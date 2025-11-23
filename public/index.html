@@ -16,16 +16,29 @@
     <div id="app" class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6">
         <header class="flex justify-between items-center mb-6 border-b pb-4">
             <h1 class="text-3xl font-bold text-gray-800">My Task Manager</h1>
-            <!-- 認証ボタンのコンテナ -->
-            <div id="auth-ui">
-                <!-- ログアウト状態の時に表示 -->
-                <button id="google-login-btn" 
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md">
-                    Googleでサインイン
-                </button>
+            <!-- 認証フォームとユーザー情報コンテナ -->
+            <div id="auth-ui" class="space-y-4">
+                
+                <!-- ログアウト状態の時に表示されるログインフォーム -->
+                <div id="login-form-container">
+                    <div class="space-y-2 p-4 bg-gray-100 rounded-lg shadow-inner">
+                        <input type="email" id="email-input" placeholder="メールアドレス"
+                               class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500">
+                        <input type="password" id="password-input" placeholder="パスワード"
+                               class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500">
+                        <!-- main.js でイベントリスナーを設定 -->
+                        <button id="email-login-btn" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition duration-150 shadow-md">
+                            ログイン
+                        </button>
+                    </div>
+                    <p class="text-xs text-red-500 mt-1" id="login-error-message"></p>
+                </div>
+
                 <!-- ログイン状態の時に表示 -->
                 <div id="user-info" class="hidden flex items-center space-x-2">
                     <span id="user-display-name" class="text-sm text-gray-600"></span>
+                    <!-- main.js でイベントリスナーを設定 -->
                     <button id="logout-btn" 
                             class="bg-red-500 hover:bg-red-600 text-white text-sm py-1 px-3 rounded-lg transition duration-150">
                         ログアウト
@@ -57,7 +70,7 @@
         </div>
     </div>
 
-    <!-- ★【重要修正】インラインスクリプトでfirebaseConfigをグローバルに設定 -->
+    <!-- ★【重要】インラインスクリプトでfirebaseConfigをグローバルに設定 -->
     <script>
         // あなたのFirebaseプロジェクト設定を正確に貼り付け
         const firebaseConfig = {

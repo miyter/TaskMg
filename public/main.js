@@ -2,12 +2,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { 
     getAuth, 
-    signInAnonymously, 
     onAuthStateChanged, 
     signOut, 
     signInWithCustomToken,
-    GoogleAuthProvider, 
-    signInWithPopup 
+    signInWithEmailAndPassword // ★Email/Password認証のために追加
 } 
 from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { 
@@ -22,7 +20,7 @@ import {
 // ログレベルをデバッグに設定
 setLogLevel('debug');
 
-// ★【修正ポイント】グローバル変数から設定を取得
+// グローバル変数から設定を取得
 const firebaseConfig = window.GLOBAL_FIREBASE_CONFIG || {};
 const initialAuthToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
 const appId = window.GLOBAL_APP_ID;
@@ -46,14 +44,15 @@ if (firebaseConfig.apiKey) {
     console.error("致命的なエラー: Firebase APIキーが設定されていません。index.htmlのインラインスクリプトを確認してください。");
 }
 
-// Google認証プロバイダーの定義
-const googleProvider = new GoogleAuthProvider();
-
 // ログイン状態とユーザーIDを保持するための変数
 let userId = null; 
 
 // UI要素の参照
-const googleLoginBtn = document.getElementById('google-login-btn');
+const loginFormContainer = document.getElementById('login-form-container');
+const emailInput = document.getElementById('email-input');
+const passwordInput = document.getElementById('password-input');
+const emailLoginBtn = document.getElementById('email-login-btn');
+const loginErrorMessage = document.getElementById('login-error-message');
 const userInfoDiv = document.getElementById('user-info');
 const userDisplayNameSpan = document.getElementById('user-display-name');
 const taskList = document.getElementById('task-list');
@@ -64,27 +63,38 @@ const logoutBtn = document.getElementById('logout-btn');
 
 // --- 2. 認証処理 ---
 
-// Google認証（ポップアップ）を開始する関数 
-async function signInWithGoogle() {
+/**
+ * Email/Passwordでログインを実行
+ */
+async function signInWithEmailPassword() {
     if (!isFirebaseInitialized) {
-        alert("Firebaseサービスが利用できません。APIキーが設定されているか確認してください。");
+        alert("Firebaseサービスが利用できません。初期化エラーを確認してください。");
         return;
     }
-    // ポップアップウィンドウで認証フローを直接開始
+
+    const email = emailInput ? emailInput.value : '';
+    const password = passwordInput ? passwordInput.value : '';
+
+    if (!email || !password) {
+        if (loginErrorMessage) loginErrorMessage.textContent = 'メールアドレスとパスワードを入力してください。';
+        return;
+    }
+    
+    if (loginErrorMessage) loginErrorMessage.textContent = ''; // エラーをクリア
+
     try {
-        console.log("Google認証ポップアップを開始します...");
-        const result = await signInWithPopup(auth, googleProvider);
-        console.log("認証成功:", result.user.displayName);
+        // ★ Email/Passwordでサインイン
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        console.log("Email/Password認証成功:", result.user.email);
     } catch (error) {
-        console.error("Google認証エラー:", error.code, error.message);
+        console.error("Email/Password認証エラー:", error.code, error.message);
         
-        if (error.code === 'auth/popup-blocked') {
-            alert("ポップアップがブロックされました。\nブラウザの設定でこのサイトを許可してください。");
-        } else if (error.code === 'auth/popup-closed-by-user') {
-            console.log("ユーザーがポップアップを閉じました");
-        } else {
-            alert(`認証に失敗しました: ${error.message}`);
+        let displayMessage = "ログインに失敗しました。";
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            displayMessage = "メールアドレスまたはパスワードが違います。";
         }
+        
+        if (loginErrorMessage) loginErrorMessage.textContent = displayMessage;
     }
 }
 
@@ -93,6 +103,9 @@ async function handleSignOut() {
     if (!isFirebaseInitialized) return;
     try {
         await signOut(auth);
+        // ログアウト後、フォームをクリア
+        if (emailInput) emailInput.value = '';
+        if (passwordInput) passwordInput.value = '';
         console.log("ログアウトしました。");
     } catch (error) {
         console.error("ログアウト中にエラーが発生しました:", error);
@@ -103,6 +116,7 @@ async function handleSignOut() {
 async function initializeAuth() {
     if (!isFirebaseInitialized) return;
     try {
+        // __initial_auth_tokenがある場合はカスタム認証でログインを試みる
         if (initialAuthToken) {
             await signInWithCustomToken(auth, initialAuthToken);
         }
@@ -117,11 +131,12 @@ if (isFirebaseInitialized) {
         if (user) {
             // ログイン済み
             userId = user.uid;
-            const displayName = user.displayName || (user.isAnonymous ? "ゲスト" : "ユーザー");
+            // Eメール認証なので、メールアドレスをDisplayNameとして使用
+            const displayName = user.email || (user.isAnonymous ? "ゲスト" : "ユーザー");
             console.log("ユーザーログイン検知:", userId);
             
             // UIの更新: ログイン状態
-            if (googleLoginBtn) googleLoginBtn.classList.add('hidden');
+            if (loginFormContainer) loginFormContainer.classList.add('hidden');
             if (userInfoDiv) userInfoDiv.classList.remove('hidden');
             if (userDisplayNameSpan) userDisplayNameSpan.textContent = `ようこそ、${displayName} さん (UID: ${userId.substring(0, 8)}...)`; 
             
@@ -134,9 +149,10 @@ if (isFirebaseInitialized) {
             console.log("ログアウト状態検知");
 
             // UIの更新: ログアウト状態
-            if (googleLoginBtn) googleLoginBtn.classList.remove('hidden');
+            if (loginFormContainer) loginFormContainer.classList.remove('hidden');
             if (userInfoDiv) userInfoDiv.classList.add('hidden');
             if (taskList) taskList.innerHTML = '<li class="p-4 bg-gray-100 rounded-lg text-gray-500 italic">タスクがありません。ログインして最初のタスクを追加してください。</li>';
+            if (loginErrorMessage) loginErrorMessage.textContent = '';
         }
     });
 }
@@ -228,7 +244,7 @@ function listenToTasks() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // 認証ボタン
-    if (googleLoginBtn) googleLoginBtn.addEventListener('click', signInWithGoogle);
+    if (emailLoginBtn) emailLoginBtn.addEventListener('click', signInWithEmailPassword);
     if (logoutBtn) logoutBtn.addEventListener('click', handleSignOut);
 
     // タスク追加ボタン
