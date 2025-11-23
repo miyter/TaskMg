@@ -1,0 +1,17 @@
+{
+  "name": "taskmg-worker-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dependencies for running the static site on Cloudflare Worker.",
+  "main": "workers-site/index.js",
+  "dependencies": {
+    "@cloudflare/kv-asset-handler": "^0.3.0"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  },
+  "scripts": {
+    "start": "npm-run-all --parallel start:*",
+    "deploy": "wrangler deploy"
+  }
+}
