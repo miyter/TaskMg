@@ -2,7 +2,7 @@
 // 役割: UI操作と各モジュール（auth, store）の連携を行います。
 
 import { loginWithEmail, logout, subscribeToAuthChanges, tryInitialAuth } from "./auth.js";
-import { addTask, subscribeToTasks } from "./store.js";
+import { addTask, subscribeToTasks, toggleTaskStatus, deleteTask } from "./store.js"; // ★追加: 新しい関数をインポート
 
 // --- UI要素の参照 ---
 const loginFormContainer = document.getElementById('login-form-container');
@@ -66,6 +66,31 @@ async function handleAddTask() {
     }
 }
 
+// タスク操作イベント (完了/削除) の委譲
+function handleTaskAction(e) {
+    if (!currentUserId) return;
+
+    const target = e.target;
+    const taskElement = target.closest('li');
+    if (!taskElement) return;
+
+    const taskId = taskElement.dataset.id;
+    const currentStatus = taskElement.dataset.status;
+
+    // 完了チェックボックスの操作
+    if (target.matches('.task-toggle')) {
+        toggleTaskStatus(currentUserId, taskId, currentStatus);
+    } 
+    // 削除ボタンの操作
+    else if (target.matches('.task-delete-btn')) {
+        // alertの代わりにカスタムUIを使うべきだが、今回は手順書の指示に従い簡易対応
+        if (confirm('本当にこのタスクを削除しますか？')) {
+            deleteTask(currentUserId, taskId);
+        }
+    }
+}
+
+
 // --- UI更新ロジック ---
 
 function updateAuthUI(user) {
@@ -117,11 +142,33 @@ function renderTaskList(tasks) {
     }
 
     tasks.forEach(task => {
+        const isCompleted = task.status === 'completed';
         const li = document.createElement('li');
-        li.className = 'p-4 border-l-4 border-blue-500 bg-white rounded-lg shadow flex justify-between items-center transition duration-150 hover:shadow-lg';
+        
+        // データをカスタム属性に設定
+        li.className = `p-4 border-l-4 border-blue-500 bg-white rounded-lg shadow flex justify-between items-center transition duration-150 hover:shadow-lg ${isCompleted ? 'opacity-60' : ''}`;
+        li.setAttribute('data-id', task.id);
+        li.setAttribute('data-status', task.status);
+        
         li.innerHTML = `
-            <span class="text-gray-800">${task.title}</span>
-            <span class="text-xs text-gray-400">(${task.status})</span>
+            <div class="flex items-center flex-grow">
+                <!-- 完了チェックボックス -->
+                <input type="checkbox" 
+                       class="task-toggle w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 mr-4 cursor-pointer"
+                       ${isCompleted ? 'checked' : ''}>
+                
+                <!-- タスクタイトル -->
+                <span class="text-gray-800 flex-grow ${isCompleted ? 'line-through text-gray-500' : ''}">
+                    ${task.title}
+                </span>
+            </div>
+
+            <!-- 削除ボタン -->
+            <button class="task-delete-btn text-gray-400 hover:text-red-500 transition duration-150 p-1 ml-4" title="削除">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 100 2v6a1 1 0 102 0V8a1 1 0 00-2 0z" clip-rule="evenodd" />
+                </svg>
+            </button>
         `;
         taskList.appendChild(li);
     });
@@ -135,6 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
     if (addTaskBtn) addTaskBtn.addEventListener('click', handleAddTask);
     
+    // タスク一覧全体に対するイベントリスナーを登録（イベント委譲）
+    if (taskList) taskList.addEventListener('click', handleTaskAction);
+
     // Enterキーでのタスク追加対応
     if (taskTitleInput) {
         taskTitleInput.addEventListener('keypress', (e) => {

@@ -5,7 +5,10 @@ import {
     collection, 
     addDoc, 
     query, 
-    onSnapshot 
+    onSnapshot,
+    doc, // ★追加: ドキュメント参照用
+    updateDoc, // ★追加: 更新用
+    deleteDoc // ★追加: 削除用
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, isInitialized } from "./firebase-init.js";
 
@@ -19,6 +22,15 @@ function getTaskCollection(userId) {
     const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
     const path = `/artifacts/${currentAppId}/users/${userId}/tasks`;
     return collection(db, path);
+}
+
+/**
+ * 特定のタスクドキュメント参照を取得
+ */
+function getTaskDoc(userId, taskId) {
+    const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
+    const path = `/artifacts/${currentAppId}/users/${userId}/tasks/${taskId}`;
+    return doc(db, path);
 }
 
 /**
@@ -41,6 +53,45 @@ export async function addTask(userId, title) {
         if (e.code === 'permission-denied') {
             alert("書き込み権限がありません。");
         }
+        return false;
+    }
+}
+
+/**
+ * タスクのステータス（完了/未完了）を切り替え
+ */
+export async function toggleTaskStatus(userId, taskId, currentStatus) {
+    if (!isInitialized || !userId) return;
+
+    // 次のステータスを決定
+    const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
+    
+    try {
+        const taskRef = getTaskDoc(userId, taskId);
+        await updateDoc(taskRef, {
+            status: newStatus
+        });
+        console.log(`タスク ${taskId} のステータスを ${newStatus} に更新しました`);
+        return true;
+    } catch (e) {
+        console.error("タスクステータス更新エラー:", e);
+        return false;
+    }
+}
+
+/**
+ * タスクを削除
+ */
+export async function deleteTask(userId, taskId) {
+    if (!isInitialized || !userId) return;
+
+    try {
+        const taskRef = getTaskDoc(userId, taskId);
+        await deleteDoc(taskRef);
+        console.log(`タスク ${taskId} を削除しました`);
+        return true;
+    } catch (e) {
+        console.error("タスク削除エラー:", e);
         return false;
     }
 }
