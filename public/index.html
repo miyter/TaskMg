@@ -12,12 +12,7 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
-        
-        /* ドラッグ&ドロップ時のスタイル */
-        .drop-target {
-            background-color: #dbeafe !important; /* bg-blue-100 */
-            border: 2px dashed #3b82f6;
-        }
+        .drop-target { background-color: #dbeafe !important; border: 2px dashed #3b82f6; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -49,8 +44,6 @@
         
         <!-- 左サイドバー -->
         <aside class="w-full md:w-64 flex-shrink-0 bg-white rounded-xl shadow-md p-4 h-fit max-h-[90vh] overflow-y-auto">
-            
-            <!-- プロジェクトセクション -->
             <div class="mb-8">
                 <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Projects</h2>
                 <ul class="space-y-1 mb-4">
@@ -67,7 +60,6 @@
                 </div>
             </div>
 
-            <!-- ★新規追加: ラベルセクション -->
             <div>
                 <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Labels</h2>
                 <p class="text-[10px] text-gray-400 mb-2 px-1">※タスクをドラッグしてタグ付け</p>
@@ -79,13 +71,21 @@
                     <button id="add-label-btn" class="text-blue-600 hover:bg-blue-50 px-2 rounded">+</button>
                 </div>
             </div>
-
         </aside>
 
         <!-- メインエリア -->
         <main class="flex-grow bg-white rounded-xl shadow-md p-6">
             <div class="mb-6 border-b pb-4">
-                <h2 id="current-view-title" class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">すべてのタスク</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="current-view-title" class="text-xl font-bold text-gray-800 flex items-center gap-2">すべてのタスク</h2>
+                    
+                    <!-- ★新機能: 完了タスク表示トグル -->
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggle-completed-btn" class="sr-only peer" checked>
+                        <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        <span class="ms-3 text-xs font-medium text-gray-500">完了を表示</span>
+                    </label>
+                </div>
                 
                 <div id="task-input-section" class="flex flex-col sm:flex-row gap-3">
                     <input type="text" id="task-title-input" placeholder="タスクを追加..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
