@@ -10,8 +10,8 @@ import {
     updateDoc, 
     deleteDoc,
     Timestamp,
-    arrayUnion, // ★追加: 配列に要素を追加
-    arrayRemove // ★追加: 配列から要素を削除
+    arrayUnion, 
+    arrayRemove 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, isInitialized } from "./firebase-init.js";
 
@@ -44,7 +44,7 @@ export async function addTask(userId, title, dueDate = null, projectId = null) {
             status: "todo",
             dueDate: firestoreDueDate,
             projectId: projectId,
-            labelIds: [], // ★追加: ラベルIDの配列を初期化
+            labelIds: [], 
             createdAt: new Date(),
             ownerId: userId
         });
@@ -148,7 +148,7 @@ export function subscribeToTasks(userId, callback, filterCondition = { type: 'al
             const projectId = filterCondition.value;
             if (projectId === 'inbox') {
                 tasks = tasks.filter(t => !t.projectId);
-            } else if (projectId) {
+            } else if (projectId && projectId !== 'all') { // ★修正: 'all'の場合はフィルタリングしない
                 tasks = tasks.filter(t => t.projectId === projectId);
             }
         } else if (filterCondition.type === 'label') {

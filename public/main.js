@@ -6,7 +6,6 @@ import { addTask, subscribeToTasks, toggleTaskStatus, deleteTask, updateTask } f
 import { addProject, deleteProject } from "./project-store.js";
 import { addLabel, deleteLabel } from "./label-store.js";
 
-// UIモジュールのインポート
 import * as AuthUI from "./ui-auth.js";
 import * as SidebarUI from "./ui-sidebar.js";
 import * as TaskUI from "./ui-task.js";
@@ -15,9 +14,9 @@ import * as TaskUI from "./ui-task.js";
 let currentUserId = null;
 let currentFilter = { type: 'project', value: 'all' };
 let unsubscribeTasks = null;
-let showCompletedTasks = true; // ★新機能: 完了タスクの表示状態
+let showCompletedTasks = true; 
 
-// --- UI要素（共通） ---
+// --- UI要素 ---
 const emailLoginBtn = document.getElementById('email-login-btn');
 const logoutBtn = document.getElementById('logout-btn');
 const addTaskBtn = document.getElementById('add-task-btn');
@@ -27,9 +26,9 @@ const addProjectBtn = document.getElementById('add-project-btn');
 const newProjectInput = document.getElementById('new-project-input');
 const addLabelBtn = document.getElementById('add-label-btn');
 const newLabelInput = document.getElementById('new-label-input');
-const toggleCompletedBtn = document.getElementById('toggle-completed-btn'); // ★新機能
+const toggleCompletedBtn = document.getElementById('toggle-completed-btn');
 
-// --- 認証フロー ---
+// --- 認証 ---
 
 async function handleLogin() {
     const { email, password } = AuthUI.getAuthInputValues();
@@ -51,7 +50,6 @@ async function handleLogout() {
     SidebarUI.cleanupSidebar();
 }
 
-// ユーザー状態の変化時の処理
 function onAuthStateChanged(user) {
     AuthUI.updateAuthUI(user);
     
@@ -75,7 +73,7 @@ function selectView(filter) {
     startTaskListener(currentUserId, currentFilter);
 }
 
-// --- タスク管理フロー ---
+// --- タスク ---
 
 function startTaskListener(userId, filter) {
     if (unsubscribeTasks) unsubscribeTasks();
@@ -92,7 +90,6 @@ async function handleAddTask() {
     let dueDate = null;
     if (dueDateValue) dueDate = new Date(dueDateValue);
 
-    // プロジェクト表示中ならそのプロジェクトに追加
     const targetProjectId = (currentFilter.type === 'project' && currentFilter.value !== 'all' && currentFilter.value !== 'inbox') 
         ? currentFilter.value : null;
 
@@ -103,12 +100,12 @@ async function handleAddTask() {
     }
 }
 
-// タスク一覧でのアクション（クリックイベント委譲）
+// アクション委譲
 async function handleTaskAction(e) {
     if (!currentUserId) return;
     
-    // ラベル削除（TaskUI側で処理）
-    if (await TaskUI.handleLabelBadgeClick(e, currentUserId)) return;
+    // ★更新: UI-Taskモジュール側で処理するイベント（ラベル削除、追加プルダウンなど）
+    if (await TaskUI.handleTaskClickEvents(e, currentUserId)) return;
 
     const target = e.target;
     const li = target.closest('li[data-id]');
@@ -131,17 +128,13 @@ async function handleTaskAction(e) {
 // --- 初期化 ---
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Auth
     if (emailLoginBtn) emailLoginBtn.addEventListener('click', handleLogin);
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 
-    // Sidebar Actions (Event Delegation)
     document.querySelector('aside').addEventListener('click', async (e) => {
-        // 選択
         const btn = e.target.closest('button[data-type]');
         if (btn) return selectView({ type: btn.dataset.type, value: btn.dataset.id });
         
-        // 削除
         if (e.target.matches('.delete-project-btn')) {
             if (confirm('リストを削除しますか？')) deleteProject(currentUserId, e.target.dataset.id);
         } else if (e.target.matches('.delete-label-btn')) {
@@ -149,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Add Forms
     if (addTaskBtn) addTaskBtn.addEventListener('click', handleAddTask);
     if (taskTitleInput) taskTitleInput.addEventListener('keypress', e => { if(e.key==='Enter') handleAddTask() });
     
@@ -165,23 +157,19 @@ document.addEventListener('DOMContentLoaded', () => {
         newLabelInput.value = '';
     });
 
-    // Task List Actions
     const taskList = document.getElementById('task-list');
     if (taskList) {
         taskList.addEventListener('click', handleTaskAction);
         taskList.addEventListener('dblclick', handleTaskAction);
     }
 
-    // ★新機能: 完了タスクの表示切り替え
     if (toggleCompletedBtn) {
         toggleCompletedBtn.addEventListener('change', (e) => {
             showCompletedTasks = e.target.checked;
-            // リスナーを再起動して再描画
             startTaskListener(currentUserId, currentFilter);
         });
     }
 
-    // Start
     subscribeToAuthChanges(onAuthStateChanged);
     tryInitialAuth();
 });

@@ -3,7 +3,7 @@
 
 import { addProject, subscribeToProjects, deleteProject } from "./project-store.js";
 import { addLabel, subscribeToLabels, deleteLabel } from "./label-store.js";
-import { addLabelToTask } from "./store.js"; // ★修正: 正しい場所からインポート
+import { addLabelToTask } from "./store.js";
 
 const projectList = document.getElementById('project-list');
 const labelList = document.getElementById('label-list');
@@ -12,6 +12,9 @@ const currentViewTitle = document.getElementById('current-view-title');
 // 状態保持用
 let projectMap = {};
 let labelMap = {};
+// 全ラベルのリスト（配列）を保持して外部に提供
+let allLabels = []; 
+
 let unsubscribeProjects = null;
 let unsubscribeLabels = null;
 
@@ -27,6 +30,12 @@ export function cleanupSidebar() {
     if (unsubscribeLabels) unsubscribeLabels();
     if (projectList) projectList.innerHTML = '';
     if (labelList) labelList.innerHTML = '';
+    allLabels = [];
+}
+
+// ★追加: タスク側でプルダウンを作るために全ラベル情報を取得するメソッド
+export function getAllLabels() {
+    return allLabels;
 }
 
 export function updateSidebarSelection(currentFilter) {
@@ -89,7 +98,7 @@ function startProjectListener(userId, currentFilter) {
             projectList.appendChild(li);
         });
         updateSidebarSelection(currentFilter);
-        updateViewTitle(currentFilter); // 名前解決のために更新
+        updateViewTitle(currentFilter); 
     });
 }
 
@@ -98,6 +107,7 @@ function startLabelListener(userId, currentFilter) {
     unsubscribeLabels = subscribeToLabels(userId, (labels) => {
         labelList.innerHTML = '';
         labelMap = {};
+        allLabels = labels; // ★全ラベルリストを更新
         
         if (labels.length === 0) {
             labelList.innerHTML = '<li class="text-xs text-gray-400 px-3">ラベルがありません</li>';

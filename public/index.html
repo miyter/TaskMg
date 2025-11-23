@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>無料タスク管理ツール</title>
+    <title>task-mg</title> <!-- ★変更: タブ名 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -42,35 +42,45 @@
     <!-- メインコンテンツ -->
     <div id="app-container" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-6 flex flex-col md:flex-row gap-6">
         
-        <!-- 左サイドバー -->
-        <aside class="w-full md:w-64 flex-shrink-0 bg-white rounded-xl shadow-md p-4 h-fit max-h-[90vh] overflow-y-auto">
-            <div class="mb-8">
-                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Projects</h2>
-                <ul class="space-y-1 mb-4">
-                    <li><button class="project-item w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-50 text-blue-700" data-id="all" data-type="project">📁 すべてのタスク</button></li>
-                    <li><button class="project-item w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors" data-id="inbox" data-type="project">📥 インボックス</button></li>
-                </ul>
-                <div class="flex justify-between items-center mb-2 px-1">
-                    <span class="text-xs font-semibold text-gray-500">マイリスト</span>
+        <!-- 左サイドバー: レイアウト変更 (flex-colで高さを確保し、中身をスクロールさせる) -->
+        <aside class="w-full md:w-64 flex-shrink-0 bg-white rounded-xl shadow-md p-4 flex flex-col max-h-[calc(100vh-8rem)] sticky top-6">
+            
+            <!-- スクロールエリア (リスト) -->
+            <div class="flex-grow overflow-y-auto pr-1 space-y-6">
+                <!-- プロジェクト -->
+                <div>
+                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 sticky top-0 bg-white z-10">Projects</h2>
+                    <ul class="space-y-1 mb-2">
+                        <li><button class="project-item w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-50 text-blue-700" data-id="all" data-type="project">📁 すべてのタスク</button></li>
+                        <li><button class="project-item w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors" data-id="inbox" data-type="project">📥 インボックス</button></li>
+                    </ul>
+                    <div class="flex justify-between items-center mb-2 px-1">
+                        <span class="text-xs font-semibold text-gray-500">マイリスト</span>
+                    </div>
+                    <ul id="project-list" class="space-y-1"></ul>
                 </div>
-                <ul id="project-list" class="space-y-1 mb-2"></ul>
-                <div class="mt-2 flex gap-2">
-                    <input type="text" id="new-project-input" placeholder="新しいリスト" class="flex-grow text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
-                    <button id="add-project-btn" class="text-blue-600 hover:bg-blue-50 px-2 rounded">+</button>
+
+                <!-- ラベル -->
+                <div>
+                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 sticky top-0 bg-white z-10">Labels</h2>
+                    <ul id="label-list" class="space-y-1">
+                        <li class="text-xs text-gray-400 px-3">読み込み中...</li>
+                    </ul>
                 </div>
             </div>
 
-            <div>
-                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Labels</h2>
-                <p class="text-[10px] text-gray-400 mb-2 px-1">※タスクをドラッグしてタグ付け</p>
-                <ul id="label-list" class="space-y-1 mb-2">
-                    <li class="text-xs text-gray-400 px-3">読み込み中...</li>
-                </ul>
-                <div class="mt-2 flex gap-2">
+            <!-- 固定エリア (追加フォーム) -->
+            <div class="flex-shrink-0 pt-4 border-t mt-2 space-y-3 bg-white">
+                <div class="flex gap-2">
+                    <input type="text" id="new-project-input" placeholder="新しいリスト" class="flex-grow text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
+                    <button id="add-project-btn" class="text-blue-600 hover:bg-blue-50 px-2 rounded">+</button>
+                </div>
+                <div class="flex gap-2">
                     <input type="text" id="new-label-input" placeholder="新しいラベル" class="flex-grow text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
                     <button id="add-label-btn" class="text-blue-600 hover:bg-blue-50 px-2 rounded">+</button>
                 </div>
             </div>
+
         </aside>
 
         <!-- メインエリア -->
@@ -79,7 +89,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h2 id="current-view-title" class="text-xl font-bold text-gray-800 flex items-center gap-2">すべてのタスク</h2>
                     
-                    <!-- ★新機能: 完了タスク表示トグル -->
+                    <!-- 完了タスク表示トグル -->
                     <label class="inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="toggle-completed-btn" class="sr-only peer" checked>
                         <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
@@ -89,7 +99,8 @@
                 
                 <div id="task-input-section" class="flex flex-col sm:flex-row gap-3">
                     <input type="text" id="task-title-input" placeholder="タスクを追加..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-                    <input type="date" id="due-date-input" class="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-600">
+                    <!-- ★変更: lang="en-US" を追加して西暦表記を促進 -->
+                    <input type="date" id="due-date-input" lang="en-US" class="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-600">
                     <button id="add-task-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition whitespace-nowrap">追加</button>
                 </div>
             </div>
