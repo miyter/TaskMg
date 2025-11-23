@@ -6,9 +6,10 @@ import {
     addDoc, 
     query, 
     onSnapshot,
-    doc, // ★追加: ドキュメント参照用
-    updateDoc, // ★追加: 更新用
-    deleteDoc // ★追加: 削除用
+    doc, 
+    updateDoc, 
+    deleteDoc,
+    Timestamp // ★追加: 期限日保存用にTimestampをインポート
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, isInitialized } from "./firebase-init.js";
 
@@ -43,6 +44,7 @@ export async function addTask(userId, title) {
         await addDoc(getTaskCollection(userId), {
             title: title.trim(),
             status: "todo",
+            dueDate: null, // ★追加: 初期値としてnullを設定
             createdAt: new Date(),
             ownerId: userId
         });
@@ -53,6 +55,34 @@ export async function addTask(userId, title) {
         if (e.code === 'permission-denied') {
             alert("書き込み権限がありません。");
         }
+        return false;
+    }
+}
+
+/**
+ * タスクのタイトルまたは期限日を更新
+ * @param {string} userId 
+ * @param {string} taskId 
+ * @param {object} updates - 更新するフィールドのオブジェクト例: { title: '新しいタイトル' } or { dueDate: Dateオブジェクト }
+ */
+export async function updateTask(userId, taskId, updates) {
+    if (!isInitialized || !userId) return;
+
+    // dueDateがDateオブジェクトの場合、FirestoreのTimestampに変換
+    if (updates.dueDate instanceof Date) {
+        updates.dueDate = Timestamp.fromDate(updates.dueDate);
+    } else if (updates.dueDate === '') {
+         // UI側から空文字が来たらnullとして保存（期限日をクリアするため）
+        updates.dueDate = null;
+    }
+    
+    try {
+        const taskRef = getTaskDoc(userId, taskId);
+        await updateDoc(taskRef, updates);
+        console.log(`タスク ${taskId} のフィールドを更新しました:`, updates);
+        return true;
+    } catch (e) {
+        console.error("タスク更新エラー:", e);
         return false;
     }
 }
