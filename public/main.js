@@ -27,14 +27,13 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 // ★【修正ポイント】グローバル変数 __firebase_config を安全にパース
 let firebaseConfig = {};
-let isFirebaseConfigLoaded = false;
+let isFirebaseInitialized = false; // Firebaseが正常に初期化されたかを示すフラグ
 try {
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
         firebaseConfig = JSON.parse(__firebase_config);
-        isFirebaseConfigLoaded = true;
     }
 } catch (e) {
-    console.error("Firebase configのパースに失敗しました:", e);
+    console.error("Firebase configのパースに失敗しました。このエラーは設定の問題を示唆しています:", e);
 }
 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -42,19 +41,20 @@ const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial
 // Firebaseアプリの初期化
 let app, auth, db;
 
-if (isFirebaseConfigLoaded && firebaseConfig.apiKey) {
+if (firebaseConfig.apiKey) {
     try {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
+        isFirebaseInitialized = true;
         console.log("Firebase/Firestore 初期化成功。");
     } catch (e) {
         console.error("Firebase初期化中にエラー:", e);
+        // 初期化失敗時、isFirebaseInitialized は false のまま
     }
 } else {
     // APIキーがない場合は初期化をスキップし、エラーメッセージをコンソールに出力
-    console.error("致命的なエラー: Firebase APIキーが設定されていないため、Firebase SDKは初期化されていません。");
-    // この状態では、認証やデータベース操作はできません。
+    console.error("致命的なエラー: Firebase APIキーが設定されていません。Firebase SDKは動作しません。");
 }
 
 // Google認証プロバイダーの定義
@@ -77,8 +77,8 @@ const logoutBtn = document.getElementById('logout-btn');
 
 // Google認証（ポップアップ）を開始する関数 
 async function signInWithGoogle() {
-    if (!auth) {
-        alert("Firebaseサービスが利用できません。設定エラーを確認してください。");
+    if (!isFirebaseInitialized) {
+        alert("Firebaseサービスが利用できません。\n原因: APIキーが設定されていないか、初期化に失敗しています。");
         return;
     }
     try {
@@ -89,7 +89,7 @@ async function signInWithGoogle() {
         console.error("Google認証エラー:", error.code, error.message);
         
         if (error.code === 'auth/popup-blocked') {
-            alert("ポップアップがブロックされました。\nブラウザのアドレスバーにある「ポップアップブロック」アイコンをクリックして、このサイトを許可してください。");
+            alert("ポップアップがブロックされました。\nブラウザの設定でこのサイトを許可してください。");
         } else if (error.code === 'auth/popup-closed-by-user') {
             console.log("ユーザーがポップアップを閉じました");
         } else {
@@ -100,7 +100,7 @@ async function signInWithGoogle() {
 
 // ログアウト関数
 async function handleSignOut() {
-    if (!auth) return;
+    if (!isFirebaseInitialized) return;
     try {
         await signOut(auth);
         console.log("ログアウトしました。");
@@ -111,7 +111,7 @@ async function handleSignOut() {
 
 // 認証処理（Canvas環境向け初期化）
 async function initializeAuth() {
-    if (!auth) return;
+    if (!isFirebaseInitialized) return;
     try {
         if (initialAuthToken) {
             await signInWithCustomToken(auth, initialAuthToken);
@@ -122,7 +122,7 @@ async function initializeAuth() {
 }
 
 // 認証状態の監視
-if (auth) {
+if (isFirebaseInitialized) {
     onAuthStateChanged(auth, (user) => {
         if (user) {
             // ログイン済み
