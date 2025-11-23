@@ -1,8 +1,9 @@
-// 作成日: 2025-11-25
+// 更新日: 2025-11-25
 // 役割: サイドバー（プロジェクト・ラベル）の描画とイベント設定
 
 import { addProject, subscribeToProjects, deleteProject } from "./project-store.js";
-import { addLabel, subscribeToLabels, deleteLabel, addLabelToTask } from "./label-store.js";
+import { addLabel, subscribeToLabels, deleteLabel } from "./label-store.js";
+import { addLabelToTask } from "./store.js"; // ★修正: 正しい場所からインポート
 
 const projectList = document.getElementById('project-list');
 const labelList = document.getElementById('label-list');
