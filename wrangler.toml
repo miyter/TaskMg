@@ -1,17 +1,10 @@
 name = "taskmg"
+# 互換性の日付は最新のものを指定
+compatibility_date = "2025-11-23" 
 
-互換性の日付は最新のものを指定
-
-compatibility_date = "2025-11-23"
-
-[site] セクションは、Workersで静的ファイルをホストするための設定だよ
-
+# [site] セクションは、Workersで静的ファイルをホストするための設定だよ
 [site]
-
-静的ファイルが置いてあるディレクトリを指定。今回はルート（./）だね
-
-bucket = "./"
-
-Workersで静的ファイルを扱うためのボイラープレートの場所
-
+# 【重要】静的ファイルをpublicフォルダから読み込むように変更する
+bucket = "./public"
+# Workersで静的ファイルを扱うためのボイラープレートの場所
 entry-point = "workers-site"
