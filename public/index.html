@@ -3,60 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>タスク管理ツール - MVP</title>
-    <!-- Tailwind CSSを読み込みます -->
+    <title>無料タスク管理ツール</title>
+    <!-- Tailwind CSSのインポート (仕様書に基づく) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* フォント設定 */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f9fb;
-        }
+        /* 適切なフォントを設定 */
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="p-4 sm:p-8">
+<body class="bg-gray-50 min-h-screen p-4 md:p-8">
 
-    <!-- メインコンテナ -->
-    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8">
-        
-        <!-- ヘッダー -->
-        <header class="mb-8">
-            <h1 class="text-3xl font-semibold text-gray-800 border-b-2 pb-2">
-                無料タスク管理ツール (MVP)
-            </h1>
-            <p class="text-sm text-gray-500 mt-1">
-                デプロイ成功！このページはCloudflare Pagesから配信されています。
-            </p>
+    <div id="app" class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6">
+        <header class="flex justify-between items-center mb-6 border-b pb-4">
+            <h1 class="text-3xl font-bold text-gray-800">My Task Manager</h1>
+            <!-- 認証ボタンのコンテナ -->
+            <div id="auth-ui">
+                <!-- ログアウト状態の時に表示 -->
+                <button id="google-login-btn" onclick="signInWithGoogle()" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md">
+                    Googleでサインイン
+                </button>
+                <!-- ログイン状態の時に表示 -->
+                <div id="user-info" class="hidden flex items-center space-x-2">
+                    <span id="user-display-name" class="text-sm text-gray-600"></span>
+                    <button onclick="signOut(auth)" 
+                            class="bg-red-500 hover:bg-red-600 text-white text-sm py-1 px-3 rounded-lg transition duration-150">
+                        ログアウト
+                    </button>
+                </div>
+            </div>
         </header>
 
-        <!-- タスク入力エリア (仮) -->
-        <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
-            <h2 class="text-xl text-indigo-700 font-medium mb-2">現在のステータス</h2>
-            <p class="text-indigo-600">
-                ✅ Git設定、Cloudflare連携、デプロイ基盤の準備が完了しました。
-            </p>
-            <p class="text-indigo-600">
-                🎉 これでコードをプッシュすれば自動でWebサイトが更新されます！
-            </p>
+        <!-- タスク入力フォーム -->
+        <div id="task-input-section" class="mb-6">
+            <h2 class="text-xl font-semibold mb-3 text-gray-700">新しいタスクを追加</h2>
+            <div class="flex space-x-3">
+                <input type="text" id="task-title-input" placeholder="タスクのタイトルを入力..."
+                       class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-150">
+                <button onclick="handleAddTask()" 
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-150">
+                    追加
+                </button>
+            </div>
         </div>
 
-        <!-- タスクリスト (仮) -->
-        <div id="task-list" class="space-y-3">
-            <div class="flex items-center bg-gray-50 p-4 rounded-lg shadow-sm">
-                <span class="text-lg text-gray-700">タスク：基本機能の実装</span>
-                <span class="ml-auto text-sm text-yellow-600 bg-yellow-100 px-3 py-1 rounded-full">TODO</span>
-            </div>
-            <div class="flex items-center bg-gray-50 p-4 rounded-lg shadow-sm">
-                <span class="text-lg text-gray-700">タスク：Firebase接続の準備</span>
-                <span class="ml-auto text-sm text-green-600 bg-green-100 px-3 py-1 rounded-full">完了済み</span>
-            </div>
+        <!-- タスク一覧 -->
+        <div id="task-list-container">
+            <h2 class="text-xl font-semibold mb-3 text-gray-700">タスク一覧</h2>
+            <ul id="task-list" class="space-y-3">
+                <!-- ここにタスクがリアルタイムで表示されます -->
+                <li class="p-4 bg-gray-100 rounded-lg text-gray-500 italic">タスクがありません。ログインして最初のタスクを追加してください。</li>
+            </ul>
         </div>
-        
     </div>
 
-    <!-- JavaScriptはここに追記していきます -->
-    <script>
-        // フェーズ1のMVP実装を進めましょう！
+    <!-- ここにFirebaseの初期化と関数を記述します -->
+    <script type="module">
+        // --- 1. Firebase SDK のインポートと初期設定 ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            onAuthStateChanged, 
+            signOut, 
+            signInWithCustomToken,
+            GoogleAuthProvider, 
+            signInWithPopup 
+        } 
+        from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            query, 
+            onSnapshot, 
+            // ログレベル設定を追加
+            setLogLevel 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ログレベルをデバッグに設定 (Firestoreの動作確認に便利です)
+        setLogLevel('debug');
+
+        // 環境変数から設定を取得 (Canvas環境での必須手順)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Firebaseアプリの初期化
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Google認証プロバイダーの定義
+        const googleProvider = new GoogleAuthProvider();
+
+        // ログイン状態とユーザーIDを保持するための変数
+        let userId = null; 
+        
+        // UI要素の参照
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const userInfoDiv = document.getElementById('user-info');
+        const userDisplayNameSpan = document.getElementById('user-display-name');
+        const taskList = document.getElementById('task-list');
+        const taskTitleInput = document.getElementById('task-title-input');
+
+
+        // --- 2. 認証処理 ---
+        
+        // Google認証ポップアップを表示する関数
+        window.signInWithGoogle = async () => {
+            try {
+                // ポップアップウィンドウでサインインプロセスを開始
+                const result = await signInWithPopup(auth, googleProvider);
+                // Googleアカウントでサインインに成功
+                console.log("Googleアカウントでログインしました:", result.user.displayName);
+            } catch (error) {
+                // エラー処理
+                console.error("Google認証中にエラーが発生しました:", error.code, error.message);
+                // エラーメッセージをユーザーに分かりやすく表示する処理を入れると良い
+            }
+        }
+
+        // 認証処理（Canvas環境向け）
+        async function initializeAuth() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("初期認証中にエラーが発生しました:", error);
+            }
+        }
+
+        // 認証状態の監視
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // ログイン済み
+                userId = user.uid;
+                console.log("ユーザーがログインしました。UID:", userId);
+                
+                // UIの更新: ログイン状態
+                googleLoginBtn.classList.add('hidden');
+                userInfoDiv.classList.remove('hidden');
+                userDisplayNameSpan.textContent = `UID: ${userId}`; // ユーザーIDを表示
+                
+                // 認証完了後にタスクのリアルタイムリスナーを開始
+                listenToTasks(); 
+
+            } else {
+                // ログアウトまたは未ログイン
+                userId = null;
+                console.log("ユーザーはログアウトしています。");
+
+                // UIの更新: ログアウト状態
+                googleLoginBtn.classList.remove('hidden');
+                userInfoDiv.classList.add('hidden');
+                taskList.innerHTML = '<li class="p-4 bg-gray-100 rounded-lg text-gray-500 italic">タスクがありません。ログインして最初のタスクを追加してください。</li>';
+            }
+        });
+
+        // 認証をキックオフ
+        initializeAuth();
+
+
+        // --- 3. Firestore データ操作関数 ---
+
+        /**
+         * 認証済みユーザーのタスクコレクションへの参照を取得
+         */
+        function getTaskCollectionRef(currentUserId) {
+            const path = `/artifacts/${appId}/users/${currentUserId}/tasks`;
+            return collection(db, path);
+        }
+
+        // データの追加
+        async function addTask(taskTitle) {
+            if (!userId || !taskTitle.trim()) {
+                console.warn("ユーザーが認証されていないか、タイトルが空です。");
+                return;
+            }
+            try {
+                await addDoc(getTaskCollectionRef(userId), {
+                    title: taskTitle.trim(),
+                    status: "todo",
+                    createdAt: new Date(),
+                    ownerId: userId 
+                });
+                taskTitleInput.value = ''; // 入力欄をクリア
+                console.log("タスクが追加されました！");
+            } catch (e) {
+                console.error("タスク追加中にエラー:", e);
+            }
+        }
+
+        // UIイベントハンドラ
+        window.handleAddTask = () => {
+            const title = taskTitleInput.value;
+            addTask(title);
+        };
+
+
+        // データのリアルタイムな読み込みとUI反映
+        function listenToTasks() {
+            if (!userId) return;
+
+            const q = query(getTaskCollectionRef(userId));
+            
+            // リアルタイムリスナーを設定
+            onSnapshot(q, (snapshot) => {
+                // リアルタイム更新されたタスクリスト全体を再構築
+                taskList.innerHTML = '';
+                if (snapshot.empty) {
+                     taskList.innerHTML = '<li class="p-4 bg-gray-100 rounded-lg text-gray-500 italic">タスクがありません。追加してください。</li>';
+                     return;
+                }
+
+                snapshot.docs.forEach((doc) => {
+                    const task = doc.data();
+                    const taskElement = document.createElement('li');
+                    taskElement.className = 'p-4 border-l-4 border-blue-500 bg-white rounded-lg shadow flex justify-between items-center';
+                    taskElement.innerHTML = `
+                        <span class="text-gray-800">${task.title}</span>
+                        <span class="text-xs text-gray-400">(${task.status})</span>
+                    `;
+                    taskList.appendChild(taskElement);
+                });
+                console.log("タスクリストを更新しました。");
+
+            }, (error) => {
+                console.error("タスクのリアルタイム更新エラー:", error);
+            });
+        }
+
     </script>
 </body>
 </html>
