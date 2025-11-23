@@ -1,5 +1,5 @@
 // 更新日: 2025-11-25
-// 役割: Firestoreへのデータ読み書きを担当します。
+// 役割: タスクデータのFirestore読み書きを担当（プロジェクト対応版）
 
 import { 
     collection, 
@@ -13,35 +13,25 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, isInitialized } from "./firebase-init.js";
 
-// アプリIDの取得
 const appId = window.GLOBAL_APP_ID || 'default-app-id';
 
-/**
- * ユーザーごとのタスクコレクション参照を取得
- */
 function getTaskCollection(userId) {
     const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
-    const path = `/artifacts/${currentAppId}/users/${userId}/tasks`;
-    return collection(db, path);
+    return collection(db, `/artifacts/${currentAppId}/users/${userId}/tasks`);
 }
 
-/**
- * 特定のタスクドキュメント参照を取得
- */
 function getTaskDoc(userId, taskId) {
     const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
-    const path = `/artifacts/${currentAppId}/users/${userId}/tasks/${taskId}`;
-    return doc(db, path);
+    return doc(db, `/artifacts/${currentAppId}/users/${userId}/tasks/${taskId}`);
 }
 
 /**
  * タスクを追加
- * ★変更点: dueDate (Dateオブジェクトまたはnull) を引数に追加
+ * projectId引数を追加（デフォルトはnull＝インボックス）
  */
-export async function addTask(userId, title, dueDate = null) {
+export async function addTask(userId, title, dueDate = null, projectId = null) {
     if (!isInitialized || !userId) return;
     
-    // dueDateがDateオブジェクトであればTimestampに変換、そうでなければそのまま
     let firestoreDueDate = null;
     if (dueDate instanceof Date) {
         firestoreDueDate = Timestamp.fromDate(dueDate);
@@ -51,42 +41,29 @@ export async function addTask(userId, title, dueDate = null) {
         await addDoc(getTaskCollection(userId), {
             title: title.trim(),
             status: "todo",
-            dueDate: firestoreDueDate, // ★更新
+            dueDate: firestoreDueDate,
+            projectId: projectId, // プロジェクトIDを保存
             createdAt: new Date(),
             ownerId: userId
         });
-        console.log("タスク追加成功");
         return true;
     } catch (e) {
         console.error("タスク追加エラー:", e);
-        if (e.code === 'permission-denied') {
-            alert("書き込み権限がありません。");
-        }
         return false;
     }
 }
 
-/**
- * タスクのタイトルまたは期限日を更新
- * @param {string} userId 
- * @param {string} taskId 
- * @param {object} updates - 更新するフィールドのオブジェクト例: { title: '新しいタイトル' } or { dueDate: Dateオブジェクト }
- */
 export async function updateTask(userId, taskId, updates) {
     if (!isInitialized || !userId) return;
 
-    // dueDateがDateオブジェクトの場合、FirestoreのTimestampに変換
     if (updates.dueDate instanceof Date) {
         updates.dueDate = Timestamp.fromDate(updates.dueDate);
     } else if (updates.dueDate === '') {
-         // UI側から空文字が来たらnullとして保存（期限日をクリアするため）
         updates.dueDate = null;
     }
     
     try {
-        const taskRef = getTaskDoc(userId, taskId);
-        await updateDoc(taskRef, updates);
-        console.log(`タスク ${taskId} のフィールドを更新しました:`, updates);
+        await updateDoc(getTaskDoc(userId, taskId), updates);
         return true;
     } catch (e) {
         console.error("タスク更新エラー:", e);
@@ -94,64 +71,60 @@ export async function updateTask(userId, taskId, updates) {
     }
 }
 
-/**
- * タスクのステータス（完了/未完了）を切り替え
- */
 export async function toggleTaskStatus(userId, taskId, currentStatus) {
     if (!isInitialized || !userId) return;
-
-    // 次のステータスを決定
     const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
-    
     try {
-        const taskRef = getTaskDoc(userId, taskId);
-        await updateDoc(taskRef, {
-            status: newStatus
-        });
-        console.log(`タスク ${taskId} のステータスを ${newStatus} に更新しました`);
+        await updateDoc(getTaskDoc(userId, taskId), { status: newStatus });
         return true;
     } catch (e) {
-        console.error("タスクステータス更新エラー:", e);
+        console.error("エラー:", e);
         return false;
     }
 }
 
-/**
- * タスクを削除
- */
 export async function deleteTask(userId, taskId) {
     if (!isInitialized || !userId) return;
-
     try {
-        const taskRef = getTaskDoc(userId, taskId);
-        await deleteDoc(taskRef);
-        console.log(`タスク ${taskId} を削除しました`);
+        await deleteDoc(getTaskDoc(userId, taskId));
         return true;
     } catch (e) {
-        console.error("タスク削除エラー:", e);
+        console.error("エラー:", e);
         return false;
     }
 }
 
 /**
  * タスク一覧のリアルタイム監視
- * @param {string} userId 
- * @param {Function} callback - (tasks) => {} 形式の関数
+ * projectIdによるフィルタリングに対応
+ * filterProjectId: nullなら全件、'inbox'ならプロジェクトなし、IDならそのプロジェクト
  */
-export function subscribeToTasks(userId, callback) {
+export function subscribeToTasks(userId, callback, filterProjectId = null) {
     if (!isInitialized || !userId) return;
 
+    // インデックスエラー回避のため、全件取得してからJSでフィルタリングする
     const q = query(getTaskCollection(userId));
 
-    // リスナー登録（戻り値はunsubscribe関数）
     return onSnapshot(q, (snapshot) => {
-        const tasks = [];
+        let tasks = [];
         snapshot.forEach((doc) => {
             tasks.push({ id: doc.id, ...doc.data() });
         });
+
+        // メモリ内フィルタリング
+        if (filterProjectId) {
+            if (filterProjectId === 'inbox') {
+                // プロジェクト未設定のものだけ
+                tasks = tasks.filter(t => !t.projectId);
+            } else {
+                // 特定のプロジェクトIDのものだけ
+                tasks = tasks.filter(t => t.projectId === filterProjectId);
+            }
+        }
+
         callback(tasks);
     }, (error) => {
         console.error("データ取得エラー:", error);
-        callback([]); // エラー時は空配列を返すなど
+        callback([]);
     });
 }
