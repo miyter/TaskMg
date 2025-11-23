@@ -1,13 +1,14 @@
+<!-- 更新日: 2025-11-24 -->
+<!-- 役割: アプリケーションのHTML構造。main.jsのみを読み込みます。 -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>無料タスク管理ツール</title>
-    <!-- Tailwind CSSのインポート (仕様書に基づく) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 適切なフォントを設定 */
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
@@ -16,17 +17,16 @@
     <div id="app" class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6">
         <header class="flex justify-between items-center mb-6 border-b pb-4">
             <h1 class="text-3xl font-bold text-gray-800">My Task Manager</h1>
-            <!-- 認証フォームとユーザー情報コンテナ -->
+            <!-- 認証UIエリア -->
             <div id="auth-ui" class="space-y-4">
                 
-                <!-- ログアウト状態の時に表示されるログインフォーム -->
+                <!-- ログインフォーム (未ログイン時表示) -->
                 <div id="login-form-container">
                     <div class="space-y-2 p-4 bg-gray-100 rounded-lg shadow-inner">
                         <input type="email" id="email-input" placeholder="メールアドレス"
                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500">
                         <input type="password" id="password-input" placeholder="パスワード"
                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500">
-                        <!-- main.js でイベントリスナーを設定 -->
                         <button id="email-login-btn" 
                                 class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition duration-150 shadow-md">
                             ログイン
@@ -35,10 +35,9 @@
                     <p class="text-xs text-red-500 mt-1" id="login-error-message"></p>
                 </div>
 
-                <!-- ログイン状態の時に表示 -->
+                <!-- ユーザー情報 (ログイン時表示) -->
                 <div id="user-info" class="hidden flex items-center space-x-2">
                     <span id="user-display-name" class="text-sm text-gray-600"></span>
-                    <!-- main.js でイベントリスナーを設定 -->
                     <button id="logout-btn" 
                             class="bg-red-500 hover:bg-red-600 text-white text-sm py-1 px-3 rounded-lg transition duration-150">
                         ログアウト
@@ -47,7 +46,7 @@
             </div>
         </header>
 
-        <!-- タスク入力フォーム -->
+        <!-- タスク入力エリア -->
         <div id="task-input-section" class="mb-6">
             <h2 class="text-xl font-semibold mb-3 text-gray-700">新しいタスクを追加</h2>
             <div class="flex space-x-3">
@@ -60,19 +59,18 @@
             </div>
         </div>
 
-        <!-- タスク一覧 -->
+        <!-- タスク一覧エリア -->
         <div id="task-list-container">
             <h2 class="text-xl font-semibold mb-3 text-gray-700">タスク一覧</h2>
             <ul id="task-list" class="space-y-3">
-                <!-- ここにタスクがリアルタイムで表示されます -->
-                <li class="p-4 bg-gray-100 rounded-lg text-gray-500 italic">タスクがありません。ログインして最初のタスクを追加してください。</li>
+                <li class="p-4 bg-gray-100 rounded-lg text-gray-500 italic">読み込み中...</li>
             </ul>
         </div>
     </div>
 
-    <!-- ★【重要】インラインスクリプトでfirebaseConfigをグローバルに設定 -->
+    <!-- 設定値の注入 -->
     <script>
-        // あなたのFirebaseプロジェクト設定を正確に貼り付け
+        // あなたのFirebaseプロジェクト設定
         const firebaseConfig = {
           apiKey: "AIzaSyCD6u_GAQJrU8DBu1LMUGw0wUsAXtdC6qw",
           authDomain: "taskmg-c5be0.firebaseapp.com",
@@ -82,17 +80,12 @@
           appId: "1:245900813558:web:3502cafdd4fa5d1c9538d7",
           measurementId: "G-NQC4YWR4EM"
         };
-
-        // main.jsが読み込めるようにグローバル変数に格納
         window.GLOBAL_FIREBASE_CONFIG = firebaseConfig;
-        
-        // Canvasから渡されるトークンもグローバル変数に格納
         window.GLOBAL_INITIAL_AUTH_TOKEN = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         window.GLOBAL_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
     </script>
     
-    <!-- Firebaseとロジックを外部モジュールとして読み込み -->
+    <!-- メインモジュールの読み込み -->
     <script type="module" src="/main.js"></script> 
 </body>
 </html>
