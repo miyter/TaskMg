@@ -1,10 +1,11 @@
-// 更新日: 2025-11-24
+// 更新日: 2025-11-25
 // 役割: UI操作と各モジュール（auth, store）の連携を行います。
 
 import { loginWithEmail, logout, subscribeToAuthChanges, tryInitialAuth } from "./auth.js";
-import { addTask, subscribeToTasks, toggleTaskStatus, deleteTask, updateTask } from "./store.js"; // ★追加: updateTaskをインポート
+import { addTask, subscribeToTasks, toggleTaskStatus, deleteTask, updateTask } from "./store.js"; 
 
 // --- UI要素の参照 ---
+// HTMLに要素を直接追加したので、DOMContentLoaded前に参照可能
 const loginFormContainer = document.getElementById('login-form-container');
 const emailInput = document.getElementById('email-input');
 const passwordInput = document.getElementById('password-input');
@@ -16,9 +17,8 @@ const userDisplayNameSpan = document.getElementById('user-display-name');
 const logoutBtn = document.getElementById('logout-btn');
 
 const taskList = document.getElementById('task-list');
-// 期限日入力用の要素を新たに追加
 const taskTitleInput = document.getElementById('task-title-input');
-const dueDateInput = document.getElementById('due-date-input'); // ★追加
+const dueDateInput = document.getElementById('due-date-input'); // ★修正: HTMLから直接参照
 const addTaskBtn = document.getElementById('add-task-btn');
 
 // --- 状態変数 ---
@@ -30,6 +30,7 @@ function formatDate(timestamp) {
     if (!timestamp) return '';
     // FirestoreのTimestampオブジェクトをJavaScriptのDateに変換
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    // YYYY-MM-DD形式にフォーマット (type="date" の input に必要)
     return date.toISOString().split('T')[0];
 }
 
@@ -77,25 +78,27 @@ async function handleLogout() {
 
 // タスク追加ボタンクリック時
 async function handleAddTask() {
+    // ★修正: DOM参照エラー対策。HTMLに要素を直接追加したため、ここでの参照は安全
     const title = taskTitleInput.value;
-    const dueDateValue = dueDateInput.value; // ★期限日を取得
+    const dueDateValue = dueDateInput.value; 
+    
     if (!title.trim()) return;
 
-    const updates = { title: title.trim() };
-
-    // 期限日が設定されていればDateオブジェクトに変換して追加
+    // store.js の addTask を更新し、dueDateも渡せるように修正
+    let dueDate = null;
     if (dueDateValue) {
-        // 時刻を含まない日付文字列として解釈させるため、UTCでなくローカルタイムとして解釈
-        updates.dueDate = new Date(dueDateValue); 
+        // Dateオブジェクトを生成（タイムゾーンの扱いはFirestore側でTimestampに変換される際に調整される）
+        dueDate = new Date(dueDateValue); 
     }
-    
-    // store.js の addTask が title と status しか受け取らないため、ここではタイトルのみ渡す
-    // ※今回はシンプルにタイトルだけ追加し、dueDateは次のフェーズでUIに含めることにする
-    const success = await addTask(currentUserId, title); 
+
+    // store.js に新しいaddTaskを定義する
+    // ※今回は store.js の addTask が title と status しか受け取らないため、タイトルのみ渡す
+    // → store.js の addTask を修正して、dueDate も受け取るようにします
+    const success = await addTask(currentUserId, title, dueDate); 
 
     if (success) {
         taskTitleInput.value = ''; // 入力欄クリア
-        dueDateInput.value = ''; // ★期限日入力欄クリア
+        dueDateInput.value = ''; // 期限日入力欄クリア
     }
 }
 
@@ -128,9 +131,9 @@ function handleTaskAction(e) {
     // 期限日入力欄の変更 (changeイベント)
     else if (target.matches('.task-due-date-input')) {
         const newDateString = target.value;
-        let newDate = newDateString ? new Date(newDateString) : '';
+        // store.jsのupdateTaskがTimestampに変換するため、空文字かDateオブジェクトを渡す
+        let newDate = newDateString ? new Date(newDateString) : ''; 
         
-        // Dateオブジェクトまたは空文字を渡す
         updateTask(currentUserId, taskId, { dueDate: newDate });
     }
 }
@@ -231,7 +234,7 @@ function renderTaskList(tasks) {
 
     tasks.forEach(task => {
         const isCompleted = task.status === 'completed';
-        const overdue = isOverdue(task.dueDate); // ★期限切れチェック
+        const overdue = isOverdue(task.dueDate); 
         const dueDateText = task.dueDate ? formatDate(task.dueDate) : '期限なし';
         
         const li = document.createElement('li');
@@ -268,7 +271,7 @@ function renderTaskList(tasks) {
                           <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
                         </svg>
                         <span class="${overdue && !isCompleted ? 'text-red-500 font-semibold' : ''}">
-                            ${dueDateText}
+                            ${task.dueDate ? formatDate(task.dueDate) : '期限なし'}
                             ${overdue && !isCompleted ? ' (期限切れ)' : ''}
                         </span>
                     </div>
@@ -298,33 +301,14 @@ function renderTaskList(tasks) {
 // --- 初期化処理 ---
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 期限日入力フィールドをタスク入力セクションに追加（まだHTMLにないので）
-    const taskInputSection = document.getElementById('task-input-section');
-    if (taskInputSection) {
-        const inputContainer = taskInputSection.querySelector('.flex.space-x-3');
-        if (inputContainer && !dueDateInput) {
-            const dateInput = document.createElement('input');
-            dateInput.type = 'date';
-            dateInput.id = 'due-date-input';
-            dateInput.placeholder = '期限日 (任意)';
-            dateInput.className = 'p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-150';
-            
-            // taskTitleInputの後に挿入
-            inputContainer.insertBefore(dateInput, taskTitleInput.nextSibling);
-
-            // グローバル変数に設定
-            window.dueDateInput = dateInput;
-        }
-    }
-
-
+    // ★修正: 動的なDOM追加ロジックを削除したため、main.jsからdueDateInputの参照が安全になった。
+    
     // イベントリスナー登録
     if (emailLoginBtn) emailLoginBtn.addEventListener('click', handleLogin);
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
     if (addTaskBtn) addTaskBtn.addEventListener('click', handleAddTask);
     
     // タスク一覧全体に対するイベントリスナーを登録（イベント委譲）
-    // 編集モード開始のために dblclick も追加
     if (taskList) {
         taskList.addEventListener('click', handleTaskAction);
         taskList.addEventListener('dblclick', handleTaskAction); // ダブルクリックで編集

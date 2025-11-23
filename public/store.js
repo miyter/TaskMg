@@ -1,4 +1,4 @@
-// 更新日: 2025-11-24
+// 更新日: 2025-11-25
 // 役割: Firestoreへのデータ読み書きを担当します。
 
 import { 
@@ -9,7 +9,7 @@ import {
     doc, 
     updateDoc, 
     deleteDoc,
-    Timestamp // ★追加: 期限日保存用にTimestampをインポート
+    Timestamp 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, isInitialized } from "./firebase-init.js";
 
@@ -36,15 +36,22 @@ function getTaskDoc(userId, taskId) {
 
 /**
  * タスクを追加
+ * ★変更点: dueDate (Dateオブジェクトまたはnull) を引数に追加
  */
-export async function addTask(userId, title) {
+export async function addTask(userId, title, dueDate = null) {
     if (!isInitialized || !userId) return;
     
+    // dueDateがDateオブジェクトであればTimestampに変換、そうでなければそのまま
+    let firestoreDueDate = null;
+    if (dueDate instanceof Date) {
+        firestoreDueDate = Timestamp.fromDate(dueDate);
+    }
+
     try {
         await addDoc(getTaskCollection(userId), {
             title: title.trim(),
             status: "todo",
-            dueDate: null, // ★追加: 初期値としてnullを設定
+            dueDate: firestoreDueDate, // ★更新
             createdAt: new Date(),
             ownerId: userId
         });
