@@ -19,7 +19,6 @@
             <!-- 認証ボタンのコンテナ -->
             <div id="auth-ui">
                 <!-- ログアウト状態の時に表示 -->
-                <!-- main.js でイベントリスナーを設定するため、onclickは削除 -->
                 <button id="google-login-btn" 
                         class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md">
                     Googleでサインイン
@@ -27,7 +26,6 @@
                 <!-- ログイン状態の時に表示 -->
                 <div id="user-info" class="hidden flex items-center space-x-2">
                     <span id="user-display-name" class="text-sm text-gray-600"></span>
-                    <!-- main.js でイベントリスナーを設定するため、onclickは削除 -->
                     <button id="logout-btn" 
                             class="bg-red-500 hover:bg-red-600 text-white text-sm py-1 px-3 rounded-lg transition duration-150">
                         ログアウト
@@ -42,7 +40,6 @@
             <div class="flex space-x-3">
                 <input type="text" id="task-title-input" placeholder="タスクのタイトルを入力..."
                        class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-150">
-                <!-- main.js でイベントリスナーを設定するため、onclickは削除 -->
                 <button id="add-task-btn"
                         class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-150">
                     追加
@@ -60,8 +57,29 @@
         </div>
     </div>
 
+    <!-- ★【重要修正】インラインスクリプトでfirebaseConfigをグローバルに設定 -->
+    <script>
+        // あなたのFirebaseプロジェクト設定を正確に貼り付け
+        const firebaseConfig = {
+          apiKey: "AIzaSyCD6u_GAQJrU8DBu1LMUGw0wUsAXtdC6qw",
+          authDomain: "taskmg-c5be0.firebaseapp.com",
+          projectId: "taskmg-c5be0",
+          storageBucket: "taskmg-c5be0.firebasestorage.app",
+          messagingSenderId: "245900813558",
+          appId: "1:245900813558:web:3502cafdd4fa5d1c9538d7",
+          measurementId: "G-NQC4YWR4EM"
+        };
+
+        // main.jsが読み込めるようにグローバル変数に格納
+        window.GLOBAL_FIREBASE_CONFIG = firebaseConfig;
+        
+        // Canvasから渡されるトークンもグローバル変数に格納
+        window.GLOBAL_INITIAL_AUTH_TOKEN = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        window.GLOBAL_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+    </script>
+    
     <!-- Firebaseとロジックを外部モジュールとして読み込み -->
-    <!-- main.js が /public 直下にあると想定し、絶対パスで指定 -->
     <script type="module" src="/main.js"></script> 
 </body>
 </html>

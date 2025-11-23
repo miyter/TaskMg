@@ -22,22 +22,12 @@ import {
 // ログレベルをデバッグに設定
 setLogLevel('debug');
 
-// 環境変数から設定を取得
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+// ★【修正ポイント】グローバル変数から設定を取得
+const firebaseConfig = window.GLOBAL_FIREBASE_CONFIG || {};
+const initialAuthToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
+const appId = window.GLOBAL_APP_ID;
 
-// ★【修正ポイント】グローバル変数 __firebase_config を安全にパース
-let firebaseConfig = {};
-let isFirebaseInitialized = false; // Firebaseが正常に初期化されたかを示すフラグ
-try {
-    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-        firebaseConfig = JSON.parse(__firebase_config);
-    }
-} catch (e) {
-    console.error("Firebase configのパースに失敗しました。このエラーは設定の問題を示唆しています:", e);
-}
-
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
+let isFirebaseInitialized = false; 
 // Firebaseアプリの初期化
 let app, auth, db;
 
@@ -50,11 +40,10 @@ if (firebaseConfig.apiKey) {
         console.log("Firebase/Firestore 初期化成功。");
     } catch (e) {
         console.error("Firebase初期化中にエラー:", e);
-        // 初期化失敗時、isFirebaseInitialized は false のまま
     }
 } else {
-    // APIキーがない場合は初期化をスキップし、エラーメッセージをコンソールに出力
-    console.error("致命的なエラー: Firebase APIキーが設定されていません。Firebase SDKは動作しません。");
+    // APIキーがない場合は初期化をスキップ
+    console.error("致命的なエラー: Firebase APIキーが設定されていません。index.htmlのインラインスクリプトを確認してください。");
 }
 
 // Google認証プロバイダーの定義
@@ -78,9 +67,10 @@ const logoutBtn = document.getElementById('logout-btn');
 // Google認証（ポップアップ）を開始する関数 
 async function signInWithGoogle() {
     if (!isFirebaseInitialized) {
-        alert("Firebaseサービスが利用できません。\n原因: APIキーが設定されていないか、初期化に失敗しています。");
+        alert("Firebaseサービスが利用できません。APIキーが設定されているか確認してください。");
         return;
     }
+    // ポップアップウィンドウで認証フローを直接開始
     try {
         console.log("Google認証ポップアップを開始します...");
         const result = await signInWithPopup(auth, googleProvider);
