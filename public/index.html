@@ -8,11 +8,16 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
-        /* スクロールバーのカスタマイズ */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        
+        /* ドラッグ&ドロップ時のスタイル */
+        .drop-target {
+            background-color: #dbeafe !important; /* bg-blue-100 */
+            border: 2px dashed #3b82f6;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -25,15 +30,12 @@
             </h1>
             
             <div id="auth-ui" class="space-y-4">
-                <!-- ログインフォーム (未ログイン時) -->
                 <div id="login-form-container" class="flex items-center gap-2">
                     <input type="email" id="email-input" placeholder="Email" class="p-2 border rounded text-sm w-48">
                     <input type="password" id="password-input" placeholder="Pass" class="p-2 border rounded text-sm w-32">
                     <button id="email-login-btn" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Login</button>
                     <span id="login-error-message" class="text-xs text-red-500 absolute top-14 right-4"></span>
                 </div>
-
-                <!-- ユーザー情報 (ログイン時) -->
                 <div id="user-info" class="hidden flex items-center gap-4">
                     <span id="user-display-name" class="text-sm text-gray-600 font-medium"></span>
                     <button id="logout-btn" class="text-red-500 hover:text-red-700 text-sm underline">ログアウト</button>
@@ -42,62 +44,56 @@
         </div>
     </header>
 
-    <!-- メインコンテンツ (2カラムレイアウト) -->
+    <!-- メインコンテンツ -->
     <div id="app-container" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-6 flex flex-col md:flex-row gap-6">
         
-        <!-- 左サイドバー: プロジェクトリスト -->
-        <aside class="w-full md:w-64 flex-shrink-0 bg-white rounded-xl shadow-md p-4 h-fit">
-            <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Projects</h2>
+        <!-- 左サイドバー -->
+        <aside class="w-full md:w-64 flex-shrink-0 bg-white rounded-xl shadow-md p-4 h-fit max-h-[90vh] overflow-y-auto">
             
-            <!-- 特別なリスト -->
-            <ul class="space-y-1 mb-6">
-                <li>
-                    <button class="project-item w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-50 text-blue-700" data-id="all">
-                        📁 すべてのタスク
-                    </button>
-                </li>
-                <li>
-                    <button class="project-item w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors" data-id="inbox">
-                        📥 インボックス (未分類)
-                    </button>
-                </li>
-            </ul>
-
-            <!-- ユーザープロジェクト -->
-            <div class="flex justify-between items-center mb-2 px-1">
-                <span class="text-xs font-semibold text-gray-500">マイリスト</span>
-            </div>
-            <ul id="project-list" class="space-y-1 mb-4">
-                <li class="text-xs text-gray-400 px-3">読み込み中...</li>
-            </ul>
-
-            <!-- プロジェクト追加フォーム -->
-            <div class="mt-2 pt-2 border-t flex gap-2">
-                <input type="text" id="new-project-input" placeholder="新しいリスト" class="flex-grow text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
-                <button id="add-project-btn" class="text-blue-600 hover:bg-blue-50 px-2 rounded">+</button>
-            </div>
-        </aside>
-
-        <!-- メインエリア: タスク一覧 -->
-        <main class="flex-grow bg-white rounded-xl shadow-md p-6">
-            <div class="mb-6 border-b pb-4">
-                <h2 id="current-view-title" class="text-xl font-bold text-gray-800 mb-4">すべてのタスク</h2>
-                
-                <!-- タスク追加フォーム -->
-                <div id="task-input-section" class="flex flex-col sm:flex-row gap-3">
-                    <input type="text" id="task-title-input" placeholder="タスクを追加..." 
-                           class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-                    
-                    <input type="date" id="due-date-input" 
-                           class="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-600">
-
-                    <button id="add-task-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition whitespace-nowrap">
-                        追加
-                    </button>
+            <!-- プロジェクトセクション -->
+            <div class="mb-8">
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Projects</h2>
+                <ul class="space-y-1 mb-4">
+                    <li><button class="project-item w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-50 text-blue-700" data-id="all" data-type="project">📁 すべてのタスク</button></li>
+                    <li><button class="project-item w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors" data-id="inbox" data-type="project">📥 インボックス</button></li>
+                </ul>
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <span class="text-xs font-semibold text-gray-500">マイリスト</span>
+                </div>
+                <ul id="project-list" class="space-y-1 mb-2"></ul>
+                <div class="mt-2 flex gap-2">
+                    <input type="text" id="new-project-input" placeholder="新しいリスト" class="flex-grow text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
+                    <button id="add-project-btn" class="text-blue-600 hover:bg-blue-50 px-2 rounded">+</button>
                 </div>
             </div>
 
-            <!-- タスクリスト -->
+            <!-- ★新規追加: ラベルセクション -->
+            <div>
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Labels</h2>
+                <p class="text-[10px] text-gray-400 mb-2 px-1">※タスクをドラッグしてタグ付け</p>
+                <ul id="label-list" class="space-y-1 mb-2">
+                    <li class="text-xs text-gray-400 px-3">読み込み中...</li>
+                </ul>
+                <div class="mt-2 flex gap-2">
+                    <input type="text" id="new-label-input" placeholder="新しいラベル" class="flex-grow text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
+                    <button id="add-label-btn" class="text-blue-600 hover:bg-blue-50 px-2 rounded">+</button>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- メインエリア -->
+        <main class="flex-grow bg-white rounded-xl shadow-md p-6">
+            <div class="mb-6 border-b pb-4">
+                <h2 id="current-view-title" class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">すべてのタスク</h2>
+                
+                <div id="task-input-section" class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="task-title-input" placeholder="タスクを追加..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    <input type="date" id="due-date-input" class="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-600">
+                    <button id="add-task-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition whitespace-nowrap">追加</button>
+                </div>
+            </div>
+
             <ul id="task-list" class="space-y-3">
                 <li class="p-8 text-center text-gray-400 italic">タスクを読み込んでいます...</li>
             </ul>

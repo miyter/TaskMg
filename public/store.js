@@ -1,5 +1,5 @@
 // 更新日: 2025-11-25
-// 役割: タスクデータのFirestore読み書きを担当（プロジェクト対応版）
+// 役割: タスクデータのFirestore読み書きを担当（プロジェクト・ラベル対応版）
 
 import { 
     collection, 
@@ -9,7 +9,9 @@ import {
     doc, 
     updateDoc, 
     deleteDoc,
-    Timestamp 
+    Timestamp,
+    arrayUnion, // ★追加: 配列に要素を追加
+    arrayRemove // ★追加: 配列から要素を削除
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, isInitialized } from "./firebase-init.js";
 
@@ -27,7 +29,6 @@ function getTaskDoc(userId, taskId) {
 
 /**
  * タスクを追加
- * projectId引数を追加（デフォルトはnull＝インボックス）
  */
 export async function addTask(userId, title, dueDate = null, projectId = null) {
     if (!isInitialized || !userId) return;
@@ -42,7 +43,8 @@ export async function addTask(userId, title, dueDate = null, projectId = null) {
             title: title.trim(),
             status: "todo",
             dueDate: firestoreDueDate,
-            projectId: projectId, // プロジェクトIDを保存
+            projectId: projectId,
+            labelIds: [], // ★追加: ラベルIDの配列を初期化
             createdAt: new Date(),
             ownerId: userId
         });
@@ -67,6 +69,38 @@ export async function updateTask(userId, taskId, updates) {
         return true;
     } catch (e) {
         console.error("タスク更新エラー:", e);
+        return false;
+    }
+}
+
+/**
+ * タスクにラベルを追加
+ */
+export async function addLabelToTask(userId, taskId, labelId) {
+    if (!isInitialized || !userId) return;
+    try {
+        await updateDoc(getTaskDoc(userId, taskId), {
+            labelIds: arrayUnion(labelId)
+        });
+        return true;
+    } catch (e) {
+        console.error("ラベル追加エラー:", e);
+        return false;
+    }
+}
+
+/**
+ * タスクからラベルを削除
+ */
+export async function removeLabelFromTask(userId, taskId, labelId) {
+    if (!isInitialized || !userId) return;
+    try {
+        await updateDoc(getTaskDoc(userId, taskId), {
+            labelIds: arrayRemove(labelId)
+        });
+        return true;
+    } catch (e) {
+        console.error("ラベル削除エラー:", e);
         return false;
     }
 }
@@ -96,13 +130,11 @@ export async function deleteTask(userId, taskId) {
 
 /**
  * タスク一覧のリアルタイム監視
- * projectIdによるフィルタリングに対応
- * filterProjectId: nullなら全件、'inbox'ならプロジェクトなし、IDならそのプロジェクト
+ * filterCondition: { type: 'project'|'label'|'all', value: string|null }
  */
-export function subscribeToTasks(userId, callback, filterProjectId = null) {
+export function subscribeToTasks(userId, callback, filterCondition = { type: 'all', value: null }) {
     if (!isInitialized || !userId) return;
 
-    // インデックスエラー回避のため、全件取得してからJSでフィルタリングする
     const q = query(getTaskCollection(userId));
 
     return onSnapshot(q, (snapshot) => {
@@ -112,13 +144,18 @@ export function subscribeToTasks(userId, callback, filterProjectId = null) {
         });
 
         // メモリ内フィルタリング
-        if (filterProjectId) {
-            if (filterProjectId === 'inbox') {
-                // プロジェクト未設定のものだけ
+        if (filterCondition.type === 'project') {
+            const projectId = filterCondition.value;
+            if (projectId === 'inbox') {
                 tasks = tasks.filter(t => !t.projectId);
-            } else {
-                // 特定のプロジェクトIDのものだけ
-                tasks = tasks.filter(t => t.projectId === filterProjectId);
+            } else if (projectId) {
+                tasks = tasks.filter(t => t.projectId === projectId);
+            }
+        } else if (filterCondition.type === 'label') {
+            const labelId = filterCondition.value;
+            if (labelId) {
+                // ラベル配列に含まれているか
+                tasks = tasks.filter(t => t.labelIds && t.labelIds.includes(labelId));
             }
         }
 
