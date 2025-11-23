@@ -68,7 +68,9 @@
             signOut, 
             signInWithCustomToken,
             GoogleAuthProvider, 
-            signInWithPopup 
+            // 認証ポップアップ/リダイレクト関連をインポート
+            signInWithRedirect, // ★リダイレクト認証のために追加
+            getRedirectResult // ★リダイレクト結果取得のために追加
         } 
         from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
@@ -110,16 +112,16 @@
 
         // --- 2. 認証処理 ---
         
-        // Google認証ポップアップを表示する関数
+        // Google認証リダイレクトを開始する関数 (ポップアップからリダイレクトに変更)
         window.signInWithGoogle = async () => {
             try {
-                // ポップアップウィンドウでサインインプロセスを開始
-                const result = await signInWithPopup(auth, googleProvider);
-                // Googleアカウントでサインインに成功
-                console.log("Googleアカウントでログインしました:", result.user.displayName);
+                // signInWithPopup の代わりに signInWithRedirect を使用
+                // この操作でブラウザがGoogleの認証ページにリダイレクトされます
+                await signInWithRedirect(auth, googleProvider);
+                // リダイレクトにより、この行以降は実行されない
             } catch (error) {
                 // エラー処理
-                console.error("Google認証中にエラーが発生しました:", error.code, error.message);
+                console.error("Google認証開始中にエラーが発生しました:", error.code, error.message);
                 // エラーメッセージをユーザーに分かりやすく表示する処理を入れると良い
             }
         }
@@ -127,13 +129,28 @@
         // 認証処理（Canvas環境向け）
         async function initializeAuth() {
             try {
+                // 1. リダイレクト結果の確認
+                // 認証ページから戻ってきた場合、ここで結果を取得する
+                const result = await getRedirectResult(auth);
+                if (result) {
+                    // Googleアカウントでサインインに成功
+                    console.log("Googleリダイレクト認証でログインしました:", result.user.displayName);
+                }
+
+                // 2. 初期トークンまたは匿名認証でのログイン
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
-                } else {
+                } else if (!auth.currentUser) { 
+                    // リダイレクト認証の結果、まだログインしていなければ匿名認証を試みる
                     await signInAnonymously(auth);
                 }
             } catch (error) {
-                console.error("初期認証中にエラーが発生しました:", error);
+                console.error("初期認証またはリダイレクト結果取得中にエラーが発生しました:", error);
+                
+                // エラーコードに応じて特定の処理を行うことも可能
+                if (error.code === 'auth/account-exists-with-different-credential') {
+                    // 以前の認証方法と競合した場合などの処理
+                }
             }
         }
 
@@ -142,12 +159,14 @@
             if (user) {
                 // ログイン済み
                 userId = user.uid;
+                // Google認証の場合、displayNameも取得可能
+                const displayName = user.displayName || `UID: ${userId.substring(0, 8)}...`; 
                 console.log("ユーザーがログインしました。UID:", userId);
                 
                 // UIの更新: ログイン状態
                 googleLoginBtn.classList.add('hidden');
                 userInfoDiv.classList.remove('hidden');
-                userDisplayNameSpan.textContent = `UID: ${userId}`; // ユーザーIDを表示
+                userDisplayNameSpan.textContent = `ようこそ、${displayName} さん`; // ユーザー名を表示
                 
                 // 認証完了後にタスクのリアルタイムリスナーを開始
                 listenToTasks(); 
@@ -222,8 +241,13 @@
 
                 snapshot.docs.forEach((doc) => {
                     const task = doc.data();
+                    const taskId = doc.id; // ドキュメントIDを取得
                     const taskElement = document.createElement('li');
-                    taskElement.className = 'p-4 border-l-4 border-blue-500 bg-white rounded-lg shadow flex justify-between items-center';
+                    
+                    // タスクの見た目を少し調整
+                    taskElement.className = 'p-4 border-l-4 border-blue-500 bg-white rounded-lg shadow flex justify-between items-center transition duration-150 hover:shadow-lg';
+                    taskElement.setAttribute('data-id', taskId);
+                    
                     taskElement.innerHTML = `
                         <span class="text-gray-800">${task.title}</span>
                         <span class="text-xs text-gray-400">(${task.status})</span>
