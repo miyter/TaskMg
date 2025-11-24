@@ -15,6 +15,7 @@ let currentUserId = null;
 let currentFilter = { type: 'project', value: 'all' };
 let unsubscribeTasks = null;
 let showCompletedTasks = true; 
+let currentSortCriteria = 'createdAt_desc'; // ★追加: ソート状態
 
 // --- UI要素 ---
 const emailLoginBtn = document.getElementById('email-login-btn');
@@ -27,6 +28,7 @@ const newProjectInput = document.getElementById('new-project-input');
 const addLabelBtn = document.getElementById('add-label-btn');
 const newLabelInput = document.getElementById('new-label-input');
 const toggleCompletedBtn = document.getElementById('toggle-completed-btn');
+const sortSelect = document.getElementById('sort-select'); // ★追加
 
 // --- 認証 ---
 
@@ -78,7 +80,8 @@ function selectView(filter) {
 function startTaskListener(userId, filter) {
     if (unsubscribeTasks) unsubscribeTasks();
     unsubscribeTasks = subscribeToTasks(userId, (tasks) => {
-        TaskUI.renderTaskList(tasks, userId, showCompletedTasks);
+        // ★更新: ソート引数を渡す
+        TaskUI.renderTaskList(tasks, userId, showCompletedTasks, currentSortCriteria);
     }, filter);
 }
 
@@ -104,7 +107,6 @@ async function handleAddTask() {
 async function handleTaskAction(e) {
     if (!currentUserId) return;
     
-    // ★更新: UI-Taskモジュール側で処理するイベント（ラベル削除、追加プルダウンなど）
     if (await TaskUI.handleTaskClickEvents(e, currentUserId)) return;
 
     const target = e.target;
@@ -166,6 +168,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (toggleCompletedBtn) {
         toggleCompletedBtn.addEventListener('change', (e) => {
             showCompletedTasks = e.target.checked;
+            startTaskListener(currentUserId, currentFilter);
+        });
+    }
+
+    // ★追加: ソート変更イベント
+    if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+            currentSortCriteria = e.target.value;
             startTaskListener(currentUserId, currentFilter);
         });
     }

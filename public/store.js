@@ -41,7 +41,7 @@ export async function addTask(userId, title, dueDate = null, projectId = null) {
     try {
         await addDoc(getTaskCollection(userId), {
             title: title.trim(),
-            description: "", // ★追加: 詳細メモ用
+            description: "", // ★詳細メモ用
             status: "todo",
             dueDate: firestoreDueDate,
             projectId: projectId,

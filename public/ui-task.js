@@ -1,5 +1,5 @@
 // 更新日: 2025-11-25
-// 役割: タスク一覧の描画、編集、詳細メモUI
+// 役割: タスク一覧の描画、編集、詳細メモUI、ソート処理
 
 import { updateTask, removeLabelFromTask, addLabelToTask } from "./store.js";
 import { getProjectName, getLabelDetails, getAllLabels } from "./ui-sidebar.js";
@@ -21,10 +21,31 @@ function isOverdue(timestamp) {
     return dueDate < now;
 }
 
-export function renderTaskList(tasks, currentUserId, showCompleted = true) {
+// ★更新: sortCriteriaを追加
+export function renderTaskList(tasks, currentUserId, showCompleted = true, sortCriteria = 'createdAt_desc') {
     taskList.innerHTML = '';
     
-    const filteredTasks = showCompleted ? tasks : tasks.filter(t => t.status !== 'completed');
+    // 1. フィルタリング
+    let filteredTasks = showCompleted ? tasks : tasks.filter(t => t.status !== 'completed');
+
+    // 2. ソート処理
+    filteredTasks.sort((a, b) => {
+        if (sortCriteria === 'createdAt_desc') {
+            return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+        } else if (sortCriteria === 'createdAt_asc') {
+            return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+        } else if (sortCriteria === 'dueDate_asc') {
+            // 期限日がないものは後ろへ
+            const aTime = a.dueDate ? (a.dueDate.seconds || 0) : 9999999999;
+            const bTime = b.dueDate ? (b.dueDate.seconds || 0) : 9999999999;
+            return aTime - bTime;
+        } else if (sortCriteria === 'dueDate_desc') {
+            const aTime = a.dueDate ? (a.dueDate.seconds || 0) : 0;
+            const bTime = b.dueDate ? (b.dueDate.seconds || 0) : 0;
+            return bTime - aTime;
+        }
+        return 0;
+    });
 
     if (filteredTasks.length === 0) {
         taskList.innerHTML = '<li class="p-8 text-center text-gray-400 italic">タスクがありません</li>';
@@ -86,7 +107,7 @@ export function renderTaskList(tasks, currentUserId, showCompleted = true) {
                         ${task.title}
                     </span>
                     
-                    <!-- 詳細メモエリア (初期は非表示) -->
+                    <!-- 詳細メモエリア -->
                     <div class="task-description-area hidden mt-2 w-full">
                          <textarea class="w-full p-2 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none bg-yellow-50" rows="3" placeholder="詳細を入力...">${task.description || ''}</textarea>
                          <div class="flex justify-end mt-1 space-x-2">
@@ -94,7 +115,7 @@ export function renderTaskList(tasks, currentUserId, showCompleted = true) {
                              <button class="save-description-btn text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">保存</button>
                          </div>
                     </div>
-                    <!-- 詳細プレビュー (エリアが閉じている時で、メモがある場合表示) -->
+                    <!-- 詳細プレビュー -->
                     <div class="task-description-preview mt-1 text-xs text-gray-500 truncate ${!hasDescription ? 'hidden' : ''}" title="${task.description || ''}">
                         ${task.description || ''}
                     </div>
@@ -115,6 +136,7 @@ export function renderTaskList(tasks, currentUserId, showCompleted = true) {
             </div>
         `;
 
+        // ドラッグ開始
         li.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('text/plain', task.id);
             li.classList.add('opacity-50');
@@ -127,13 +149,13 @@ export function renderTaskList(tasks, currentUserId, showCompleted = true) {
     });
 }
 
+// ... その他の関数は変更なし ...
 export function startEditing(li, taskId, oldTitle, currentUserId) {
     const span = li.querySelector('.task-title-span');
     const input = document.createElement('input');
     input.type = 'text';
     input.value = oldTitle;
     input.className = 'flex-grow p-1 border border-blue-500 rounded outline-none w-full';
-    
     span.style.display = 'none';
     span.parentElement.insertBefore(input, span);
     input.focus();
@@ -154,7 +176,7 @@ export async function handleTaskClickEvents(e, currentUserId) {
     if (!li) return false;
     const taskId = li.dataset.id;
     
-    // 1. ラベル削除
+    // ラベル削除
     const labelBadge = target.closest('.task-label-badge');
     if (labelBadge) {
         e.stopPropagation();
@@ -164,12 +186,11 @@ export async function handleTaskClickEvents(e, currentUserId) {
         return true;
     }
 
-    // 2. メモ開閉
+    // メモ開閉
     if (target.matches('.toggle-description-btn')) {
         e.stopPropagation();
         const descArea = li.querySelector('.task-description-area');
         const descPreview = li.querySelector('.task-description-preview');
-        
         if (descArea.classList.contains('hidden')) {
             descArea.classList.remove('hidden');
             descPreview.classList.add('hidden');
@@ -180,20 +201,18 @@ export async function handleTaskClickEvents(e, currentUserId) {
         return true;
     }
 
-    // 3. メモ保存
+    // メモ保存
     if (target.matches('.save-description-btn')) {
         e.stopPropagation();
         const textarea = li.querySelector('textarea');
         const val = textarea.value;
         await updateTask(currentUserId, taskId, { description: val });
-        
-        // 閉じる
         const descArea = li.querySelector('.task-description-area');
         descArea.classList.add('hidden');
         return true;
     }
     
-    // 4. メモキャンセル
+    // メモキャンセル
     if (target.matches('.cancel-description-btn')) {
         e.stopPropagation();
         const descArea = li.querySelector('.task-description-area');
@@ -203,15 +222,13 @@ export async function handleTaskClickEvents(e, currentUserId) {
         return true;
     }
 
-    // 5. ラベル追加メニュー表示
+    // ラベル追加メニュー表示
     if (target.matches('.add-label-btn')) {
         e.stopPropagation();
         document.querySelectorAll('.label-dropdown').forEach(el => el.classList.add('hidden'));
-
         const dropdown = li.querySelector('.label-dropdown');
         renderLabelDropdown(dropdown, taskId, currentUserId);
         dropdown.classList.remove('hidden');
-
         const closeDropdown = (ev) => {
             if (!dropdown.contains(ev.target) && ev.target !== target) {
                 dropdown.classList.add('hidden');
@@ -225,25 +242,21 @@ export async function handleTaskClickEvents(e, currentUserId) {
     if (target.closest('.label-dropdown') || target.closest('.task-description-area')) {
         return true; 
     }
-
     return false;
 }
 
 function renderLabelDropdown(container, taskId, currentUserId) {
     const labels = getAllLabels();
     container.innerHTML = '';
-
     if (labels.length === 0) {
         container.innerHTML = '<span class="text-xs text-gray-400">ラベルがありません</span>';
         return;
     }
-
     labels.forEach(lbl => {
         const div = document.createElement('div');
         div.className = 'flex items-center p-1 hover:bg-gray-50 rounded cursor-pointer';
         const colorBox = `<span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color: ${lbl.color}"></span>`;
         div.innerHTML = `<label class="flex items-center w-full cursor-pointer text-sm text-gray-700">${colorBox} ${lbl.name}</label>`;
-
         div.addEventListener('click', async () => {
             await addLabelToTask(currentUserId, taskId, lbl.id);
             div.style.backgroundColor = '#dbeafe';

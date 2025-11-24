@@ -1,5 +1,6 @@
 // 更新日: 2025-11-25
 // 役割: ラベル（タグ）データのFirestore読み書きを担当
+// 重要: このファイルが正しく保存されていないとアプリが起動しません
 
 import { 
     collection, 
@@ -61,7 +62,9 @@ export function subscribeToLabels(userId, callback) {
             labels.push({ id: doc.id, ...doc.data() });
         });
         
+        // 名前順にソート
         labels.sort((a, b) => a.name.localeCompare(b.name));
+        
         callback(labels);
     }, (error) => {
         console.error("ラベル取得エラー:", error);

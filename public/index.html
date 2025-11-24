@@ -70,7 +70,7 @@
             </div>
 
             <!-- 固定エリア (追加フォーム) -->
-            <!-- ★修正: min-w-0 と flex-shrink-0 を適用して崩れ防止 -->
+            <!-- ★修正: flex-1 min-w-0 で入力欄を縮小可能にし、flex-shrink-0 でボタン幅を維持 -->
             <div class="flex-shrink-0 pt-4 border-t mt-2 space-y-3 bg-white">
                 <div class="flex gap-2">
                     <input type="text" id="new-project-input" placeholder="新しいリスト" class="flex-1 min-w-0 text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
@@ -87,14 +87,25 @@
         <!-- メインエリア -->
         <main class="flex-grow bg-white rounded-xl shadow-md p-6">
             <div class="mb-6 border-b pb-4">
-                <div class="flex justify-between items-center mb-4">
+                <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
                     <h2 id="current-view-title" class="text-xl font-bold text-gray-800 flex items-center gap-2">すべてのタスク</h2>
                     
-                    <label class="inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="toggle-completed-btn" class="sr-only peer" checked>
-                        <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                        <span class="ms-3 text-xs font-medium text-gray-500">完了を表示</span>
-                    </label>
+                    <div class="flex items-center gap-3">
+                        <!-- ★新機能: ソートプルダウン -->
+                        <select id="sort-select" class="text-xs border rounded p-1.5 text-gray-600 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                            <option value="createdAt_desc">作成日 (新しい順)</option>
+                            <option value="createdAt_asc">作成日 (古い順)</option>
+                            <option value="dueDate_asc">期限日 (近い順)</option>
+                            <option value="dueDate_desc">期限日 (遠い順)</option>
+                        </select>
+
+                        <!-- 完了タスク表示トグル -->
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggle-completed-btn" class="sr-only peer" checked>
+                            <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span class="ms-3 text-xs font-medium text-gray-500">完了を表示</span>
+                        </label>
+                    </div>
                 </div>
                 
                 <div id="task-input-section" class="flex flex-col sm:flex-row gap-3">
