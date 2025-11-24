@@ -1,71 +1,42 @@
-// 更新日: 2025-11-24
-// 役割: ログイン、ログアウト、認証状態の監視を担当します。
-
+// --- 認証モジュール (更新日: 2025-11-25 修正版) ---
 import { 
     signInWithEmailAndPassword, 
     signOut, 
-    onAuthStateChanged,
-    signInWithCustomToken
+    onAuthStateChanged, 
+    signInWithCustomToken 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { auth, isInitialized } from "./firebase-init.js";
+import { auth, isInitialized } from './firebase-init.js';
 
-/**
- * メールとパスワードでログイン
- */
-export async function loginWithEmail(email, password) {
-    if (!isInitialized) throw new Error("Firebase未初期化");
-    
-    try {
-        const result = await signInWithEmailAndPassword(auth, email, password);
-        console.log("ログイン成功:", result.user.email);
-        return { success: true, user: result.user };
-    } catch (error) {
-        console.error("ログインエラー:", error.code);
-        let message = "ログインに失敗しました。";
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            message = "メールアドレスまたはパスワードが間違っています。";
-        } else if (error.code === 'auth/invalid-email') {
-            message = "メールアドレスの形式が正しくありません。";
-        }
-        return { success: false, message: message };
+let currentUser = null;
+const initialAuthToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
+
+// ★この関数が見つからないエラーが出ています。確実にここにあるか確認してください！
+export function initAuthListener(onUserChanged) {
+    if (!isInitialized) return;
+
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        onUserChanged(user);
+    });
+
+    // 初期トークンがあればログイン試行（Canvas環境用）
+    if (initialAuthToken) {
+        signInWithCustomToken(auth, initialAuthToken).catch(e => console.error("Token Auth Error:", e));
     }
 }
 
-/**
- * ログアウト
- */
+// メールログイン
+export async function loginWithEmail(email, password) {
+    if (!isInitialized) throw new Error("Firebase not initialized");
+    return await signInWithEmailAndPassword(auth, email, password);
+}
+
+// ログアウト
 export async function logout() {
     if (!isInitialized) return;
-    try {
-        await signOut(auth);
-        console.log("ログアウトしました");
-    } catch (error) {
-        console.error("ログアウトエラー:", error);
-    }
+    await signOut(auth);
 }
 
-/**
- * 認証状態の監視リスナーを設定
- * @param {Function} callback - (user) => {} 形式の関数
- */
-export function subscribeToAuthChanges(callback) {
-    if (!isInitialized) return;
-    onAuthStateChanged(auth, (user) => {
-        callback(user);
-    });
-}
-
-/**
- * Canvas環境用：カスタムトークンでの初期ログイン試行
- */
-export async function tryInitialAuth() {
-    const initialToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
-    if (isInitialized && initialToken) {
-        try {
-            await signInWithCustomToken(auth, initialToken);
-            console.log("カスタムトークンでログインしました");
-        } catch (error) {
-            console.error("初期認証トークンエラー:", error);
-        }
-    }
+export function getCurrentUser() {
+    return currentUser;
 }

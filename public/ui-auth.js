@@ -1,4 +1,4 @@
-// --- 認証モジュール (更新日: 2025-11-25) ---
+// --- 認証モジュール (更新日: 2025-11-25 修正版) ---
 import { 
     signInWithEmailAndPassword, 
     signOut, 
@@ -10,7 +10,7 @@ import { auth, isInitialized } from './firebase-init.js';
 let currentUser = null;
 const initialAuthToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
 
-// ユーザー状態監視のリスナー（これが main.js から呼ばれています）
+// ★この関数が見つからないエラーが出ています。確実にここにあるか確認してください！
 export function initAuthListener(onUserChanged) {
     if (!isInitialized) return;
 
