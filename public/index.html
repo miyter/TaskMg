@@ -18,16 +18,27 @@
 <body class="bg-gray-50 min-h-screen flex flex-col">
 
     <!-- ヘッダー -->
-    <header class="bg-white shadow-sm z-10">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <span>📝</span> My Task Manager
+    <header class="bg-white shadow-sm z-10 sticky top-0">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2 flex-shrink-0">
+                <span>📝</span> <span class="hidden sm:inline">My Task Manager</span>
             </h1>
             
-            <div id="auth-ui" class="space-y-4">
+            <!-- ★新機能: 検索バー -->
+            <div class="flex-grow max-w-md mx-4 hidden md:block">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        🔍
+                    </span>
+                    <input type="text" id="search-input" placeholder="タスクを検索..." 
+                           class="w-full py-2 pl-10 pr-4 bg-gray-100 border-transparent rounded-lg focus:bg-white focus:border-blue-500 focus:ring-0 text-sm transition-colors">
+                </div>
+            </div>
+
+            <div id="auth-ui" class="space-y-4 flex-shrink-0">
                 <div id="login-form-container" class="flex items-center gap-2">
-                    <input type="email" id="email-input" placeholder="Email" class="p-2 border rounded text-sm w-48">
-                    <input type="password" id="password-input" placeholder="Pass" class="p-2 border rounded text-sm w-32">
+                    <input type="email" id="email-input" placeholder="Email" class="p-2 border rounded text-sm w-32 sm:w-48">
+                    <input type="password" id="password-input" placeholder="Pass" class="p-2 border rounded text-sm w-24 sm:w-32">
                     <button id="email-login-btn" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Login</button>
                     <span id="login-error-message" class="text-xs text-red-500 absolute top-14 right-4"></span>
                 </div>
@@ -37,13 +48,17 @@
                 </div>
             </div>
         </div>
+        <!-- モバイル用検索バー (画面が狭い時用) -->
+        <div class="md:hidden px-4 pb-3">
+            <input type="text" id="search-input-mobile" placeholder="タスクを検索..." class="w-full p-2 bg-gray-100 rounded text-sm">
+        </div>
     </header>
 
     <!-- メインコンテンツ -->
     <div id="app-container" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-6 flex flex-col md:flex-row gap-6">
         
         <!-- 左サイドバー -->
-        <aside class="w-full md:w-64 flex-shrink-0 bg-white rounded-xl shadow-md p-4 flex flex-col max-h-[calc(100vh-8rem)] sticky top-6">
+        <aside class="w-full md:w-64 flex-shrink-0 bg-white rounded-xl shadow-md p-4 flex flex-col max-h-[calc(100vh-8rem)] sticky top-20">
             
             <!-- スクロールエリア -->
             <div class="flex-grow overflow-y-auto pr-1 space-y-6 scrollbar-thin">
@@ -70,15 +85,15 @@
             </div>
 
             <!-- 固定エリア (追加フォーム) -->
-            <!-- ★修正: flex-1 min-w-0 で入力欄を縮小可能にし、flex-shrink-0 でボタン幅を維持 -->
+            <!-- ★修正: ボタンが押し出されないよう flex-shrink-0 を設定 -->
             <div class="flex-shrink-0 pt-4 border-t mt-2 space-y-3 bg-white">
-                <div class="flex gap-2">
-                    <input type="text" id="new-project-input" placeholder="新しいリスト" class="flex-1 min-w-0 text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
-                    <button id="add-project-btn" class="text-blue-600 hover:bg-blue-50 px-2 rounded flex-shrink-0">+</button>
+                <div class="flex gap-2 items-center">
+                    <input type="text" id="new-project-input" placeholder="新しいリスト" class="flex-1 min-w-0 w-full text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
+                    <button id="add-project-btn" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded flex-shrink-0 text-lg font-bold leading-none h-8 w-8 flex items-center justify-center">+</button>
                 </div>
-                <div class="flex gap-2">
-                    <input type="text" id="new-label-input" placeholder="新しいラベル" class="flex-1 min-w-0 text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
-                    <button id="add-label-btn" class="text-blue-600 hover:bg-blue-50 px-2 rounded flex-shrink-0">+</button>
+                <div class="flex gap-2 items-center">
+                    <input type="text" id="new-label-input" placeholder="新しいラベル" class="flex-1 min-w-0 w-full text-sm border-gray-300 border rounded px-2 py-1 focus:outline-none focus:border-blue-500">
+                    <button id="add-label-btn" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded flex-shrink-0 text-lg font-bold leading-none h-8 w-8 flex items-center justify-center">+</button>
                 </div>
             </div>
 
@@ -91,7 +106,6 @@
                     <h2 id="current-view-title" class="text-xl font-bold text-gray-800 flex items-center gap-2">すべてのタスク</h2>
                     
                     <div class="flex items-center gap-3">
-                        <!-- ★新機能: ソートプルダウン -->
                         <select id="sort-select" class="text-xs border rounded p-1.5 text-gray-600 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                             <option value="createdAt_desc">作成日 (新しい順)</option>
                             <option value="createdAt_asc">作成日 (古い順)</option>
@@ -99,7 +113,6 @@
                             <option value="dueDate_desc">期限日 (遠い順)</option>
                         </select>
 
-                        <!-- 完了タスク表示トグル -->
                         <label class="inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="toggle-completed-btn" class="sr-only peer" checked>
                             <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>

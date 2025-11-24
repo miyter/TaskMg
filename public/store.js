@@ -1,5 +1,5 @@
 // 更新日: 2025-11-25
-// 役割: タスクデータのFirestore読み書きを担当（プロジェクト・ラベル・詳細メモ対応版）
+// 役割: タスクデータのFirestore読み書きを担当（検索機能対応版）
 
 import { 
     collection, 
@@ -27,9 +27,6 @@ function getTaskDoc(userId, taskId) {
     return doc(db, `/artifacts/${currentAppId}/users/${userId}/tasks/${taskId}`);
 }
 
-/**
- * タスクを追加
- */
 export async function addTask(userId, title, dueDate = null, projectId = null) {
     if (!isInitialized || !userId) return;
     
@@ -41,7 +38,7 @@ export async function addTask(userId, title, dueDate = null, projectId = null) {
     try {
         await addDoc(getTaskCollection(userId), {
             title: title.trim(),
-            description: "", // ★詳細メモ用
+            description: "",
             status: "todo",
             dueDate: firestoreDueDate,
             projectId: projectId,
@@ -123,7 +120,8 @@ export async function deleteTask(userId, taskId) {
     }
 }
 
-export function subscribeToTasks(userId, callback, filterCondition = { type: 'all', value: null }) {
+// ★更新: 検索クエリ（searchQuery）を追加
+export function subscribeToTasks(userId, callback, filterCondition = { type: 'all', value: null }, searchQuery = '') {
     if (!isInitialized || !userId) return;
 
     const q = query(getTaskCollection(userId));
@@ -134,6 +132,16 @@ export function subscribeToTasks(userId, callback, filterCondition = { type: 'al
             tasks.push({ id: doc.id, ...doc.data() });
         });
 
+        // 1. 検索フィルタ (キーワードがあればタイトルか詳細で絞り込み)
+        if (searchQuery && searchQuery.trim() !== '') {
+            const lowerQuery = searchQuery.toLowerCase();
+            tasks = tasks.filter(t => 
+                (t.title && t.title.toLowerCase().includes(lowerQuery)) || 
+                (t.description && t.description.toLowerCase().includes(lowerQuery))
+            );
+        }
+
+        // 2. プロジェクト/ラベルフィルタ
         if (filterCondition.type === 'project') {
             const projectId = filterCondition.value;
             if (projectId === 'inbox') {

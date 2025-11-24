@@ -1,6 +1,5 @@
 // 更新日: 2025-11-25
 // 役割: ラベル（タグ）データのFirestore読み書きを担当
-// 重要: このファイルが正しく保存されていないとアプリが起動しません
 
 import { 
     collection, 
@@ -40,7 +39,6 @@ export async function addLabel(userId, name) {
             createdAt: new Date(),
             ownerId: userId
         });
-        console.log("ラベル追加成功");
         return true;
     } catch (e) {
         console.error("ラベル追加エラー:", e);

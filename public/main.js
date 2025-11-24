@@ -1,5 +1,5 @@
 // 更新日: 2025-11-25
-// 役割: アプリケーションのエントリーポイント（初期化とモジュール連携）
+// 役割: アプリケーションのエントリーポイント（検索機能連携）
 
 import { loginWithEmail, logout, subscribeToAuthChanges, tryInitialAuth } from "./auth.js";
 import { addTask, subscribeToTasks, toggleTaskStatus, deleteTask, updateTask } from "./store.js";
@@ -15,7 +15,8 @@ let currentUserId = null;
 let currentFilter = { type: 'project', value: 'all' };
 let unsubscribeTasks = null;
 let showCompletedTasks = true; 
-let currentSortCriteria = 'createdAt_desc'; // ★追加: ソート状態
+let currentSortCriteria = 'createdAt_desc';
+let currentSearchQuery = ''; // ★追加: 検索キーワード
 
 // --- UI要素 ---
 const emailLoginBtn = document.getElementById('email-login-btn');
@@ -28,7 +29,9 @@ const newProjectInput = document.getElementById('new-project-input');
 const addLabelBtn = document.getElementById('add-label-btn');
 const newLabelInput = document.getElementById('new-label-input');
 const toggleCompletedBtn = document.getElementById('toggle-completed-btn');
-const sortSelect = document.getElementById('sort-select'); // ★追加
+const sortSelect = document.getElementById('sort-select');
+const searchInput = document.getElementById('search-input'); // ★追加
+const searchInputMobile = document.getElementById('search-input-mobile'); // ★追加
 
 // --- 認証 ---
 
@@ -80,9 +83,8 @@ function selectView(filter) {
 function startTaskListener(userId, filter) {
     if (unsubscribeTasks) unsubscribeTasks();
     unsubscribeTasks = subscribeToTasks(userId, (tasks) => {
-        // ★更新: ソート引数を渡す
         TaskUI.renderTaskList(tasks, userId, showCompletedTasks, currentSortCriteria);
-    }, filter);
+    }, filter, currentSearchQuery); // ★更新: 検索クエリを渡す
 }
 
 async function handleAddTask() {
@@ -172,13 +174,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ★追加: ソート変更イベント
     if (sortSelect) {
         sortSelect.addEventListener('change', (e) => {
             currentSortCriteria = e.target.value;
             startTaskListener(currentUserId, currentFilter);
         });
     }
+
+    // ★新機能: 検索イベント
+    const handleSearch = (e) => {
+        currentSearchQuery = e.target.value;
+        startTaskListener(currentUserId, currentFilter);
+    };
+    if (searchInput) searchInput.addEventListener('input', handleSearch);
+    if (searchInputMobile) searchInputMobile.addEventListener('input', handleSearch);
 
     subscribeToAuthChanges(onAuthStateChanged);
     tryInitialAuth();
