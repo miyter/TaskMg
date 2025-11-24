@@ -1,4 +1,4 @@
-// --- データ操作モジュール (完全版：更新 2025/11/24) ---
+// --- データ操作モジュール (完全版：更新 2025/11/25 10:30) ---
 import { 
     collection, addDoc, query, onSnapshot, doc, updateDoc, orderBy, deleteDoc, arrayUnion, arrayRemove 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -23,15 +23,16 @@ function getTaskCollectionRef(userId) {
 
 // --- Actions ---
 
-// タスク追加
-export async function addTask(userId, title, recurrenceType = 'none', projectId = null) {
+// タスク追加（期限日とメモ対応）
+export async function addTask(userId, title, recurrenceType = 'none', projectId = null, dueDate = null, description = '') {
     if (!title.trim()) return;
 
     const taskData = {
         title: title.trim(),
+        description: description || '', // メモ
         status: "todo",
         createdAt: new Date(),
-        dueDate: null,
+        dueDate: dueDate ? new Date(dueDate) : null, // 期限日
         recurrence: { type: recurrenceType },
         projectId: projectId,
         labelIds: [],
@@ -53,19 +54,19 @@ export async function toggleTaskStatus(userId, taskId, currentStatus, taskData) 
     }
 }
 
-// ★追加: タスクにラベルを付与（サイドバーへのドロップで使用）
+// タスクにラベルを付与
 export async function addLabelToTask(userId, taskId, labelId) {
     const taskRef = doc(getTaskCollectionRef(userId), taskId);
     await updateDoc(taskRef, {
-        labelIds: arrayUnion(labelId) // 配列に重複なく追加
+        labelIds: arrayUnion(labelId)
     });
 }
 
-// ★追加: タスクからラベルを削除
+// タスクからラベルを削除
 export async function removeLabelFromTask(userId, taskId, labelId) {
     const taskRef = doc(getTaskCollectionRef(userId), taskId);
     await updateDoc(taskRef, {
-        labelIds: arrayRemove(labelId) // 配列から削除
+        labelIds: arrayRemove(labelId)
     });
 }
 
@@ -74,10 +75,13 @@ async function createNextRecurringTask(userId, originalTask) {
     const today = new Date();
     let nextDate = new Date();
     
+    // 期限日があればそれを基準に、なければ今日を基準に
+    const baseDate = originalTask.dueDate && originalTask.dueDate.toDate ? originalTask.dueDate.toDate() : today;
+
     switch (originalTask.recurrence.type) {
-        case 'daily': nextDate.setDate(today.getDate() + 1); break;
-        case 'weekly': nextDate.setDate(today.getDate() + 7); break;
-        case 'monthly': nextDate.setMonth(today.getMonth() + 1); break;
+        case 'daily': nextDate = new Date(baseDate); nextDate.setDate(baseDate.getDate() + 1); break;
+        case 'weekly': nextDate = new Date(baseDate); nextDate.setDate(baseDate.getDate() + 7); break;
+        case 'monthly': nextDate = new Date(baseDate); nextDate.setMonth(baseDate.getMonth() + 1); break;
         default: return;
     }
 
@@ -138,6 +142,7 @@ function applyFilter() {
         switch (currentFilter.sort) {
             case 'created_asc': return dateA - dateB;
             case 'due_asc': 
+                // 期限なしは最後に
                 const dueA = a.dueDate ? (a.dueDate.toDate ? a.dueDate.toDate() : new Date(a.dueDate)) : new Date(9999,11,31);
                 const dueB = b.dueDate ? (b.dueDate.toDate ? b.dueDate.toDate() : new Date(b.dueDate)) : new Date(9999,11,31);
                 return dueA - dueB;
