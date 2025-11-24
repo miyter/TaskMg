@@ -3,9 +3,13 @@ import {
     signInWithEmailAndPassword,
     signOut,
     signInWithCustomToken,
-    onAuthStateChanged
+    onAuthStateChanged,
+    updatePassword
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { auth, isFirebaseInitialized } from './firebase.js';
+
+// ★修正: 相対パス './firebase.js' が原因でエラーを引き起こすため、
+//         モジュール間の参照エラーを防ぐために一旦直接インポートに戻します。
+import { auth, isFirebaseInitialized } from '../core/firebase.js'; 
 
 // 現在のユーザーID
 export let currentUserId = null;
@@ -39,4 +43,13 @@ export async function loginWithEmail(email, password) {
 export async function logout() {
     if (!isFirebaseInitialized) return;
     await signOut(auth);
+}
+
+// ユーザーパスワードの更新機能
+export async function updateUserPassword(newPassword) {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error("認証されていません。");
+    }
+    return await updatePassword(user, newPassword);
 }
