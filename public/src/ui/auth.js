@@ -1,52 +1,43 @@
-// --- 認証ロジック ---
-import { 
-    signInWithEmailAndPassword,
-    signOut,
-    signInWithCustomToken,
-    onAuthStateChanged,
-    updatePassword // ★追加: パスワード更新用
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { auth, isFirebaseInitialized } from './firebase.js';
+// --- 認証UI制御 ---
+import { loginWithEmail, logout } from '../core/auth.js';
 
-// 現在のユーザーID
-export let currentUserId = null;
+const ui = {
+    formContainer: document.getElementById('login-form-container'),
+    userInfo: document.getElementById('user-info'),
+    displayName: document.getElementById('user-display-name'),
+    emailInput: document.getElementById('email-input'),
+    passInput: document.getElementById('password-input'),
+    loginBtn: document.getElementById('email-login-btn'),
+    logoutBtn: document.getElementById('logout-btn')
+};
 
-// 認証状態の監視リスナー
-export function initAuthListener(onLogin, onLogout) {
-    if (!isFirebaseInitialized) return;
+export function initAuthUI() {
+    if (ui.loginBtn) {
+        ui.loginBtn.addEventListener('click', async () => {
+            try {
+                await loginWithEmail(ui.emailInput.value, ui.passInput.value);
+            } catch (e) {
+                alert("ログイン失敗: " + e.message);
+            }
+        });
+    }
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUserId = user.uid;
-            onLogin(user);
-        } else {
-            currentUserId = null;
-            onLogout();
-        }
-    });
-
-    // Canvas環境用の初期トークンログイン
-    const initialToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
-    if (initialToken) {
-        signInWithCustomToken(auth, initialToken).catch(console.error);
+    if (ui.logoutBtn) {
+        ui.logoutBtn.addEventListener('click', async () => {
+            await logout();
+        });
     }
 }
 
-export async function loginWithEmail(email, password) {
-    if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
-    return await signInWithEmailAndPassword(auth, email, password);
-}
-
-export async function logout() {
-    if (!isFirebaseInitialized) return;
-    await signOut(auth);
-}
-
-// ★追加: ユーザーパスワードの更新機能
-export async function updateUserPassword(newPassword) {
-    const user = auth.currentUser;
-    if (!user) {
-        throw new Error("認証されていません。");
+export function updateAuthUI(user) {
+    if (user) {
+        ui.formContainer.classList.add('hidden');
+        ui.userInfo.classList.remove('hidden');
+        ui.userInfo.classList.add('flex');
+        ui.displayName.textContent = user.email || "ゲスト";
+    } else {
+        ui.formContainer.classList.remove('hidden');
+        ui.userInfo.classList.add('hidden');
+        ui.userInfo.classList.remove('flex');
     }
-    return await updatePassword(user, newPassword);
 }
