@@ -6,7 +6,7 @@ import { subscribeTasks, getCurrentFilter, setFilter } from './store.js';
 import { setupTaskUI, renderTaskList } from './ui-task.js';
 import { initSidebar, cleanupSidebar, updateSidebarSelection, updateViewTitle } from './ui-sidebar.js';
 import { updateDashboard } from './ui-dashboard.js'; 
-import { initSettingsUI } from './ui-settings.js'; // New!
+import { initSettingsUI } from './ui-settings.js'; 
 
 // UI要素
 const loginForm = document.getElementById('login-form-container');
@@ -31,12 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Login:", user.uid);
             loginForm.classList.add('hidden');
             userInfo.classList.remove('hidden');
-            userDisplay.textContent = user.email;
+            // 表示名を整形（@より前を表示）
+            const displayName = user.email ? user.email.split('@')[0] : "ユーザー";
+            userDisplay.textContent = displayName;
             
             // 1. タスクUIのイベント設定
             setupTaskUI(user.uid);
 
-            // 2. 設定UIの初期化 (New!)
+            // 2. 設定UIの初期化
             initSettingsUI(user.uid);
 
             // 3. サイドバー初期化 & 画面切り替えハンドラ
@@ -57,11 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     dashboardView.classList.add('hidden');
                     taskView.classList.remove('hidden');
                     
-                    // フィルタ条件を更新（store.jsが再フィルタリングして renderTaskList を呼ぶ）
+                    // フィルタ条件を更新
                     let newFilter = { projectId: 'all', labelId: null };
                     
                     if (selection.type === 'project') {
-                        // inboxの場合は projectId: null
                         newFilter.projectId = selection.value === 'inbox' ? null : selection.value;
                         newFilter.labelId = null;
                     } else if (selection.type === 'label') {
@@ -77,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 4. データ購読開始
             subscribeTasks(user.uid, (tasks, filterState) => {
-                allTasksCache = tasks; // 注: フィルタ後のタスクしか来ない
+                allTasksCache = tasks; 
 
                 if (currentViewMode === 'dashboard') {
                     updateDashboard(tasks);
@@ -91,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loginForm.classList.remove('hidden');
             userInfo.classList.add('hidden');
             if (typeof cleanupSidebar === 'function') cleanupSidebar();
-            renderTaskList([], {});
+            renderTaskList([], {}); // クリア
         }
     });
 
@@ -99,11 +100,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if(loginBtn) {
         loginBtn.addEventListener('click', async () => {
             try {
+                if (!emailIn.value || !passIn.value) {
+                    alert("メールアドレスとパスワードを入力してください");
+                    return;
+                }
                 await loginWithEmail(emailIn.value, passIn.value);
                 emailIn.value = '';
                 passIn.value = '';
             } catch (e) {
-                alert("ログイン失敗");
+                console.error(e);
+                alert("ログインに失敗しました。メールアドレスかパスワードを確認してください。");
             }
         });
     }
@@ -111,7 +117,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
     if(logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
-            await logout();
+            if(confirm("ログアウトしますか？")) {
+                await logout();
+            }
         });
     }
 });
