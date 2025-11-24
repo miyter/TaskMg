@@ -1,0 +1,13 @@
+# 依存ライブラリを除外
+node_modules/
+
+# Cloudflare Workersの一時ファイルを除外
+.wrangler/
+
+# ログファイルを除外
+*.log
+npm-debug.log*
+
+# 環境変数ファイルを除外
+.env
+.dev.vars

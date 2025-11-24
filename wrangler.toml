@@ -1,6 +1,7 @@
 name = "taskmg"
 main = "workers-site/index.js"
-compatibility_date = "2025-11-23"
+compatibility_date = "2025-11-24"
 
-[site]
-bucket = "./public"
+# [site] を廃止し、新しい assets 設定を使用
+[assets]
+directory = "./public"
