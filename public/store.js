@@ -1,164 +1,167 @@
-// 更新日: 2025-11-25
-// 役割: タスクデータのFirestore読み書きを担当（検索機能対応版）
-
+// --- データ操作モジュール (完全版：更新 2025/11/24) ---
 import { 
-    collection, 
-    addDoc, 
-    query, 
-    onSnapshot,
-    doc, 
-    updateDoc, 
-    deleteDoc,
-    Timestamp,
-    arrayUnion, 
-    arrayRemove 
+    collection, addDoc, query, onSnapshot, doc, updateDoc, orderBy, deleteDoc, arrayUnion, arrayRemove 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { db, isInitialized } from "./firebase-init.js";
+import { db, appId } from './firebase-init.js';
 
-const appId = window.GLOBAL_APP_ID || 'default-app-id';
+// --- State ---
+let tasks = [];
+let currentFilter = {
+    projectId: null,
+    labelId: null,
+    searchQuery: '',
+    showCompleted: false,
+    sort: 'created_desc'
+};
+let notifyListeners = () => {};
 
-function getTaskCollection(userId) {
-    const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
-    return collection(db, `/artifacts/${currentAppId}/users/${userId}/tasks`);
+// --- Helpers ---
+function getTaskCollectionRef(userId) {
+    if (!db) throw new Error("Firestore not initialized");
+    return collection(db, `/artifacts/${appId}/users/${userId}/tasks`);
 }
 
-function getTaskDoc(userId, taskId) {
-    const currentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
-    return doc(db, `/artifacts/${currentAppId}/users/${userId}/tasks/${taskId}`);
+// --- Actions ---
+
+// タスク追加
+export async function addTask(userId, title, recurrenceType = 'none', projectId = null) {
+    if (!title.trim()) return;
+
+    const taskData = {
+        title: title.trim(),
+        status: "todo",
+        createdAt: new Date(),
+        dueDate: null,
+        recurrence: { type: recurrenceType },
+        projectId: projectId,
+        labelIds: [],
+        ownerId: userId
+    };
+
+    await addDoc(getTaskCollectionRef(userId), taskData);
 }
 
-export async function addTask(userId, title, dueDate = null, projectId = null) {
-    if (!isInitialized || !userId) return;
-    
-    let firestoreDueDate = null;
-    if (dueDate instanceof Date) {
-        firestoreDueDate = Timestamp.fromDate(dueDate);
-    }
+// ステータス更新 & 繰り返し処理
+export async function toggleTaskStatus(userId, taskId, currentStatus, taskData) {
+    const taskRef = doc(getTaskCollectionRef(userId), taskId);
+    const newStatus = currentStatus === 'todo' ? 'completed' : 'todo';
 
-    try {
-        await addDoc(getTaskCollection(userId), {
-            title: title.trim(),
-            description: "",
-            status: "todo",
-            dueDate: firestoreDueDate,
-            projectId: projectId,
-            labelIds: [], 
-            createdAt: new Date(),
-            ownerId: userId
-        });
-        return true;
-    } catch (e) {
-        console.error("タスク追加エラー:", e);
-        return false;
-    }
-}
+    await updateDoc(taskRef, { status: newStatus });
 
-export async function updateTask(userId, taskId, updates) {
-    if (!isInitialized || !userId) return;
-
-    if (updates.dueDate instanceof Date) {
-        updates.dueDate = Timestamp.fromDate(updates.dueDate);
-    } else if (updates.dueDate === '') {
-        updates.dueDate = null;
-    }
-    
-    try {
-        await updateDoc(getTaskDoc(userId, taskId), updates);
-        return true;
-    } catch (e) {
-        console.error("タスク更新エラー:", e);
-        return false;
+    if (newStatus === 'completed' && taskData.recurrence && taskData.recurrence.type !== 'none') {
+        await createNextRecurringTask(userId, taskData);
     }
 }
 
+// ★追加: タスクにラベルを付与（サイドバーへのドロップで使用）
 export async function addLabelToTask(userId, taskId, labelId) {
-    if (!isInitialized || !userId) return;
-    try {
-        await updateDoc(getTaskDoc(userId, taskId), {
-            labelIds: arrayUnion(labelId)
-        });
-        return true;
-    } catch (e) {
-        console.error("ラベル追加エラー:", e);
-        return false;
-    }
+    const taskRef = doc(getTaskCollectionRef(userId), taskId);
+    await updateDoc(taskRef, {
+        labelIds: arrayUnion(labelId) // 配列に重複なく追加
+    });
 }
 
+// ★追加: タスクからラベルを削除
 export async function removeLabelFromTask(userId, taskId, labelId) {
-    if (!isInitialized || !userId) return;
-    try {
-        await updateDoc(getTaskDoc(userId, taskId), {
-            labelIds: arrayRemove(labelId)
-        });
-        return true;
-    } catch (e) {
-        console.error("ラベル削除エラー:", e);
-        return false;
-    }
+    const taskRef = doc(getTaskCollectionRef(userId), taskId);
+    await updateDoc(taskRef, {
+        labelIds: arrayRemove(labelId) // 配列から削除
+    });
 }
 
-export async function toggleTaskStatus(userId, taskId, currentStatus) {
-    if (!isInitialized || !userId) return;
-    const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
-    try {
-        await updateDoc(getTaskDoc(userId, taskId), { status: newStatus });
-        return true;
-    } catch (e) {
-        console.error("エラー:", e);
-        return false;
+// 次回タスク自動生成
+async function createNextRecurringTask(userId, originalTask) {
+    const today = new Date();
+    let nextDate = new Date();
+    
+    switch (originalTask.recurrence.type) {
+        case 'daily': nextDate.setDate(today.getDate() + 1); break;
+        case 'weekly': nextDate.setDate(today.getDate() + 7); break;
+        case 'monthly': nextDate.setMonth(today.getMonth() + 1); break;
+        default: return;
     }
+
+    const newTaskData = {
+        ...originalTask,
+        title: originalTask.title,
+        status: "todo",
+        createdAt: new Date(),
+        dueDate: nextDate,
+        isRecurringCopy: true,
+    };
+    delete newTaskData.id;
+
+    await addDoc(getTaskCollectionRef(userId), newTaskData);
 }
 
+// タスク削除
 export async function deleteTask(userId, taskId) {
-    if (!isInitialized || !userId) return;
-    try {
-        await deleteDoc(getTaskDoc(userId, taskId));
-        return true;
-    } catch (e) {
-        console.error("エラー:", e);
-        return false;
-    }
+    if(!confirm("このタスクを削除しますか？")) return;
+    await deleteDoc(doc(getTaskCollectionRef(userId), taskId));
 }
 
-// ★更新: 検索クエリ（searchQuery）を追加
-export function subscribeToTasks(userId, callback, filterCondition = { type: 'all', value: null }, searchQuery = '') {
-    if (!isInitialized || !userId) return;
+// --- Filtering & Sorting ---
 
-    const q = query(getTaskCollection(userId));
+export function setFilter(newFilter) {
+    currentFilter = { ...currentFilter, ...newFilter };
+    applyFilter();
+}
 
+function applyFilter() {
+    let filtered = tasks.filter(t => {
+        if (!currentFilter.showCompleted && t.status === 'completed') return false;
+
+        if (currentFilter.projectId !== 'all') {
+            if (currentFilter.projectId === null) {
+                if (t.projectId) return false;
+            } else {
+                if (t.projectId !== currentFilter.projectId) return false;
+            }
+        }
+
+        if (currentFilter.labelId) {
+            if (!t.labelIds || !t.labelIds.includes(currentFilter.labelId)) return false;
+        }
+
+        if (currentFilter.searchQuery) {
+            const q = currentFilter.searchQuery.toLowerCase();
+            if (!t.title.toLowerCase().includes(q)) return false;
+        }
+
+        return true;
+    });
+
+    filtered.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+
+        switch (currentFilter.sort) {
+            case 'created_asc': return dateA - dateB;
+            case 'due_asc': 
+                const dueA = a.dueDate ? (a.dueDate.toDate ? a.dueDate.toDate() : new Date(a.dueDate)) : new Date(9999,11,31);
+                const dueB = b.dueDate ? (b.dueDate.toDate ? b.dueDate.toDate() : new Date(b.dueDate)) : new Date(9999,11,31);
+                return dueA - dueB;
+            case 'created_desc':
+            default: return dateB - dateA;
+        }
+    });
+
+    notifyListeners(filtered, currentFilter);
+}
+
+export function subscribeTasks(userId, callback) {
+    notifyListeners = callback;
+    const q = query(getTaskCollectionRef(userId), orderBy("createdAt", "desc"));
+    
     return onSnapshot(q, (snapshot) => {
-        let tasks = [];
-        snapshot.forEach((doc) => {
+        tasks = [];
+        snapshot.forEach(doc => {
             tasks.push({ id: doc.id, ...doc.data() });
         });
-
-        // 1. 検索フィルタ (キーワードがあればタイトルか詳細で絞り込み)
-        if (searchQuery && searchQuery.trim() !== '') {
-            const lowerQuery = searchQuery.toLowerCase();
-            tasks = tasks.filter(t => 
-                (t.title && t.title.toLowerCase().includes(lowerQuery)) || 
-                (t.description && t.description.toLowerCase().includes(lowerQuery))
-            );
-        }
-
-        // 2. プロジェクト/ラベルフィルタ
-        if (filterCondition.type === 'project') {
-            const projectId = filterCondition.value;
-            if (projectId === 'inbox') {
-                tasks = tasks.filter(t => !t.projectId);
-            } else if (projectId && projectId !== 'all') {
-                tasks = tasks.filter(t => t.projectId === projectId);
-            }
-        } else if (filterCondition.type === 'label') {
-            const labelId = filterCondition.value;
-            if (labelId) {
-                tasks = tasks.filter(t => t.labelIds && t.labelIds.includes(labelId));
-            }
-        }
-
-        callback(tasks);
-    }, (error) => {
-        console.error("データ取得エラー:", error);
-        callback([]);
+        applyFilter();
     });
+}
+
+export function getCurrentFilter() {
+    return currentFilter;
 }

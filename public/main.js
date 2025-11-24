@@ -1,194 +1,63 @@
-// 更新日: 2025-11-25
-// 役割: アプリケーションのエントリーポイント（検索機能連携）
+// --- メインエントリーポイント (統合版) ---
+import { initAuthListener, loginWithEmail, logout } from './auth.js';
+import { subscribeTasks } from './store.js';
+import { setupTaskUI, renderTaskList } from './ui-task.js';
+import { setupSidebar } from './ui-sidebar.js'; // サイドバー統合
 
-import { loginWithEmail, logout, subscribeToAuthChanges, tryInitialAuth } from "./auth.js";
-import { addTask, subscribeToTasks, toggleTaskStatus, deleteTask, updateTask } from "./store.js";
-import { addProject, deleteProject } from "./project-store.js";
-import { addLabel, deleteLabel } from "./label-store.js";
-
-import * as AuthUI from "./ui-auth.js";
-import * as SidebarUI from "./ui-sidebar.js";
-import * as TaskUI from "./ui-task.js";
-
-// --- 状態変数 ---
-let currentUserId = null;
-let currentFilter = { type: 'project', value: 'all' };
-let unsubscribeTasks = null;
-let showCompletedTasks = true; 
-let currentSortCriteria = 'createdAt_desc';
-let currentSearchQuery = ''; // ★追加: 検索キーワード
-
-// --- UI要素 ---
-const emailLoginBtn = document.getElementById('email-login-btn');
-const logoutBtn = document.getElementById('logout-btn');
-const addTaskBtn = document.getElementById('add-task-btn');
-const taskTitleInput = document.getElementById('task-title-input');
-const dueDateInput = document.getElementById('due-date-input');
-const addProjectBtn = document.getElementById('add-project-btn');
-const newProjectInput = document.getElementById('new-project-input');
-const addLabelBtn = document.getElementById('add-label-btn');
-const newLabelInput = document.getElementById('new-label-input');
-const toggleCompletedBtn = document.getElementById('toggle-completed-btn');
-const sortSelect = document.getElementById('sort-select');
-const searchInput = document.getElementById('search-input'); // ★追加
-const searchInputMobile = document.getElementById('search-input-mobile'); // ★追加
-
-// --- 認証 ---
-
-async function handleLogin() {
-    const { email, password } = AuthUI.getAuthInputValues();
-    if (!email || !password) return;
-    
-    AuthUI.showLoginError('ログイン中...');
-    const result = await loginWithEmail(email, password);
-    
-    if (!result.success) {
-        AuthUI.showLoginError(result.message);
-    } else {
-        AuthUI.clearLoginError();
-    }
-}
-
-async function handleLogout() {
-    await logout();
-    AuthUI.clearAuthInputs();
-    SidebarUI.cleanupSidebar();
-}
-
-function onAuthStateChanged(user) {
-    AuthUI.updateAuthUI(user);
-    
-    if (user) {
-        currentUserId = user.uid;
-        SidebarUI.initSidebar(currentUserId, currentFilter);
-        startTaskListener(currentUserId, currentFilter);
-    } else {
-        currentUserId = null;
-        if (unsubscribeTasks) unsubscribeTasks();
-        TaskUI.renderTaskList([], null);
-    }
-}
-
-// --- ビュー切り替え ---
-
-function selectView(filter) {
-    currentFilter = filter;
-    SidebarUI.updateSidebarSelection(currentFilter);
-    SidebarUI.updateViewTitle(currentFilter);
-    startTaskListener(currentUserId, currentFilter);
-}
-
-// --- タスク ---
-
-function startTaskListener(userId, filter) {
-    if (unsubscribeTasks) unsubscribeTasks();
-    unsubscribeTasks = subscribeToTasks(userId, (tasks) => {
-        TaskUI.renderTaskList(tasks, userId, showCompletedTasks, currentSortCriteria);
-    }, filter, currentSearchQuery); // ★更新: 検索クエリを渡す
-}
-
-async function handleAddTask() {
-    const title = taskTitleInput.value;
-    const dueDateValue = dueDateInput.value;
-    if (!title.trim()) return;
-
-    let dueDate = null;
-    if (dueDateValue) dueDate = new Date(dueDateValue);
-
-    const targetProjectId = (currentFilter.type === 'project' && currentFilter.value !== 'all' && currentFilter.value !== 'inbox') 
-        ? currentFilter.value : null;
-
-    const success = await addTask(currentUserId, title, dueDate, targetProjectId);
-    if (success) {
-        taskTitleInput.value = '';
-        dueDateInput.value = '';
-    }
-}
-
-// アクション委譲
-async function handleTaskAction(e) {
-    if (!currentUserId) return;
-    
-    if (await TaskUI.handleTaskClickEvents(e, currentUserId)) return;
-
-    const target = e.target;
-    const li = target.closest('li[data-id]');
-    if (!li) return;
-    
-    const id = li.dataset.id;
-
-    if (target.matches('.task-toggle')) {
-        toggleTaskStatus(currentUserId, id, li.dataset.status);
-    } else if (target.matches('.task-delete-btn')) {
-        if (confirm('削除しますか？')) deleteTask(currentUserId, id);
-    } else if (target.matches('.task-title-span') && e.type === 'dblclick') {
-        TaskUI.startEditing(li, id, target.textContent.trim(), currentUserId);
-    } else if (target.matches('.task-due-date-input')) {
-        const date = target.value ? new Date(target.value) : '';
-        updateTask(currentUserId, id, { dueDate: date });
-    }
-}
-
-// --- 初期化 ---
+// UI要素
+const loginForm = document.getElementById('login-form-container');
+const userInfo = document.getElementById('user-info');
+const userDisplay = document.getElementById('user-display-name');
+const emailIn = document.getElementById('email-input');
+const passIn = document.getElementById('password-input');
+const loginMsg = document.getElementById('login-error-message'); // index.htmlに追加が必要かも？なければエラーにならないよう配慮
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (emailLoginBtn) emailLoginBtn.addEventListener('click', handleLogin);
-    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+    
+    initAuthListener((user) => {
+        if (user) {
+            console.log("Login:", user.uid);
+            loginForm.classList.add('hidden');
+            userInfo.classList.remove('hidden');
+            userDisplay.textContent = user.email;
+            
+            // 各モジュールのセットアップ
+            setupSidebar(user.uid);
+            setupTaskUI(user.uid);
+            
+            // タスクデータの購読開始
+            // store.jsでフィルタリングされた結果が返ってくる
+            subscribeTasks(user.uid, (tasks, filterState) => {
+                renderTaskList(tasks, filterState);
+            });
 
-    document.querySelector('aside').addEventListener('click', async (e) => {
-        const btn = e.target.closest('button[data-type]');
-        if (btn) return selectView({ type: btn.dataset.type, value: btn.dataset.id });
-        
-        if (e.target.matches('.delete-project-btn')) {
-            if (confirm('リストを削除しますか？')) deleteProject(currentUserId, e.target.dataset.id);
-        } else if (e.target.matches('.delete-label-btn')) {
-            if (confirm('ラベルを削除しますか？')) deleteLabel(currentUserId, e.target.dataset.id);
+        } else {
+            console.log("Logout");
+            loginForm.classList.remove('hidden');
+            userInfo.classList.add('hidden');
+            renderTaskList([], {});
         }
     });
 
-    if (addTaskBtn) addTaskBtn.addEventListener('click', handleAddTask);
-    if (taskTitleInput) taskTitleInput.addEventListener('keypress', e => { if(e.key==='Enter') handleAddTask() });
-    
-    if (addProjectBtn) addProjectBtn.addEventListener('click', async () => {
-        const name = newProjectInput.value;
-        if (name.trim()) await addProject(currentUserId, name);
-        newProjectInput.value = '';
-    });
-    
-    if (addLabelBtn) addLabelBtn.addEventListener('click', async () => {
-        const name = newLabelInput.value;
-        if (name.trim()) await addLabel(currentUserId, name);
-        newLabelInput.value = '';
-    });
-
-    const taskList = document.getElementById('task-list');
-    if (taskList) {
-        taskList.addEventListener('click', handleTaskAction);
-        taskList.addEventListener('dblclick', handleTaskAction);
-    }
-
-    if (toggleCompletedBtn) {
-        toggleCompletedBtn.addEventListener('change', (e) => {
-            showCompletedTasks = e.target.checked;
-            startTaskListener(currentUserId, currentFilter);
+    // ログイン処理
+    const loginBtn = document.getElementById('email-login-btn');
+    if(loginBtn) {
+        loginBtn.addEventListener('click', async () => {
+            try {
+                await loginWithEmail(emailIn.value, passIn.value);
+                emailIn.value = '';
+                passIn.value = '';
+            } catch (e) {
+                alert("ログイン失敗");
+            }
         });
     }
 
-    if (sortSelect) {
-        sortSelect.addEventListener('change', (e) => {
-            currentSortCriteria = e.target.value;
-            startTaskListener(currentUserId, currentFilter);
+    // ログアウト処理
+    const logoutBtn = document.getElementById('logout-btn');
+    if(logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            await logout();
         });
     }
-
-    // ★新機能: 検索イベント
-    const handleSearch = (e) => {
-        currentSearchQuery = e.target.value;
-        startTaskListener(currentUserId, currentFilter);
-    };
-    if (searchInput) searchInput.addEventListener('input', handleSearch);
-    if (searchInputMobile) searchInputMobile.addEventListener('input', handleSearch);
-
-    subscribeToAuthChanges(onAuthStateChanged);
-    tryInitialAuth();
 });

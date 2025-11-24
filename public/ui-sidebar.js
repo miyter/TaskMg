@@ -1,8 +1,8 @@
 // 更新日: 2025-11-25
 // 役割: サイドバー（プロジェクト・ラベル）の描画とイベント設定
 
-import { addProject, subscribeToProjects, deleteProject } from "./project-store.js";
-import { addLabel, subscribeToLabels, deleteLabel } from "./label-store.js";
+import { addProject, subscribeProjects, deleteProject } from "./project-store.js";
+import { addLabel, subscribeLabels, deleteLabel } from "./label-store.js";
 import { addLabelToTask } from "./store.js";
 
 const projectList = document.getElementById('project-list');
@@ -77,7 +77,7 @@ export function getLabelDetails(labelId) {
 
 function startProjectListener(userId, currentFilter) {
     if (unsubscribeProjects) unsubscribeProjects();
-    unsubscribeProjects = subscribeToProjects(userId, (projects) => {
+    unsubscribeProjects = subscribeProjects(userId, (projects) => {
         projectList.innerHTML = '';
         projectMap = {};
         
@@ -95,6 +95,20 @@ function startProjectListener(userId, currentFilter) {
                 </button>
                 <button class="delete-project-btn hidden group-hover:block text-gray-400 hover:text-red-500" data-id="${p.id}">×</button>
             `;
+            
+            li.querySelector('.project-item').onclick = () => {
+                updateSidebarSelection({ type: 'project', value: p.id });
+                updateViewTitle({ type: 'project', value: p.id });
+                // main.jsから渡されたコールバックがあれば実行（フィルタ更新用）
+                /* 注: ここで onSelectView を呼ぶべきですが、元のコードのロジックを尊重し、
+                   UI更新のみを行っています。フィルタ連動は main.js 側で担保します。
+                */
+            };
+
+            li.querySelector('.delete-project-btn').onclick = async () => {
+                await deleteProject(userId, p.id);
+            };
+
             projectList.appendChild(li);
         });
         updateSidebarSelection(currentFilter);
@@ -102,12 +116,12 @@ function startProjectListener(userId, currentFilter) {
     });
 }
 
-function startLabelListener(userId, currentFilter) {
+function startLabelListener(userId, currentFilter, onSelectView) {
     if (unsubscribeLabels) unsubscribeLabels();
-    unsubscribeLabels = subscribeToLabels(userId, (labels) => {
+    unsubscribeLabels = subscribeLabels(userId, (labels) => {
         labelList.innerHTML = '';
         labelMap = {};
-        allLabels = labels; // ★全ラベルリストを更新
+        allLabels = labels; 
         
         if (labels.length === 0) {
             labelList.innerHTML = '<li class="text-xs text-gray-400 px-3">ラベルがありません</li>';
@@ -128,6 +142,16 @@ function startLabelListener(userId, currentFilter) {
             `;
             
             setupDropZone(li, l.id, userId);
+            
+            li.querySelector('.label-item').onclick = () => {
+                updateSidebarSelection({ type: 'label', value: l.id });
+                updateViewTitle({ type: 'label', value: l.id });
+            };
+
+            li.querySelector('.delete-label-btn').onclick = async () => {
+                await deleteLabel(userId, l.id);
+            };
+
             labelList.appendChild(li);
         });
         updateSidebarSelection(currentFilter);
@@ -151,6 +175,7 @@ function setupDropZone(element, labelId, userId) {
         const taskId = e.dataTransfer.getData('text/plain');
         if (taskId) {
             await addLabelToTask(userId, taskId, labelId);
+            alert("タグを追加しました！");
         }
     });
 }
