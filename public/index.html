@@ -36,7 +36,7 @@
                     </span>
                     <input type="text" id="search-input" 
                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"
-                           placeholder="タスクを検索...">
+                           placeholder="検索: 「今日」「#仕事」「@重要」など...">
                 </div>
             </div>
 
@@ -105,7 +105,7 @@
         <!-- メインコンテンツ -->
         <main class="flex-1 flex flex-col bg-white overflow-hidden relative">
             
-            <!-- ダッシュボード画面 (初期非表示) -->
+            <!-- ダッシュボード画面 -->
             <div id="dashboard-view" class="hidden p-6 overflow-y-auto h-full custom-scrollbar">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">ダッシュボード</h2>
                 
@@ -146,7 +146,7 @@
                 </div>
             </div>
 
-            <!-- タスク管理画面 (初期表示) -->
+            <!-- タスク管理画面 -->
             <div id="task-view" class="flex flex-col h-full overflow-hidden">
                 <!-- ツールバー -->
                 <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-white flex-shrink-0">
@@ -168,6 +168,7 @@
                             <option value="created_desc">作成日 (新しい順)</option>
                             <option value="created_asc">作成日 (古い順)</option>
                             <option value="due_asc">期限 (近い順)</option>
+                            <option value="project_asc">プロジェクト名順</option>
                         </select>
                     </div>
                 </div>
