@@ -1,11 +1,10 @@
 // @miyter:20251125
-// Vite導入に伴い、ローカルモジュールのインポートパスを絶対パス '@' に修正
+// ダッシュボードからの画面切り替えが機能しない問題を修正
 
 // --- 修正1: データストアモジュールへのインポートパスを絶対パスに変更 ---
 import { addProject } from '@/store/projects.js';
 import { addLabel } from '@/store/labels.js';
 import { updateTask } from '@/store/store.js'; 
-// Firestore SDKを直接インポートしないため、インポート行は削除済み
 
 
 // プロジェクト名を取得するヘルパー関数
@@ -35,7 +34,13 @@ export function renderProjects(projects, onSelect) {
     `).join('');
     
     list.querySelectorAll('li').forEach(li => {
-        li.addEventListener('click', () => onSelect({ type: 'project', value: li.dataset.id }));
+        li.addEventListener('click', () => {
+            // ★修正: クリック時に画面切り替えロジックをトリガー
+            onSelect({ type: 'project', value: li.dataset.id });
+            // メインビューを強制的に表示
+            document.getElementById('task-view').classList.remove('hidden');
+            document.getElementById('dashboard-view').classList.add('hidden');
+        });
     });
     
     // インボックス/全表示機能は UI/main.js で別途追加
@@ -59,7 +64,13 @@ export function renderLabels(labels, onSelect, userId) {
 
     list.querySelectorAll('li').forEach(li => {
         // ラベル選択イベント
-        li.addEventListener('click', () => onSelect({ type: 'label', value: li.dataset.id }));
+        li.addEventListener('click', () => {
+             // ★修正: クリック時に画面切り替えロジックをトリガー
+            onSelect({ type: 'label', value: li.dataset.id });
+            // メインビューを強制的に表示
+            document.getElementById('task-view').classList.remove('hidden');
+            document.getElementById('dashboard-view').classList.add('hidden');
+        });
         
         // ドラッグ＆ドロップ機能の復元
         setupDropZone(li, li.dataset.id, userId);

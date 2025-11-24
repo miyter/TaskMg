@@ -1,0 +1,10 @@
+/* @miyter:20251125 */
+/* Tailwind CSSのインポートディレクティブ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* その他のカスタムスタイルがあればここに追記 */
+body {
+    transition: background-color 0.3s ease;
+}
