@@ -1,0 +1,184 @@
+// 更新日: 2025-11-25
+// 役割: タスク編集モーダルの開閉、入力値の処理、保存・削除ロジックを担当
+
+import { updateTask, deleteTask } from '../store/store.js';
+import { currentUserId } from '../core/auth.js';
+import { getLabelDetails } from './sidebar.js'; 
+
+// =========================================================
+// UI要素の参照 (components.jsが挿入したもの)
+// =========================================================
+const editModal = document.getElementById('edit-task-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
+const cancelEditBtn = document.getElementById('cancel-edit-btn');
+const saveTaskBtn = document.getElementById('save-task-btn');
+const deleteTaskBtnModal = document.getElementById('delete-task-btn-modal');
+const editTitle = document.getElementById('edit-task-title');
+const editDate = document.getElementById('edit-task-date');
+const editDesc = document.getElementById('edit-task-desc');
+const editLabelsContainer = document.getElementById('edit-task-labels');
+const editAddLabelSelect = document.getElementById('edit-add-label-select');
+const toastContainer = document.getElementById('toast-container'); // トースト用
+
+let editingTaskId = null; 
+
+// =========================================================
+// ユーティリティ
+// =========================================================
+
+function showToast(message, type = 'blue') {
+    if (!toastContainer) return;
+    const toast = document.createElement('div');
+    const bgColor = type === 'red' ? 'bg-red-500' : 'bg-gray-800';
+    toast.className = `${bgColor} text-white text-sm px-4 py-3 rounded shadow-lg flex items-center transform transition-all duration-300 translate-y-2 opacity-0`;
+    toast.innerHTML = `<i class="fas fa-info-circle mr-2"></i><span>${message}</span>`;
+    toastContainer.appendChild(toast);
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+    });
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// =========================================================
+// モーダル公開メソッド
+// =========================================================
+
+export function openEditModal(task) {
+    if (!editModal || !currentUserId) return;
+    
+    editingTaskId = task.id;
+    editTitle.value = task.title;
+    editDesc.value = task.description || '';
+    
+    if (task.dueDate) {
+        const d = task.dueDate.toDate ? task.dueDate.toDate() : new Date(task.dueDate);
+        const year = d.getFullYear();
+        const month = ('0' + (d.getMonth() + 1)).slice(-2);
+        const day = ('0' + d.getDate()).slice(-2);
+        editDate.value = `${year}-${month}-${day}`;
+    } else {
+        editDate.value = '';
+    }
+
+    updateModalLabels(task.id, task.labelIds);
+    
+    // モーダルを開く前に、ラベル選択肢を再構築
+    const labelList = document.getElementById('label-list');
+    const allLabels = Array.from(labelList ? labelList.querySelectorAll('li') : []).map(li => ({
+        id: li.dataset.id,
+        name: li.textContent.trim().replace(/^.+\s/, ''), 
+        color: li.querySelector('span')?.style.backgroundColor 
+    }));
+    
+    if (editAddLabelSelect) {
+        editAddLabelSelect.innerHTML = '<option value="">＋ タグを追加...</option>';
+        allLabels.forEach(l => {
+            const opt = document.createElement('option');
+            opt.value = l.id;
+            opt.textContent = l.name;
+            editAddLabelSelect.appendChild(opt);
+        });
+        editAddLabelSelect.value = '';
+    }
+
+    editModal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+}
+
+function closeEditModal() {
+    if (editModal) editModal.classList.add('hidden');
+    document.body.classList.remove('modal-open'); 
+    editingTaskId = null;
+}
+
+function updateModalLabels(taskId, labelIds = []) {
+    if (!editLabelsContainer) return;
+    editLabelsContainer.innerHTML = '';
+    
+    labelIds.forEach(lid => {
+        const label = getLabelDetails(lid);
+        if (!label) return;
+
+        const badge = document.createElement('span');
+        badge.className = "text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-gray-200";
+        badge.style.backgroundColor = '#F3F4F6'; 
+        badge.style.color = '#374151';
+        
+        badge.innerHTML = `
+            <span class="w-2 h-2 rounded-full" style="background-color: ${label.color}"></span>
+            ${label.name}
+            <button class="text-gray-400 hover:text-red-500 ml-1 remove-tag-modal transition-colors rounded-full p-0.5 hover:bg-gray-200" data-lid="${lid}">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        badge.querySelector('.remove-tag-modal').onclick = async (e) => {
+            e.stopPropagation(); 
+            // ラベル削除機能のロジックがまだstore.jsにないため、一旦タスク全体を更新する操作をトリガー
+            await updateTask(currentUserId, taskId, {}); 
+            badge.remove();
+            showToast(`ラベル ${label.name} を外しました`);
+        };
+        editLabelsContainer.appendChild(badge);
+    });
+}
+
+// =========================================================
+// モーダルイベント初期化
+// =========================================================
+
+export function initTaskModal() {
+    if (!editModal) return;
+
+    if (closeModalBtn) closeModalBtn.onclick = closeEditModal;
+    if (cancelEditBtn) cancelEditBtn.onclick = closeEditModal;
+    if (editModal) editModal.onclick = (e) => {
+        if (e.target === editModal) closeEditModal();
+    };
+    
+    if (saveTaskBtn) {
+        saveTaskBtn.onclick = async () => {
+            if (!editingTaskId || !currentUserId) return;
+            const titleVal = editTitle.value.trim();
+            if (!titleVal) {
+                alert("タイトルは必須です。"); 
+                return;
+            }
+            const updates = {
+                title: titleVal,
+                dueDate: editDate.value,
+                description: editDesc.value
+            };
+            await updateTask(currentUserId, editingTaskId, updates);
+            closeEditModal();
+            showToast("タスクを更新しました");
+        };
+    }
+    
+    if (deleteTaskBtnModal) {
+        deleteTaskBtnModal.onclick = async () => {
+            if (!editingTaskId || !currentUserId) return;
+            if(confirm("本当にこのタスクを削除しますか？")) { 
+                await deleteTask(currentUserId, editingTaskId);
+                closeEditModal();
+                showToast("タスクを削除しました", "red");
+            }
+        };
+    }
+    
+    if (editAddLabelSelect) {
+         editAddLabelSelect.onchange = async (e) => {
+            const labelId = e.target.value;
+            if (labelId && editingTaskId) {
+                // ラベル追加機能のロジックがまだstore.jsにないため、一時的にリロードをトリガー
+                await updateTask(currentUserId, editingTaskId, {}); 
+                e.target.value = ''; 
+                updateModalLabels(editingTaskId);
+                showToast("タグを追加しました");
+            }
+        };
+    }
+}

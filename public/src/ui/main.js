@@ -5,10 +5,10 @@ import { subscribeToLabels } from '../store/labels.js';
 import { filterTasks, sortTasks } from '../logic/search.js';
 import { initAuthUI, updateAuthUI } from './auth.js';
 import { initSidebar, renderProjects, renderLabels } from './sidebar.js';
-import { renderTaskList, initTaskInput } from './task-view.js';
+import { initTaskView, renderTaskList } from './task-view.js'; // ★修正: task-viewからinitTaskViewとrenderTaskListをインポート
 import { renderDashboard } from './dashboard.js';
 import { initSettings } from './settings.js';
-import { renderModals } from './components.js'; // ★追加: モーダルレンダリングをインポート
+import { renderModals } from './components.js'; 
 
 let allTasks = [];
 let allProjects = []; 
@@ -23,7 +23,7 @@ let currentSort = 'created_desc';
 
 // アプリ初期化
 document.addEventListener('DOMContentLoaded', () => {
-    // ★追加: 共通モーダルをDOMに挿入
+    // 共通モーダルをDOMに挿入
     renderModals();
     
     initAuthUI();
@@ -45,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initializeApp(userId) {
     // 1. 各種イベントリスナー初期化
-    // initSidebar に onSelectView を渡す
     initSidebar(userId, (filter) => {
         if (filter.type === 'dashboard') {
             document.getElementById('task-view').classList.add('hidden');
@@ -60,8 +59,8 @@ function initializeApp(userId) {
     });
     initSettings(userId);
     
-    // タスク追加イベント
-    initTaskInput(async (taskData) => {
+    // タスク追加イベントを task-view に委譲
+    initTaskView(async (taskData) => {
         // 現在選択中のプロジェクトIDを付与
         if (currentFilter.projectId) taskData.projectId = currentFilter.projectId;
         await addTask(userId, taskData);
@@ -72,22 +71,22 @@ function initializeApp(userId) {
 
     // 2. データ購読開始
     subscribeToProjects(userId, (projects) => {
-        allProjects = projects; // ★データを保持
+        allProjects = projects; 
         renderProjects(projects, (filter) => {
             currentFilter.projectId = filter.value;
             currentFilter.labelId = null;
             updateView();
         });
-        updateView(); // プロジェクトリスト更新に伴い、グラフも更新
+        updateView(); 
     });
 
     subscribeToLabels(userId, (labels) => {
-        allLabels = labels; // ★データを保持
+        allLabels = labels; 
         renderLabels(labels, (filter) => {
             currentFilter.labelId = filter.value;
             currentFilter.projectId = null;
             updateView();
-        }, userId); // userId を渡す (ドロップゾーンのため)
+        }, userId); 
         updateView();
     });
 
@@ -169,6 +168,5 @@ function updateView() {
     });
     
     // ダッシュボード更新
-    // allProjectsを渡す
     renderDashboard(allTasks, allProjects); 
 }
