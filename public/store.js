@@ -1,6 +1,6 @@
-// --- データ操作モジュール (完全版：更新 2025/11/25 修正版) ---
+// --- データ操作モジュール (更新日: 2025-11-25) ---
 import { 
-    collection, addDoc, query, onSnapshot, doc, updateDoc, orderBy, deleteDoc, arrayUnion, arrayRemove 
+    collection, addDoc, query, onSnapshot, doc, updateDoc, orderBy, deleteDoc, arrayUnion, arrayRemove, getDocs 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, appId } from './firebase-init.js';
 
@@ -19,6 +19,32 @@ let notifyListeners = () => {};
 function getTaskCollectionRef(userId) {
     if (!db) throw new Error("Firestore not initialized");
     return collection(db, `/artifacts/${appId}/users/${userId}/tasks`);
+}
+
+// ★追加: バックアップ用データ取得（タスク、プロジェクト、ラベルをまとめて取得）
+export async function createBackupData(userId) {
+    if (!db) throw new Error("Firestore not initialized");
+    
+    const tasksRef = collection(db, `/artifacts/${appId}/users/${userId}/tasks`);
+    const projectsRef = collection(db, `/artifacts/${appId}/users/${userId}/projects`);
+    const labelsRef = collection(db, `/artifacts/${appId}/users/${userId}/labels`);
+
+    const [tasksSnap, projectsSnap, labelsSnap] = await Promise.all([
+        getDocs(tasksRef),
+        getDocs(projectsRef),
+        getDocs(labelsRef)
+    ]);
+
+    const backup = {
+        version: "1.0",
+        exportedAt: new Date().toISOString(),
+        userId: userId,
+        tasks: tasksSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+        projects: projectsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+        labels: labelsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    };
+
+    return backup;
 }
 
 // --- Actions ---
@@ -41,15 +67,13 @@ export async function addTask(userId, title, recurrenceType = 'none', projectId 
     await addDoc(getTaskCollectionRef(userId), taskData);
 }
 
-// ★追加: タスク情報の更新（タイトル、期限、メモなど）
 export async function updateTask(userId, taskId, updates) {
     const taskRef = doc(getTaskCollectionRef(userId), taskId);
     
-    // 日付文字列が渡された場合はDateオブジェクトに変換
     if (updates.dueDate && typeof updates.dueDate === 'string') {
         updates.dueDate = new Date(updates.dueDate);
     } else if (updates.dueDate === '') {
-        updates.dueDate = null; // クリア
+        updates.dueDate = null;
     }
 
     await updateDoc(taskRef, updates);

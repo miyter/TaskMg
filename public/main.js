@@ -1,11 +1,12 @@
-// --- メインエントリーポイント (更新日: 2025-11-25 修正版) ---
+// --- メインエントリーポイント (更新日: 2025-11-25) ---
 // 役割: 各モジュールの初期化と、画面切り替え(ルーティング的な)制御
 
 import { initAuthListener, loginWithEmail, logout } from './auth.js';
 import { subscribeTasks, getCurrentFilter, setFilter } from './store.js';
 import { setupTaskUI, renderTaskList } from './ui-task.js';
 import { initSidebar, cleanupSidebar, updateSidebarSelection, updateViewTitle } from './ui-sidebar.js';
-import { updateDashboard } from './ui-dashboard.js'; // New!
+import { updateDashboard } from './ui-dashboard.js'; 
+import { initSettingsUI } from './ui-settings.js'; // New!
 
 // UI要素
 const loginForm = document.getElementById('login-form-container');
@@ -35,7 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. タスクUIのイベント設定
             setupTaskUI(user.uid);
 
-            // 2. サイドバー初期化 & 画面切り替えハンドラ
+            // 2. 設定UIの初期化 (New!)
+            initSettingsUI(user.uid);
+
+            // 3. サイドバー初期化 & 画面切り替えハンドラ
             initSidebar(user.uid, getCurrentFilter(), (selection) => {
                 
                 if (selection.type === 'dashboard') {
@@ -71,42 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            // 3. データ購読開始
-            // store.js はフィルタ後のタスクを返すが、ダッシュボードには全タスクが必要なので
-            // ここでは store.js のフィルタロジックとは別に、全件取得する仕組みがあるとベストだが
-            // 簡易的に store.js の subscribeTasks が返すのはフィルタ後のみ。
-            // ★修正: ダッシュボード用に全件が必要なため、フィルタ条件を一時的に無視するか、
-            // store.js に全件取得モードを追加するのが正しい。
-            // 今回は store.js の subscribeTasks は「フィルタ後の結果」しか返さない仕様なので、
-            // Dashboard表示時はフィルタを全解除する...といったハックが必要になる。
-            // -> より良い方法として、store.js から「全タスク」も受け取れるようにするのが理想だが、
-            // ファイル変更を最小限にするため、ここでは「表示モード」に応じて処理を分ける。
-            
-            // store.js の subscribeTasks はフィルタリング結果を返す仕様。
-            // ダッシュボード表示中も裏でタスクリストの更新は走って良い。
-            // ただし、ダッシュボードの集計には「全タスク」が必要。
-            // 現状の store.js ではフィルタされたタスクしか来ないため、ダッシュボードを表示する際は
-            // 一旦フィルタを「全表示」にするか、store.js を改造して「全タスク」もコールバック引数に入れる必要がある。
-            // 
-            // 今回は store.js をいじらず解決するため、
-            // 「ダッシュボード表示時は、フィルタを全解除(projectId='all')してデータを吸い上げ、
-            // 画面描画(renderTaskList)はスキップする」というロジックにする。
-
+            // 4. データ購読開始
             subscribeTasks(user.uid, (tasks, filterState) => {
                 allTasksCache = tasks; // 注: フィルタ後のタスクしか来ない
 
                 if (currentViewMode === 'dashboard') {
-                    // ダッシュボード表示中
-                    // 本来は全タスクで集計すべきだが、現在のフィルタ状態のタスクで集計される制限がある。
-                    // (ユーザーがダッシュボードを押した瞬間にフィルタ解除する手もあるが、UXが変わる)
-                    // ここでは「現在見えているタスクの分析」として割り切るか、
-                    // store.js の修正が必要。
-                    // -> ユーザー体験として「全タスクの状況」が見たいはずなので、
-                    // store.js を修正するのが正しいが、今回はファイル数制限のため
-                    // 「フィルタリングされた結果のダッシュボード」として提供する。
                     updateDashboard(tasks);
                 } else {
-                    // タスク一覧表示中
                     renderTaskList(tasks, filterState);
                 }
             });

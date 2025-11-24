@@ -47,7 +47,11 @@
                 </div>
                 <div id="user-info" class="hidden flex items-center space-x-3">
                     <span id="user-display-name" class="text-sm text-gray-600 font-medium"></span>
-                    <button id="logout-btn" class="text-gray-400 hover:text-red-500 transition">
+                    <!-- 設定ボタン (New!) -->
+                    <button id="settings-btn" class="text-gray-400 hover:text-blue-500 transition" title="設定">
+                        <i class="fas fa-cog fa-lg"></i>
+                    </button>
+                    <button id="logout-btn" class="text-gray-400 hover:text-red-500 transition" title="ログアウト">
                         <i class="fas fa-sign-out-alt fa-lg"></i>
                     </button>
                 </div>
@@ -62,7 +66,7 @@
         <aside class="w-64 bg-gray-50 border-r border-gray-200 flex-shrink-0 flex flex-col hidden md:flex">
             <div class="p-4 overflow-y-auto flex-1">
                 
-                <!-- ダッシュボードメニュー (New!) -->
+                <!-- ダッシュボードメニュー -->
                 <div class="mb-6">
                     <ul class="space-y-1">
                         <li id="nav-dashboard" class="px-2 py-2 text-gray-600 hover:bg-gray-100 rounded-md text-sm font-medium cursor-pointer flex items-center">
@@ -102,7 +106,7 @@
         <!-- メインコンテンツ -->
         <main class="flex-1 flex flex-col bg-white overflow-hidden relative">
             
-            <!-- ★ダッシュボード画面 (初期非表示) -->
+            <!-- ダッシュボード画面 (初期非表示) -->
             <div id="dashboard-view" class="hidden p-6 overflow-y-auto h-full custom-scrollbar">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">ダッシュボード</h2>
                 
@@ -143,7 +147,7 @@
                 </div>
             </div>
 
-            <!-- ★タスク管理画面 (初期表示) -->
+            <!-- タスク管理画面 (初期表示) -->
             <div id="task-view" class="flex flex-col h-full overflow-hidden">
                 <!-- ツールバー -->
                 <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-white flex-shrink-0">
@@ -219,6 +223,35 @@
                         <button id="delete-task-btn-modal" class="text-red-500 hover:bg-red-50 px-4 py-2 rounded-md transition text-sm mr-auto"><i class="fas fa-trash"></i> 削除</button>
                         <button id="cancel-edit-btn" class="text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-md transition text-sm">キャンセル</button>
                         <button id="save-task-btn" class="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2 rounded-md transition text-sm font-medium shadow-sm">保存</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 設定モーダル (New!) -->
+            <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6 relative">
+                    <button id="close-settings-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times fa-lg"></i></button>
+                    <h3 class="text-lg font-semibold mb-6 text-gray-800 border-b pb-2">設定 & データ管理</h3>
+                    
+                    <div class="space-y-6">
+                        <!-- パスワード変更 -->
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-700 mb-2">🔐 アカウント設定</h4>
+                            <div class="flex gap-2">
+                                <input type="password" id="new-password-input" placeholder="新しいパスワード" class="flex-1 p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+                                <button id="update-password-btn" class="bg-gray-600 text-white px-3 py-2 rounded-md text-sm hover:bg-gray-700 whitespace-nowrap">変更</button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">※変更するには最近ログインしている必要があります。</p>
+                        </div>
+
+                        <!-- データバックアップ -->
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-700 mb-2">💾 データ管理</h4>
+                            <p class="text-sm text-gray-600 mb-3">全てのタスク、プロジェクト、タグのデータをJSON形式でダウンロードします。</p>
+                            <button id="export-data-btn" class="w-full bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700 flex items-center justify-center">
+                                <i class="fas fa-download mr-2"></i> データをバックアップ (JSON)
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
