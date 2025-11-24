@@ -1,4 +1,4 @@
-// --- データ操作モジュール (完全版：更新 2025/11/25 10:30) ---
+// --- データ操作モジュール (完全版：更新 2025/11/25 修正版) ---
 import { 
     collection, addDoc, query, onSnapshot, doc, updateDoc, orderBy, deleteDoc, arrayUnion, arrayRemove 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -23,16 +23,15 @@ function getTaskCollectionRef(userId) {
 
 // --- Actions ---
 
-// タスク追加（期限日とメモ対応）
 export async function addTask(userId, title, recurrenceType = 'none', projectId = null, dueDate = null, description = '') {
     if (!title.trim()) return;
 
     const taskData = {
         title: title.trim(),
-        description: description || '', // メモ
+        description: description || '',
         status: "todo",
         createdAt: new Date(),
-        dueDate: dueDate ? new Date(dueDate) : null, // 期限日
+        dueDate: dueDate ? new Date(dueDate) : null,
         recurrence: { type: recurrenceType },
         projectId: projectId,
         labelIds: [],
@@ -42,7 +41,20 @@ export async function addTask(userId, title, recurrenceType = 'none', projectId 
     await addDoc(getTaskCollectionRef(userId), taskData);
 }
 
-// ステータス更新 & 繰り返し処理
+// ★追加: タスク情報の更新（タイトル、期限、メモなど）
+export async function updateTask(userId, taskId, updates) {
+    const taskRef = doc(getTaskCollectionRef(userId), taskId);
+    
+    // 日付文字列が渡された場合はDateオブジェクトに変換
+    if (updates.dueDate && typeof updates.dueDate === 'string') {
+        updates.dueDate = new Date(updates.dueDate);
+    } else if (updates.dueDate === '') {
+        updates.dueDate = null; // クリア
+    }
+
+    await updateDoc(taskRef, updates);
+}
+
 export async function toggleTaskStatus(userId, taskId, currentStatus, taskData) {
     const taskRef = doc(getTaskCollectionRef(userId), taskId);
     const newStatus = currentStatus === 'todo' ? 'completed' : 'todo';
@@ -54,7 +66,6 @@ export async function toggleTaskStatus(userId, taskId, currentStatus, taskData) 
     }
 }
 
-// タスクにラベルを付与
 export async function addLabelToTask(userId, taskId, labelId) {
     const taskRef = doc(getTaskCollectionRef(userId), taskId);
     await updateDoc(taskRef, {
@@ -62,7 +73,6 @@ export async function addLabelToTask(userId, taskId, labelId) {
     });
 }
 
-// タスクからラベルを削除
 export async function removeLabelFromTask(userId, taskId, labelId) {
     const taskRef = doc(getTaskCollectionRef(userId), taskId);
     await updateDoc(taskRef, {
@@ -70,12 +80,9 @@ export async function removeLabelFromTask(userId, taskId, labelId) {
     });
 }
 
-// 次回タスク自動生成
 async function createNextRecurringTask(userId, originalTask) {
     const today = new Date();
     let nextDate = new Date();
-    
-    // 期限日があればそれを基準に、なければ今日を基準に
     const baseDate = originalTask.dueDate && originalTask.dueDate.toDate ? originalTask.dueDate.toDate() : today;
 
     switch (originalTask.recurrence.type) {
@@ -98,7 +105,6 @@ async function createNextRecurringTask(userId, originalTask) {
     await addDoc(getTaskCollectionRef(userId), newTaskData);
 }
 
-// タスク削除
 export async function deleteTask(userId, taskId) {
     if(!confirm("このタスクを削除しますか？")) return;
     await deleteDoc(doc(getTaskCollectionRef(userId), taskId));
@@ -142,7 +148,6 @@ function applyFilter() {
         switch (currentFilter.sort) {
             case 'created_asc': return dateA - dateB;
             case 'due_asc': 
-                // 期限なしは最後に
                 const dueA = a.dueDate ? (a.dueDate.toDate ? a.dueDate.toDate() : new Date(a.dueDate)) : new Date(9999,11,31);
                 const dueB = b.dueDate ? (b.dueDate.toDate ? b.dueDate.toDate() : new Date(b.dueDate)) : new Date(9999,11,31);
                 return dueA - dueB;

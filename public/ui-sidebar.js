@@ -1,4 +1,4 @@
-// 更新日: 2025-11-25
+// 更新日: 2025-11-25 修正版
 // 役割: サイドバー（プロジェクト・ラベル）の描画とイベント設定
 
 import { addProject, subscribeProjects, deleteProject } from "./project-store.js";
@@ -8,11 +8,12 @@ import { addLabelToTask } from "./store.js";
 const projectList = document.getElementById('project-list');
 const labelList = document.getElementById('label-list');
 const currentViewTitle = document.getElementById('current-view-title');
+const addProjectBtn = document.getElementById('add-project-btn'); // 取得
+const addLabelBtn = document.getElementById('add-label-btn');     // 取得
 
 // 状態保持用
 let projectMap = {};
 let labelMap = {};
-// 全ラベルのリスト（配列）を保持して外部に提供
 let allLabels = []; 
 
 let unsubscribeProjects = null;
@@ -21,6 +22,21 @@ let unsubscribeLabels = null;
 // --- 公開メソッド ---
 
 export function initSidebar(userId, currentFilter, onSelectView) {
+    // ★ここでイベントリスナーを設定して、ボタンを復活させる
+    if (addProjectBtn) {
+        addProjectBtn.onclick = async () => {
+            const name = prompt("新しいプロジェクト名:");
+            if (name) await addProject(userId, name);
+        };
+    }
+
+    if (addLabelBtn) {
+        addLabelBtn.onclick = async () => {
+            const name = prompt("新しいタグ名:");
+            if (name) await addLabel(userId, name);
+        };
+    }
+
     startProjectListener(userId, currentFilter);
     startLabelListener(userId, currentFilter, onSelectView);
 }
@@ -33,7 +49,6 @@ export function cleanupSidebar() {
     allLabels = [];
 }
 
-// ★追加: タスク側でプルダウンを作るために全ラベル情報を取得するメソッド
 export function getAllLabels() {
     return allLabels;
 }
@@ -99,10 +114,6 @@ function startProjectListener(userId, currentFilter) {
             li.querySelector('.project-item').onclick = () => {
                 updateSidebarSelection({ type: 'project', value: p.id });
                 updateViewTitle({ type: 'project', value: p.id });
-                // main.jsから渡されたコールバックがあれば実行（フィルタ更新用）
-                /* 注: ここで onSelectView を呼ぶべきですが、元のコードのロジックを尊重し、
-                   UI更新のみを行っています。フィルタ連動は main.js 側で担保します。
-                */
             };
 
             li.querySelector('.delete-project-btn').onclick = async () => {

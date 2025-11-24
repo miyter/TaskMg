@@ -123,35 +123,26 @@
                 </div>
             </div>
 
-            <!-- タスク入力フォーム（拡張版） -->
+            <!-- タスク入力フォーム -->
             <div class="p-4 bg-gray-50 border-b border-gray-100">
-                <!-- 上段：タイトル入力と追加ボタン -->
                 <div class="flex flex-col md:flex-row gap-2 mb-2">
                     <input type="text" id="task-title-input" 
                            class="flex-1 pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
                            placeholder="新しいタスクを追加...">
-                    
                     <button id="add-task-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm transition whitespace-nowrap">
                         追加
                     </button>
                 </div>
-                
-                <!-- 下段：詳細設定（期限日、メモ、繰り返し） -->
                 <div class="flex flex-wrap items-center gap-3">
-                    <!-- 期限日入力（カレンダー）復活！ -->
                     <div class="flex items-center bg-white border border-gray-300 rounded-md px-2 py-1">
                         <i class="fas fa-calendar-alt text-gray-400 mr-2"></i>
                         <input type="date" id="task-due-date-input" class="text-sm text-gray-600 focus:outline-none">
                     </div>
-
-                    <!-- 詳細メモ入力（簡易トグル） -->
                     <div class="flex-1 min-w-[200px]">
                         <input type="text" id="task-desc-input" 
                                class="w-full text-sm bg-transparent border-b border-gray-300 focus:border-blue-500 focus:outline-none py-1 text-gray-600"
                                placeholder="詳細メモを追加 (オプション)">
                     </div>
-
-                    <!-- 繰り返し設定 -->
                     <select id="task-recurrence-select" class="text-sm py-1 px-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 text-gray-600">
                         <option value="none">🔄 繰り返しなし</option>
                         <option value="daily">毎日</option>
@@ -168,6 +159,51 @@
                 </ul>
             </div>
             
+            <!-- ★追加：タスク編集モーダル -->
+            <div id="edit-task-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 p-6 relative">
+                    <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800">タスクの編集</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">タイトル</label>
+                            <input type="text" id="edit-task-title" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">期限日</label>
+                            <input type="date" id="edit-task-date" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">詳細メモ</label>
+                            <textarea id="edit-task-desc" rows="3" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"></textarea>
+                        </div>
+                        
+                        <!-- タグ管理エリア -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">タグ (ラベル)</label>
+                            <div id="edit-task-labels" class="flex flex-wrap gap-2 mb-2">
+                                <!-- ここに現在のラベルが表示される -->
+                            </div>
+                            <select id="edit-add-label-select" class="w-full p-2 border border-gray-300 rounded-md text-sm">
+                                <option value="">＋ タグを追加...</option>
+                                <!-- ここに全ラベル選択肢が表示される -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button id="delete-task-btn-modal" class="text-red-500 hover:bg-red-50 px-4 py-2 rounded-md transition text-sm mr-auto">
+                            <i class="fas fa-trash"></i> 削除
+                        </button>
+                        <button id="cancel-edit-btn" class="text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-md transition text-sm">キャンセル</button>
+                        <button id="save-task-btn" class="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2 rounded-md transition text-sm font-medium shadow-sm">保存</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- トースト通知用エリア -->
             <div id="toast-container" class="absolute bottom-4 right-4 space-y-2 pointer-events-none"></div>
         </main>
@@ -189,10 +225,8 @@
         window.GLOBAL_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     </script>
     
-    <!-- モジュール読み込み -->
     <script type="module" src="/main.js"></script> 
     
-    <!-- スイッチのCSS動作 -->
     <style>
         input:checked ~ .dot { transform: translateX(100%); background-color: #48bb78; }
         input:checked ~ .bg-gray-200 { background-color: #d1fae5; }
