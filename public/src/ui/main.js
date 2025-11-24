@@ -1,100 +1,174 @@
-// --- メインエントリーポイント (最終版) ---
-import { initAuthListener, loginWithEmail, logout } from './core/auth.js';
-import { subscribeTasks, getCurrentFilter, setFilter } from './store/tasks.js';
-import { setupTaskUI, renderTaskList } from './ui/task-view.js';
-import { initSidebar, cleanupSidebar, updateSidebarSelection, updateViewTitle } from './ui/sidebar.js';
-import { updateDashboard } from './ui/dashboard.js'; 
-import { initSettingsUI } from './ui/settings.js'; 
-import { renderModals } from './ui/components.js';
-// ★追加: 認証UI制御をインポート
-import { updateAuthUI } from './ui/auth.js';
+import { initAuthListener } from '../core/auth.js';
+import { subscribeToTasks, addTask } from '../store/store.js';
+import { subscribeToProjects } from '../store/projects.js';
+import { subscribeToLabels } from '../store/labels.js';
+import { filterTasks, sortTasks } from '../logic/search.js';
+import { initAuthUI, updateAuthUI } from './auth.js';
+import { initSidebar, renderProjects, renderLabels } from './sidebar.js';
+import { renderTaskList, initTaskInput } from './task-view.js';
+import { renderDashboard } from './dashboard.js';
+import { initSettings } from './settings.js';
+import { renderModals } from './components.js'; // ★追加: モーダルレンダリングをインポート
 
-const emailIn = document.getElementById('email-input');
-const passIn = document.getElementById('password-input');
-const taskView = document.getElementById('task-view');
-const dashboardView = document.getElementById('dashboard-view');
+let allTasks = [];
+let allProjects = []; 
+let allLabels = [];   
+let currentFilter = {
+    keyword: '',
+    projectId: null, // null = Inbox
+    labelId: null,
+    showCompleted: false
+};
+let currentSort = 'created_desc';
 
-let currentViewMode = 'tasks'; 
-let allTasksCache = []; 
-
+// アプリ初期化
 document.addEventListener('DOMContentLoaded', () => {
+    // ★追加: 共通モーダルをDOMに挿入
     renderModals();
+    
+    initAuthUI();
+    
+    initAuthListener(
+        // ログイン時
+        (user) => {
+            updateAuthUI(user);
+            initializeApp(user.uid);
+        },
+        // ログアウト時
+        () => {
+            updateAuthUI(null);
+            // 画面クリア等の処理
+            renderTaskList([], null);
+        }
+    );
+});
 
-    initAuthListener((user) => {
-        // ★修正: UI更新を専用モジュールに任せる
-        updateAuthUI(user);
-
-        if (user) {
-            console.log("Login:", user.uid);
-            
-            setupTaskUI(user.uid);
-            initSettingsUI(user.uid); 
-
-            initSidebar(user.uid, getCurrentFilter(), (selection) => {
-                if (selection.type === 'dashboard') {
-                    currentViewMode = 'dashboard';
-                    taskView.classList.add('hidden');
-                    dashboardView.classList.remove('hidden');
-                    updateDashboard(allTasksCache);
-                    updateSidebarSelection({ type: 'dashboard' });
-                } else {
-                    currentViewMode = 'tasks';
-                    dashboardView.classList.add('hidden');
-                    taskView.classList.remove('hidden');
-                    
-                    let newFilter = { projectId: 'all', labelId: null };
-                    if (selection.type === 'project') {
-                        newFilter.projectId = selection.value === 'inbox' ? null : selection.value;
-                        newFilter.labelId = null;
-                    } else if (selection.type === 'label') {
-                        newFilter.projectId = 'all';
-                        newFilter.labelId = selection.value;
-                    }
-                    
-                    setFilter(newFilter);
-                    updateSidebarSelection(selection);
-                    updateViewTitle(selection);
-                }
-            });
-            
-            subscribeTasks(user.uid, (tasks, filterState) => {
-                allTasksCache = tasks; 
-                if (currentViewMode === 'dashboard') {
-                    updateDashboard(tasks);
-                } else {
-                    renderTaskList(tasks, filterState);
-                }
-            });
-
+function initializeApp(userId) {
+    // 1. 各種イベントリスナー初期化
+    // initSidebar に onSelectView を渡す
+    initSidebar(userId, (filter) => {
+        if (filter.type === 'dashboard') {
+            document.getElementById('task-view').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
         } else {
-            console.log("Logout");
-            if (typeof cleanupSidebar === 'function') cleanupSidebar();
-            renderTaskList([], {}); 
+            currentFilter.projectId = filter.type === 'project' ? filter.value : null;
+            currentFilter.labelId = filter.type === 'label' ? filter.value : null;
+            document.getElementById('task-view').classList.remove('hidden');
+            document.getElementById('dashboard-view').classList.add('hidden');
+            updateView();
         }
     });
+    initSettings(userId);
+    
+    // タスク追加イベント
+    initTaskInput(async (taskData) => {
+        // 現在選択中のプロジェクトIDを付与
+        if (currentFilter.projectId) taskData.projectId = currentFilter.projectId;
+        await addTask(userId, taskData);
+    });
 
-    const loginBtn = document.getElementById('email-login-btn');
-    if(loginBtn) {
-        loginBtn.addEventListener('click', async () => {
-            try {
-                if (!emailIn.value || !passIn.value) {
-                    alert("メールアドレスとパスワードを入力してください");
-                    return;
-                }
-                await loginWithEmail(emailIn.value, passIn.value);
-                emailIn.value = '';
-                passIn.value = '';
-            } catch (e) {
-                console.error(e);
-                alert("ログインに失敗しました。");
-            }
+    // フィルタ・検索UIイベント
+    setupFilterEvents();
+
+    // 2. データ購読開始
+    subscribeToProjects(userId, (projects) => {
+        allProjects = projects; // ★データを保持
+        renderProjects(projects, (filter) => {
+            currentFilter.projectId = filter.value;
+            currentFilter.labelId = null;
+            updateView();
+        });
+        updateView(); // プロジェクトリスト更新に伴い、グラフも更新
+    });
+
+    subscribeToLabels(userId, (labels) => {
+        allLabels = labels; // ★データを保持
+        renderLabels(labels, (filter) => {
+            currentFilter.labelId = filter.value;
+            currentFilter.projectId = null;
+            updateView();
+        }, userId); // userId を渡す (ドロップゾーンのため)
+        updateView();
+    });
+
+    subscribeToTasks(userId, (tasks) => {
+        allTasks = tasks;
+        updateView();
+    });
+}
+
+function setupFilterEvents() {
+    // 検索ボックス
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            currentFilter.keyword = e.target.value;
+            updateView();
         });
     }
 
-    const logoutBtn = document.getElementById('logout-btn');
-    if(logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            if(confirm("ログアウトしますか？")) await logout();
+    // 完了表示トグル
+    const toggle = document.getElementById('show-completed-toggle');
+    if (toggle) {
+        toggle.addEventListener('change', (e) => {
+            currentFilter.showCompleted = e.target.checked;
+            updateView();
         });
     }
-});
+
+    // ソート選択
+    const sortSelect = document.getElementById('sort-select');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+            currentSort = e.target.value;
+            updateView();
+        });
+    }
+    
+    // ダッシュボード切替
+    const navDash = document.getElementById('nav-dashboard');
+    if(navDash) {
+        navDash.addEventListener('click', () => {
+            document.getElementById('task-view').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
+        });
+    }
+    
+    // インボックス(タイトル)クリックで戻る
+    const title = document.getElementById('current-view-title');
+    if(title) {
+        title.addEventListener('click', () => {
+             document.getElementById('task-view').classList.remove('hidden');
+             document.getElementById('dashboard-view').classList.add('hidden');
+             currentFilter.projectId = null;
+             currentFilter.labelId = null;
+             updateView();
+        });
+    }
+}
+
+function updateView() {
+    // タイトル更新
+    const titleEl = document.getElementById('current-view-title');
+    if (currentFilter.projectId) {
+        const proj = allProjects.find(p => p.id === currentFilter.projectId);
+        titleEl.textContent = proj ? proj.name : "プロジェクト";
+    } else if (currentFilter.labelId) {
+        const label = allLabels.find(l => l.id === currentFilter.labelId);
+        titleEl.textContent = label ? label.name : "ラベル";
+    } else {
+        titleEl.textContent = "インボックス";
+    }
+
+    const filtered = filterTasks(allTasks, currentFilter);
+    const sorted = sortTasks(filtered, currentSort);
+    
+    // タスクリスト描画
+    import('../core/auth.js').then(m => {
+        renderTaskList(sorted, m.currentUserId);
+    });
+    
+    // ダッシュボード更新
+    // allProjectsを渡す
+    renderDashboard(allTasks, allProjects); 
+}

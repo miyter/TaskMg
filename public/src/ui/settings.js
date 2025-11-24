@@ -1,6 +1,6 @@
-// --- 設定UI (移動: public/ui-settings.js -> src/ui/settings.js) ---
+// --- 設定UI (パスワード変更、データエクスポート) ---
 import { updateUserPassword } from '../core/auth.js';
-import { createBackupData } from '../store/tasks.js';
+import { createBackupData } from '../store/store.js';
 
 const settingsBtn = document.getElementById('settings-btn');
 const settingsModal = document.getElementById('settings-modal');
@@ -11,25 +11,33 @@ const exportDataBtn = document.getElementById('export-data-btn');
 
 let currentUserId = null;
 
-export function initSettingsUI(userId) {
+export function initSettings(userId) { // 関数名を initSettings に修正
     currentUserId = userId;
 
     if (settingsBtn) {
         settingsBtn.onclick = () => {
-            settingsModal.classList.remove('hidden');
+            if (settingsModal) settingsModal.classList.remove('hidden');
         };
     }
     if (closeSettingsBtn) {
         closeSettingsBtn.onclick = () => {
-            settingsModal.classList.add('hidden');
-            newPasswordInput.value = ''; 
+            if (settingsModal) settingsModal.classList.add('hidden');
+            if (newPasswordInput) newPasswordInput.value = ''; 
         };
     }
+    
+    // モーダル外クリックで閉じる機能
+    if (settingsModal) {
+        settingsModal.onclick = (e) => {
+            if (e.target === settingsModal) closeSettingsBtn.onclick();
+        };
+    }
+
     if (updatePasswordBtn) {
         updatePasswordBtn.onclick = async () => {
             const newPass = newPasswordInput.value;
             if (!newPass || newPass.length < 6) {
-                alert("パスワードは6文字以上で入力してください。");
+                alert("パスワードは6文字以上で入力してください。"); // ★ alertはカスタムモーダルに置き換え推奨
                 return;
             }
             try {

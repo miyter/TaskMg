@@ -1,20 +1,31 @@
-// --- ダッシュボードUI (移動: public/ui-dashboard.js -> src/ui/dashboard.js) ---
+// --- ダッシュボード制御 (完全版) ---
+// Chart.jsはCDNで読み込んでいるため window.Chart を使用
+
+// プロジェクト名解決のために sidebar からインポートが必要
 import { getProjectName } from "./sidebar.js";
 
 let statusChartInstance = null;
 let projectChartInstance = null;
 
-export function updateDashboard(tasks) {
+// 名前を updateDashboard に変更（元のコードに倣う）
+export function renderDashboard(tasks, projects) {
     if (!tasks) return;
-
+    
+    // 現在時刻
+    const now = new Date();
+    
+    // KPI計算
     const totalTodo = tasks.filter(t => t.status === 'todo').length;
     const totalDone = tasks.filter(t => t.status === 'completed').length;
-    const now = new Date();
+    
+    // 期限切れ
     const overdue = tasks.filter(t => {
         if (t.status === 'completed' || !t.dueDate) return false;
         const due = t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
         return due < now;
     }).length;
+    
+    // 今週の予定 (今日から7日後まで)
     const nextWeek = new Date();
     nextWeek.setDate(now.getDate() + 7);
     const upcoming = tasks.filter(t => {
@@ -23,18 +34,20 @@ export function updateDashboard(tasks) {
         return due >= now && due <= nextWeek;
     }).length;
 
+    // KPI表示更新
     document.getElementById('kpi-todo').textContent = totalTodo;
     document.getElementById('kpi-done').textContent = totalDone;
     document.getElementById('kpi-overdue').textContent = overdue;
     document.getElementById('kpi-upcoming').textContent = upcoming;
 
     renderStatusChart(totalTodo, totalDone);
-    renderProjectChart(tasks);
+    renderProjectChart(tasks, projects);
 }
 
 function renderStatusChart(todo, done) {
     const ctx = document.getElementById('statusChart').getContext('2d');
     if (statusChartInstance) statusChartInstance.destroy();
+    
     statusChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -45,22 +58,33 @@ function renderStatusChart(todo, done) {
                 borderWidth: 0
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { position: 'bottom' } 
+            } 
+        }
     });
 }
 
-function renderProjectChart(tasks) {
+function renderProjectChart(tasks, allProjects) {
     const ctx = document.getElementById('projectChart').getContext('2d');
     const counts = {};
+    
+    // 未完了タスクのみをカウント
     tasks.filter(t => t.status === 'todo').forEach(t => {
-        const pname = t.projectId ? getProjectName(t.projectId) : 'インボックス';
-        const label = pname || '未分類';
+        // プロジェクト名を取得（getProjectNameはsidebar.jsに依存）
+        const projectName = t.projectId ? getProjectName(t.projectId, allProjects) : 'インボックス';
+        const label = projectName || '未分類';
         counts[label] = (counts[label] || 0) + 1;
     });
+    
     const labels = Object.keys(counts);
     const data = Object.values(counts);
 
     if (projectChartInstance) projectChartInstance.destroy();
+    
     projectChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -72,6 +96,18 @@ function renderProjectChart(tasks) {
                 borderRadius: 4
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            scales: { 
+                y: { 
+                    beginAtZero: true, 
+                    ticks: { stepSize: 1 } 
+                } 
+            }, 
+            plugins: { 
+                legend: { display: false } 
+            } 
+        }
     });
 }

@@ -1,9 +1,20 @@
-// --- UIコンポーネント (移動: public/ui-components.js -> src/ui/components.js) ---
+// --- 共通UIコンポーネント (タスク編集/設定モーダル) ---
+
 export function renderModals() {
+    // 既存のモーダルコンテナがあれば削除
+    if (document.getElementById('modal-container')) {
+        document.getElementById('modal-container').remove();
+    }
+    
+    // モーダル全体を格納するコンテナ
     const modalContainer = document.createElement('div');
+    modalContainer.id = 'modal-container';
+    
+    // モーダルHTML構造をインラインで定義
     modalContainer.innerHTML = `
-        <div id="edit-task-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 relative transform transition-transform scale-95 hover:scale-100 duration-200">
+        <!-- タスク編集モーダル (task-view.jsで使用) -->
+        <div id="edit-task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 relative transform transition-all">
                 <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"><i class="fas fa-times fa-lg"></i></button>
                 <h3 class="text-xl font-bold mb-6 text-gray-800 border-b pb-3 flex items-center"><i class="fas fa-edit mr-2 text-blue-500"></i> タスクの編集</h3>
                 <div class="space-y-5">
@@ -27,24 +38,26 @@ export function renderModals() {
             </div>
         </div>
 
-        <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 relative transform transition-transform scale-95 hover:scale-100 duration-200">
-                <button id="close-settings-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"><i class="fas fa-times fa-lg"></i></button>
-                <h3 class="text-xl font-bold mb-6 text-gray-800 border-b pb-3 flex items-center"><i class="fas fa-tools mr-2 text-gray-600"></i> 設定 & データ管理</h3>
-                <div class="space-y-8">
-                    <div>
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center"><span class="bg-blue-100 text-blue-600 p-1.5 rounded-md mr-2"><i class="fas fa-lock fa-sm"></i></span> アカウント設定</h4>
-                        <div class="flex gap-2"><input type="password" id="new-password-input" placeholder="新しいパスワード" class="flex-1 p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"><button id="update-password-btn" class="bg-gray-800 text-white px-4 py-2.5 rounded-lg text-sm hover:bg-gray-900 font-medium shadow-sm transition-colors whitespace-nowrap">変更</button></div>
-                        <p class="text-xs text-gray-500 mt-2 ml-1"><i class="fas fa-info-circle mr-1"></i> セキュリティ保護のため、変更には最近の再ログインが必要です。</p>
-                    </div>
-                    <div>
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center"><span class="bg-green-100 text-green-600 p-1.5 rounded-md mr-2"><i class="fas fa-database fa-sm"></i></span> データ管理</h4>
-                        <p class="text-sm text-gray-600 mb-4 ml-1 leading-relaxed">現在の全てのタスク、プロジェクト、タグのデータをJSON形式で一括ダウンロードします。バックアップとしてご利用ください。</p>
-                        <button id="export-data-btn" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg text-sm font-bold hover:bg-green-700 flex items-center justify-center shadow-md transition-all transform active:scale-95"><i class="fas fa-file-export mr-2"></i> バックアップデータを作成 (JSON)</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- 設定モーダル (settings.jsで使用) -->
+        <!-- index.htmlにも既に記述済みのため、ここでは編集モーダルのみをcomponentsに定義するアプローチを採用します -->
+        
     `;
     document.body.appendChild(modalContainer);
 }
+
+// 編集モーダル用の要素をエクスポート
+export const editModalElements = {
+    modal: document.getElementById('edit-task-modal'),
+    closeBtn: document.getElementById('close-modal-btn'),
+    cancelBtn: document.getElementById('cancel-edit-btn'),
+    saveBtn: document.getElementById('save-task-btn'),
+    deleteBtn: document.getElementById('delete-task-btn-modal'),
+    title: document.getElementById('edit-task-title'),
+    date: document.getElementById('edit-task-date'),
+    desc: document.getElementById('edit-task-desc'),
+    labelsContainer: document.getElementById('edit-task-labels'),
+    addLabelSelect: document.getElementById('edit-add-label-select')
+};
+
+// 空のエクスポートも維持
+export default {};

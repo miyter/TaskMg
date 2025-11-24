@@ -1,45 +1,42 @@
-// --- 認証ロジック (移動: public/auth.js -> src/core/auth.js) ---
+// --- 認証ロジック ---
 import { 
-    signInWithEmailAndPassword, 
-    signOut, 
-    onAuthStateChanged, 
+    signInWithEmailAndPassword,
+    signOut,
     signInWithCustomToken,
-    updatePassword 
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-// ★パス変更
-import { auth, isInitialized } from './firebase.js';
+import { auth, isFirebaseInitialized } from './firebase.js';
 
-let currentUser = null;
-const initialAuthToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
+// 現在のユーザーID
+export let currentUserId = null;
 
-export function initAuthListener(onUserChanged) {
-    if (!isInitialized) return;
+// 認証状態の監視リスナー
+export function initAuthListener(onLogin, onLogout) {
+    if (!isFirebaseInitialized) return;
 
     onAuthStateChanged(auth, (user) => {
-        currentUser = user;
-        onUserChanged(user);
+        if (user) {
+            currentUserId = user.uid;
+            onLogin(user);
+        } else {
+            currentUserId = null;
+            onLogout();
+        }
     });
 
-    if (initialAuthToken) {
-        signInWithCustomToken(auth, initialAuthToken).catch(e => console.error("Token Auth Error:", e));
+    // Canvas環境用の初期トークンログイン
+    const initialToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
+    if (initialToken) {
+        signInWithCustomToken(auth, initialToken).catch(console.error);
     }
 }
 
 export async function loginWithEmail(email, password) {
-    if (!isInitialized) throw new Error("Firebase not initialized");
+    if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
     return await signInWithEmailAndPassword(auth, email, password);
 }
 
 export async function logout() {
-    if (!isInitialized) return;
+    if (!isFirebaseInitialized) return;
     await signOut(auth);
-}
-
-export async function updateUserPassword(newPassword) {
-    if (!auth.currentUser) throw new Error("ログインしていません");
-    await updatePassword(auth.currentUser, newPassword);
-}
-
-export function getCurrentUser() {
-    return currentUser;
 }

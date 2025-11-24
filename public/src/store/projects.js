@@ -1,30 +1,25 @@
-// --- プロジェクトStore (移動: public/project-store.js -> src/store/projects.js) ---
-import { collection, addDoc, query, onSnapshot, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { db, appId } from '../core/firebase.js';
+// --- プロジェクトデータ操作 ---
+import { collection, addDoc, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { db } from '../core/firebase.js';
 
-function getProjectRef(userId) {
-    return collection(db, `/artifacts/${appId}/users/${userId}/projects`);
-}
+export function subscribeToProjects(userId, onUpdate) {
+    const appId = window.GLOBAL_APP_ID;
+    const path = `/artifacts/${appId}/users/${userId}/projects`;
+    // orderByはインデックスエラー回避のため一旦外すか、必要なら複合インデックスを作成する
+    const q = query(collection(db, path));
 
-export async function addProject(userId, name) {
-    if (!name.trim()) return;
-    await addDoc(getProjectRef(userId), {
-        name: name.trim(),
-        createdAt: new Date(),
-        ownerId: userId
+    return onSnapshot(q, (snapshot) => {
+        const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        onUpdate(projects);
     });
 }
 
-export async function deleteProject(userId, projectId) {
-    if (!confirm("プロジェクトを削除しますか？タスクは削除されませんが、Inboxに移動します。")) return;
-    await deleteDoc(doc(getProjectRef(userId), projectId));
-}
-
-export function subscribeProjects(userId, callback) {
-    const q = query(getProjectRef(userId), orderBy("createdAt", "asc"));
-    return onSnapshot(q, (snapshot) => {
-        const projects = [];
-        snapshot.forEach(doc => projects.push({ id: doc.id, ...doc.data() }));
-        callback(projects);
+export async function addProject(userId, name) {
+    const appId = window.GLOBAL_APP_ID;
+    const path = `/artifacts/${appId}/users/${userId}/projects`;
+    await addDoc(collection(db, path), {
+        name,
+        ownerId: userId,
+        createdAt: new Date()
     });
 }
