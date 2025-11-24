@@ -1,5 +1,5 @@
 // 更新日: 2025-11-25
-// 役割: タスク一覧の描画、編集、ドラッグ＆ドロップ、ラベル選択UI
+// 役割: タスク一覧の描画、編集、詳細メモUI
 
 import { updateTask, removeLabelFromTask, addLabelToTask } from "./store.js";
 import { getProjectName, getLabelDetails, getAllLabels } from "./ui-sidebar.js";
@@ -34,17 +34,16 @@ export function renderTaskList(tasks, currentUserId, showCompleted = true) {
     filteredTasks.forEach(task => {
         const isCompleted = task.status === 'completed';
         const overdue = isOverdue(task.dueDate);
+        const hasDescription = task.description && task.description.trim().length > 0;
         const li = document.createElement('li');
         
         li.draggable = true;
         li.dataset.id = task.id;
         li.dataset.status = task.status;
         
-        // プロジェクト名
         const projectName = getProjectName(task.projectId);
         const projectBadge = projectName ? `<span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">#${projectName}</span>` : '';
 
-        // ラベルバッジ（既存のもの）
         let labelBadges = '';
         if (task.labelIds && task.labelIds.length > 0) {
             task.labelIds.forEach(lblId => {
@@ -62,9 +61,8 @@ export function renderTaskList(tasks, currentUserId, showCompleted = true) {
 
         let borderColor = isCompleted ? 'border-gray-300' : (overdue ? 'border-red-500' : 'border-blue-500');
         
-        li.className = `p-4 border-l-4 ${borderColor} bg-white rounded-lg shadow flex justify-between items-start hover:shadow-lg transition cursor-move ${isCompleted ? 'opacity-60' : ''}`;
+        li.className = `p-4 border-l-4 ${borderColor} bg-white rounded-lg shadow transition cursor-move ${isCompleted ? 'opacity-60' : ''}`;
         
-        // ★UI変更: ラベル追加ボタンとプルダウンコンテナを追加
         li.innerHTML = `
             <div class="flex items-start flex-grow space-x-3 pointer-events-none">
                 <input type="checkbox" class="task-toggle mt-1.5 w-5 h-5 cursor-pointer text-blue-600 pointer-events-auto" ${isCompleted ? 'checked' : ''}>
@@ -73,19 +71,33 @@ export function renderTaskList(tasks, currentUserId, showCompleted = true) {
                     <div class="flex flex-wrap items-center gap-2 mb-1">
                         ${projectBadge}
                         ${labelBadges}
-                        <!-- ラベル追加ボタン -->
                         <button class="add-label-btn text-xs bg-gray-100 hover:bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 transition-colors" title="ラベルを追加">
                             + Tag
                         </button>
-                        <!-- ラベル選択プルダウン (初期は非表示) -->
-                        <div class="label-dropdown hidden absolute top-6 left-0 z-20 bg-white border border-gray-200 shadow-lg rounded-lg p-2 w-48 max-h-48 overflow-y-auto">
-                            <!-- JSで生成 -->
-                        </div>
+                        <!-- メモボタン -->
+                         <button class="toggle-description-btn text-xs ${hasDescription ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-gray-100 text-gray-500 border-gray-200'} hover:opacity-80 px-1.5 py-0.5 rounded border transition-colors" title="詳細メモ">
+                            📝
+                        </button>
+                        
+                        <div class="label-dropdown hidden absolute top-6 left-0 z-20 bg-white border border-gray-200 shadow-lg rounded-lg p-2 w-48 max-h-48 overflow-y-auto"></div>
                     </div>
                     
                     <span class="task-title-span text-gray-800 text-lg ${isCompleted ? 'line-through text-gray-500' : ''} cursor-pointer hover:bg-yellow-50 px-1 rounded block truncate">
                         ${task.title}
                     </span>
+                    
+                    <!-- 詳細メモエリア (初期は非表示) -->
+                    <div class="task-description-area hidden mt-2 w-full">
+                         <textarea class="w-full p-2 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none bg-yellow-50" rows="3" placeholder="詳細を入力...">${task.description || ''}</textarea>
+                         <div class="flex justify-end mt-1 space-x-2">
+                             <button class="cancel-description-btn text-xs text-gray-500 hover:text-gray-700">閉じる</button>
+                             <button class="save-description-btn text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">保存</button>
+                         </div>
+                    </div>
+                    <!-- 詳細プレビュー (エリアが閉じている時で、メモがある場合表示) -->
+                    <div class="task-description-preview mt-1 text-xs text-gray-500 truncate ${!hasDescription ? 'hidden' : ''}" title="${task.description || ''}">
+                        ${task.description || ''}
+                    </div>
                     
                     <div class="flex items-center space-x-3 text-sm text-gray-500 mt-1">
                         ${task.dueDate ? `
@@ -136,9 +148,11 @@ export function startEditing(li, taskId, oldTitle, currentUserId) {
     input.addEventListener('keypress', (e) => { if (e.key === 'Enter') finish(); });
 }
 
-// アクションハンドラ（ラベル削除、追加メニュー表示など）
 export async function handleTaskClickEvents(e, currentUserId) {
     const target = e.target;
+    const li = target.closest('li');
+    if (!li) return false;
+    const taskId = li.dataset.id;
     
     // 1. ラベル削除
     const labelBadge = target.closest('.task-label-badge');
@@ -150,22 +164,54 @@ export async function handleTaskClickEvents(e, currentUserId) {
         return true;
     }
 
-    // 2. ラベル追加メニュー表示
+    // 2. メモ開閉
+    if (target.matches('.toggle-description-btn')) {
+        e.stopPropagation();
+        const descArea = li.querySelector('.task-description-area');
+        const descPreview = li.querySelector('.task-description-preview');
+        
+        if (descArea.classList.contains('hidden')) {
+            descArea.classList.remove('hidden');
+            descPreview.classList.add('hidden');
+        } else {
+            descArea.classList.add('hidden');
+            if (descPreview.textContent.trim()) descPreview.classList.remove('hidden');
+        }
+        return true;
+    }
+
+    // 3. メモ保存
+    if (target.matches('.save-description-btn')) {
+        e.stopPropagation();
+        const textarea = li.querySelector('textarea');
+        const val = textarea.value;
+        await updateTask(currentUserId, taskId, { description: val });
+        
+        // 閉じる
+        const descArea = li.querySelector('.task-description-area');
+        descArea.classList.add('hidden');
+        return true;
+    }
+    
+    // 4. メモキャンセル
+    if (target.matches('.cancel-description-btn')) {
+        e.stopPropagation();
+        const descArea = li.querySelector('.task-description-area');
+        const descPreview = li.querySelector('.task-description-preview');
+        descArea.classList.add('hidden');
+        if (descPreview.textContent.trim()) descPreview.classList.remove('hidden');
+        return true;
+    }
+
+    // 5. ラベル追加メニュー表示
     if (target.matches('.add-label-btn')) {
         e.stopPropagation();
-        // 他の開いているプルダウンを閉じる
         document.querySelectorAll('.label-dropdown').forEach(el => el.classList.add('hidden'));
 
-        const li = target.closest('li');
-        const taskId = li.dataset.id;
         const dropdown = li.querySelector('.label-dropdown');
-        
-        // プルダウンの中身を生成
         renderLabelDropdown(dropdown, taskId, currentUserId);
-        
         dropdown.classList.remove('hidden');
 
-        // 外側クリックで閉じる処理
         const closeDropdown = (ev) => {
             if (!dropdown.contains(ev.target) && ev.target !== target) {
                 dropdown.classList.add('hidden');
@@ -176,16 +222,13 @@ export async function handleTaskClickEvents(e, currentUserId) {
         return true;
     }
 
-    // 3. プルダウン内のクリック（チェックボックス操作）は伝播させない
-    if (target.closest('.label-dropdown')) {
-        // e.stopPropagation(); // チェックボックスのchangeイベントを通すためにここは止めないほうがいい場合もあるが、親のliクリックイベント（編集など）を防ぐ
-        return true; // main.jsで後続処理をスキップさせるフラグ
+    if (target.closest('.label-dropdown') || target.closest('.task-description-area')) {
+        return true; 
     }
 
     return false;
 }
 
-// プルダウンの中身（チェックボックス一覧）を生成
 function renderLabelDropdown(container, taskId, currentUserId) {
     const labels = getAllLabels();
     container.innerHTML = '';
@@ -195,39 +238,17 @@ function renderLabelDropdown(container, taskId, currentUserId) {
         return;
     }
 
-    // 現在のタスクのラベルIDを取得（DOMから逆算せずstoreから取れればベストだが、今回はDOM更新のタイミングで描画しているのでバッジから推測も可能。
-    // しかし、正確にはタスクデータを参照したい。ここでは簡単のため、DOM上のバッジをチェックするか、単純にクリックでトグルさせる）
-    // チェック状態を正しく反映するにはタスクのデータが必要ですが、引数で渡していないため、
-    // ここではシンプルに「クリックしたら追加/削除」を実行するリストにします。
-    // （※本来はタスクオブジェクトのlabelIdsを参照してchecked属性をつけるべきです）
-
     labels.forEach(lbl => {
         const div = document.createElement('div');
         div.className = 'flex items-center p-1 hover:bg-gray-50 rounded cursor-pointer';
-        
-        // 色丸
         const colorBox = `<span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color: ${lbl.color}"></span>`;
-        
-        div.innerHTML = `
-            <label class="flex items-center w-full cursor-pointer text-sm text-gray-700">
-                ${colorBox} ${lbl.name}
-            </label>
-        `;
+        div.innerHTML = `<label class="flex items-center w-full cursor-pointer text-sm text-gray-700">${colorBox} ${lbl.name}</label>`;
 
         div.addEventListener('click', async () => {
-            // 現在の状態を確認してトグル（簡易実装：追加を試みて、UI上で既に付与済みなら削除ロジックなど…
-            // 今回はシンプルに「クリック＝追加」として実装し、削除はバッジの×ボタンで行うのがUX的に明確かもしれません。
-            // しかし「プルダウンで複数選択」という要望なので、チェックボックス式が良いですね。
-            
-            // 暫定対応: クリックで強制追加 (削除はバッジで)。
-            // 本格的なトグルにするにはタスクの現在のlabelIdsを知る必要があるため。
             await addLabelToTask(currentUserId, taskId, lbl.id);
-            
-            // 視覚的なフィードバック（一瞬背景色を変えるなど）
             div.style.backgroundColor = '#dbeafe';
             setTimeout(() => div.style.backgroundColor = '', 200);
         });
-
         container.appendChild(div);
     });
 }

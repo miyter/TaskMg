@@ -1,5 +1,5 @@
 // 更新日: 2025-11-25
-// 役割: タスクデータのFirestore読み書きを担当（プロジェクト・ラベル対応版）
+// 役割: タスクデータのFirestore読み書きを担当（プロジェクト・ラベル・詳細メモ対応版）
 
 import { 
     collection, 
@@ -41,6 +41,7 @@ export async function addTask(userId, title, dueDate = null, projectId = null) {
     try {
         await addDoc(getTaskCollection(userId), {
             title: title.trim(),
+            description: "", // ★追加: 詳細メモ用
             status: "todo",
             dueDate: firestoreDueDate,
             projectId: projectId,
@@ -73,9 +74,6 @@ export async function updateTask(userId, taskId, updates) {
     }
 }
 
-/**
- * タスクにラベルを追加
- */
 export async function addLabelToTask(userId, taskId, labelId) {
     if (!isInitialized || !userId) return;
     try {
@@ -89,9 +87,6 @@ export async function addLabelToTask(userId, taskId, labelId) {
     }
 }
 
-/**
- * タスクからラベルを削除
- */
 export async function removeLabelFromTask(userId, taskId, labelId) {
     if (!isInitialized || !userId) return;
     try {
@@ -128,10 +123,6 @@ export async function deleteTask(userId, taskId) {
     }
 }
 
-/**
- * タスク一覧のリアルタイム監視
- * filterCondition: { type: 'project'|'label'|'all', value: string|null }
- */
 export function subscribeToTasks(userId, callback, filterCondition = { type: 'all', value: null }) {
     if (!isInitialized || !userId) return;
 
@@ -143,18 +134,16 @@ export function subscribeToTasks(userId, callback, filterCondition = { type: 'al
             tasks.push({ id: doc.id, ...doc.data() });
         });
 
-        // メモリ内フィルタリング
         if (filterCondition.type === 'project') {
             const projectId = filterCondition.value;
             if (projectId === 'inbox') {
                 tasks = tasks.filter(t => !t.projectId);
-            } else if (projectId && projectId !== 'all') { // ★修正: 'all'の場合はフィルタリングしない
+            } else if (projectId && projectId !== 'all') {
                 tasks = tasks.filter(t => t.projectId === projectId);
             }
         } else if (filterCondition.type === 'label') {
             const labelId = filterCondition.value;
             if (labelId) {
-                // ラベル配列に含まれているか
                 tasks = tasks.filter(t => t.labelIds && t.labelIds.includes(labelId));
             }
         }
