@@ -1,9 +1,9 @@
 // 更新日: 2025-11-25 修正版 (ダッシュボードメニュー追加)
 // 役割: サイドバー（プロジェクト・ラベル）の描画とイベント設定
 
-import { addProject, subscribeProjects, deleteProject } from "./project-store.js";
-import { addLabel, subscribeLabels, deleteLabel } from "./label-store.js";
-import { addLabelToTask } from "./store.js";
+import { addProject, subscribeProjects, deleteProject } from "../store/projects.js";
+import { addLabel, subscribeLabels, deleteLabel } from "../store/labels.js";
+import { addLabelToTask } from "../store/store.js";
 
 const projectList = document.getElementById('project-list');
 const labelList = document.getElementById('label-list');

@@ -1,16 +1,14 @@
-// --- メインエントリーポイント (更新日: 2025-11-25 リファクタリング) ---
-import { initAuthListener, loginWithEmail, logout } from './auth.js';
-import { subscribeTasks, getCurrentFilter, setFilter } from './store.js';
-import { setupTaskUI, renderTaskList } from './ui-task.js';
-import { initSidebar, cleanupSidebar, updateSidebarSelection, updateViewTitle } from './ui-sidebar.js';
-import { updateDashboard } from './ui-dashboard.js'; 
-import { initSettingsUI } from './ui-settings.js'; 
-// ★コンポーネント生成をインポート
-import { renderModals } from './ui-components.js';
+// --- メインエントリーポイント (最終版) ---
+import { initAuthListener, loginWithEmail, logout } from './core/auth.js';
+import { subscribeTasks, getCurrentFilter, setFilter } from './store/tasks.js';
+import { setupTaskUI, renderTaskList } from './ui/task-view.js';
+import { initSidebar, cleanupSidebar, updateSidebarSelection, updateViewTitle } from './ui/sidebar.js';
+import { updateDashboard } from './ui/dashboard.js'; 
+import { initSettingsUI } from './ui/settings.js'; 
+import { renderModals } from './ui/components.js';
+// ★追加: 認証UI制御をインポート
+import { updateAuthUI } from './ui/auth.js';
 
-const loginForm = document.getElementById('login-form-container');
-const userInfo = document.getElementById('user-info');
-const userDisplay = document.getElementById('user-display-name');
 const emailIn = document.getElementById('email-input');
 const passIn = document.getElementById('password-input');
 const taskView = document.getElementById('task-view');
@@ -20,20 +18,17 @@ let currentViewMode = 'tasks';
 let allTasksCache = []; 
 
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // ★最初にモーダルなどのHTMLコンポーネントを生成
     renderModals();
 
     initAuthListener((user) => {
+        // ★修正: UI更新を専用モジュールに任せる
+        updateAuthUI(user);
+
         if (user) {
             console.log("Login:", user.uid);
-            loginForm.classList.add('hidden');
-            userInfo.classList.remove('hidden');
-            const displayName = user.email ? user.email.split('@')[0] : "ユーザー";
-            userDisplay.textContent = displayName;
             
             setupTaskUI(user.uid);
-            initSettingsUI(user.uid); // モーダル生成後に呼ぶ
+            initSettingsUI(user.uid); 
 
             initSidebar(user.uid, getCurrentFilter(), (selection) => {
                 if (selection.type === 'dashboard') {
@@ -73,8 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } else {
             console.log("Logout");
-            loginForm.classList.remove('hidden');
-            userInfo.classList.add('hidden');
             if (typeof cleanupSidebar === 'function') cleanupSidebar();
             renderTaskList([], {}); 
         }

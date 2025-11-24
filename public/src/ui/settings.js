@@ -1,8 +1,6 @@
-// --- 設定UI制御モジュール (新規作成) ---
-// 役割: 設定モーダルの開閉、パスワード変更、データエクスポート制御
-
-import { updateUserPassword } from './auth.js';
-import { createBackupData } from './store.js';
+// --- 設定UI (移動: public/ui-settings.js -> src/ui/settings.js) ---
+import { updateUserPassword } from '../core/auth.js';
+import { createBackupData } from '../store/tasks.js';
 
 const settingsBtn = document.getElementById('settings-btn');
 const settingsModal = document.getElementById('settings-modal');
@@ -16,21 +14,17 @@ let currentUserId = null;
 export function initSettingsUI(userId) {
     currentUserId = userId;
 
-    // モーダル開閉
     if (settingsBtn) {
         settingsBtn.onclick = () => {
             settingsModal.classList.remove('hidden');
         };
     }
-
     if (closeSettingsBtn) {
         closeSettingsBtn.onclick = () => {
             settingsModal.classList.add('hidden');
-            newPasswordInput.value = ''; // リセット
+            newPasswordInput.value = ''; 
         };
     }
-
-    // パスワード変更
     if (updatePasswordBtn) {
         updatePasswordBtn.onclick = async () => {
             const newPass = newPasswordInput.value;
@@ -38,7 +32,6 @@ export function initSettingsUI(userId) {
                 alert("パスワードは6文字以上で入力してください。");
                 return;
             }
-            
             try {
                 await updateUserPassword(newPass);
                 alert("パスワードを変更しました。");
@@ -53,16 +46,12 @@ export function initSettingsUI(userId) {
             }
         };
     }
-
-    // データエクスポート
     if (exportDataBtn) {
         exportDataBtn.onclick = async () => {
             if (!currentUserId) return;
-            
             const originalText = exportDataBtn.innerHTML;
             exportDataBtn.disabled = true;
             exportDataBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 作成中...';
-
             try {
                 const data = await createBackupData(currentUserId);
                 downloadJSON(data, `task_manager_backup_${getTimestamp()}.json`);
@@ -78,12 +67,10 @@ export function initSettingsUI(userId) {
     }
 }
 
-// JSONファイルとしてダウンロードさせるヘルパー
 function downloadJSON(data, filename) {
     const jsonStr = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;

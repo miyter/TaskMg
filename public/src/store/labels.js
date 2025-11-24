@@ -1,6 +1,6 @@
-// --- ラベル操作モジュール ---
+// --- ラベルStore (移動: public/label-store.js -> src/store/labels.js) ---
 import { collection, addDoc, query, onSnapshot, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { db, appId } from './firebase-init.js';
+import { db, appId } from '../core/firebase.js';
 
 const PRESET_COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899'];
 

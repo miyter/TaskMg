@@ -1,10 +1,7 @@
-// --- UIコンポーネント生成 (新規作成) ---
-// 役割: HTMLファイルから大きな静的コンテンツ（モーダル等）を分離して注入する
-
+// --- UIコンポーネント (移動: public/ui-components.js -> src/ui/components.js) ---
 export function renderModals() {
     const modalContainer = document.createElement('div');
     modalContainer.innerHTML = `
-        <!-- 編集モーダル -->
         <div id="edit-task-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 relative transform transition-transform scale-95 hover:scale-100 duration-200">
                 <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"><i class="fas fa-times fa-lg"></i></button>
@@ -30,7 +27,6 @@ export function renderModals() {
             </div>
         </div>
 
-        <!-- 設定モーダル -->
         <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 relative transform transition-transform scale-95 hover:scale-100 duration-200">
                 <button id="close-settings-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"><i class="fas fa-times fa-lg"></i></button>

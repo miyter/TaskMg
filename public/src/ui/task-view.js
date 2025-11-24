@@ -1,6 +1,6 @@
-// --- タスクUI制御 (完全版：最終調整) ---
-import { addTask, toggleTaskStatus, deleteTask, setFilter, getCurrentFilter, removeLabelFromTask, updateTask, addLabelToTask } from './store.js';
-import { getAllLabels, getLabelDetails } from './ui-sidebar.js'; 
+// --- タスク一覧UI (移動: public/ui-task.js -> src/ui/task-view.js) ---
+import { addTask, toggleTaskStatus, deleteTask, setFilter, getCurrentFilter, removeLabelFromTask, updateTask, addLabelToTask } from '../store/tasks.js';
+import { getAllLabels, getLabelDetails } from './sidebar.js';
 
 const taskList = document.getElementById('task-list');
 const taskTitleInput = document.getElementById('task-title-input');
@@ -12,7 +12,6 @@ const searchInput = document.getElementById('search-input');
 const showCompletedToggle = document.getElementById('show-completed-toggle');
 const sortSelect = document.getElementById('sort-select');
 
-// モーダル要素
 const editModal = document.getElementById('edit-task-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const cancelEditBtn = document.getElementById('cancel-edit-btn');
@@ -30,7 +29,6 @@ let editingTaskId = null;
 export function setupTaskUI(userId) {
     currentUserId = userId;
     
-    // イベントリスナー重複防止のためのクローン再配置
     const newBtn = addTaskBtn.cloneNode(true);
     addTaskBtn.parentNode.replaceChild(newBtn, addTaskBtn);
     newBtn.addEventListener('click', handleAddTask);
@@ -47,24 +45,19 @@ export function setupTaskUI(userId) {
         setFilter({ sort: e.target.value });
     });
 
-    // モーダルイベント
     closeModalBtn.onclick = closeEditModal;
     cancelEditBtn.onclick = closeEditModal;
-    
-    // モーダル外クリックで閉じる
     editModal.onclick = (e) => {
         if (e.target === editModal) closeEditModal();
     };
     
     saveTaskBtn.onclick = async () => {
         if (!editingTaskId || !currentUserId) return;
-        
         const titleVal = editTitle.value.trim();
         if (!titleVal) {
             alert("タイトルは必須です。");
             return;
         }
-
         const updates = {
             title: titleVal,
             dueDate: editDate.value,
@@ -84,20 +77,19 @@ export function setupTaskUI(userId) {
         }
     };
 
-    // モーダル内のラベル追加
     editAddLabelSelect.onchange = async (e) => {
         const labelId = e.target.value;
         if (labelId && editingTaskId) {
             await addLabelToTask(currentUserId, editingTaskId, labelId);
             e.target.value = ''; 
-            updateModalLabels(editingTaskId); // 再描画待ちの間にUI更新したいが、今回はstore更新待ち
+            updateModalLabels(editingTaskId);
         }
     };
 }
 
 function closeEditModal() {
     editModal.classList.add('hidden');
-    document.body.classList.remove('modal-open'); // スクロールロック解除
+    document.body.classList.remove('modal-open'); 
     editingTaskId = null;
 }
 
@@ -118,12 +110,9 @@ function openEditModal(task) {
 
     updateModalLabels(task.id, task.labelIds);
     
-    // プルダウン選択肢更新
     const allLabels = getAllLabels();
     editAddLabelSelect.innerHTML = '<option value="">＋ タグを追加...</option>';
     allLabels.forEach(l => {
-        // 既に付与されているタグは除外するか、UI上で分かるようにするのが親切だが、
-        // 簡易実装として全て表示し、重複追加はFirestore側(arrayUnion)で防ぐ
         const opt = document.createElement('option');
         opt.value = l.id;
         opt.textContent = l.name;
@@ -131,7 +120,7 @@ function openEditModal(task) {
     });
 
     editModal.classList.remove('hidden');
-    document.body.classList.add('modal-open'); // 背景スクロールロック
+    document.body.classList.add('modal-open');
 }
 
 function updateModalLabels(taskId, labelIds = null) {
@@ -154,13 +143,11 @@ function updateModalLabels(taskId, labelIds = null) {
                 <i class="fas fa-times"></i>
             </button>
         `;
-        
         badge.querySelector('.remove-tag-modal').onclick = async (e) => {
             e.stopPropagation(); 
             await removeLabelFromTask(currentUserId, taskId, lid);
             badge.remove();
         };
-
         editLabelsContainer.appendChild(badge);
     });
 }
@@ -171,7 +158,7 @@ async function handleAddTask() {
         return;
     }
     const title = taskTitleInput.value.trim();
-    if (!title) return; // 空タイトルのガード
+    if (!title) return; 
 
     const recurrence = recurrenceSelect.value;
     const dueDate = taskDueDateInput.value; 
@@ -189,7 +176,6 @@ async function handleAddTask() {
     recurrenceSelect.value = 'none';
 }
 
-// トースト通知を表示するヘルパー
 function showToast(message, type = 'blue') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -197,19 +183,12 @@ function showToast(message, type = 'blue') {
     const toast = document.createElement('div');
     const bgColor = type === 'red' ? 'bg-red-500' : 'bg-gray-800';
     toast.className = `${bgColor} text-white text-sm px-4 py-3 rounded shadow-lg flex items-center transform transition-all duration-300 translate-y-2 opacity-0`;
-    toast.innerHTML = `
-        <i class="fas fa-info-circle mr-2"></i>
-        <span>${message}</span>
-    `;
+    toast.innerHTML = `<i class="fas fa-info-circle mr-2"></i><span>${message}</span>`;
 
     container.appendChild(toast);
-
-    // アニメーション
     requestAnimationFrame(() => {
         toast.classList.remove('translate-y-2', 'opacity-0');
     });
-
-    // 3秒後に消える
     setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-2');
         setTimeout(() => toast.remove(), 300);
@@ -219,19 +198,9 @@ function showToast(message, type = 'blue') {
 export function renderTaskList(tasks, filterState) {
     taskList.innerHTML = '';
     if (tasks.length === 0) {
-        // フィルタリング結果が0件の場合のメッセージ
         const isEmptyInbox = !filterState.projectId && !filterState.labelId && !filterState.searchQuery && !filterState.showCompleted;
-        const msg = isEmptyInbox 
-            ? "タスクがありません。新しいタスクを追加しましょう！✨" 
-            : "条件に一致するタスクは見つかりませんでした。";
-            
-        taskList.innerHTML = `
-            <li class="flex flex-col items-center justify-center py-12 text-center text-gray-400">
-                <div class="bg-gray-100 p-4 rounded-full mb-3">
-                    <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
-                </div>
-                <p class="text-sm">${msg}</p>
-            </li>`;
+        const msg = isEmptyInbox ? "タスクがありません。新しいタスクを追加しましょう！✨" : "条件に一致するタスクは見つかりませんでした。";
+        taskList.innerHTML = `<li class="flex flex-col items-center justify-center py-12 text-center text-gray-400"><div class="bg-gray-100 p-4 rounded-full mb-3"><i class="fas fa-clipboard-check fa-2x text-gray-300"></i></div><p class="text-sm">${msg}</p></li>`;
         return;
     }
 
@@ -250,9 +219,7 @@ export function renderTaskList(tasks, filterState) {
         });
 
         li.addEventListener('click', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.closest('.delete-btn') || e.target.closest('.remove-label-btn')) {
-                return;
-            }
+            if (e.target.tagName === 'INPUT' || e.target.closest('.delete-btn') || e.target.closest('.remove-label-btn')) return;
             openEditModal(task);
         });
 
@@ -261,14 +228,10 @@ export function renderTaskList(tasks, filterState) {
             const d = task.dueDate.toDate ? task.dueDate.toDate() : new Date(task.dueDate);
             const dateStr = d.toLocaleDateString();
             const isOverdue = d < new Date() && !isCompleted;
-            
-            // 今日かどうか判定
             const today = new Date();
             const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
-            
             let colorClass = 'text-gray-500';
             let icon = 'fa-calendar-alt';
-            
             if (isOverdue) {
                 colorClass = 'text-red-500 font-bold';
                 icon = 'fa-exclamation-circle';
@@ -276,71 +239,44 @@ export function renderTaskList(tasks, filterState) {
                 colorClass = 'text-blue-600 font-bold';
                 icon = 'fa-calendar-day';
             }
-
             dueDateHtml = `<span class="text-xs ${colorClass} ml-3 flex items-center" title="期限: ${dateStr}"><i class="fas ${icon} mr-1"></i> ${dateStr}</span>`;
         }
 
-        const recurIcon = task.recurrence && task.recurrence.type !== 'none' 
-            ? `<span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-100 ml-2 flex items-center"><i class="fas fa-sync-alt mr-1"></i> ${getRecurLabel(task.recurrence.type)}</span>` 
-            : '';
-
-        const descIcon = task.description 
-            ? `<span class="text-gray-400 ml-2" title="メモあり"><i class="fas fa-sticky-note"></i></span>` 
-            : '';
+        const recurIcon = task.recurrence && task.recurrence.type !== 'none' ? `<span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-100 ml-2 flex items-center"><i class="fas fa-sync-alt mr-1"></i> ${getRecurLabel(task.recurrence.type)}</span>` : '';
+        const descIcon = task.description ? `<span class="text-gray-400 ml-2" title="メモあり"><i class="fas fa-sticky-note"></i></span>` : '';
 
         let labelBadges = '';
         if (task.labelIds && task.labelIds.length > 0) {
             const badgesHtml = task.labelIds.map(lid => {
                 const label = getLabelDetails(lid);
                 if (!label) return '';
-                return `<span class="text-xs bg-white text-gray-600 px-2 py-0.5 rounded-full border border-gray-200 flex items-center hover:bg-gray-50 transition-colors mr-1 mb-1 remove-label-btn group-tag" data-lid="${lid}" title="クリックで削除">
-                    <span class="w-1.5 h-1.5 rounded-full mr-1.5" style="background-color: ${label.color}"></span>
-                    ${label.name}
-                    <i class="fas fa-times ml-1.5 text-gray-300 group-tag-hover:text-red-400 opacity-0 group-tag-hover:opacity-100 transition-opacity" style="font-size: 0.7em;"></i>
-                </span>`;
+                return `<span class="text-xs bg-white text-gray-600 px-2 py-0.5 rounded-full border border-gray-200 flex items-center hover:bg-gray-50 transition-colors mr-1 mb-1 remove-label-btn group-tag" data-lid="${lid}" title="クリックで削除"><span class="w-1.5 h-1.5 rounded-full mr-1.5" style="background-color: ${label.color}"></span>${label.name}<i class="fas fa-times ml-1.5 text-gray-300 group-tag-hover:text-red-400 opacity-0 group-tag-hover:opacity-100 transition-opacity" style="font-size: 0.7em;"></i></span>`;
             }).join('');
-            
             labelBadges = `<div class="mt-2 flex flex-wrap pl-9">${badgesHtml}</div>`;
         }
 
-        // スタイル: 完了済みは薄く、ボーダー色変更
         const borderClass = isCompleted ? 'border-gray-200 bg-gray-50' : 'border-gray-200 bg-white hover:border-blue-300';
         const opacityClass = isCompleted ? 'opacity-75' : '';
 
         li.className = `p-4 mb-3 rounded-xl border shadow-sm flex flex-col transition-all duration-200 cursor-pointer ${borderClass} ${opacityClass}`;
-        
         li.innerHTML = `
             <div class="flex items-start justify-between w-full">
                 <div class="flex items-start flex-1 min-w-0">
                     <div class="relative flex items-center justify-center w-6 h-6 mr-3 flex-shrink-0 mt-0.5">
-                        <input type="checkbox" ${isCompleted ? 'checked' : ''} 
-                               class="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-blue-500 checked:border-blue-500 transition-all duration-200 hover:border-blue-400">
-                        <i class="fas fa-check text-white absolute text-xs opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200"></i>
+                        <input type="checkbox" ${isCompleted ? 'checked' : ''} class="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-blue-500 checked:border-blue-500 transition-all duration-200 hover:border-blue-400"><i class="fas fa-check text-white absolute text-xs opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200"></i>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center flex-wrap mb-0.5">
-                            <span class="truncate font-medium text-base ${isCompleted ? 'line-through text-gray-400' : 'text-gray-800'}">${task.title}</span>
-                            ${recurIcon}
-                            ${descIcon}
-                            ${dueDateHtml}
-                        </div>
+                        <div class="flex items-center flex-wrap mb-0.5"><span class="truncate font-medium text-base ${isCompleted ? 'line-through text-gray-400' : 'text-gray-800'}">${task.title}</span>${recurIcon}${descIcon}${dueDateHtml}</div>
                         ${task.description ? `<p class="text-xs text-gray-500 truncate pl-0.5 max-w-md">${task.description}</p>` : ''}
                     </div>
                 </div>
-                <button class="delete-btn text-gray-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" title="削除">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </div>
-            ${labelBadges}
-        `;
+                <button class="delete-btn text-gray-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" title="削除"><i class="fas fa-trash-alt"></i></button>
+            </div>${labelBadges}`;
 
-        // イベント設定（チェックボックス）
         li.querySelector('input').addEventListener('click', (e) => {
             e.stopPropagation();
             toggleTaskStatus(currentUserId, task.id, task.status, task);
-            // 完了時のアニメーション効果などを入れるならここ
         });
-
         li.querySelector('.delete-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
             if(confirm("このタスクを削除しますか？")) {
@@ -348,13 +284,9 @@ export function renderTaskList(tasks, filterState) {
                 showToast("タスクを削除しました", "red");
             }
         });
-        
-        // バッジ削除
         li.querySelectorAll('.remove-label-btn').forEach(btn => {
-            // ホバー時の×アイコン表示用クラス操作
             btn.addEventListener('mouseenter', () => btn.querySelector('.fa-times').classList.remove('opacity-0'));
             btn.addEventListener('mouseleave', () => btn.querySelector('.fa-times').classList.add('opacity-0'));
-
             btn.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 const lid = btn.getAttribute('data-lid');
@@ -363,11 +295,9 @@ export function renderTaskList(tasks, filterState) {
                 }
             });
         });
-
         taskList.appendChild(li);
     });
     
-    // 件数バッジ更新
     const badge = document.getElementById('task-count-badge');
     if(badge) badge.textContent = tasks.length;
 }

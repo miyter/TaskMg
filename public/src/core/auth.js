@@ -1,16 +1,17 @@
-// --- 認証モジュール (更新日: 2025-11-25 修正版) ---
+// --- 認証ロジック (移動: public/auth.js -> src/core/auth.js) ---
 import { 
     signInWithEmailAndPassword, 
     signOut, 
     onAuthStateChanged, 
-    signInWithCustomToken 
+    signInWithCustomToken,
+    updatePassword 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { auth, isInitialized } from './firebase-init.js';
+// ★パス変更
+import { auth, isInitialized } from './firebase.js';
 
 let currentUser = null;
 const initialAuthToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
 
-// ★この関数が見つからないエラーが出ています。確実にここにあるか確認してください！
 export function initAuthListener(onUserChanged) {
     if (!isInitialized) return;
 
@@ -19,22 +20,24 @@ export function initAuthListener(onUserChanged) {
         onUserChanged(user);
     });
 
-    // 初期トークンがあればログイン試行（Canvas環境用）
     if (initialAuthToken) {
         signInWithCustomToken(auth, initialAuthToken).catch(e => console.error("Token Auth Error:", e));
     }
 }
 
-// メールログイン
 export async function loginWithEmail(email, password) {
     if (!isInitialized) throw new Error("Firebase not initialized");
     return await signInWithEmailAndPassword(auth, email, password);
 }
 
-// ログアウト
 export async function logout() {
     if (!isInitialized) return;
     await signOut(auth);
+}
+
+export async function updateUserPassword(newPassword) {
+    if (!auth.currentUser) throw new Error("ログインしていません");
+    await updatePassword(auth.currentUser, newPassword);
 }
 
 export function getCurrentUser() {

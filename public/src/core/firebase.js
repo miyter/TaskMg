@@ -1,4 +1,4 @@
-// --- Firebase SDK 初期化モジュール ---
+// --- Firebase初期化 (移動: public/firebase-init.js -> src/core/firebase.js) ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";

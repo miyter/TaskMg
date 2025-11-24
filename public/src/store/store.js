@@ -2,10 +2,10 @@
 import { 
     collection, addDoc, query, onSnapshot, doc, updateDoc, orderBy, deleteDoc, arrayUnion, arrayRemove, getDocs 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { db, appId } from './firebase-init.js';
+import { db, appId } from '../core/firebase.js';
 // ★他のStoreからデータを購読して内部キャッシュする
-import { subscribeProjects } from './project-store.js';
-import { subscribeLabels } from './label-store.js';
+import { subscribeProjects } from './projects.js';
+import { subscribeLabels } from './labels.js';
 
 // --- State ---
 let tasks = [];
