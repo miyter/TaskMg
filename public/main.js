@@ -1,8 +1,9 @@
-// --- メインエントリーポイント (統合版) ---
+// --- メインエントリーポイント (更新日: 2025-11-25 修正版) ---
 import { initAuthListener, loginWithEmail, logout } from './auth.js';
-import { subscribeTasks } from './store.js';
+import { subscribeTasks, getCurrentFilter, setFilter } from './store.js';
 import { setupTaskUI, renderTaskList } from './ui-task.js';
-import { setupSidebar } from './ui-sidebar.js'; // サイドバー統合
+// ★修正: ui-sidebar.js の正しい関数名 'initSidebar' をインポート
+import { initSidebar, cleanupSidebar } from './ui-sidebar.js';
 
 // UI要素
 const loginForm = document.getElementById('login-form-container');
@@ -10,7 +11,6 @@ const userInfo = document.getElementById('user-info');
 const userDisplay = document.getElementById('user-display-name');
 const emailIn = document.getElementById('email-input');
 const passIn = document.getElementById('password-input');
-const loginMsg = document.getElementById('login-error-message'); // index.htmlに追加が必要かも？なければエラーにならないよう配慮
 
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -21,12 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
             userInfo.classList.remove('hidden');
             userDisplay.textContent = user.email;
             
-            // 各モジュールのセットアップ
-            setupSidebar(user.uid);
+            // ★修正: setupSidebar ではなく initSidebar を呼び出す
+            initSidebar(user.uid, getCurrentFilter(), (newFilter) => {
+                // サイドバーで選択されたらフィルタを更新
+                setFilter(newFilter);
+            });
+            
             setupTaskUI(user.uid);
             
             // タスクデータの購読開始
-            // store.jsでフィルタリングされた結果が返ってくる
             subscribeTasks(user.uid, (tasks, filterState) => {
                 renderTaskList(tasks, filterState);
             });
@@ -35,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Logout");
             loginForm.classList.remove('hidden');
             userInfo.classList.add('hidden');
+            
+            // ★修正: クリーンアップも反映
+            if (typeof cleanupSidebar === 'function') cleanupSidebar();
+            
             renderTaskList([], {});
         }
     });
