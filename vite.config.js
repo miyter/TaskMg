@@ -1,32 +1,32 @@
 import { defineConfig } from 'vite';
 import tailwindcss from 'tailwindcss';
 import autoprefixer from 'autoprefixer';
-// import path from 'path'; // ★削除: pathモジュールを削除し、Node.jsのパス解決ロジックに依存しないようにする
+import path from 'path'; 
 
 // @miyter:20251125
-// Windowsの日本語パスエラーを回避するため、pathモジュールと絶対パスを回避
+// index.htmlがプロジェクトルート直下にある構造に合わせ、パスを最終修正
 
 export default defineConfig({
-  // rootオプションは削除したまま
+  // ★修正1: rootオプションを削除 (index.htmlがルート直下にあるため)
   
-  // ビルド成果物の出力先: プロジェクトルートに dist を出力
+  // ビルド成果物の出力先: プロジェクトルート (TaskMg) に dist を出力
   build: {
     outDir: 'dist', 
     emptyOutDir: true, 
-    // ★修正1: inputをプロジェクトルートからの相対パスとしてシンプルに指定
-    //         Rollupがこれを直接受け取り、パス解決のミスマッチを避けることを期待
+    // ★修正2: inputをプロジェクトルートからの相対パスに修正
+    //         index.htmlがルート直下にあるため、ファイル名だけを指定
     rollupOptions: {
       input: {
-        main: 'public/index.html', // プロジェクトルートからの相対パス
+        main: './index.html', 
       },
     },
   },
   
-  // 2. エイリアス設定: Rollupのパス解決に依存しないように、pathモジュールも削除
+  // 2. エイリアス設定: rootが削除されたため、'@' が public/src を指すように修正
   resolve: {
     alias: {
-      // pathモジュールを使用しないエイリアス定義 (Vite v5+の推奨外だが、日本語パス回避のため)
-      // VITEが自動的にプロジェクトルートを基準に解決することを期待
+      // @/core/auth.js が TaskMg/public/src/core/auth.js を指すように設定
+      // pathモジュールを使わずに相対パスで記述 (最もシンプルな手法)
       '@': './public/src', 
     },
   },
