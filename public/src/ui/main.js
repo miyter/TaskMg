@@ -1,18 +1,22 @@
-import { initAuthListener } from '../core/auth.js';
-import { subscribeToTasks, addTask } from '../store/store.js';
-import { subscribeToProjects } from '../store/projects.js';
-import { subscribeToLabels } from '../store/labels.js';
-import { filterTasks, sortTasks } from '../logic/search.js';
-import { initAuthUI, updateAuthUI } from './auth.js';
-import { initSidebar, renderProjects, renderLabels } from './sidebar.js';
-import { initTaskView, renderTaskList } from './task-view.js'; // ★修正: task-viewからinitTaskViewとrenderTaskListをインポート
-import { renderDashboard } from './dashboard.js';
-import { initSettings } from './settings.js';
-import { renderModals } from './components.js'; 
+// @miyter:20251125
+import "tailwindcss/tailwind.css"; // ViteでCSSをインポート
+
+// --- モジュールインポート (Vite絶対パス '@' に修正) ---
+import { initAuthListener } from '@/core/auth.js';
+import { subscribeToTasks, addTask } from '@/store/store.js';
+import { subscribeToProjects } from '@/store/projects.js';
+import { subscribeToLabels } from '@/store/labels.js';
+import { filterTasks, sortTasks } from '@/logic/search.js';
+import { initAuthUI, updateAuthUI } from './auth.js'; // 同一階層のため修正なし
+import { initSidebar, renderProjects, renderLabels } from './sidebar.js'; // 同一階層のため修正なし
+import { initTaskView, renderTaskList } from './task-view.js'; // 同一階層のため修正なし
+import { renderDashboard } from './dashboard.js'; // 同一階層のため修正なし
+import { initSettings } from './settings.js'; // 同一階層のため修正なし
+import { renderModals } from './components.js'; // 同一階層のため修正なし
 
 let allTasks = [];
 let allProjects = []; 
-let allLabels = [];   
+let allLabels = [];   
 let currentFilter = {
     keyword: '',
     projectId: null, // null = Inbox
@@ -163,7 +167,7 @@ function updateView() {
     const sorted = sortTasks(filtered, currentSort);
     
     // タスクリスト描画
-    import('../core/auth.js').then(m => {
+    import('@/core/auth.js').then(m => {
         renderTaskList(sorted, m.currentUserId);
     });
     

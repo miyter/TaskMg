@@ -1,15 +1,21 @@
-// --- 認証ロジック ---
+// @miyter:20251125
+// Vite導入に伴い、Firebase SDKのインポートをnpmパッケージ形式に、
+// ローカルモジュールのインポートを絶対パス '@' に修正
+
+// --- 修正1: Firebase SDKをnpmパッケージからインポート ---
 import { 
     signInWithEmailAndPassword,
     signOut,
     signInWithCustomToken,
     onAuthStateChanged,
     updatePassword
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+} from "firebase/auth";
 
-// ★修正: 相対パス './firebase.js' が原因でエラーを引き起こすため、
-//         モジュール間の参照エラーを防ぐために一旦直接インポートに戻します。
-import { auth, isFirebaseInitialized } from '../core/firebase.js'; 
+// --- 修正2: ローカルモジュールへのインポートパスを絶対パスに変更 ---
+import { auth, isFirebaseInitialized } from '@/core/firebase.js'; 
+// UI層のヘルパー関数（updatePasswordが依存するため）
+import { showMessageModal } from '@/ui/components.js'; 
+
 
 // 現在のユーザーID
 export let currentUserId = null;
@@ -49,7 +55,20 @@ export async function logout() {
 export async function updateUserPassword(newPassword) {
     const user = auth.currentUser;
     if (!user) {
+        showMessageModal("エラー", "認証されていません。", "error");
         throw new Error("認証されていません。");
     }
-    return await updatePassword(user, newPassword);
+    
+    try {
+        await updatePassword(user, newPassword);
+        showMessageModal("成功", "パスワードが正常に変更されました。", "success");
+    } catch (error) {
+        console.error("パスワード変更エラー:", error);
+        let message = "パスワードの変更に失敗しました。";
+        if (error.code === 'auth/requires-recent-login') {
+            message = "セキュリティ保護のため、パスワード変更には再ログインが必要です。一度ログアウトし、再度ログインしてから設定画面を開いてください。";
+        }
+        showMessageModal("エラー", message, "error");
+        throw error;
+    }
 }

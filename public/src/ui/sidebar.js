@@ -1,8 +1,12 @@
-// --- サイドバー制御 ---
-import { addProject } from '../store/projects.js';
-import { addLabel } from '../store/labels.js';
-import { updateTask } from '../store/store.js'; 
-// import { arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'; // Firestore SDKを直接インポートしない
+// @miyter:20251125
+// Vite導入に伴い、ローカルモジュールのインポートパスを絶対パス '@' に修正
+
+// --- 修正1: データストアモジュールへのインポートパスを絶対パスに変更 ---
+import { addProject } from '@/store/projects.js';
+import { addLabel } from '@/store/labels.js';
+import { updateTask } from '@/store/store.js'; 
+// Firestore SDKを直接インポートしないため、インポート行は削除済み
+
 
 // プロジェクト名を取得するヘルパー関数
 export function getProjectName(projectId, allProjects) {
@@ -95,7 +99,7 @@ export function initSidebar(userId, onSelectView) {
     // プロジェクト追加
     if (addProjBtn) {
         addProjBtn.addEventListener('click', async () => {
-            const name = prompt("新しいプロジェクト名:");
+            const name = prompt("新しいプロジェクト名:"); // promptは非推奨だが一旦維持
             if (name) await addProject(userId, name);
         });
     }
@@ -103,7 +107,7 @@ export function initSidebar(userId, onSelectView) {
     // ラベル追加
     if (addLabelBtn) {
         addLabelBtn.addEventListener('click', async () => {
-            const name = prompt("新しいラベル名:");
+            const name = prompt("新しいラベル名:"); // promptは非推奨だが一旦維持
             // 簡易的なランダムカラー生成
             const color = "#" + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
             if (name) await addLabel(userId, name, color);

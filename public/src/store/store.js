@@ -1,9 +1,15 @@
-// --- タスクデータ操作 ---
+// @miyter:20251125
+// Vite導入に伴い、Firebase SDKのインポートをnpmパッケージ形式に、
+// ローカルモジュールのインポートを絶対パス '@' に修正
+
+// --- 修正1: Firebase SDKをnpmパッケージからインポート ---
 import { 
     collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, Timestamp,
-    getDocs // ★追加: バックアップ用
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { db } from '../core/firebase.js';
+    getDocs 
+} from "firebase/firestore";
+
+// --- 修正2: ローカルモジュールへのインポートパスを絶対パスに変更 ---
+import { db } from '@/core/firebase.js';
 
 let unsubscribe = null;
 
@@ -11,6 +17,7 @@ export function subscribeToTasks(userId, onUpdate) {
     if (unsubscribe) unsubscribe();
     
     const appId = window.GLOBAL_APP_ID;
+    // ユーザー専用のタスクコレクションパス
     const path = `/artifacts/${appId}/users/${userId}/tasks`;
     const q = query(collection(db, path));
 
@@ -20,7 +27,7 @@ export function subscribeToTasks(userId, onUpdate) {
             return {
                 id: doc.id,
                 ...data,
-                // TimestampをDateオブジェクトまたは数値に変換
+                // TimestampをDateオブジェクトに変換（存在しない場合は新しいDateオブジェクト/null）
                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                 dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : null
             };
@@ -47,7 +54,7 @@ export async function updateTask(userId, taskId, updates) {
     
     // 日付データの変換処理
     if (updates.dueDate && !(updates.dueDate instanceof Date) && !(updates.dueDate instanceof Timestamp)) {
-         updates.dueDate = new Date(updates.dueDate);
+          updates.dueDate = new Date(updates.dueDate);
     }
     
     await updateDoc(ref, updates);

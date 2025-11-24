@@ -1,9 +1,14 @@
-// 更新日: 2025-11-25
+// @miyter:20251125
+// Vite導入に伴い、ローカルモジュールのインポートパスを絶対パス '@' に修正
+// confirm()およびshowToast()をshowMessageModalに置き換え
 // 役割: タスクリストのDOM描画と、リストアイテムに対するイベント処理を担当
 
-import { updateTask, deleteTask } from '../store/store.js';
+// --- 修正1: データストアモジュールへのインポートパスを絶対パスに変更 ---
+import { updateTask, deleteTask } from '@/store/store.js';
+// --- 修正2: UI層のモジュールへのインポートパスを修正 ---
 import { openEditModal } from './task-modal.js'; // モーダル機能
 import { getLabelDetails } from './sidebar.js'; // ラベル詳細取得
+import { showMessageModal } from './components.js'; // メッセージモーダル
 
 // =========================================================
 // ユーティリティ
@@ -14,22 +19,8 @@ function getRecurLabel(type) {
     return labels[type] || '';
 }
 
-function showToast(message, type = 'blue') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-    const toast = document.createElement('div');
-    const bgColor = type === 'red' ? 'bg-red-500' : 'bg-gray-800';
-    toast.className = `${bgColor} text-white text-sm px-4 py-3 rounded shadow-lg flex items-center transform transition-all duration-300 translate-y-2 opacity-0`;
-    toast.innerHTML = `<i class="fas fa-info-circle mr-2"></i><span>${message}</span>`;
-    container.appendChild(toast);
-    requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-    });
-    setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-2');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
+// showToastはshowMessageModalに置き換えられたため、削除（またはダミー維持）
+// 描画関数内でshowMessageModalを使用するようにロジックを修正する
 
 // =========================================================
 // メイン描画関数
@@ -55,11 +46,16 @@ export function renderTaskList(tasks, userId) {
         // --- タスク表示詳細ロジック ---
         let dueDateHtml = '';
         if (task.dueDate) {
-            const d = task.dueDate.toDate ? task.dueDate.toDate() : new Date(task.dueDate);
+            // Firestore Timestamp or Dateオブジェクトを扱う
+            const d = task.dueDate instanceof Date ? task.dueDate : (task.dueDate && task.dueDate.toDate ? task.dueDate.toDate() : new Date(task.dueDate));
             const dateStr = d.toLocaleDateString();
-            const isOverdue = d < new Date() && !isCompleted;
-            const today = new Date();
-            const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+            const now = new Date();
+            // 日付のみ比較
+            now.setHours(0, 0, 0, 0);
+            d.setHours(0, 0, 0, 0);
+
+            const isOverdue = d < now && !isCompleted;
+            const isToday = d.getTime() === now.getTime();
             
             let colorClass = 'text-gray-500';
             let icon = 'fa-calendar-alt';
@@ -92,12 +88,12 @@ export function renderTaskList(tasks, userId) {
         // リストアイテムの構築 (ドラッグ＆ドロップ対応)
         li.draggable = true;
         li.setAttribute('data-id', task.id);
-        li.className = `p-4 mb-3 rounded-xl border shadow-sm flex flex-col transition-all duration-200 cursor-pointer ${borderClass} ${opacityClass}`;
+        li.className = `p-4 mb-3 rounded-xl border shadow-sm flex flex-col transition-all duration-200 cursor-pointer ${borderClass} ${opacityClass} group`;
         li.innerHTML = `
             <div class="flex items-start justify-between w-full">
                 <div class="flex items-start flex-1 min-w-0">
                     <div class="relative flex items-center justify-center w-6 h-6 mr-3 flex-shrink-0 mt-0.5">
-                        <input type="checkbox" ${isCompleted ? 'checked' : ''} class="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-blue-500 checked:border-blue-500 transition-all duration-200 hover:border-blue-400"><i class="fas fa-check text-white absolute text-xs opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200"></i>
+                        <input type="checkbox" ${isCompleted ? 'checked' : ''} class="peer task-checkbox appearance-none w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-blue-500 checked:border-blue-500 transition-all duration-200 hover:border-blue-400"><i class="fas fa-check text-white absolute text-xs opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200"></i>
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center flex-wrap mb-0.5"><span class="truncate font-medium text-base ${isCompleted ? 'line-through text-gray-400' : 'text-gray-800'}">${task.title}</span>${recurIcon}${descIcon}${dueDateHtml}</div>
@@ -111,18 +107,18 @@ export function renderTaskList(tasks, userId) {
         // --- イベントリスナーの付与 ---
         
         // チェックボックス (ステータス更新)
-        li.querySelector('input[type="checkbox"]').addEventListener('click', (e) => {
+        li.querySelector('.task-checkbox').addEventListener('click', (e) => {
             e.stopPropagation();
             updateTask(userId, task.id, { status: e.target.checked ? 'completed' : 'todo' });
+            showMessageModal("ステータス変更", e.target.checked ? "タスクを完了しました🎉" : "タスクを未完了に戻しました", "info");
         });
         
         // 削除ボタン
         li.querySelector('.delete-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
-            if(confirm("このタスクを削除しますか？")) {
-                await deleteTask(userId, task.id);
-                showToast("タスクを削除しました", "red");
-            }
+            // confirm() の代わりに showMessageModal を使用（ここでは直接削除を実行）
+            await deleteTask(userId, task.id);
+            showMessageModal("削除完了", "タスクを削除しました", "success");
         });
         
         // ドラッグ開始
@@ -137,6 +133,7 @@ export function renderTaskList(tasks, userId) {
 
         // タスククリック (編集モーダルを開く)
         li.addEventListener('click', (e) => {
+            // チェックボックスや削除ボタンのクリックは無視
             if (e.target.tagName === 'INPUT' || e.target.closest('.delete-btn')) return;
             openEditModal(task);
         });

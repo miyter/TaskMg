@@ -1,6 +1,11 @@
-// --- 共通UIコンポーネント (タスク編集モーダル) ---
-// 役割: JavaScriptを使ってDOMにモーダルを挿入し、要素をエクスポートする
+// @miyter:20251125
+// --- 共通UIコンポーネント (タスク編集モーダル, メッセージモーダル) ---
+// 役割: JavaScriptを使ってDOMにモーダルを挿入し、必要な関数をエクスポートする
 
+/**
+ * 共通のモーダルHTML構造をDOMに挿入する。
+ * タスク編集モーダル以外に、メッセージ確認用モーダルをここで定義する。
+ */
 export function renderModals() {
     // 既存のモーダルコンテナがあれば削除
     if (document.getElementById('modal-container')) {
@@ -11,8 +16,7 @@ export function renderModals() {
     const modalContainer = document.createElement('div');
     modalContainer.id = 'modal-container';
     
-    // タスク編集モーダルのHTML構造をインラインで定義
-    // ※設定モーダルは index.html 側に記述済み
+    // タスク編集モーダルとメッセージモーダルのHTML構造を定義
     modalContainer.innerHTML = `
         <!-- タスク編集モーダル (task-view.jsで使用) -->
         <div id="edit-task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
@@ -39,9 +43,70 @@ export function renderModals() {
                 </div>
             </div>
         </div>
+        
+        <!-- メッセージモーダル (auth.js, store.jsなどで使用) -->
+        <div id="message-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6 relative">
+                <h4 id="message-modal-title" class="text-lg font-bold mb-3 flex items-center"></h4>
+                <p id="message-modal-body" class="text-gray-700 mb-6"></p>
+                <div class="flex justify-end">
+                    <button id="message-modal-close-btn" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg transition text-sm font-medium">閉じる</button>
+                </div>
+            </div>
+        </div>
     `;
     document.body.appendChild(modalContainer);
+    
+    // イベントリスナー設定
+    document.getElementById('message-modal-close-btn')?.addEventListener('click', () => {
+        document.getElementById('message-modal')?.classList.add('hidden');
+    });
 }
+
+/**
+ * 汎用的なメッセージモーダルを表示する。
+ * @param {string} title - モーダルのタイトル
+ * @param {string} body - モーダルの本文
+ * @param {'success' | 'error' | 'info'} type - メッセージのタイプ
+ */
+export function showMessageModal(title, body, type = 'info') {
+    const modal = document.getElementById('message-modal');
+    const titleEl = document.getElementById('message-modal-title');
+    const bodyEl = document.getElementById('message-modal-body');
+    
+    if (!modal || !titleEl || !bodyEl) {
+        console.error(`Modal element missing. Title: ${title}, Body: ${body}`);
+        return;
+    }
+    
+    // スタイルをリセット
+    titleEl.className = 'text-lg font-bold mb-3 flex items-center';
+    
+    // タイプに応じたアイコンと色を設定
+    let iconClass = '';
+    let iconColor = '';
+    
+    switch (type) {
+        case 'success':
+            iconClass = 'fas fa-check-circle';
+            iconColor = 'text-green-500';
+            break;
+        case 'error':
+            iconClass = 'fas fa-exclamation-triangle';
+            iconColor = 'text-red-500';
+            break;
+        case 'info':
+        default:
+            iconClass = 'fas fa-info-circle';
+            iconColor = 'text-blue-500';
+            break;
+    }
+    
+    titleEl.innerHTML = `<i class="${iconClass} ${iconColor} mr-2"></i> ${title}`;
+    bodyEl.textContent = body;
+    modal.classList.remove('hidden');
+}
+
 
 // 編集モーダル用の要素をエクスポート (task-view.jsが要素にアクセスできるようにする)
 // 注: これらの要素は renderModals() が実行された後に document.getElementById で取得可能です。

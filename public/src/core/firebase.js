@@ -1,7 +1,10 @@
-// --- Firebase初期化設定 ---
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// @miyter:20251125
+// Vite導入に伴い、Firebase SDKのインポートをnpmパッケージ形式に修正
+
+// --- 修正: CDNパスからnpmパッケージ名に変更 ---
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore, setLogLevel } from "firebase/firestore";
 
 // デバッグログを有効化（開発用）
 setLogLevel('debug');

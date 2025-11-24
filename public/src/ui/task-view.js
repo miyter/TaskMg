@@ -1,9 +1,14 @@
-// 更新日: 2025-11-25
+// @miyter:20251125
+// Vite導入に伴い、ローカルモジュールのインポートパスを絶対パス '@' に修正
 // 役割: タスク追加フォームの制御、およびリスト/モーダルモジュールの連携
 
-import { addTask } from '../store/store.js';
-import { initTaskModal } from './task-modal.js'; // ★修正: 相対パスを修正
-import { renderTaskList } from './task-list.js'; // ★修正: 相対パスを修正
+// --- 修正1: データストアモジュールへのインポートパスを絶対パスに変更 ---
+import { addTask } from '@/store/store.js';
+
+// --- 修正2: UI層の同一階層モジュールへのインポートパスを修正（または相対パスを維持）---
+// task-modalとtask-listはUI層の直下のため、./の相対パスを維持します
+import { initTaskModal } from './task-modal.js'; 
+import { renderTaskList } from './task-list.js'; 
 
 // =========================================================
 // UI要素の参照 (入力フォーム)

@@ -1,7 +1,11 @@
+// @miyter:20251125
+// Vite導入に伴い、Chart.jsをnpmパッケージからインポートするように修正
 // --- ダッシュボード制御 (完全版) ---
-// Chart.jsはCDNで読み込んでいるため window.Chart を使用
 
-// プロジェクト名解決のために sidebar からインポートが必要
+// --- 修正: Chart.jsをnpmパッケージからインポート ---
+import Chart from 'chart.js/auto';
+
+// --- 修正: プロジェクト名解決のために sidebar からインポート ---
 import { getProjectName } from "./sidebar.js";
 
 let statusChartInstance = null;
@@ -9,7 +13,7 @@ let projectChartInstance = null;
 
 // 名前を updateDashboard に変更（元のコードに倣う）
 export function renderDashboard(tasks, projects) {
-    if (!tasks) return;
+    if (!tasks || !Chart) return;
     
     // 現在時刻
     const now = new Date();
@@ -21,16 +25,24 @@ export function renderDashboard(tasks, projects) {
     // 期限切れ
     const overdue = tasks.filter(t => {
         if (t.status === 'completed' || !t.dueDate) return false;
+        // Firestore Timestamp or Dateオブジェクトを扱う
         const due = t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
+        // 日付のみ比較
+        due.setHours(0, 0, 0, 0);
+        now.setHours(0, 0, 0, 0);
         return due < now;
     }).length;
     
     // 今週の予定 (今日から7日後まで)
     const nextWeek = new Date();
     nextWeek.setDate(now.getDate() + 7);
+    nextWeek.setHours(23, 59, 59, 999); // 7日後の終わりまで
+    
     const upcoming = tasks.filter(t => {
         if (t.status === 'completed' || !t.dueDate) return false;
         const due = t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
+        
+        // 期限が現在から7日以内であるタスクをカウント
         return due >= now && due <= nextWeek;
     }).length;
 
@@ -45,7 +57,9 @@ export function renderDashboard(tasks, projects) {
 }
 
 function renderStatusChart(todo, done) {
-    const ctx = document.getElementById('statusChart').getContext('2d');
+    const ctx = document.getElementById('statusChart')?.getContext('2d');
+    if (!ctx) return;
+    
     if (statusChartInstance) statusChartInstance.destroy();
     
     statusChartInstance = new Chart(ctx, {
@@ -69,7 +83,9 @@ function renderStatusChart(todo, done) {
 }
 
 function renderProjectChart(tasks, allProjects) {
-    const ctx = document.getElementById('projectChart').getContext('2d');
+    const ctx = document.getElementById('projectChart')?.getContext('2d');
+    if (!ctx) return;
+
     const counts = {};
     
     // 未完了タスクのみをカウント
