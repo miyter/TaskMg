@@ -1,4 +1,5 @@
-// --- 共通UIコンポーネント (タスク編集/設定モーダル) ---
+// --- 共通UIコンポーネント (タスク編集モーダル) ---
+// 役割: JavaScriptを使ってDOMにモーダルを挿入し、要素をエクスポートする
 
 export function renderModals() {
     // 既存のモーダルコンテナがあれば削除
@@ -10,7 +11,8 @@ export function renderModals() {
     const modalContainer = document.createElement('div');
     modalContainer.id = 'modal-container';
     
-    // モーダルHTML構造をインラインで定義
+    // タスク編集モーダルのHTML構造をインラインで定義
+    // ※設定モーダルは index.html 側に記述済み
     modalContainer.innerHTML = `
         <!-- タスク編集モーダル (task-view.jsで使用) -->
         <div id="edit-task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
@@ -37,26 +39,14 @@ export function renderModals() {
                 </div>
             </div>
         </div>
-
-        <!-- 設定モーダル (settings.jsで使用) -->
-        <!-- index.htmlにも既に記述済みのため、ここでは編集モーダルのみをcomponentsに定義するアプローチを採用します -->
-        
     `;
     document.body.appendChild(modalContainer);
 }
 
-// 編集モーダル用の要素をエクスポート
+// 編集モーダル用の要素をエクスポート (task-view.jsが要素にアクセスできるようにする)
+// 注: これらの要素は renderModals() が実行された後に document.getElementById で取得可能です。
 export const editModalElements = {
-    modal: document.getElementById('edit-task-modal'),
-    closeBtn: document.getElementById('close-modal-btn'),
-    cancelBtn: document.getElementById('cancel-edit-btn'),
-    saveBtn: document.getElementById('save-task-btn'),
-    deleteBtn: document.getElementById('delete-task-btn-modal'),
-    title: document.getElementById('edit-task-title'),
-    date: document.getElementById('edit-task-date'),
-    desc: document.getElementById('edit-task-desc'),
-    labelsContainer: document.getElementById('edit-task-labels'),
-    addLabelSelect: document.getElementById('edit-add-label-select')
+    // 参照のみエクスポートし、取得はタスクビュー側で行うため、ここでは省略
 };
 
 // 空のエクスポートも維持

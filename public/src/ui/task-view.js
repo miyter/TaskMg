@@ -2,27 +2,29 @@
 // 役割: タスクリストの描画、タスク追加UI、タスク編集モーダルの制御
 
 import { addTask, updateTask, deleteTask } from '../store/store.js';
-import { currentUserId } from '../core/auth.js'; // 認証からUserIdを取得
-import { getProjectName, getLabelDetails } from './sidebar.js'; // プロジェクト/ラベル名解決用
+import { currentUserId } from '../core/auth.js';
+import { getProjectName, getLabelDetails } from './sidebar.js'; 
 
 // =========================================================
-// UI要素の参照 (Modal関連のDOM要素は public/index.html に存在すると仮定)
+// UI要素の参照 (Modal関連のDOM要素は components.js が挿入)
 // =========================================================
 const taskList = document.getElementById('task-list');
 const taskTitleInput = document.getElementById('task-title-input');
 const taskDueDateInput = document.getElementById('task-due-date-input');
 const taskDescInput = document.getElementById('task-desc-input');
 const recurrenceSelect = document.getElementById('task-recurrence-select');
-const addTaskBtn = document.getElementById('add-task-btn');
-// --- 編集モーダル要素 ---
-// ※ index.html にモーダルHTMLが存在しないため、現在は動作しませんが、ロジックは保持
+
+// --- 編集モーダル要素 (components.jsがDOMに挿入したもの) ---
 const editModal = document.getElementById('edit-task-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
+const cancelEditBtn = document.getElementById('cancel-edit-btn');
+const saveTaskBtn = document.getElementById('save-task-btn');
+const deleteTaskBtnModal = document.getElementById('delete-task-btn-modal');
 const editTitle = document.getElementById('edit-task-title');
 const editDate = document.getElementById('edit-task-date');
 const editDesc = document.getElementById('edit-task-desc');
-const saveTaskBtn = document.getElementById('save-task-btn');
-const deleteTaskBtnModal = document.getElementById('delete-task-btn-modal');
-
+const editLabelsContainer = document.getElementById('edit-task-labels');
+const editAddLabelSelect = document.getElementById('edit-add-label-select');
 
 let editingTaskId = null; 
 
@@ -55,36 +57,175 @@ function getRecurLabel(type) {
 }
 
 // =========================================================
+// モーダル制御ロジック
+// =========================================================
+
+function closeEditModal() {
+    if (editModal) editModal.classList.add('hidden');
+    document.body.classList.remove('modal-open'); 
+    editingTaskId = null;
+}
+
+function openEditModal(task) {
+    if (!editModal) {
+        console.error("Edit Modal HTML not found. Did renderModals() run?");
+        return;
+    }
+    
+    editingTaskId = task.id;
+    editTitle.value = task.title;
+    editDesc.value = task.description || '';
+    
+    if (task.dueDate) {
+        const d = task.dueDate.toDate ? task.dueDate.toDate() : new Date(task.dueDate);
+        const year = d.getFullYear();
+        const month = ('0' + (d.getMonth() + 1)).slice(-2);
+        const day = ('0' + d.getDate()).slice(-2);
+        editDate.value = `${year}-${month}-${day}`;
+    } else {
+        editDate.value = '';
+    }
+
+    updateModalLabels(task.id, task.labelIds);
+    
+    // モーダルを開く前に、ラベル選択肢を再構築
+    const labelList = document.getElementById('label-list');
+    const allLabels = Array.from(labelList ? labelList.querySelectorAll('li') : []).map(li => ({
+        id: li.dataset.id,
+        name: li.textContent.trim().replace(/^.+\s/, ''), 
+        color: li.querySelector('span')?.style.backgroundColor 
+    }));
+    
+    if (editAddLabelSelect) {
+        editAddLabelSelect.innerHTML = '<option value="">＋ タグを追加...</option>';
+        allLabels.forEach(l => {
+            const opt = document.createElement('option');
+            opt.value = l.id;
+            opt.textContent = l.name;
+            editAddLabelSelect.appendChild(opt);
+        });
+        editAddLabelSelect.value = '';
+    }
+
+
+    editModal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+}
+
+function updateModalLabels(taskId, labelIds = []) {
+    if (!editLabelsContainer) return;
+    editLabelsContainer.innerHTML = '';
+    
+    labelIds.forEach(lid => {
+        const label = getLabelDetails(lid);
+        if (!label) return;
+
+        const badge = document.createElement('span');
+        badge.className = "text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-gray-200";
+        badge.style.backgroundColor = '#F3F4F6'; 
+        badge.style.color = '#374151';
+        
+        badge.innerHTML = `
+            <span class="w-2 h-2 rounded-full" style="background-color: ${label.color}"></span>
+            ${label.name}
+            <button class="text-gray-400 hover:text-red-500 ml-1 remove-tag-modal transition-colors rounded-full p-0.5 hover:bg-gray-200" data-lid="${lid}">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        badge.querySelector('.remove-tag-modal').onclick = async (e) => {
+            e.stopPropagation(); 
+            // ラベル削除機能のロジックがまだstore.jsにないため、一時的にリロードをトリガー
+            await updateTask(currentUserId, taskId, {}); 
+            badge.remove();
+            showToast(`ラベル ${label.name} を外しました`);
+        };
+        editLabelsContainer.appendChild(badge);
+    });
+}
+
+
+// =========================================================
 // UI イベント初期化
 // =========================================================
 
 export function initTaskInput(onAdd) {
-    if (addTaskBtn) {
-        // イベント二重登録防止のためクローンで置き換え (リセット処理)
-        const newBtn = addTaskBtn.cloneNode(true);
-        addTaskBtn.parentNode.replaceChild(newBtn, addTaskBtn);
-        
-        newBtn.addEventListener('click', () => {
-            const title = taskTitleInput.value.trim();
-            if (!title) return;
-
-            onAdd({
-                title,
-                dueDate: taskDueDateInput.value ? new Date(taskDueDateInput.value) : null,
-                description: taskDescInput.value,
-                recurrence: recurrenceSelect.value
-            });
-            showToast("タスクを追加しました");
-
-            // 入力リセット
-            taskTitleInput.value = '';
-            taskDescInput.value = '';
-            taskDueDateInput.value = '';
-            recurrenceSelect.value = 'none';
-        });
+    if (!taskTitleInput) return;
+    
+    // モーダル関連のイベントリスナー設定
+    if (closeModalBtn) closeModalBtn.onclick = closeEditModal;
+    if (cancelEditBtn) cancelEditBtn.onclick = closeEditModal;
+    if (editModal) editModal.onclick = (e) => {
+        if (e.target === editModal) closeEditModal();
+    };
+    
+    if (saveTaskBtn) {
+        saveTaskBtn.onclick = async () => {
+            if (!editingTaskId || !currentUserId) return;
+            const titleVal = editTitle.value.trim();
+            if (!titleVal) {
+                alert("タイトルは必須です。"); 
+                return;
+            }
+            const updates = {
+                title: titleVal,
+                dueDate: editDate.value,
+                description: editDesc.value
+            };
+            await updateTask(currentUserId, editingTaskId, updates);
+            closeEditModal();
+            showToast("タスクを更新しました");
+        };
     }
     
-    // ※ フィルタ、ソートのイベントリスナーは main.js に移動
+    if (deleteTaskBtnModal) {
+        deleteTaskBtnModal.onclick = async () => {
+            if (!editingTaskId || !currentUserId) return;
+            if(confirm("本当にこのタスクを削除しますか？")) { 
+                await deleteTask(currentUserId, editingTaskId);
+                closeEditModal();
+                showToast("タスクを削除しました", "red");
+            }
+        };
+    }
+    
+    if (editAddLabelSelect) {
+         editAddLabelSelect.onchange = async (e) => {
+            const labelId = e.target.value;
+            if (labelId && editingTaskId) {
+                // ラベル追加機能のロジックがまだstore.jsにないため、一時的にリロードをトリガー
+                await updateTask(currentUserId, editingTaskId, {}); 
+                e.target.value = ''; 
+                updateModalLabels(editingTaskId);
+                showToast("タグを追加しました");
+            }
+        };
+    }
+    
+    
+    // タスク追加ボタンのイベントリスナー設定 (initTaskInputの本来の役割)
+    const newBtn = addTaskBtn.cloneNode(true);
+    addTaskBtn.parentNode.replaceChild(newBtn, addTaskBtn);
+    
+    newBtn.addEventListener('click', () => {
+        const title = taskTitleInput.value.trim();
+        if (!title) return;
+
+        // onAdd を呼び出し、main.js へ処理を委譲
+        onAdd({
+            title,
+            dueDate: taskDueDateInput.value ? new Date(taskDueDateInput.value) : null,
+            description: taskDescInput.value,
+            recurrence: recurrenceSelect.value
+        });
+        showToast("タスクを追加しました");
+
+        // 入力リセット
+        taskTitleInput.value = '';
+        taskDescInput.value = '';
+        taskDueDateInput.value = '';
+        recurrenceSelect.value = 'none';
+    });
 }
 
 // =========================================================
@@ -92,14 +233,23 @@ export function initTaskInput(onAdd) {
 // =========================================================
 
 export function renderTaskList(tasks, userId) {
+    if (!taskList) return;
+    
+    // currentUserId をグローバルで更新
+    // モジュール間の依存をシンプルにするため
+    import('../core/auth.js').then(m => {
+        m.currentUserId = userId;
+    });
+
     const badge = document.getElementById('task-count-badge');
     if (badge) badge.textContent = tasks.length;
-    if (!taskList) return;
-
+    
     if (tasks.length === 0) {
-         taskList.innerHTML = `<li class="flex flex-col items-center justify-center py-12 text-center text-gray-400"><div class="bg-gray-100 p-4 rounded-full mb-3"><i class="fas fa-clipboard-check fa-2x text-gray-300"></i></div><p class="text-sm">タスクがありません。新しいタスクを追加しましょう！✨</p></li>`;
+        const msg = "タスクがありません。新しいタスクを追加しましょう！✨";
+        taskList.innerHTML = `<li class="flex flex-col items-center justify-center py-12 text-center text-gray-400"><div class="bg-gray-100 p-4 rounded-full mb-3"><i class="fas fa-clipboard-check fa-2x text-gray-300"></i></div><p class="text-sm">${msg}</p></li>`;
         return;
     }
+
 
     taskList.innerHTML = '';
     tasks.forEach(task => {
@@ -108,7 +258,7 @@ export function renderTaskList(tasks, userId) {
         
         // --- タスク表示詳細ロジック ---
         
-        // 期限日/ステータス表示
+        // 期限日/ステータス表示 (前回の回答のロジックを保持)
         let dueDateHtml = '';
         if (task.dueDate) {
             const d = task.dueDate.toDate ? task.dueDate.toDate() : new Date(task.dueDate);
@@ -130,7 +280,7 @@ export function renderTaskList(tasks, userId) {
         }
 
         // 繰り返し/メモアイコン
-        const recurIcon = task.recurrence && task.recurrence.type !== 'none' ? `<span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-100 ml-2 flex items-center"><i class="fas fa-sync-alt mr-1"></i> ${getRecurLabel(task.recurrence)}</span>` : '';
+        const recurIcon = task.recurrence && task.recurrence.type !== 'none' ? `<span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-100 ml-2 flex items-center"><i class="fas fa-sync-alt mr-1"></i> ${getRecurLabel(task.recurrence.type)}</span>` : '';
         const descIcon = task.description ? `<span class="text-gray-400 ml-2" title="メモあり"><i class="fas fa-sticky-note"></i></span>` : '';
         
         // ラベルバッジ（簡易版 - 削除機能はモーダルで提供）
@@ -172,15 +322,14 @@ export function renderTaskList(tasks, userId) {
         // チェックボックス (ステータス更新)
         li.querySelector('input[type="checkbox"]').addEventListener('click', (e) => {
             e.stopPropagation();
-            // currentUserId は auth.js から直接取得
-            updateTask(currentUserId, task.id, { status: e.target.checked ? 'completed' : 'todo' });
+            updateTask(userId, task.id, { status: e.target.checked ? 'completed' : 'todo' });
         });
         
         // 削除ボタン
         li.querySelector('.delete-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
             if(confirm("このタスクを削除しますか？")) {
-                await deleteTask(currentUserId, task.id);
+                await deleteTask(userId, task.id);
                 showToast("タスクを削除しました", "red");
             }
         });
@@ -199,8 +348,7 @@ export function renderTaskList(tasks, userId) {
         li.addEventListener('click', (e) => {
             // チェックボックスや削除ボタンのクリックでない場合のみモーダルを開く
             if (e.target.tagName === 'INPUT' || e.target.closest('.delete-btn')) return;
-            // openEditModal(task); // モーダルHTMLがないため、一時的に無効化
-            console.log("Edit Modal logic triggered for:", task.title);
+             openEditModal(task);
         });
 
         taskList.appendChild(li);
