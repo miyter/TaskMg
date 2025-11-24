@@ -1,4 +1,4 @@
-// 更新日: 2025-11-25 修正版
+// 更新日: 2025-11-25 修正版 (ダッシュボードメニュー追加)
 // 役割: サイドバー（プロジェクト・ラベル）の描画とイベント設定
 
 import { addProject, subscribeProjects, deleteProject } from "./project-store.js";
@@ -8,21 +8,29 @@ import { addLabelToTask } from "./store.js";
 const projectList = document.getElementById('project-list');
 const labelList = document.getElementById('label-list');
 const currentViewTitle = document.getElementById('current-view-title');
-const addProjectBtn = document.getElementById('add-project-btn'); // 取得
-const addLabelBtn = document.getElementById('add-label-btn');     // 取得
+const addProjectBtn = document.getElementById('add-project-btn');
+const addLabelBtn = document.getElementById('add-label-btn');
+const navDashboard = document.getElementById('nav-dashboard'); // New!
 
-// 状態保持用
 let projectMap = {};
 let labelMap = {};
 let allLabels = []; 
-
 let unsubscribeProjects = null;
 let unsubscribeLabels = null;
 
 // --- 公開メソッド ---
 
 export function initSidebar(userId, currentFilter, onSelectView) {
-    // ★ここでイベントリスナーを設定して、ボタンを復活させる
+    
+    // ★ダッシュボードメニューのイベントリスナー
+    if (navDashboard) {
+        navDashboard.onclick = () => {
+            // main.js へ通知
+            onSelectView({ type: 'dashboard', value: null });
+            updateSidebarSelection({ type: 'dashboard', value: null });
+        };
+    }
+
     if (addProjectBtn) {
         addProjectBtn.onclick = async () => {
             const name = prompt("新しいプロジェクト名:");
@@ -37,7 +45,7 @@ export function initSidebar(userId, currentFilter, onSelectView) {
         };
     }
 
-    startProjectListener(userId, currentFilter);
+    startProjectListener(userId, currentFilter, onSelectView); // onSelectViewを渡す
     startLabelListener(userId, currentFilter, onSelectView);
 }
 
@@ -53,7 +61,18 @@ export function getAllLabels() {
     return allLabels;
 }
 
+// 選択状態のハイライト更新
 export function updateSidebarSelection(currentFilter) {
+    // ダッシュボードのハイライト
+    if (currentFilter.type === 'dashboard') {
+        navDashboard.classList.add('bg-purple-100', 'text-purple-700');
+        navDashboard.classList.remove('text-gray-600', 'hover:bg-gray-100');
+    } else {
+        navDashboard.classList.remove('bg-purple-100', 'text-purple-700');
+        navDashboard.classList.add('text-gray-600', 'hover:bg-gray-100');
+    }
+
+    // プロジェクト・ラベルのハイライト
     document.querySelectorAll('.project-item, .label-item').forEach(btn => {
         const isActive = btn.dataset.type === currentFilter.type && btn.dataset.id === currentFilter.value;
         const baseClass = btn.dataset.type === 'label' ? 'flex items-center' : '';
@@ -68,6 +87,11 @@ export function updateSidebarSelection(currentFilter) {
 
 export function updateViewTitle(filter) {
     if (!currentViewTitle) return;
+
+    if (filter.type === 'dashboard') {
+        // タイトルは画面切り替え側で制御されるためここでは何もしない、または空にする
+        return; 
+    }
 
     if (filter.type === 'project') {
         if (filter.value === 'all') currentViewTitle.textContent = '📁 すべてのタスク';
@@ -90,7 +114,7 @@ export function getLabelDetails(labelId) {
 
 // --- 内部ロジック ---
 
-function startProjectListener(userId, currentFilter) {
+function startProjectListener(userId, currentFilter, onSelectView) {
     if (unsubscribeProjects) unsubscribeProjects();
     unsubscribeProjects = subscribeProjects(userId, (projects) => {
         projectList.innerHTML = '';
@@ -100,23 +124,28 @@ function startProjectListener(userId, currentFilter) {
             projectList.innerHTML = '<li class="text-xs text-gray-400 px-3">リストがありません</li>';
         }
 
+        // インボックス (固定)
+        const inboxLi = document.createElement('li');
+        inboxLi.className = 'group flex items-center justify-between rounded-lg pr-2 mb-1';
+        inboxLi.innerHTML = `<button class="project-item w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" data-id="inbox" data-type="project"><i class="fas fa-inbox w-5 text-center mr-1"></i> インボックス</button>`;
+        inboxLi.onclick = () => onSelectView({ type: 'project', value: 'inbox' });
+        projectList.appendChild(inboxLi);
+
         projects.forEach(p => {
             projectMap[p.id] = p.name;
             const li = document.createElement('li');
             li.className = 'group flex items-center justify-between hover:bg-gray-100 rounded-lg pr-2';
             li.innerHTML = `
-                <button class="project-item" data-id="${p.id}" data-type="project">
-                    # ${p.name}
-                </button>
+                <button class="project-item" data-id="${p.id}" data-type="project"># ${p.name}</button>
                 <button class="delete-project-btn hidden group-hover:block text-gray-400 hover:text-red-500" data-id="${p.id}">×</button>
             `;
             
             li.querySelector('.project-item').onclick = () => {
-                updateSidebarSelection({ type: 'project', value: p.id });
-                updateViewTitle({ type: 'project', value: p.id });
+                onSelectView({ type: 'project', value: p.id });
             };
 
-            li.querySelector('.delete-project-btn').onclick = async () => {
+            li.querySelector('.delete-project-btn').onclick = async (e) => {
+                e.stopPropagation();
                 await deleteProject(userId, p.id);
             };
 
@@ -144,22 +173,19 @@ function startLabelListener(userId, currentFilter, onSelectView) {
             li.className = 'group flex items-center justify-between hover:bg-gray-100 rounded-lg pr-2';
             
             const colorBox = `<span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color: ${l.color}"></span>`;
-            
             li.innerHTML = `
-                <button class="label-item" data-id="${l.id}" data-type="label">
-                    ${colorBox} ${l.name}
-                </button>
+                <button class="label-item" data-id="${l.id}" data-type="label">${colorBox} ${l.name}</button>
                 <button class="delete-label-btn hidden group-hover:block text-gray-400 hover:text-red-500" data-id="${l.id}">×</button>
             `;
             
             setupDropZone(li, l.id, userId);
             
             li.querySelector('.label-item').onclick = () => {
-                updateSidebarSelection({ type: 'label', value: l.id });
-                updateViewTitle({ type: 'label', value: l.id });
+                onSelectView({ type: 'label', value: l.id });
             };
 
-            li.querySelector('.delete-label-btn').onclick = async () => {
+            li.querySelector('.delete-label-btn').onclick = async (e) => {
+                e.stopPropagation();
                 await deleteLabel(userId, l.id);
             };
 
@@ -175,11 +201,9 @@ function setupDropZone(element, labelId, userId) {
         e.preventDefault();
         element.classList.add('bg-blue-100', 'border', 'border-blue-300', 'border-dashed');
     });
-
     element.addEventListener('dragleave', () => {
         element.classList.remove('bg-blue-100', 'border', 'border-blue-300', 'border-dashed');
     });
-
     element.addEventListener('drop', async (e) => {
         e.preventDefault();
         element.classList.remove('bg-blue-100', 'border', 'border-blue-300', 'border-dashed');
