@@ -2,8 +2,8 @@
 // 役割: タスク追加フォームの制御、およびリスト/モーダルモジュールの連携
 
 import { addTask } from '../store/store.js';
-import { initTaskModal } from './task-modal.js';
-import { renderTaskList } from './task-list.js';
+import { initTaskModal } from './task-modal.js'; // ★修正: 相対パスを修正
+import { renderTaskList } from './task-list.js'; // ★修正: 相対パスを修正
 
 // =========================================================
 // UI要素の参照 (入力フォーム)
