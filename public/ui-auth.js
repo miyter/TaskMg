@@ -1,4 +1,4 @@
-// --- 認証モジュール ---
+// --- 認証モジュール (更新日: 2025-11-25) ---
 import { 
     signInWithEmailAndPassword, 
     signOut, 
@@ -10,7 +10,7 @@ import { auth, isInitialized } from './firebase-init.js';
 let currentUser = null;
 const initialAuthToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
 
-// ユーザー状態監視のリスナー
+// ユーザー状態監視のリスナー（これが main.js から呼ばれています）
 export function initAuthListener(onUserChanged) {
     if (!isInitialized) return;
 
@@ -19,7 +19,7 @@ export function initAuthListener(onUserChanged) {
         onUserChanged(user);
     });
 
-    // 初期トークンがあればログイン試行
+    // 初期トークンがあればログイン試行（Canvas環境用）
     if (initialAuthToken) {
         signInWithCustomToken(auth, initialAuthToken).catch(e => console.error("Token Auth Error:", e));
     }
