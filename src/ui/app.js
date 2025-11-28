@@ -3,7 +3,7 @@ import { subscribeToTasks, addTask } from '@/store/store.js';
 import { subscribeToProjects } from '@/store/projects.js';
 import { subscribeToLabels } from '@/store/labels.js';
 import { filterTasks, sortTasks } from '@/logic/search.js';
-import { initSidebar, renderProjects, renderLabels } from './sidebar.js';
+import { initSidebar, renderProjects, renderLabels, updateInboxCount } from './sidebar.js'; // updateInboxCountを追加
 import { initTaskView, renderTaskList } from './task-view.js';
 import { renderDashboard } from './dashboard.js';
 import { initSettings } from './settings.js';
@@ -29,6 +29,13 @@ export function initializeApp(userId) {
         if (filter.type === 'dashboard') {
             document.getElementById('task-view').classList.add('hidden');
             document.getElementById('dashboard-view').classList.remove('hidden');
+        } else if (filter.type === 'inbox') {
+            // ★追加: インボックス選択時の処理
+            currentFilter.projectId = null;
+            currentFilter.labelId = null;
+            document.getElementById('task-view').classList.remove('hidden');
+            document.getElementById('dashboard-view').classList.add('hidden');
+            updateView();
         } else {
             currentFilter.projectId = filter.type === 'project' ? filter.value : null;
             currentFilter.labelId = filter.type === 'label' ? filter.value : null;
@@ -48,13 +55,15 @@ export function initializeApp(userId) {
     setupFilterEvents();
 
     // 2. データ購読開始
+    // プロジェクト・ラベルの描画時にタスク件数が必要なため、allTasksを渡すように変更
+    
     subscribeToProjects(userId, (projects) => {
         allProjects = projects;
         renderProjects(projects, (filter) => {
             currentFilter.projectId = filter.value;
             currentFilter.labelId = null;
             updateView();
-        });
+        }, allTasks); // ★追加: タスクデータを渡す
         updateView();
     });
 
@@ -64,13 +73,26 @@ export function initializeApp(userId) {
             currentFilter.labelId = filter.value;
             currentFilter.projectId = null;
             updateView();
-        }, userId);
+        }, userId, allTasks); // ★追加: タスクデータを渡す
         updateView();
     });
 
     subscribeToTasks(userId, (tasks) => {
         allTasks = tasks;
         updateView();
+        
+        // ★追加: タスク更新時にサイドバーの件数も更新する
+        updateInboxCount(allTasks);
+        renderProjects(allProjects, (filter) => { // 再レンダリングして件数更新
+             currentFilter.projectId = filter.value;
+             currentFilter.labelId = null;
+             updateView();
+        }, allTasks);
+        renderLabels(allLabels, (filter) => { // 再レンダリングして件数更新
+             currentFilter.labelId = filter.value;
+             currentFilter.projectId = null;
+             updateView();
+        }, userId, allTasks);
     });
 }
 

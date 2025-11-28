@@ -44,7 +44,17 @@ export function renderLayout(appContainer) {
             <div class="p-4 overflow-y-auto flex-1">
                 <div class="mb-6">
                     <ul class="space-y-1">
-                        <li id="nav-dashboard" class="px-2 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-sm font-medium cursor-pointer flex items-center transition-colors"><i class="fas fa-chart-pie w-5 text-center mr-2 text-purple-500"></i> ダッシュボード</li>
+                        <!-- ダッシュボード -->
+                        <li id="nav-dashboard" class="px-2 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-sm font-medium cursor-pointer flex items-center transition-colors">
+                            <i class="fas fa-chart-pie w-5 text-center mr-2 text-purple-500"></i> ダッシュボード
+                        </li>
+                        <!-- ★追加: インボックス -->
+                        <li id="nav-inbox" class="px-2 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-sm font-medium cursor-pointer flex items-center justify-between transition-colors">
+                            <div class="flex items-center">
+                                <i class="fas fa-inbox w-5 text-center mr-2 text-blue-500"></i> インボックス
+                            </div>
+                            <span id="count-inbox" class="text-xs text-gray-400"></span>
+                        </li>
                     </ul>
                 </div>
                 <div class="mb-6">
