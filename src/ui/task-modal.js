@@ -1,9 +1,9 @@
-// タスク編集モーダルの制御ロジック
-// 機能: タスク編集、ラベル付け替え、削除
+// タスク編集モーダルの制御ロジック (リファクタリング版)
+// 機能: タスク編集、保存、削除
 
 import { updateTask, deleteTask } from '@/store/store.js';
-import { getLabelDetails } from './sidebar.js'; 
 import { showMessageModal } from './components.js';
+import { renderModalLabels, setupLabelSelectOptions } from './task-modal-labels.js';
 
 let currentEditingTask = null;
 
@@ -26,6 +26,7 @@ export function openTaskModal(task) {
     titleInput.value = task.title || '';
     descInput.value = task.description || '';
     
+    // 日付セット
     if (task.dueDate) {
         try {
             const d = new Date(task.dueDate);
@@ -40,66 +41,36 @@ export function openTaskModal(task) {
 
     recurSelect.value = (task.recurrence && task.recurrence.type) ? task.recurrence.type : 'none';
 
-    // ラベル表示の更新
-    updateModalLabels(task.id, task.labelIds);
+    // ラベル表示の更新（別モジュールに委譲）
+    refreshLabelsDisplay();
 
-    // ラベル選択肢の再構築
-    if (addLabelSelect) {
-        const labelList = document.getElementById('label-list');
-        // sidebar.jsが描画したDOMからラベル情報を取得
-        const allLabels = Array.from(labelList ? labelList.querySelectorAll('li') : []).map(li => ({
-            id: li.dataset.id,
-            name: li.textContent.trim(),
-            color: li.querySelector('span')?.style.backgroundColor 
-        }));
-        
-        addLabelSelect.innerHTML = '<option value="">＋ タグを追加...</option>';
-        allLabels.forEach(l => {
-            const opt = document.createElement('option');
-            opt.value = l.id;
-            opt.textContent = l.name;
-            addLabelSelect.appendChild(opt);
-        });
-        addLabelSelect.value = '';
-    }
+    // ラベル選択肢の再構築（別モジュールに委譲）
+    setupLabelSelectOptions(addLabelSelect);
 
     modal.classList.remove('hidden');
-    // イベント設定は initTaskModal で行うため、ここでは呼ばない
 }
 
 /**
- * モーダル内のラベル表示を更新
+ * モーダル内のラベル表示をリフレッシュするヘルパー
  */
-function updateModalLabels(taskId, labelIds = []) {
+function refreshLabelsDisplay() {
     const container = document.getElementById('edit-task-labels');
-    if (!container) return;
-    container.innerHTML = '';
+    const labelIds = currentEditingTask ? (currentEditingTask.labelIds || []) : [];
     
-    labelIds.forEach(lid => {
-        const label = getLabelDetails(lid);
-        if (!label) return;
-
-        const badge = document.createElement('span');
-        badge.className = "text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200";
+    renderModalLabels(container, labelIds, async (labelIdToRemove, labelName) => {
+        // 削除コールバック
+        if (!currentEditingTask) return;
         
-        badge.innerHTML = `
-            <span class="w-2 h-2 rounded-full" style="background-color: ${label.color}"></span>
-            ${label.name}
-            <button class="text-gray-400 hover:text-red-500 ml-1 remove-tag-modal transition-colors rounded-full p-0.5 hover:bg-gray-200 dark:hover:bg-gray-600" data-lid="${lid}">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
+        const newLabelIds = labelIds.filter(id => id !== labelIdToRemove);
         
-        badge.querySelector('.remove-tag-modal').onclick = async (e) => {
-            e.stopPropagation();
-            if(!currentEditingTask) return;
-            const newLabelIds = (currentEditingTask.labelIds || []).filter(id => id !== lid);
-            await updateTask(currentEditingTask.ownerId, taskId, { labelIds: newLabelIds });
-            currentEditingTask.labelIds = newLabelIds;
-            updateModalLabels(taskId, newLabelIds);
-            showMessageModal(`タグ「${label.name}」を外しました`);
-        };
-        container.appendChild(badge);
+        // Firestore更新
+        await updateTask(currentEditingTask.ownerId, currentEditingTask.id, { labelIds: newLabelIds });
+        
+        // 状態更新と再描画
+        currentEditingTask.labelIds = newLabelIds;
+        refreshLabelsDisplay();
+        
+        showMessageModal(`タグ「${labelName}」を外しました`);
     });
 }
 
@@ -113,7 +84,7 @@ export function closeTaskModal() {
 }
 
 /**
- * ★追加: モーダルのイベント初期化（外部から一度だけ呼ぶ）
+ * モーダルのイベント初期化（外部から一度だけ呼ぶ）
  */
 export function initTaskModal() {
     const saveBtn = document.getElementById('save-task-btn');
@@ -122,8 +93,8 @@ export function initTaskModal() {
     const deleteBtn = document.getElementById('delete-task-btn-modal');
     const addLabelSelect = document.getElementById('edit-add-label-select');
     
+    // 保存ボタン
     if (saveBtn) {
-        // クローン置換で重複リスナー防止
         const newSave = saveBtn.cloneNode(true);
         saveBtn.parentNode.replaceChild(newSave, saveBtn);
         
@@ -156,6 +127,7 @@ export function initTaskModal() {
         });
     }
 
+    // 削除ボタン
     if (deleteBtn) {
         const newDelete = deleteBtn.cloneNode(true);
         deleteBtn.parentNode.replaceChild(newDelete, deleteBtn);
@@ -169,6 +141,7 @@ export function initTaskModal() {
         };
     }
 
+    // ラベル追加プルダウン
     if (addLabelSelect) {
         addLabelSelect.onchange = async (e) => {
              const labelId = e.target.value;
@@ -176,9 +149,11 @@ export function initTaskModal() {
                  const currentLabels = currentEditingTask.labelIds || [];
                  if (!currentLabels.includes(labelId)) {
                      const newLabelIds = [...currentLabels, labelId];
+                     
                      await updateTask(currentEditingTask.ownerId, currentEditingTask.id, { labelIds: newLabelIds });
+                     
                      currentEditingTask.labelIds = newLabelIds;
-                     updateModalLabels(currentEditingTask.id, newLabelIds);
+                     refreshLabelsDisplay(); // 再描画
                      showMessageModal("タグを追加しました");
                  }
                  e.target.value = '';
