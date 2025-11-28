@@ -21,6 +21,6 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "npm-run-all --parallel start:*",
-    "deploy": "wrangler deploy"
+    "deploy": "npm run build && wrangler deploy"
   }
 }
