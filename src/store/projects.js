@@ -2,9 +2,9 @@
 // Vite導入に伴い、Firebase SDKのインポートをnpmパッケージ形式に、
 // ローカルモジュールのインポートを絶対パス '@' に修正
 
-// --- 修正1: Firebase SDKをnpmパッケージからインポート ---
+// --- 修正1: deleteDoc, doc を追加 ---
 import { 
-    collection, addDoc, query, onSnapshot, orderBy 
+    collection, addDoc, deleteDoc, doc, query, onSnapshot, orderBy 
 } from "firebase/firestore";
 
 // --- 修正2: ローカルモジュールへのインポートパスを絶対パスに変更 ---
@@ -41,4 +41,13 @@ export async function addProject(userId, name) {
         ownerId: userId,
         createdAt: new Date()
     });
+}
+
+/**
+ * ★追加: プロジェクトを削除する
+ */
+export async function deleteProject(userId, projectId) {
+    const appId = window.GLOBAL_APP_ID;
+    const path = `/artifacts/${appId}/users/${userId}/projects`;
+    await deleteDoc(doc(db, path, projectId));
 }

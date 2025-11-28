@@ -1,23 +1,30 @@
 // @miyter:20251125
-// Vite導入に伴い、Firebase SDKのインポートをnpmパッケージ形式に、
-// ローカルモジュールのインポートを絶対パス '@' に修正
+// Firebase SDKのインポート修正 + Timestamp対応 + バックアップ機能 + 必須関数の統合
 
-// --- 修正1: Firebase SDKをnpmパッケージからインポート ---
 import { 
-    collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, Timestamp,
-    getDocs 
+    collection, 
+    addDoc, 
+    updateDoc, 
+    deleteDoc, 
+    doc, 
+    query, 
+    onSnapshot, 
+    getDocs,
+    Timestamp 
 } from "firebase/firestore";
-
-// --- 修正2: ローカルモジュールへのインポートパスを絶対パスに変更 ---
 import { db } from '@/core/firebase.js';
 
 let unsubscribe = null;
 
+/**
+ * タスク一覧をリアルタイム監視
+ * (Timestamp型の日付をDate型に自動変換して返します)
+ */
 export function subscribeToTasks(userId, onUpdate) {
     if (unsubscribe) unsubscribe();
+    if (!userId) return;
     
     const appId = window.GLOBAL_APP_ID;
-    // ユーザー専用のタスクコレクションパス
     const path = `/artifacts/${appId}/users/${userId}/tasks`;
     const q = query(collection(db, path));
 
@@ -27,15 +34,18 @@ export function subscribeToTasks(userId, onUpdate) {
             return {
                 id: doc.id,
                 ...data,
-                // TimestampをDateオブジェクトに変換（存在しない場合は新しいDateオブジェクト/null）
-                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
-                dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : null
+                // TimestampをDateオブジェクトに変換（安全策）
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || Date.now()),
+                dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : (data.dueDate ? new Date(data.dueDate) : null)
             };
         });
         onUpdate(tasks);
     });
 }
 
+/**
+ * タスクを追加
+ */
 export async function addTask(userId, taskData) {
     const appId = window.GLOBAL_APP_ID;
     const path = `/artifacts/${appId}/users/${userId}/tasks`;
@@ -43,30 +53,49 @@ export async function addTask(userId, taskData) {
     await addDoc(collection(db, path), {
         ...taskData,
         ownerId: userId,
-        createdAt: new Date(),
-        status: 'todo'
+        status: 'todo',
+        createdAt: new Date()
     });
 }
 
+/**
+ * ★復活: タスクのステータスを更新
+ * (これが無いと task-list.js でビルドエラーになります)
+ */
+export async function updateTaskStatus(userId, taskId, status) {
+    const appId = window.GLOBAL_APP_ID;
+    const path = `/artifacts/${appId}/users/${userId}/tasks`;
+    await updateDoc(doc(db, path, taskId), { status });
+}
+
+/**
+ * タスクの情報を更新（汎用）
+ */
 export async function updateTask(userId, taskId, updates) {
     const appId = window.GLOBAL_APP_ID;
     const ref = doc(db, `/artifacts/${appId}/users/${userId}/tasks`, taskId);
     
-    // 日付データの変換処理
-    if (updates.dueDate && !(updates.dueDate instanceof Date) && !(updates.dueDate instanceof Timestamp)) {
-          updates.dueDate = new Date(updates.dueDate);
+    // 日付データの変換処理 (Dateオブジェクトならそのまま保存可能だが、念のため)
+    const safeUpdates = { ...updates };
+    if (safeUpdates.dueDate && !(safeUpdates.dueDate instanceof Date) && !(safeUpdates.dueDate instanceof Timestamp)) {
+          safeUpdates.dueDate = new Date(safeUpdates.dueDate);
     }
     
-    await updateDoc(ref, updates);
+    await updateDoc(ref, safeUpdates);
 }
 
+/**
+ * タスクを削除
+ */
 export async function deleteTask(userId, taskId) {
     const appId = window.GLOBAL_APP_ID;
     const ref = doc(db, `/artifacts/${appId}/users/${userId}/tasks`, taskId);
     await deleteDoc(ref);
 }
 
-// ★追加: バックアップデータ作成機能
+/**
+ * バックアップデータ作成機能
+ */
 export async function createBackupData(userId) {
     if (!db) throw new Error("Firestore not initialized");
     const appId = window.GLOBAL_APP_ID;
@@ -95,7 +124,7 @@ export async function createBackupData(userId) {
         return serialized;
     });
 
-    const backup = {
+    return {
         version: "1.0",
         exportedAt: new Date().toISOString(),
         userId: userId,
@@ -103,6 +132,4 @@ export async function createBackupData(userId) {
         projects: serializeData(projectsSnap),
         labels: serializeData(labelsSnap)
     };
-
-    return backup;
 }
