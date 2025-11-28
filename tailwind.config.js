@@ -1,6 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
-  // Tailwindが監視すべきファイルを指定
+module.exports = {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
