@@ -12,15 +12,20 @@ import { renderModals } from './components.js';
 import { initTheme, toggleTheme } from './theme.js';
 import { initializeApp } from './app.js';
 import { initTaskModal } from './task-modal.js';
-import { renderLayout } from './layout.js'; // ★追加: レイアウト描画
+import { renderLayout } from './layout.js';
 
 // アプリ初期化
 document.addEventListener('DOMContentLoaded', () => {
     // 1. レイアウトの描画 (div#appの中にHTMLを生成)
     const appContainer = document.getElementById('app');
-    if (appContainer) {
-        renderLayout(appContainer);
+    
+    // ★修正: 要素が見つからない場合はエラーログを出して終了（null参照エラー回避）
+    if (!appContainer) {
+        console.error("Fatal Error: #app element not found in DOM.");
+        return;
     }
+    
+    renderLayout(appContainer);
 
     // 2. テーマの初期化
     initTheme();
@@ -33,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. 共通モーダルの初期化
     renderModals();
-    initTaskModal(); // ★追加: モーダルのイベント設定を初期化
+    initTaskModal(); 
     
     // 5. 認証初期化
     initAuthUI();

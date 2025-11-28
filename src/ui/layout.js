@@ -39,16 +39,14 @@ export function renderLayout(appContainer) {
     </header>
 
     <div class="flex flex-1 overflow-hidden max-w-7xl mx-auto w-full">
-        <!-- サイドバー -->
-        <aside class="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex-shrink-0 flex flex-col hidden md:flex transition-colors duration-200">
+        <!-- サイドバー: CSS競合(flex hidden)を修正 -->
+        <aside class="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex-shrink-0 flex-col hidden md:flex transition-colors duration-200">
             <div class="p-4 overflow-y-auto flex-1">
                 <div class="mb-6">
                     <ul class="space-y-1">
-                        <!-- ダッシュボード -->
                         <li id="nav-dashboard" class="px-2 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-sm font-medium cursor-pointer flex items-center transition-colors">
                             <i class="fas fa-chart-pie w-5 text-center mr-2 text-purple-500"></i> ダッシュボード
                         </li>
-                        <!-- ★追加: インボックス -->
                         <li id="nav-inbox" class="px-2 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-sm font-medium cursor-pointer flex items-center justify-between transition-colors">
                             <div class="flex items-center">
                                 <i class="fas fa-inbox w-5 text-center mr-2 text-blue-500"></i> インボックス
