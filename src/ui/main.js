@@ -10,37 +10,41 @@ import { initAuthUI, updateAuthUI } from './auth.js';
 import { renderTaskList } from './task-view.js'; 
 import { renderModals } from './components.js';
 import { initTheme, toggleTheme } from './theme.js';
-// ★追加: アプリロジックをインポート
 import { initializeApp } from './app.js';
+import { initTaskModal } from './task-modal.js';
+import { renderLayout } from './layout.js'; // ★追加: レイアウト描画
 
 // アプリ初期化
 document.addEventListener('DOMContentLoaded', () => {
-    // テーマの初期化
+    // 1. レイアウトの描画 (div#appの中にHTMLを生成)
+    const appContainer = document.getElementById('app');
+    if (appContainer) {
+        renderLayout(appContainer);
+    }
+
+    // 2. テーマの初期化
     initTheme();
 
-    // テーマ切り替えボタンのイベントリスナー
+    // 3. テーマ切り替えボタンのイベントリスナー（レイアウト生成後に取得）
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', toggleTheme);
     }
 
-    // 共通モーダルをDOMに挿入
+    // 4. 共通モーダルの初期化
     renderModals();
+    initTaskModal(); // ★追加: モーダルのイベント設定を初期化
     
+    // 5. 認証初期化
     initAuthUI();
     
-    // 認証リスナーの開始
     initAuthListener(
-        // ログイン時
         (user) => {
             updateAuthUI(user);
-            // ★変更: app.js の初期化ロジックを呼び出し
             initializeApp(user.uid);
         },
-        // ログアウト時
         () => {
             updateAuthUI(null);
-            // 画面クリア
             renderTaskList([], null);
         }
     );

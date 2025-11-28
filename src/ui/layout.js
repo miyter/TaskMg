@@ -1,42 +1,17 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>無料タスク管理ツール</title>
-    <!-- Tailwind CSS (Viteビルドで処理されるためCDNは削除しても良いが、互換性のため残す場合は注意) -->
-    <!-- 本番ビルド時はCSSファイルが読み込まれるため、以下のCDNは開発中の一時的なフォールバックとして機能します -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class', // CDN版でもダークモードを有効化
-            theme: { extend: {} }
-        }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
-        /* ダークモード用のスクロールバー */
-        .dark ::-webkit-scrollbar-track { background: #1f2937; }
-        .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
-        .dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-        body.modal-open { overflow: hidden; }
-    </style>
-  <script type="module" crossorigin src="/assets/main-BuozyDqI.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-B20mborX.css">
-</head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 h-screen flex flex-col overflow-hidden transition-colors duration-200">
+/**
+ * アプリケーションのHTML構造をレンダリングする
+ * @param {HTMLElement} appContainer - 描画対象のコンテナ (div#app)
+ */
+export function renderLayout(appContainer) {
+    if (!appContainer) return;
 
+    appContainer.innerHTML = `
+    <!-- ヘッダー -->
     <header class="bg-white dark:bg-gray-800 shadow-sm z-10 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 transition-colors duration-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
             <div class="flex items-center">
                 <i class="fas fa-check-double text-blue-600 dark:text-blue-400 text-xl mr-2"></i>
-                <h1 class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">Task Manager</h1>
+                <h1 class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">mytask</h1>
             </div>
             <div class="flex-1 max-w-lg mx-4 hidden md:block">
                 <div class="relative">
@@ -45,7 +20,6 @@
                 </div>
             </div>
             <div id="auth-ui" class="flex items-center space-x-4">
-                <!-- テーマ切り替えボタン -->
                 <button id="theme-toggle-btn" class="text-gray-400 hover:text-yellow-500 dark:text-gray-400 dark:hover:text-yellow-300 transition p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="テーマ切り替え">
                     <i id="theme-toggle-icon" class="fas fa-sun fa-lg"></i>
                 </button>
@@ -65,6 +39,7 @@
     </header>
 
     <div class="flex flex-1 overflow-hidden max-w-7xl mx-auto w-full">
+        <!-- サイドバー -->
         <aside class="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex-shrink-0 flex flex-col hidden md:flex transition-colors duration-200">
             <div class="p-4 overflow-y-auto flex-1">
                 <div class="mb-6">
@@ -74,7 +49,6 @@
                 </div>
                 <div class="mb-6">
                     <div class="flex justify-between items-center mb-2 px-2">
-                        <!-- ★修正: Projectsの見出しを白く (dark:text-white) -->
                         <h3 class="text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wider">Projects</h3>
                         <button id="add-project-btn" class="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800"><i class="fas fa-plus"></i></button>
                     </div>
@@ -82,7 +56,6 @@
                 </div>
                 <div>
                     <div class="flex justify-between items-center mb-2 px-2">
-                        <!-- ★修正: Tagsの見出しを白く (dark:text-white) -->
                         <h3 class="text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wider">Tags</h3>
                         <button id="add-label-btn" class="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800"><i class="fas fa-plus"></i></button>
                     </div>
@@ -91,6 +64,7 @@
             </div>
         </aside>
 
+        <!-- メインエリア -->
         <main class="flex-1 flex flex-col bg-white dark:bg-gray-800 overflow-hidden relative transition-colors duration-200">
             <!-- ダッシュボード -->
             <div id="dashboard-view" class="hidden p-6 overflow-y-auto h-full custom-scrollbar">
@@ -136,57 +110,5 @@
             <div id="toast-container" class="absolute bottom-4 right-4 space-y-2 pointer-events-none z-50"></div>
         </main>
     </div>
-    
-    <!-- ★設定モーダル (settings.jsで使用) -->
-    <div id="settings-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden transition-opacity flex items-center justify-center">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md m-4 transform transition-all p-6 relative">
-            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center"><i class="fas fa-cog mr-2 text-blue-500"></i> 設定</h3>
-            
-            <button id="close-settings-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
-                <i class="fas fa-times fa-lg"></i>
-            </button>
-
-            <!-- パスワード変更セクション -->
-            <div class="border-b dark:border-gray-700 pb-4 mb-4">
-                <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">パスワードの変更</h4>
-                <input type="password" id="new-password-input" placeholder="新しいパスワード (6文字以上)"
-                       class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm mb-3 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                <button id="update-password-btn" 
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition duration-150 shadow-md">
-                    パスワードを更新
-                </button>
-                <p class="text-xs text-red-500 mt-2">※セキュリティのため、更新後に再ログインが必要です。</p>
-            </div>
-
-            <!-- データ操作セクション -->
-            <div>
-                <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">データ管理</h4>
-                <button id="export-data-btn" 
-                        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition duration-150 shadow-md flex items-center justify-center">
-                    <i class="fas fa-download mr-2"></i> 全データのエクスポート (JSON)
-                </button>
-            </div>
-        </div>
-    </div>
-    <!-- ★/設定モーダル -->
-
-    <script>
-        const firebaseConfig = {
-          apiKey: "AIzaSyCD6u_GAQJrU8DBu1LMUGw0wUsAXtdC6qw",
-          authDomain: "taskmg-c5be0.firebaseapp.com",
-          projectId: "taskmg-c5be0",
-          storageBucket: "taskmg-c5be0.firebasestorage.app",
-          messagingSenderId: "245900813558",
-          appId: "1:245900813558:web:3502cafdd4fa5d1c9538d7",
-          measurementId: "G-NQC4YWR4EM"
-        };
-        window.GLOBAL_FIREBASE_CONFIG = firebaseConfig;
-        window.GLOBAL_INITIAL_AUTH_TOKEN = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        window.GLOBAL_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    </script>
-    
-    <!-- 正しいパスを指定 --> 
-    
-    <style>input:checked ~ .dot { transform: translateX(100%); background-color: #10B981; } input:checked ~ .bg-gray-200 { background-color: #D1FAE5; }</style>
-</body>
-</html>
+    `;
+}
