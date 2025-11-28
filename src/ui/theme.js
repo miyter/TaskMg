@@ -1,11 +1,5 @@
-// テーマ管理ロジック
-
-/**
- * 初期テーマを適用する
- * localStorageの設定、なければシステム設定を確認
- */
 export function initTheme() {
-    // ローカルストレージに設定があるか、もしくはシステムのダークモード設定を確認
+    // ローカルストレージまたはシステム設定を確認
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
     } else {
@@ -14,9 +8,6 @@ export function initTheme() {
     updateThemeIcon();
 }
 
-/**
- * テーマを切り替える（トグル）
- */
 export function toggleTheme() {
     if (document.documentElement.classList.contains('dark')) {
         document.documentElement.classList.remove('dark');
@@ -28,19 +19,16 @@ export function toggleTheme() {
     updateThemeIcon();
 }
 
-/**
- * アイコンの表示を更新する
- */
 function updateThemeIcon() {
     const icon = document.getElementById('theme-toggle-icon');
+    
+    // ★修正: アイコンが見つからない場合は何もしない（エラー回避）
     if (!icon) return;
 
     if (document.documentElement.classList.contains('dark')) {
-        // ダークモード時は「月」を表示
         icon.classList.remove('fa-sun');
         icon.classList.add('fa-moon');
     } else {
-        // ライトモード時は「太陽」を表示
         icon.classList.remove('fa-moon');
         icon.classList.add('fa-sun');
     }

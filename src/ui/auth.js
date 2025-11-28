@@ -1,56 +1,64 @@
-// @miyter:20251125
-// Vite導入に伴い、ローカルモジュールのインポートパスを絶対パス '@' に修正
-// alert()をshowMessageModalに置き換え
+// 認証UIの制御
 
-// --- 修正1: コアモジュールへのインポートパスを絶対パスに変更 ---
+// --- 修正: インポートパス ---
 import { loginWithEmail, logout } from '@/core/auth.js';
-// --- 修正2: alert()を置き換えるため、メッセージモーダルをインポート ---
 import { showMessageModal } from './components.js'; 
 
-const ui = {
-    formContainer: document.getElementById('login-form-container'),
-    userInfo: document.getElementById('user-info'),
-    displayName: document.getElementById('user-display-name'),
-    emailInput: document.getElementById('email-input'),
-    passInput: document.getElementById('password-input'),
-    loginBtn: document.getElementById('email-login-btn'),
-    logoutBtn: document.getElementById('logout-btn')
-};
-
 export function initAuthUI() {
-    if (ui.loginBtn) {
-        ui.loginBtn.addEventListener('click', async () => {
+    const loginBtn = document.getElementById('email-login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const emailInput = document.getElementById('email-input');
+    const passInput = document.getElementById('password-input');
+
+    if (loginBtn) {
+        // 重複リスナーを防ぐため、クローンして置換する方法も有効ですが、
+        // initAuthUIが一度しか呼ばれない前提ならこのままでOK
+        loginBtn.addEventListener('click', async () => {
             try {
-                // ログイン処理を実行
-                await loginWithEmail(ui.emailInput.value, ui.passInput.value);
-                // 成功時はonAuthStateChangedでUIが更新されるため、ここでは何もしない
+                if (!emailInput.value || !passInput.value) {
+                    showMessageModal("メールアドレスとパスワードを入力してください。", null);
+                    return;
+                }
+                await loginWithEmail(emailInput.value, passInput.value);
+                // 成功時の処理は onAuthStateChanged で自動的に行われる
             } catch (e) {
-                // ログイン失敗時: alert()の代わりにshowMessageModalを使用
-                showMessageModal("ログインエラー", e.message || "ログインに失敗しました。", "error");
+                showMessageModal("ログインエラー: " + (e.message || "失敗しました"), null);
             }
         });
     }
 
-    if (ui.logoutBtn) {
-        ui.logoutBtn.addEventListener('click', async () => {
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
             await logout();
         });
     }
 }
 
 export function updateAuthUI(user) {
+    const loginForm = document.getElementById('login-form-container');
+    const userInfo = document.getElementById('user-info');
+    const userNameObj = document.getElementById('user-display-name');
+    const emailInput = document.getElementById('email-input');
+    const passInput = document.getElementById('password-input');
+
+    // 要素がまだ描画されていない場合はスキップ
+    if (!loginForm || !userInfo) return;
+
     if (user) {
-        ui.formContainer.classList.add('hidden');
-        ui.userInfo.classList.remove('hidden');
-        ui.userInfo.classList.add('flex');
-        // UIDの表示はmain.jsで行うため、ここではEmailのみ
-        ui.displayName.textContent = user.email || "ゲスト"; 
+        // ログイン時
+        loginForm.classList.add('hidden');
+        userInfo.classList.remove('hidden');
+        if (userNameObj) {
+            userNameObj.textContent = user.email || 'ユーザー';
+        }
     } else {
-        ui.formContainer.classList.remove('hidden');
-        ui.userInfo.classList.add('hidden');
-        ui.userInfo.classList.remove('flex');
-        // ログアウト時にフォームの入力値をクリア
-        if (ui.emailInput) ui.emailInput.value = '';
-        if (ui.passInput) ui.passInput.value = '';
+        // ログアウト時
+        loginForm.classList.remove('hidden');
+        userInfo.classList.add('hidden');
+        if (userNameObj) userNameObj.textContent = '';
+        
+        // フォームクリア
+        if (emailInput) emailInput.value = '';
+        if (passInput) passInput.value = '';
     }
 }
