@@ -4,7 +4,7 @@
 
 // --- 修正: CSSパッケージの直接インポートを削除し、ローカルCSSをインポート ---
 // import "tailwindcss/tailwind.css"; // ★削除！
-import "../../index.css"; // ★修正: プロジェクトルート直下のCSSファイルをインポート
+import "../index.css"; // ★修正: プロジェクトルート直下のCSSファイルをインポート
 
 // --- モジュールインポート (Vite絶対パス '@' に修正) ---
 import { initAuthListener } from '@/core/auth.js';
