@@ -1,118 +1,124 @@
-// @miyter:20251125
-// --- 共通UIコンポーネント (タスク編集モーダル, メッセージモーダル) ---
-// 役割: JavaScriptを使ってDOMにモーダルを挿入し、必要な関数をエクスポートする
+// 共通コンポーネント（モーダル等）のレンダリングと制御
 
 /**
- * 共通のモーダルHTML構造をDOMに挿入する。
- * タスク編集モーダル以外に、メッセージ確認用モーダルをここで定義する。
+ * アプリケーションで使用するモーダルHTMLをDOMに注入する
  */
 export function renderModals() {
-    // 既存のモーダルコンテナがあれば削除
-    if (document.getElementById('modal-container')) {
-        document.getElementById('modal-container').remove();
-    }
+    const existingEdit = document.getElementById('task-edit-modal');
+    if (existingEdit) existingEdit.remove();
     
-    // モーダル全体を格納するコンテナ
-    const modalContainer = document.createElement('div');
-    modalContainer.id = 'modal-container';
-    
-    // タスク編集モーダルとメッセージモーダルのHTML構造を定義
-    modalContainer.innerHTML = `
-        <!-- タスク編集モーダル (task-view.jsで使用) -->
-        <div id="edit-task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 relative transform transition-all">
-                <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"><i class="fas fa-times fa-lg"></i></button>
-                <h3 class="text-xl font-bold mb-6 text-gray-800 border-b pb-3 flex items-center"><i class="fas fa-edit mr-2 text-blue-500"></i> タスクの編集</h3>
-                <div class="space-y-5">
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1.5">タイトル <span class="text-red-500">*</span></label><input type="text" id="edit-task-title" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm"></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1.5">期限日</label><input type="date" id="edit-task-date" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm text-gray-700"></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1.5">詳細メモ</label><textarea id="edit-task-desc" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm resize-none" placeholder="タスクの詳細や補足事項を入力..."></textarea></div>
+    const existingMsg = document.getElementById('message-modal');
+    if (existingMsg) existingMsg.remove();
+
+    const html = `
+    <!-- タスク編集モーダル -->
+    <div id="task-edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg transform transition-all flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white"><i class="fas fa-edit mr-2 text-blue-500"></i>タスクの編集</h3>
+                <button id="close-edit-modal-btn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <i class="fas fa-times fa-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scrollbar space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">タイトル</label>
+                    <input type="text" id="edit-task-title" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white transition-colors" placeholder="タスクのタイトル">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">タグ (ラベル)</label>
-                        <div id="edit-task-labels" class="flex flex-wrap gap-2 mb-2 min-h-[30px] p-1"></div>
-                        <div class="relative">
-                            <select id="edit-add-label-select" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm appearance-none cursor-pointer hover:border-gray-400"><option value="">＋ タグを追加...</option></select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"><i class="fas fa-chevron-down text-xs"></i></div>
-                        </div>
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">期限</label>
+                        <input type="date" id="edit-task-due" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:[color-scheme:dark]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">繰り返し</label>
+                        <select id="edit-task-recurrence" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                            <option value="none">なし</option>
+                            <option value="daily">毎日</option>
+                            <option value="weekly">毎週</option>
+                            <option value="monthly">毎月</option>
+                        </select>
                     </div>
                 </div>
-                <div class="mt-8 flex justify-end space-x-3 border-t pt-4">
-                    <button id="delete-task-btn-modal" class="text-red-500 hover:bg-red-50 hover:text-red-600 px-4 py-2 rounded-lg transition text-sm font-medium mr-auto flex items-center"><i class="fas fa-trash-alt mr-2"></i> 削除</button>
-                    <button id="cancel-edit-btn" class="text-gray-600 hover:bg-gray-100 hover:text-gray-800 px-5 py-2.5 rounded-lg transition text-sm font-medium">キャンセル</button>
-                    <button id="save-task-btn" class="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2.5 rounded-lg transition text-sm font-bold shadow-md transform active:scale-95 flex items-center"><i class="fas fa-save mr-2"></i> 保存</button>
+
+                <!-- ★追加: ラベル編集エリア -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">タグ</label>
+                    <div class="flex flex-wrap items-center gap-2 mb-2" id="edit-task-labels">
+                        <!-- ここにラベルバッジが動的に挿入されます -->
+                    </div>
+                    <select id="edit-add-label-select" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        <option value="">＋ タグを追加...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">詳細メモ</label>
+                    <textarea id="edit-task-desc" rows="4" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white transition-colors" placeholder="詳細を入力..."></textarea>
+                </div>
+            </div>
+
+            <div class="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl flex justify-between items-center">
+                 <button id="delete-task-btn-modal" class="text-red-500 hover:text-red-700 text-sm font-medium px-3 py-2 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition">
+                    <i class="fas fa-trash-alt mr-1"></i> 削除
+                </button>
+                <div class="flex space-x-3">
+                    <button id="cancel-edit-btn" class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition">キャンセル</button>
+                    <button id="save-task-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition transform active:scale-95">保存する</button>
                 </div>
             </div>
         </div>
-        
-        <!-- メッセージモーダル (auth.js, store.jsなどで使用) -->
-        <div id="message-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6 relative">
-                <h4 id="message-modal-title" class="text-lg font-bold mb-3 flex items-center"></h4>
-                <p id="message-modal-body" class="text-gray-700 mb-6"></p>
-                <div class="flex justify-end">
-                    <button id="message-modal-close-btn" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg transition text-sm font-medium">閉じる</button>
-                </div>
+    </div>
+
+    <!-- 汎用メッセージモーダル -->
+    <div id="message-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-[60] hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 transform transition-all scale-100">
+            <h3 id="msg-modal-title" class="text-lg font-bold text-gray-800 dark:text-white mb-2">確認</h3>
+            <p id="msg-modal-text" class="text-gray-600 dark:text-gray-300 mb-6 text-sm"></p>
+            <div class="flex justify-end space-x-2">
+                <button id="msg-modal-cancel" class="px-4 py-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition hidden">キャンセル</button>
+                <button id="msg-modal-ok" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition">OK</button>
             </div>
         </div>
+    </div>
     `;
-    document.body.appendChild(modalContainer);
-    
-    // イベントリスナー設定
-    document.getElementById('message-modal-close-btn')?.addEventListener('click', () => {
-        document.getElementById('message-modal')?.classList.add('hidden');
-    });
+
+    document.body.insertAdjacentHTML('beforeend', html);
 }
 
-/**
- * 汎用的なメッセージモーダルを表示する。
- * @param {string} title - モーダルのタイトル
- * @param {string} body - モーダルの本文
- * @param {'success' | 'error' | 'info'} type - メッセージのタイプ
- */
-export function showMessageModal(title, body, type = 'info') {
+export function showMessageModal(text, onConfirm = null) {
     const modal = document.getElementById('message-modal');
-    const titleEl = document.getElementById('message-modal-title');
-    const bodyEl = document.getElementById('message-modal-body');
+    const msgText = document.getElementById('msg-modal-text');
+    const okBtn = document.getElementById('msg-modal-ok');
+    const cancelBtn = document.getElementById('msg-modal-cancel');
     
-    if (!modal || !titleEl || !bodyEl) {
-        console.error(`Modal element missing. Title: ${title}, Body: ${body}`);
-        return;
+    if (!modal) return;
+
+    msgText.textContent = text;
+    
+    const newOk = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOk, okBtn);
+    
+    const newCancel = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+    if (onConfirm) {
+        newCancel.classList.remove('hidden');
+        newOk.onclick = () => {
+            modal.classList.add('hidden');
+            onConfirm();
+        };
+        newCancel.onclick = () => {
+            modal.classList.add('hidden');
+        };
+    } else {
+        newCancel.classList.add('hidden');
+        newOk.onclick = () => {
+            modal.classList.add('hidden');
+        };
     }
-    
-    // スタイルをリセット
-    titleEl.className = 'text-lg font-bold mb-3 flex items-center';
-    
-    // タイプに応じたアイコンと色を設定
-    let iconClass = '';
-    let iconColor = '';
-    
-    switch (type) {
-        case 'success':
-            iconClass = 'fas fa-check-circle';
-            iconColor = 'text-green-500';
-            break;
-        case 'error':
-            iconClass = 'fas fa-exclamation-triangle';
-            iconColor = 'text-red-500';
-            break;
-        case 'info':
-        default:
-            iconClass = 'fas fa-info-circle';
-            iconColor = 'text-blue-500';
-            break;
-    }
-    
-    titleEl.innerHTML = `<i class="${iconClass} ${iconColor} mr-2"></i> ${title}`;
-    bodyEl.textContent = body;
+
     modal.classList.remove('hidden');
 }
-
-
-// 編集モーダル用の要素をエクスポート (task-view.jsが要素にアクセスできるようにする)
-// 注: これらの要素は renderModals() が実行された後に document.getElementById で取得可能です。
-export const editModalElements = {
-    // 参照のみエクスポートし、取得はタスクビュー側で行うため、ここでは省略
-};
-
-// 空のエクスポートも維持
-export default {};
