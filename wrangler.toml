@@ -2,9 +2,9 @@ name = "taskmg"
 # 互換性の日付は最新のものを指定
 compatibility_date = "2025-11-23" 
 
-# [site] セクションは、Workersで静的ファイルをホストするための設定だよ
+# [site] セクションの設定
 [site]
-# 【重要】変更点: publicではなくViteのビルド成果物ディレクトリ'./dist'を指定
+# 【修正】Viteのビルド成果物である dist フォルダを参照するように変更
 bucket = "./dist"
 # Workersで静的ファイルを扱うためのボイラープレートの場所
 entry-point = "workers-site"
