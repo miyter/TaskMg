@@ -12,7 +12,8 @@ import {
     getDocs,
     Timestamp 
 } from "firebase/firestore";
-import { db } from '@/core/firebase.js';
+// ローカルモジュールへのインポートパスを相対パス '../core/firebase.js' に変更
+import { db } from '../core/firebase.js';
 
 let unsubscribe = null;
 
@@ -45,6 +46,8 @@ export function subscribeToTasks(userId, onUpdate) {
 
 /**
  * タスクを追加
+ * @param {string} userId - ユーザーID
+ * @param {object} taskData - タスクデータ
  */
 export async function addTask(userId, taskData) {
     const appId = window.GLOBAL_APP_ID;
@@ -59,8 +62,10 @@ export async function addTask(userId, taskData) {
 }
 
 /**
- * ★復活: タスクのステータスを更新
- * (これが無いと task-list.js でビルドエラーになります)
+ * タスクのステータスを更新
+ * @param {string} userId - ユーザーID
+ * @param {string} taskId - タスクID
+ * @param {string} status - 新しいステータス
  */
 export async function updateTaskStatus(userId, taskId, status) {
     const appId = window.GLOBAL_APP_ID;
@@ -70,12 +75,16 @@ export async function updateTaskStatus(userId, taskId, status) {
 
 /**
  * タスクの情報を更新（汎用）
+ * @param {string} userId - ユーザーID
+ * @param {string} taskId - タスクID
+ * @param {object} updates - 更新内容
  */
 export async function updateTask(userId, taskId, updates) {
     const appId = window.GLOBAL_APP_ID;
+    // Firestoreのパスに userId を含める
     const ref = doc(db, `/artifacts/${appId}/users/${userId}/tasks`, taskId);
     
-    // 日付データの変換処理 (Dateオブジェクトならそのまま保存可能だが、念のため)
+    // 日付データの変換処理
     const safeUpdates = { ...updates };
     if (safeUpdates.dueDate && !(safeUpdates.dueDate instanceof Date) && !(safeUpdates.dueDate instanceof Timestamp)) {
           safeUpdates.dueDate = new Date(safeUpdates.dueDate);
@@ -86,6 +95,8 @@ export async function updateTask(userId, taskId, updates) {
 
 /**
  * タスクを削除
+ * @param {string} userId - ユーザーID
+ * @param {string} taskId - タスクID
  */
 export async function deleteTask(userId, taskId) {
     const appId = window.GLOBAL_APP_ID;
@@ -95,6 +106,7 @@ export async function deleteTask(userId, taskId) {
 
 /**
  * バックアップデータ作成機能
+ * @param {string} userId - ユーザーID
  */
 export async function createBackupData(userId) {
     if (!db) throw new Error("Firestore not initialized");

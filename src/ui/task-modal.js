@@ -1,3 +1,4 @@
+// @ts-nocheck
 // @miyter:20251129
 
 import { updateTask, deleteTask } from '../store/store.js';
@@ -242,8 +243,3 @@ function formatDateForInput(date) {
     const dd = String(date.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
 }
-```EOF
-
-### `src/store/store.js` の修正
-
-`updateTask` 関数はすでに `userId` を受け取るように定義されていますが、`updateTaskStatus` も同様に `userId` が必要です。また、`addTask` も呼び出し元で `userId` を受け取るように修正します。
