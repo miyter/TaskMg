@@ -1,4 +1,7 @@
-import { addTask } from '../store/store.js';
+// @miyter:20251129
+
+// ★修正: store.js ではなく、ラッパー層の index.js (store.js経由) からインポート
+import { addTaskCompatibility } from '../store/store.js';
 
 let isInputExpanded = false; // 入力フォームの開閉状態を管理
 
@@ -76,14 +79,24 @@ export function renderInlineInput(container, projectId, labelId) {
         const submitAction = async () => {
             const title = titleInput.value.trim();
             const desc = descInput.value.trim();
+            
+            // ★ dueDateは未実装なのでnull, recurrenceはnull, labelIdは空配列を渡す
+            const taskData = {
+                title,
+                description: desc,
+                dueDate: null, 
+                projectId: projectId, 
+                labelIds: labelId ? [labelId] : []
+            };
+
             if (!title) return;
 
             submitBtn.disabled = true;
             submitBtn.textContent = '追加中...';
 
             try {
-                // store.js の addTask を呼び出し
-                await addTask(title, desc, null, projectId, labelId);
+                // ★修正: userIdを削除し、新しいaddTaskCompatibilityラッパーを呼び出す
+                await addTaskCompatibility(taskData);
                 
                 // フォームをリセット（連続入力のため閉じない）
                 titleInput.value = '';
@@ -99,7 +112,10 @@ export function renderInlineInput(container, projectId, labelId) {
                 
             } catch (e) {
                 console.error(e);
-                alert('追加に失敗しました');
+                // 認証エラーの場合はStoreラッパーがモーダルを表示する
+                if (e.message !== 'Authentication required.') {
+                    alert('追加に失敗しました');
+                }
                 submitBtn.disabled = false;
             }
         };

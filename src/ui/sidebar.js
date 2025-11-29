@@ -1,10 +1,14 @@
+// @ts-nocheck
 // @miyter:20251129
 
+// ★修正: storeから updateTask をインポート
 import { updateTask } from '../store/store.js';
+// ★修正: projects.js, labels.js からラッパー関数をインポート
 import { addProject, deleteProject } from '../store/projects.js';
 import { addLabel, deleteLabel } from '../store/labels.js';
 import { showMessageModal } from './components.js';
-import { auth } from '../core/firebase.js'; // authをインポート
+import { auth } from '../core/firebase.js'; // authはsetupDropZone内で必要
+
 
 let labelMap = {};
 
@@ -61,7 +65,6 @@ export function initSidebar() { renderSidebar(); }
 function setupSidebarEvents() {
     const dispatch = (page, id = null) => document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
     
-    // ★修正1: nav-dashboard にイベントリスナーを追加
     document.getElementById('nav-dashboard')?.addEventListener('click', (e) => { 
         e.preventDefault(); 
         dispatch('dashboard'); 
@@ -71,13 +74,15 @@ function setupSidebarEvents() {
     
     document.getElementById('add-project-btn')?.addEventListener('click', async () => {
         const name = prompt("新しいプロジェクト名:"); 
-        if (name?.trim()) await addProject(auth.currentUser?.uid, name.trim());
+        // ★修正: userIdの引数を削除 (ラッパーが自動注入)
+        if (name?.trim()) await addProject(name.trim());
     });
     
     document.getElementById('add-label-btn')?.addEventListener('click', async () => {
         const name = prompt("新しいラベル名:"); 
         // ランダムカラーを使用 (簡易実装)
-        if (name?.trim()) await addLabel(auth.currentUser?.uid, name.trim(), getRandomColor());
+        // ★修正: userIdの引数を削除 (ラッパーが自動注入)
+        if (name?.trim()) await addLabel(name.trim(), getRandomColor());
     });
 }
 
@@ -115,7 +120,8 @@ export function renderProjects(projects, tasks = []) {
         li.addEventListener('click', () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'project', id: proj.id } })));
         li.querySelector('.delete-proj-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
-            showMessageModal(`プロジェクト「${proj.name}」を削除しますか？`, async () => await deleteProject(auth.currentUser?.uid, proj.id));
+            // ★修正: userIdの引数を削除 (ラッパーが自動注入)
+            showMessageModal(`プロジェクト「${proj.name}」を削除しますか？`, async () => await deleteProject(proj.id));
         });
 
         // ドロップ設定 (プロジェクト移動)
@@ -155,7 +161,8 @@ export function renderLabels(labels, tasks = []) {
         li.addEventListener('click', () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'label', id: label.id } })));
         li.querySelector('.delete-label-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
-            showMessageModal(`ラベル「${label.name}」を削除しますか？`, async () => await deleteLabel(auth.currentUser?.uid, label.id));
+            // ★修正: userIdの引数を削除 (ラッパーが自動注入)
+            showMessageModal(`ラベル「${label.name}」を削除しますか？`, async () => await deleteLabel(label.id));
         });
 
         // ドロップ設定 (ラベル付与)
@@ -168,7 +175,7 @@ function setupDropZone(element, type, targetId = null) {
     // 認証情報とFirestore操作をインポート
     import('../core/firebase.js').then(({ auth }) => {
         const userId = auth.currentUser?.uid;
-        if (!userId) return;
+        if (!userId) return; // 未認証ならドロップゾーンを設定しない
 
         element.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -186,11 +193,12 @@ function setupDropZone(element, type, targetId = null) {
                 // store.js の updateTask を動的にインポート
                 const { updateTask } = await import('../store/store.js');
 
+                // ★修正: updateTaskにuserIdを渡す必要がなくなったため、呼び出しから削除
                 if (type === 'inbox') {
-                    await updateTask(userId, taskId, { projectId: null });
+                    await updateTask(taskId, { projectId: null });
                     showMessageModal("タスクをインボックスに戻しました");
                 } else if (type === 'project' && targetId) {
-                    await updateTask(userId, taskId, { projectId: targetId });
+                    await updateTask(taskId, { projectId: targetId });
                     showMessageModal("プロジェクトへ移動しました");
                 } else if (type === 'label' && targetId) {
                     // ★課題: ラベルへのドロップは現在のラベル情報が必要なため、

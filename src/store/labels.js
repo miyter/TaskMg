@@ -1,52 +1,59 @@
-// @miyter:20251125
-// Vite導入に伴い、Firebase SDKのインポートをnpmパッケージ形式に、
-// ローカルモジュールのインポートを絶対パス '@' に修正
+// @ts-nocheck
+// @miyter:20251129
 
-// --- 修正1: deleteDoc, doc を追加 ---
-import { collection, addDoc, deleteDoc, doc, query, onSnapshot } from "firebase/firestore";
+import { auth } from '../core/firebase.js';
+import { showMessageModal } from '../ui/components.js';
 
-// --- 修正2: ローカルモジュールへのインポートパスを絶対パスに変更 ---
-import { db } from '@/core/firebase.js';
+// ★修正: store-rawをインポート
+import { 
+    subscribeToLabelsRaw,
+    addLabelRaw,
+    deleteLabelRaw
+} from './labels-raw.js';
 
 /**
- * ラベルデータのリアルタイムリスナーを開始する。
- * @param {string} userId - ユーザーID
- * @param {function} onUpdate - データ更新時に呼び出されるコールバック関数
- * @returns {function} リスナーを解除するための関数
+ * 認証ガード。未認証ならエラーモーダルを表示し例外をスローする。
+ * @returns {string} 認証済みのユーザーID
  */
-export function subscribeToLabels(userId, onUpdate) {
-    const appId = window.GLOBAL_APP_ID;
-    const path = `/artifacts/${appId}/users/${userId}/labels`;
-    const q = query(collection(db, path));
+function requireAuth() {
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+        showMessageModal("操作にはログインが必要です。", null); 
+        throw new Error('Authentication required.'); 
+    }
+    return userId;
+}
 
-    return onSnapshot(q, (snapshot) => {
-        const labels = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        onUpdate(labels);
-    });
+// ==========================================================
+// ★ UI層向けラッパー関数 (認証ガードと userId の自動注入)
+// ==========================================================
+
+/**
+ * ラベルのリアルタイム購読 (ラッパー)
+ */
+export function subscribeToLabels(onUpdate) {
+    const userId = auth.currentUser?.uid;
+    // 認証前に呼ばれる可能性もあるため、userIdが存在すれば購読
+    if (userId) {
+        subscribeToLabelsRaw(userId, onUpdate);
+    }
 }
 
 /**
- * 新しいラベルを追加する。
- * @param {string} userId - ユーザーID
+ * 新しいラベルを追加する (ラッパー)
  * @param {string} name - ラベル名
- * @param {string} color - ラベルの色 (HEXまたはTailwindクラス名)
+ * @param {string} color - ラベルの色
  */
-export async function addLabel(userId, name, color) {
-    const appId = window.GLOBAL_APP_ID;
-    const path = `/artifacts/${appId}/users/${userId}/labels`;
-    await addDoc(collection(db, path), {
-        name,
-        color,
-        ownerId: userId,
-        createdAt: new Date()
-    });
+export async function addLabel(name, color) {
+    const userId = requireAuth();
+    return addLabelRaw(userId, name, color);
 }
 
 /**
- * ★追加: ラベルを削除する
+ * ラベルを削除する (ラッパー)
+ * @param {string} labelId - ラベルID
  */
-export async function deleteLabel(userId, labelId) {
-    const appId = window.GLOBAL_APP_ID;
-    const path = `/artifacts/${appId}/users/${userId}/labels`;
-    await deleteDoc(doc(db, path, labelId));
+export async function deleteLabel(labelId) {
+    const userId = requireAuth();
+    return deleteLabelRaw(userId, labelId);
 }

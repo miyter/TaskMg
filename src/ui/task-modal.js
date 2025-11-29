@@ -1,13 +1,15 @@
 // @ts-nocheck
 // @miyter:20251129
 
+// ★修正: store.js から updateTask, deleteTask をインポート（ラッパー関数を使用）
 import { updateTask, deleteTask } from '../store/store.js';
 import { showMessageModal } from './components.js';
 // task-modal-labels.js がある前提 (ラベル機能用)
 import { renderModalLabels, setupLabelSelectOptions } from './task-modal-labels.js';
 
-// ★追加: Firebase Authをインポート
-import { auth } from '../core/firebase.js';
+// ★修正: auth はラッパー内で処理されるため不要だが、認証ガードのメッセージのために残す（または削除）
+// 今回はupdateTask/deleteTaskが認証ガードを持つため、authインポートは削除し、userIdチェックも削除します。
+// import { auth } from '../core/firebase.js';
 
 let currentTask = null;
 
@@ -136,13 +138,12 @@ export function openTaskEditModal(task) {
         setupLabelSelectOptions(addLabelSelect);
         
         addLabelSelect.onchange = async (e) => {
-            const userId = auth.currentUser?.uid; // ★修正: userIdを取得
             const labelId = e.target.value;
-            if (labelId && currentTask && userId) { // ★修正: userIdチェックを追加
+            if (labelId && currentTask) { 
                 const currentLabels = currentTask.labelIds || [];
                 if (!currentLabels.includes(labelId)) {
                     const newLabelIds = [...currentLabels, labelId];
-                    await updateTask(userId, currentTask.id, { labelIds: newLabelIds }); // ★修正: userIdを渡す
+                    await updateTask(currentTask.id, { labelIds: newLabelIds }); // ★修正: userIdを削除
                     currentTask.labelIds = newLabelIds;
                     refreshLabelsDisplay();
                     showMessageModal("タグを追加しました");
@@ -169,11 +170,7 @@ export function closeTaskModal() {
 // =========================================================
 
 function setupModalEvents(container) {
-    const userId = auth.currentUser?.uid; // ★修正: userIdを取得
-    if (!userId) {
-        showMessageModal("エラー", "認証ユーザーが見つかりません。再ログインしてください。", null);
-        return;
-    }
+    // ★修正: userIdの取得とチェックを削除。認証はラッパー関数が担当する
     
     document.getElementById('close-modal-btn')?.addEventListener('click', closeTaskModal);
     document.getElementById('cancel-modal-btn')?.addEventListener('click', closeTaskModal);
@@ -191,26 +188,27 @@ function setupModalEvents(container) {
         const newRecurrence = document.getElementById('modal-task-recurrence').value;
         
         if (!newTitle) {
-            showMessageModal("タイトルを入力してください", null); // alertをshowMessageModalに置き換え
+            showMessageModal("タイトルを入力してください", null);
             return;
         }
 
         const updates = {
             title: newTitle,
             description: newDesc,
-            // 日付文字列をDateオブジェクトに変換
             dueDate: newDateVal ? new Date(newDateVal) : null,
             recurrence: newRecurrence !== 'none' ? { type: newRecurrence } : null
         };
 
-        await updateTask(userId, currentTask.id, updates); // ★修正: userIdを渡す
+        // ★修正: userIdの引数を削除
+        await updateTask(currentTask.id, updates);
         closeTaskModal();
     });
 
     // 削除
     document.getElementById('delete-task-modal-btn')?.addEventListener('click', () => {
         showMessageModal('本当に削除しますか？', async () => {
-            await deleteTask(userId, currentTask.id); // ★修正: userIdを渡す
+            // ★修正: userIdの引数を削除
+            await deleteTask(currentTask.id);
             closeTaskModal();
         });
     });
@@ -218,9 +216,8 @@ function setupModalEvents(container) {
 
 function refreshLabelsDisplay() {
     const container = document.getElementById('modal-task-labels');
-    const userId = auth.currentUser?.uid; // ★修正: userIdを取得
-
-    if (!container || !currentTask || !userId) return;
+    // ★修正: userIdの取得とチェックを削除
+    if (!container || !currentTask) return;
     
     const labelIds = currentTask.labelIds || [];
     
@@ -228,7 +225,8 @@ function refreshLabelsDisplay() {
         renderModalLabels(container, labelIds, async (labelIdToRemove, labelName) => {
             if (!currentTask) return;
             const newLabelIds = (currentTask.labelIds || []).filter(id => id !== labelIdToRemove);
-            await updateTask(userId, currentTask.id, { labelIds: newLabelIds }); // ★修正: userIdを渡す
+            // ★修正: userIdの引数を削除
+            await updateTask(currentTask.id, { labelIds: newLabelIds });
             currentTask.labelIds = newLabelIds;
             refreshLabelsDisplay();
             showMessageModal(`タグ「${labelName}」を外しました`);

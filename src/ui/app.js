@@ -1,9 +1,15 @@
+// @ts-nocheck
 // @miyter:20251129
 
-// (既存のインポート等はそのまま)
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore'; // onSnapshotはsubscribeToTasksRaw内で使用するため残す
 import { db, auth } from '../core/firebase.js';
+
+// ★修正: store/store.js を import。これで index.js のラッパーが利用可能
+import { subscribeToTasks } from '../store/store.js';
+import { subscribeToProjects } from '../store/projects.js';
+import { subscribeToLabels } from '../store/labels.js';
+
 import { filterTasks } from '../logic/search.js';
 import { renderLayout } from './layout.js';
 import { initTheme } from './theme.js';
@@ -25,31 +31,40 @@ export function initializeApp() {
     initTaskModal();
     setupGlobalEventListeners();
     onAuthStateChanged(auth, (user) => {
-        user ? startDataSync(user.uid) : (stopDataSync(), renderLoginState());
+        user ? startDataSync() : (stopDataSync(), renderLoginState()); // ★修正: userIdの受け渡しを削除
     });
 }
 
-function startDataSync(userId) {
-    const appId = window.GLOBAL_APP_ID || 'default-app-id';
+/**
+ * データのリアルタイム購読を開始する
+ * ★修正: userId引数を削除
+ */
+function startDataSync() {
+    // 既存の購読があれば停止
+    stopDataSync();
     
-    // タスク購読 (常時全件取得しメモリ内でフィルタリング)
-    unsubscribeTasks = onSnapshot(query(collection(db, `artifacts/${appId}/users/${userId}/tasks`), orderBy('createdAt', 'desc')), (snap) => {
-        allTasks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        updateUI(); // タスク更新時
+    // ★修正: onSnapshotをStoreラッパー関数に置き換え、userIdの管理をStore層に委譲
+    
+    // 1. タスク購読 (Storeラッパーが内部で userId を取得)
+    unsubscribeTasks = subscribeToTasks((snap) => {
+        allTasks = snap.map(doc => ({ id: doc.id, ...doc }));
+        updateUI(); 
     });
 
-    unsubscribeProjects = onSnapshot(query(collection(db, `artifacts/${appId}/users/${userId}/projects`), orderBy('createdAt', 'asc')), (snap) => {
-        allProjects = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // 2. プロジェクト購読
+    unsubscribeProjects = subscribeToProjects((projects) => {
+        allProjects = projects;
         renderProjects(allProjects, allTasks);
-        updateUI(); // プロジェクト名解決のためUI更新
+        updateUI(); 
     });
 
-    unsubscribeLabels = onSnapshot(query(collection(db, `artifacts/${appId}/users/${userId}/labels`), orderBy('createdAt', 'asc')), (snap) => {
-        allLabels = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // 3. ラベル購読
+    unsubscribeLabels = subscribeToLabels((labels) => {
+        allLabels = labels;
         renderLabels(allLabels, allTasks);
         updateUI();
     });
-    // ★修正: データ同期開始時にもサイドバーのイベントを設定する（nav-dashboardクリックを有効にするため）
+    
     initSidebar();
 }
 
@@ -75,7 +90,6 @@ function updateUI() {
 
     // ヘッダー情報取得
     const searchKeyword = document.getElementById('search-input')?.value || '';
-    // トグルボタンの状態を確認
     const toggleButton = document.getElementById('toggle-completed-btn');
     const showCompleted = toggleButton?.classList.contains('text-blue-500') || false;
 
@@ -88,7 +102,8 @@ function updateUI() {
     }
     if (currentFilter.type === 'settings') {
         showView(settingsView, [taskView, dashboardView]);
-        initSettings(auth.currentUser.uid); // ★修正: initSettingsにuserIdを渡す
+        // ★修正: userIdの取得を削除。initSettingsはauth.jsのラッパーが処理するため。
+        initSettings(); 
         updateHeaderTitle('設定');
         return;
     }
@@ -97,7 +112,6 @@ function updateUI() {
     showView(taskView, [dashboardView, settingsView]);
 
     // ★重要: フィルタリングロジックの修正
-    // filterTasks関数が正しく動作することを前提に、引数を渡す
     const filteredTasks = filterTasks(allTasks, {
         projectId: currentFilter.type === 'project' ? currentFilter.id : null, 
         labelId: currentFilter.type === 'label' ? currentFilter.id : null,     

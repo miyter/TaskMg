@@ -1,5 +1,7 @@
+// @ts-nocheck
 // --- 設定UI (パスワード変更、データエクスポート) ---
 import { updateUserPassword } from '../core/auth.js';
+// ★修正: createBackupData をインポート
 import { createBackupData } from '../store/store.js';
 
 const settingsBtn = document.getElementById('settings-btn');
@@ -14,22 +16,26 @@ let currentUserId = null;
 export function initSettings(userId) { // 関数名を initSettings に修正
     currentUserId = userId;
 
+    // ★修正: settingsModalの存在チェックを追加
+    const sModal = document.getElementById('settings-modal');
+    if (!sModal) return; 
+
     if (settingsBtn) {
         settingsBtn.onclick = () => {
-            if (settingsModal) settingsModal.classList.remove('hidden');
+            if (sModal) sModal.classList.remove('hidden');
         };
     }
     if (closeSettingsBtn) {
         closeSettingsBtn.onclick = () => {
-            if (settingsModal) settingsModal.classList.add('hidden');
+            if (sModal) sModal.classList.add('hidden');
             if (newPasswordInput) newPasswordInput.value = ''; 
         };
     }
     
     // モーダル外クリックで閉じる機能
-    if (settingsModal) {
-        settingsModal.onclick = (e) => {
-            if (e.target === settingsModal) closeSettingsBtn.onclick();
+    if (sModal) {
+        sModal.onclick = (e) => {
+            if (e.target === sModal) closeSettingsBtn.onclick();
         };
     }
 
@@ -41,6 +47,7 @@ export function initSettings(userId) { // 関数名を initSettings に修正
                 return;
             }
             try {
+                // ★修正: userIdの引数を削除 (auth.jsの関数内でauth.currentUserを使用)
                 await updateUserPassword(newPass);
                 alert("パスワードを変更しました。");
                 newPasswordInput.value = '';
@@ -61,7 +68,8 @@ export function initSettings(userId) { // 関数名を initSettings に修正
             exportDataBtn.disabled = true;
             exportDataBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 作成中...';
             try {
-                const data = await createBackupData(currentUserId);
+                // ★修正: userIdの引数を削除 (storeラッパー関数内でauth.currentUserを使用)
+                const data = await createBackupData();
                 downloadJSON(data, `task_manager_backup_${getTimestamp()}.json`);
                 alert("バックアップデータをダウンロードしました！");
             } catch (e) {

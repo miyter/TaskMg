@@ -1,3 +1,4 @@
+// @ts-nocheck
 // @miyter:20251125
 // Vite導入に伴い、Firebase SDKのインポートをnpmパッケージ形式に、
 // ローカルモジュールのインポートを絶対パス '@' に修正
@@ -11,10 +12,10 @@ import {
     updatePassword
 } from "firebase/auth";
 
-// --- 修正2: ローカルモジュールへのインポートパスを絶対パスに変更 ---
-import { auth, isFirebaseInitialized } from '@/core/firebase.js'; 
+// --- 修正2: ローカルモジュールへのインポートパスを相対パスに変更 ---
+import { auth, isFirebaseInitialized } from '../core/firebase.js'; 
 // UI層のヘルパー関数（updatePasswordが依存するため）
-import { showMessageModal } from '@/ui/components.js'; 
+import { showMessageModal } from '../ui/components.js'; 
 
 
 // 現在のユーザーID
@@ -51,11 +52,15 @@ export async function logout() {
     await signOut(auth);
 }
 
-// ユーザーパスワードの更新機能
+/**
+ * ユーザーパスワードの更新機能 (Storeラッパー対応)
+ * @param {string} newPassword - 新しいパスワード
+ */
 export async function updateUserPassword(newPassword) {
     const user = auth.currentUser;
     if (!user) {
         showMessageModal("エラー", "認証されていません。", "error");
+        // ラッパーが例外を補足し、UI側で処理を継続できるようにする
         throw new Error("認証されていません。");
     }
     
