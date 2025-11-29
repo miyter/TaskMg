@@ -1,171 +1,261 @@
-// アプリケーションのコアロジック
-import { subscribeToTasks, addTask } from '@/store/store.js';
-import { subscribeToProjects } from '@/store/projects.js';
-import { subscribeToLabels } from '@/store/labels.js';
-import { filterTasks, sortTasks } from '@/logic/search.js';
-import { initSidebar, renderProjects, renderLabels, updateInboxCount } from './sidebar.js'; // updateInboxCountを追加
-import { initTaskView, renderTaskList } from './task-view.js';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { db, auth } from '../core/firebase.js';
+import { filterTasks } from '../logic/search.js';
+// UIコンポーネントのインポート
+import { renderLayout } from './layout.js';
+import { initTheme } from './theme.js';
+import { initTaskModal } from './task-modal.js';
+import { initSidebar, renderProjects, renderLabels, updateInboxCount } from './sidebar.js';
+import { renderTaskView } from './task-view.js';
 import { renderDashboard } from './dashboard.js';
 import { initSettings } from './settings.js';
 
-// 状態管理
+// --- 状態管理 ---
 let allTasks = [];
 let allProjects = [];
 let allLabels = [];
-let currentFilter = {
-    keyword: '',
-    projectId: null, // null = Inbox
-    labelId: null,
-    showCompleted: false
+
+// フィルタ状態
+let currentFilter = { 
+    type: 'inbox', // 'inbox', 'project', 'label', 'dashboard', 'settings'
+    id: null 
 };
-let currentSort = 'created_desc';
+
+// Firestore購読解除用関数
+let unsubscribeTasks = null;
+let unsubscribeProjects = null;
+let unsubscribeLabels = null;
+
+// =========================================================
+// 公開メソッド (main.js から呼ばれるエントリーポイント)
+// =========================================================
 
 /**
- * ログイン後のアプリ初期化とデータ購読
+ * アプリケーションの初期化
  */
-export function initializeApp(userId) {
-    // 1. 各種イベントリスナー初期化
-    initSidebar(userId, (filter) => {
-        if (filter.type === 'dashboard') {
-            document.getElementById('task-view').classList.add('hidden');
-            document.getElementById('dashboard-view').classList.remove('hidden');
-        } else if (filter.type === 'inbox') {
-            // ★追加: インボックス選択時の処理
-            currentFilter.projectId = null;
-            currentFilter.labelId = null;
-            document.getElementById('task-view').classList.remove('hidden');
-            document.getElementById('dashboard-view').classList.add('hidden');
-            updateView();
+export function initializeApp() {
+    console.log('initializeApp: Starting...');
+
+    // 1. テーマとレイアウトの初期化 (DOM生成)
+    initTheme();
+    renderLayout();
+
+    // 2. モーダル機能の初期化
+    initTaskModal();
+
+    // 3. イベントリスナーの設定
+    setupGlobalEventListeners();
+
+    // 4. 認証監視とデータ同期開始
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            startDataSync(user.uid);
         } else {
-            currentFilter.projectId = filter.type === 'project' ? filter.value : null;
-            currentFilter.labelId = filter.type === 'label' ? filter.value : null;
-            document.getElementById('task-view').classList.remove('hidden');
-            document.getElementById('dashboard-view').classList.add('hidden');
-            updateView();
+            stopDataSync();
+            renderLoginState();
         }
     });
-    initSettings(userId);
+}
+
+// =========================================================
+// 内部ロジック
+// =========================================================
+
+// --- データ同期 (Firestore -> Local State) ---
+function startDataSync(userId) {
+    const appId = window.GLOBAL_APP_ID || 'default-app-id';
     
-    // タスク追加イベントを task-view に委譲
-    initTaskView(async (taskData) => {
-        if (currentFilter.projectId) taskData.projectId = currentFilter.projectId;
-        await addTask(userId, taskData);
+    // タスク購読
+    const tasksQuery = query(
+        collection(db, `artifacts/${appId}/users/${userId}/tasks`), 
+        orderBy('createdAt', 'desc')
+    );
+    unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
+        allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        updateUI(); // データ更新時に画面再描画
     });
 
-    setupFilterEvents();
+    // プロジェクト購読
+    const projectsQuery = query(
+        collection(db, `artifacts/${appId}/users/${userId}/projects`), 
+        orderBy('createdAt', 'asc')
+    );
+    unsubscribeProjects = onSnapshot(projectsQuery, (snapshot) => {
+        allProjects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderProjects(allProjects, allTasks); // サイドバー更新
+        updateUI(); 
+    });
 
-    // 2. データ購読開始
-    // プロジェクト・ラベルの描画時にタスク件数が必要なため、allTasksを渡すように変更
+    // ラベル購読
+    const labelsQuery = query(
+        collection(db, `artifacts/${appId}/users/${userId}/labels`), 
+        orderBy('createdAt', 'asc')
+    );
+    unsubscribeLabels = onSnapshot(labelsQuery, (snapshot) => {
+        allLabels = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderLabels(allLabels, allTasks); // サイドバー更新
+        updateUI();
+    });
+
+    // サイドバーのイベント初期化
+    initSidebar();
+}
+
+// --- 同期停止 ---
+function stopDataSync() {
+    if (unsubscribeTasks) unsubscribeTasks();
+    if (unsubscribeProjects) unsubscribeProjects();
+    if (unsubscribeLabels) unsubscribeLabels();
     
-    subscribeToProjects(userId, (projects) => {
-        allProjects = projects;
-        renderProjects(projects, (filter) => {
-            currentFilter.projectId = filter.value;
-            currentFilter.labelId = null;
-            updateView();
-        }, allTasks); // ★追加: タスクデータを渡す
-        updateView();
+    allTasks = [];
+    allProjects = [];
+    allLabels = [];
+    
+    updateUI();
+}
+
+// --- UI更新 (メインロジック) ---
+function updateUI() {
+    // 1. サイドバーの未完了件数バッジを更新
+    updateInboxCount(allTasks);
+
+    // 2. DOM要素の取得
+    const taskView = document.getElementById('task-view');
+    const dashboardView = document.getElementById('dashboard-view');
+    const settingsView = document.getElementById('settings-view');
+    
+    if (!taskView) return; // ログアウト時などでDOMがない場合ガード
+
+    // ヘッダーUIの状態取得
+    const searchInput = document.getElementById('search-input');
+    const searchKeyword = searchInput ? searchInput.value : '';
+    
+    const toggleBtn = document.getElementById('toggle-completed-btn');
+    const showCompleted = toggleBtn ? toggleBtn.classList.contains('text-blue-500') : false;
+
+    // 3. ビューの切り替え制御
+    if (currentFilter.type === 'dashboard') {
+        showView(dashboardView, [taskView, settingsView]);
+        renderDashboard(allTasks, allProjects); // ダッシュボード描画
+        updateHeaderTitle('ダッシュボード');
+        return;
+    } 
+    
+    if (currentFilter.type === 'settings') {
+        showView(settingsView, [taskView, dashboardView]);
+        initSettings(); // 設定画面初期化
+        updateHeaderTitle('設定');
+        return;
+    }
+
+    // --- タスク一覧ビューの描画 ---
+    showView(taskView, [dashboardView, settingsView]);
+
+    // フィルタリング実行
+    const filteredTasks = filterTasks(allTasks, {
+        type: currentFilter.type,
+        id: currentFilter.id,
+        keyword: searchKeyword,
+        showCompleted: showCompleted
     });
 
-    subscribeToLabels(userId, (labels) => {
-        allLabels = labels;
-        renderLabels(labels, (filter) => {
-            currentFilter.labelId = filter.value;
-            currentFilter.projectId = null;
-            updateView();
-        }, userId, allTasks); // ★追加: タスクデータを渡す
-        updateView();
-    });
+    // ビュー描画 (task-view.js に委譲)
+    renderTaskView(
+        filteredTasks, 
+        currentFilter.type === 'project' ? currentFilter.id : null, 
+        currentFilter.type === 'label' ? currentFilter.id : null
+    );
+    
+    updateHeaderTitleByFilter();
+}
 
-    subscribeToTasks(userId, (tasks) => {
-        allTasks = tasks;
-        updateView();
-        
-        // ★追加: タスク更新時にサイドバーの件数も更新する
-        updateInboxCount(allTasks);
-        renderProjects(allProjects, (filter) => { // 再レンダリングして件数更新
-             currentFilter.projectId = filter.value;
-             currentFilter.labelId = null;
-             updateView();
-        }, allTasks);
-        renderLabels(allLabels, (filter) => { // 再レンダリングして件数更新
-             currentFilter.labelId = filter.value;
-             currentFilter.projectId = null;
-             updateView();
-        }, userId, allTasks);
+// ヘルパー: ビューの表示/非表示切り替え
+function showView(showEl, hideEls) {
+    if (showEl) showEl.classList.remove('hidden');
+    hideEls.forEach(el => {
+        if (el) el.classList.add('hidden');
     });
 }
 
-/**
- * フィルタ・検索UIイベントの設定
- */
-function setupFilterEvents() {
+// ヘルパー: ヘッダータイトルの更新
+function updateHeaderTitle(text) {
+    const titleEl = document.getElementById('header-title');
+    if (titleEl) titleEl.textContent = text;
+}
+
+// ヘルパー: フィルタ状態に応じたタイトル更新
+function updateHeaderTitleByFilter() {
+    if (currentFilter.type === 'project') {
+        const proj = allProjects.find(p => p.id === currentFilter.id);
+        updateHeaderTitle(proj ? proj.name : 'プロジェクト');
+    } else if (currentFilter.type === 'label') {
+        const label = allLabels.find(l => l.id === currentFilter.id);
+        updateHeaderTitle(label ? label.name : 'ラベル');
+    } else {
+        updateHeaderTitle('インボックス');
+    }
+}
+
+// 未ログイン時の表示
+function renderLoginState() {
+    const taskView = document.getElementById('task-view');
+    if (taskView) {
+        taskView.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-full text-gray-400 mt-20">
+                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <p>ログインしてタスクを管理しましょう</p>
+            </div>
+        `;
+    }
+}
+
+// --- イベントリスナー設定 ---
+function setupGlobalEventListeners() {
+    // 1. サイドバーからの画面切り替え (カスタムイベント)
+    document.addEventListener('route-change', (e) => {
+        const { page, id } = e.detail;
+        currentFilter = { type: page, id: id };
+        updateUI();
+    });
+
+    // 2. 検索入力
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            currentFilter.keyword = e.target.value;
-            updateView();
+        searchInput.addEventListener('input', () => {
+            updateUI();
         });
     }
 
-    const toggle = document.getElementById('show-completed-toggle');
-    if (toggle) {
-        toggle.addEventListener('change', (e) => {
-            currentFilter.showCompleted = e.target.checked;
-            updateView();
+    // 3. 完了タスク表示切り替え
+    const toggleBtn = document.getElementById('toggle-completed-btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            if (toggleBtn.classList.contains('text-blue-500')) {
+                toggleBtn.classList.remove('text-blue-500'); // OFF
+                toggleBtn.classList.add('text-gray-400');
+            } else {
+                toggleBtn.classList.add('text-blue-500'); // ON
+                toggleBtn.classList.remove('text-gray-400');
+            }
+            updateUI();
         });
     }
 
+    // 4. ソート順切り替え
     const sortSelect = document.getElementById('sort-select');
     if (sortSelect) {
-        sortSelect.addEventListener('change', (e) => {
-            currentSort = e.target.value;
-            updateView();
+        sortSelect.addEventListener('change', () => {
+            updateUI();
         });
     }
-
-    const navDash = document.getElementById('nav-dashboard');
-    if(navDash) {
-        navDash.addEventListener('click', () => {
-            document.getElementById('task-view').classList.add('hidden');
-            document.getElementById('dashboard-view').classList.remove('hidden');
-        });
-    }
-
-    const title = document.getElementById('current-view-title');
-    if(title) {
-        title.addEventListener('click', () => {
-             document.getElementById('task-view').classList.remove('hidden');
-             document.getElementById('dashboard-view').classList.add('hidden');
-             currentFilter.projectId = null;
-             currentFilter.labelId = null;
-             updateView();
-        });
-    }
-}
-
-/**
- * 画面の更新（フィルタリング・ソート・描画）
- */
-function updateView() {
-    const titleEl = document.getElementById('current-view-title');
-    if (currentFilter.projectId) {
-        const proj = allProjects.find(p => p.id === currentFilter.projectId);
-        titleEl.textContent = proj ? proj.name : "プロジェクト";
-    } else if (currentFilter.labelId) {
-        const label = allLabels.find(l => l.id === currentFilter.labelId);
-        titleEl.textContent = label ? label.name : "ラベル";
-    } else {
-        titleEl.textContent = "インボックス";
-    }
-
-    const filtered = filterTasks(allTasks, currentFilter);
-    const sorted = sortTasks(filtered, currentSort);
     
-    // 循環依存を避けるため動的インポートでユーザーIDを取得して描画
-    import('@/core/auth.js').then(m => {
-        renderTaskList(sorted, m.currentUserId);
-    });
-    
-    renderDashboard(allTasks, allProjects);
+    // 5. 設定ボタン
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            currentFilter = { type: 'settings', id: null };
+            updateUI();
+        });
+    }
 }
