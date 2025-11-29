@@ -114,7 +114,7 @@ function updateUI() {
     // ★重要: フィルタリングロジックの修正
     const filteredTasks = filterTasks(allTasks, {
         projectId: currentFilter.type === 'project' ? currentFilter.id : null, 
-        labelId: currentFilter.type === 'label' ? currentFilter.id : null,     
+        labelId: currentFilter.type === 'label' ? currentFilter.id : null, 
         keyword: searchKeyword,
         showCompleted: showCompleted
     });
@@ -155,6 +155,7 @@ function renderLoginState() {
     const d = document.getElementById('dashboard-view');
     const s = document.getElementById('settings-view');
 
+    // ★ 修正: ご指摘の通り、それぞれの要素に対して null チェックを追加
     if (v) v.innerHTML = `<div class="p-10 text-center text-gray-400">ログインしてください</div>`;
     if (d) d.innerHTML = '';
     if (s) s.innerHTML = '';
