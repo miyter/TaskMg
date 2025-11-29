@@ -1,47 +1,101 @@
-// 認証UIの制御
+// @ts-nocheck
+// @miyter:20251125
+// Vite導入に伴い、Firebase SDKのインポートをnpmパッケージ形式に、
+// ローカルモジュールのインポートを絶対パス '@' に修正
 
-// --- 修正: インポートパス ---
-import { loginWithEmail, logout } from '@/core/auth.js';
+// --- 修正1: Firebase SDKをnpmパッケージからインポート ---
+import { 
+    signInWithEmailAndPassword,
+    signOut,
+    signInWithCustomToken,
+    onAuthStateChanged,
+    updatePassword
+} from "firebase/auth";
+
+// --- 修正2: ローカルモジュールへのインポートパスを相対パスに変更 ---
+import { auth, isFirebaseInitialized } from '../core/firebase.js'; 
+// UI層のヘルパー関数（updatePasswordが依存するため）
 import { showMessageModal } from './components.js'; 
 
-export function initAuthUI() {
-    const loginBtn = document.getElementById('email-login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const emailInput = document.getElementById('email-input');
-    const passInput = document.getElementById('password-input');
 
-    if (loginBtn) {
-        // 重複リスナーを防ぐため、クローンして置換する方法も有効ですが、
-        // initAuthUIが一度しか呼ばれない前提ならこのままでOK
-        loginBtn.addEventListener('click', async () => {
-            try {
-                if (!emailInput.value || !passInput.value) {
-                    showMessageModal("メールアドレスとパスワードを入力してください。", null);
-                    return;
-                }
-                await loginWithEmail(emailInput.value, passInput.value);
-                // 成功時の処理は onAuthStateChanged で自動的に行われる
-            } catch (e) {
-                showMessageModal("ログインエラー: " + (e.message || "失敗しました"), null);
-            }
-        });
-    }
+// 現在のユーザーID
+export let currentUserId = null;
 
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            await logout();
-        });
+// 認証状態の監視リスナー
+// ★注意: app.js が initAuthListener ではなく onAuthStateChanged を直接使用するようになったため、
+// この関数は実質未使用だが、他のファイルが呼び出している可能性も考慮し、ロジックを保持する。
+export function initAuthListener(onLogin, onLogout) {
+    if (!isFirebaseInitialized) return;
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUserId = user.uid;
+            onLogin(user);
+        } else {
+            currentUserId = null;
+            onLogout();
+        }
+    });
+
+    // Canvas環境用の初期トークンログイン
+    const initialToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
+    if (initialToken) {
+        signInWithCustomToken(auth, initialToken).catch(console.error);
     }
 }
 
+export async function loginWithEmail(email, password) {
+    if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
+    return await signInWithEmailAndPassword(auth, email, password);
+}
+
+export async function logout() {
+    if (!isFirebaseInitialized) return;
+    await signOut(auth);
+}
+
+/**
+ * ユーザーパスワードの更新機能 (Storeラッパー対応)
+ * @param {string} newPassword - 新しいパスワード
+ */
+export async function updateUserPassword(newPassword) {
+    const user = auth.currentUser;
+    if (!user) {
+        showMessageModal("エラー", "認証されていません。", "error");
+        // ラッパーが例外を補足し、UI側で処理を継続できるようにする
+        throw new Error("認証されていません。");
+    }
+    
+    try {
+        await updatePassword(user, newPassword);
+        showMessageModal("成功", "パスワードが正常に変更されました。", "success");
+    } catch (error) {
+        console.error("パスワード変更エラー:", error);
+        let message = "パスワードの変更に失敗しました。";
+        if (error.code === 'auth/requires-recent-login') {
+            message = "セキュリティ保護のため、パスワード変更には再ログインが必要です。一度ログアウトし、再度ログインしてから設定画面を開いてください。";
+        }
+        showMessageModal("エラー", message, "error");
+        throw error;
+    }
+}
+
+/**
+ * 認証状態に応じてヘッダーUIを更新する
+ * (onAuthStateChanged のコールバックとして app.js から呼ばれる)
+ * @param {firebase.User | null} user - 認証ユーザーオブジェクト
+ */
 export function updateAuthUI(user) {
+    // ★修正: layout.js に追加された新しいIDを使用
     const loginForm = document.getElementById('login-form-container');
     const userInfo = document.getElementById('user-info');
     const userNameObj = document.getElementById('user-display-name');
     const emailInput = document.getElementById('email-input');
     const passInput = document.getElementById('password-input');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginBtn = document.getElementById('email-login-btn'); // ログインボタンも参照
 
-    // 要素がまだ描画されていない場合はスキップ
+    // 要素がまだ描画されていない場合はスキップ（app.js の onAuthStateChanged が renderLayout() より先に実行された場合）
     if (!loginForm || !userInfo) return;
 
     if (user) {
@@ -49,6 +103,7 @@ export function updateAuthUI(user) {
         loginForm.classList.add('hidden');
         userInfo.classList.remove('hidden');
         if (userNameObj) {
+            // UIDの代わりにメールアドレスを表示
             userNameObj.textContent = user.email || 'ユーザー';
         }
     } else {
@@ -61,4 +116,31 @@ export function updateAuthUI(user) {
         if (emailInput) emailInput.value = '';
         if (passInput) passInput.value = '';
     }
+
+    // ★追加: イベントリスナーを再設定 (layout.jsのDOM生成後に一度だけ実行)
+    if (loginBtn && !loginBtn.hasListener) {
+        loginBtn.addEventListener('click', async () => {
+            try {
+                if (!emailInput.value || !passInput.value) {
+                    showMessageModal("メールアドレスとパスワードを入力してください。", null);
+                    return;
+                }
+                await loginWithEmail(emailInput.value, passInput.value);
+            } catch (e) {
+                showMessageModal("ログインエラー: " + (e.message || "失敗しました"), null);
+            }
+        });
+        loginBtn.hasListener = true; // 重複登録防止フラグ
+    }
+
+    if (logoutBtn && !logoutBtn.hasListener) {
+        logoutBtn.addEventListener('click', async () => {
+            await logout();
+        });
+        logoutBtn.hasListener = true; // 重複登録防止フラグ
+    }
 }
+
+// 以前の initAuthUI は不要になるため、削除または未実装のままにするが、
+// 以前のファイルに存在するため、残りのロジックを updateAuthUI に統合して簡潔化する。
+// 依存関係がなければ削除するが、今回は updateAuthUI にロジックを統合する形で対応。

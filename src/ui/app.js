@@ -5,6 +5,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore'; // onSnapshotはsubscribeToTasksRaw内で使用するため残す
 import { db, auth } from '../core/firebase.js';
 
+// ★追加: auth.js から認証UI更新関数をインポート
+import { updateAuthUI } from './auth.js';
 // ★修正: store/store.js を import。これで index.js のラッパーが利用可能
 import { subscribeToTasks } from '../store/store.js';
 import { subscribeToProjects } from '../store/projects.js';
@@ -31,7 +33,9 @@ export function initializeApp() {
     initTaskModal();
     setupGlobalEventListeners();
     onAuthStateChanged(auth, (user) => {
-        user ? startDataSync() : (stopDataSync(), renderLoginState()); // ★修正: userIdの受け渡しを削除
+        // ★修正: updateAuthUI を最初に呼び出す（認証UIを安全に更新）
+        updateAuthUI(user);
+        user ? startDataSync() : (stopDataSync(), renderLoginState()); 
     });
 }
 
@@ -86,7 +90,8 @@ function updateUI() {
     const dashboardView = document.getElementById('dashboard-view');
     const settingsView = document.getElementById('settings-view');
     
-    if (!taskView || !dashboardView || !settingsView) return; // 要素がない場合は早期リターン
+    // layout.js がまだDOM要素を生成していない場合はここで処理を中断
+    if (!taskView || !dashboardView || !settingsView) return; 
 
     // ヘッダー情報取得
     const searchKeyword = document.getElementById('search-input')?.value || '';
@@ -114,7 +119,7 @@ function updateUI() {
     // ★重要: フィルタリングロジックの修正
     const filteredTasks = filterTasks(allTasks, {
         projectId: currentFilter.type === 'project' ? currentFilter.id : null, 
-        labelId: currentFilter.type === 'label' ? currentFilter.id : null, 
+        labelId: currentFilter.type === 'label' ? currentFilter.id : null,     
         keyword: searchKeyword,
         showCompleted: showCompleted
     });
@@ -135,6 +140,7 @@ function showView(show, hides) {
 
 function updateHeaderTitle(text) {
     const el = document.getElementById('header-title');
+    // ★修正: シンプルなNull Guardに戻す (updateUI()内のガードで十分なはず)
     if (el) el.textContent = text;
 }
 
@@ -155,7 +161,6 @@ function renderLoginState() {
     const d = document.getElementById('dashboard-view');
     const s = document.getElementById('settings-view');
 
-    // ★ 修正: ご指摘の通り、それぞれの要素に対して null チェックを追加
     if (v) v.innerHTML = `<div class="p-10 text-center text-gray-400">ログインしてください</div>`;
     if (d) d.innerHTML = '';
     if (s) s.innerHTML = '';

@@ -71,8 +71,29 @@ export function renderLayout() {
                         <svg id="theme-icon-moon" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                         <svg id="theme-icon-sun" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     </button>
-                    <div id="user-menu-trigger" class="ml-1 cursor-pointer">
-                        <div class="w-7 h-7 rounded-md bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">U</div>
+                    
+                    <!-- ★追加: ログイン/ログアウトUIコンテナ -->
+                    <div id="auth-ui" class="ml-1 flex items-center space-x-2">
+                        <!-- ログアウト状態の時に表示されるログインフォーム -->
+                        <div id="login-form-container" class="space-x-2 flex items-center">
+                            <input type="email" id="email-input" placeholder="メール"
+                                class="w-24 lg:w-32 bg-gray-100 dark:bg-gray-800 text-sm rounded py-1 px-2 focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all duration-200 border-none outline-none placeholder-gray-500 dark:text-gray-200" style="min-width: 0;">
+                            <input type="password" id="password-input" placeholder="パスワード"
+                                class="w-24 lg:w-32 bg-gray-100 dark:bg-gray-800 text-sm rounded py-1 px-2 focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all duration-200 border-none outline-none placeholder-gray-500 dark:text-gray-200" style="min-width: 0;">
+                            <button id="email-login-btn" 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1 px-2 rounded shadow-md transition duration-150">
+                                ログイン
+                            </button>
+                        </div>
+
+                        <!-- ログイン状態の時に表示 -->
+                        <div id="user-info" class="hidden flex items-center space-x-2">
+                            <span id="user-display-name" class="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[100px]"></span>
+                            <button id="logout-btn" 
+                                    class="bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-3 rounded shadow-md transition duration-150">
+                                ログアウト
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>

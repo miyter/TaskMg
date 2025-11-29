@@ -48,11 +48,17 @@ export function renderDashboard(tasks, projects) {
     }).length;
 
     // KPI表示更新
-    document.getElementById('kpi-todo').textContent = totalTodo;
-    document.getElementById('kpi-done').textContent = totalDone;
-    document.getElementById('kpi-overdue').textContent = overdue;
-    document.getElementById('kpi-upcoming').textContent = upcoming;
+    // ★修正: Optional Chaining (.?) を if 文による null チェックに置き換え、ビルドエラーを回避
+    const kpiTodo = document.getElementById('kpi-todo');
+    const kpiDone = document.getElementById('kpi-done');
+    const kpiOverdue = document.getElementById('kpi-overdue');
+    const kpiUpcoming = document.getElementById('kpi-upcoming');
 
+    if (kpiTodo) kpiTodo.textContent = totalTodo;
+    if (kpiDone) kpiDone.textContent = totalDone;
+    if (kpiOverdue) kpiOverdue.textContent = overdue;
+    if (kpiUpcoming) kpiUpcoming.textContent = upcoming;
+    
     renderStatusChart(totalTodo, totalDone);
     renderProjectChart(tasks, projects);
 }

@@ -8,6 +8,7 @@ import { showMessageModal } from './components.js';
 export function renderTaskList(container, tasks) {
     const list = document.createElement('ul');
     list.id = 'task-list-ul';
+    // flex-col, gap-1, padding/margin調整を行い、高密度化
     list.className = 'divide-y divide-gray-100 dark:divide-gray-800 border-b border-gray-100 dark:divide-gray-800 mb-2';
 
     if (!tasks || tasks.length === 0) {
@@ -30,10 +31,13 @@ function createTaskItem(task) {
     
     const isCompleted = task.status === 'completed';
     const dateText = formatDateCompact(task.dueDate);
+    // ★修正: getTaskDateDateColor -> getTaskDateColor に修正
     const dateColorClass = getTaskDateColor(task.dueDate);
 
+    // ★修正: UIをよりコンパクトに（Todoist風の高密度なリストアイテム）
     li.className = `group flex items-start gap-2 sm:gap-3 py-2 px-2 rounded -mx-2 transition-all duration-200 cursor-pointer border border-transparent ${isCompleted ? 'opacity-60 bg-gray-50 dark:bg-gray-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-gray-100 dark:hover:border-gray-700'}`;
 
+    // ★修正: HTML構造を更新
     li.innerHTML = `
         <div class="drag-handle hidden group-hover:flex items-center justify-center w-4 h-5 mt-0.5 text-gray-300 hover:text-gray-500 cursor-move" title="並び替え">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
@@ -64,7 +68,10 @@ function createTaskItem(task) {
         // ★修正: userIdを削除
         await updateTaskStatus(task.id, isCompleted ? 'todo' : 'completed');
     });
+    // ★修正: タスク行全体をクリックでモーダルを開く
     li.addEventListener('click', () => openTaskEditModal(task));
+
+    // ボタンにイベントを設定
     li.querySelector('.edit-btn').addEventListener('click', (e) => { e.stopPropagation(); openTaskEditModal(task); });
     li.querySelector('.delete-btn').addEventListener('click', async (e) => {
         e.stopPropagation();
