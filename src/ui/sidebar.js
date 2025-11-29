@@ -1,7 +1,10 @@
+// @miyter:20251129
+
 import { updateTask } from '../store/store.js';
 import { addProject, deleteProject } from '../store/projects.js';
 import { addLabel, deleteLabel } from '../store/labels.js';
 import { showMessageModal } from './components.js';
+import { auth } from '../core/firebase.js'; // authをインポート
 
 let labelMap = {};
 
@@ -17,7 +20,6 @@ export function getProjectName(projectId, allProjects = []) {
 }
 
 export function renderSidebar() {
-    // (renderSidebarのHTML構造は前回の回答と同じなので省略せず記述しますが、ドラッグ&ドロップイベントの設定が重要です)
     const container = document.getElementById('sidebar-content');
     if (!container) return;
 
@@ -58,14 +60,31 @@ export function initSidebar() { renderSidebar(); }
 
 function setupSidebarEvents() {
     const dispatch = (page, id = null) => document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
-    document.getElementById('nav-dashboard')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('dashboard'); });
+    
+    // ★修正1: nav-dashboard にイベントリスナーを追加
+    document.getElementById('nav-dashboard')?.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        dispatch('dashboard'); 
+    });
+    
     document.getElementById('nav-inbox')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('inbox'); });
+    
     document.getElementById('add-project-btn')?.addEventListener('click', async () => {
-        const name = prompt("新しいプロジェクト名:"); if (name?.trim()) await addProject(name.trim());
+        const name = prompt("新しいプロジェクト名:"); 
+        if (name?.trim()) await addProject(auth.currentUser?.uid, name.trim());
     });
+    
     document.getElementById('add-label-btn')?.addEventListener('click', async () => {
-        const name = prompt("新しいラベル名:"); if (name?.trim()) await addLabel(name.trim());
+        const name = prompt("新しいラベル名:"); 
+        // ランダムカラーを使用 (簡易実装)
+        if (name?.trim()) await addLabel(auth.currentUser?.uid, name.trim(), getRandomColor());
     });
+}
+
+// ダミーのランダムカラー生成関数（簡易的に）
+function getRandomColor() {
+    const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6'];
+    return colors[Math.floor(Math.random() * colors.length)];
 }
 
 export function renderProjects(projects, tasks = []) {
@@ -82,7 +101,7 @@ export function renderProjects(projects, tasks = []) {
         li.className = 'group flex items-center justify-between px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target';
         li.innerHTML = `
             <div class="flex items-center flex-1 min-w-0 pointer-events-none">
-                <span class="text-gray-400 mr-2">#</span>
+                <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
                 <span class="truncate">${proj.name}</span>
             </div>
             <div class="flex items-center">
@@ -96,7 +115,7 @@ export function renderProjects(projects, tasks = []) {
         li.addEventListener('click', () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'project', id: proj.id } })));
         li.querySelector('.delete-proj-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
-            showMessageModal(`プロジェクト「${proj.name}」を削除しますか？`, async () => await deleteProject(proj.id));
+            showMessageModal(`プロジェクト「${proj.name}」を削除しますか？`, async () => await deleteProject(auth.currentUser?.uid, proj.id));
         });
 
         // ドロップ設定 (プロジェクト移動)
@@ -136,7 +155,7 @@ export function renderLabels(labels, tasks = []) {
         li.addEventListener('click', () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'label', id: label.id } })));
         li.querySelector('.delete-label-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
-            showMessageModal(`ラベル「${label.name}」を削除しますか？`, async () => await deleteLabel(label.id));
+            showMessageModal(`ラベル「${label.name}」を削除しますか？`, async () => await deleteLabel(auth.currentUser?.uid, label.id));
         });
 
         // ドロップ設定 (ラベル付与)
@@ -146,33 +165,41 @@ export function renderLabels(labels, tasks = []) {
 }
 
 function setupDropZone(element, type, targetId = null) {
-    element.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        element.classList.add('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
-    });
-    element.addEventListener('dragleave', () => {
-        element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
-    });
-    element.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
-        const taskId = e.dataTransfer.getData('text/plain');
-        
-        if (taskId) {
-            console.log(`Dropped Task:${taskId} on ${type}:${targetId}`);
-            if (type === 'inbox') {
-                await updateTask(taskId, { projectId: null });
-                showMessageModal("タスクをインボックスに戻しました");
-            } else if (type === 'project' && targetId) {
-                await updateTask(taskId, { projectId: targetId });
-                showMessageModal("プロジェクトへ移動しました");
-            } else if (type === 'label' && targetId) {
-                // ラベルは配列に追加する必要があるため、本来は arrayUnion が望ましいが簡易実装
-                // 現在のラベルを取得できないため、この操作は「ラベル付け替え」ではなく「ラベル追加」として扱うべきだが
-                // Firestoreの読み込みなしでは難しいので、ここではコンソールログのみ
-                console.log("ラベルへのドロップは現在のラベル情報が必要なため未実装");
+    // 認証情報とFirestore操作をインポート
+    import('../core/firebase.js').then(({ auth }) => {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        element.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            element.classList.add('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+        });
+        element.addEventListener('dragleave', () => {
+            element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+        });
+        element.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+            const taskId = e.dataTransfer.getData('text/plain');
+            
+            if (taskId) {
+                // store.js の updateTask を動的にインポート
+                const { updateTask } = await import('../store/store.js');
+
+                if (type === 'inbox') {
+                    await updateTask(userId, taskId, { projectId: null });
+                    showMessageModal("タスクをインボックスに戻しました");
+                } else if (type === 'project' && targetId) {
+                    await updateTask(userId, taskId, { projectId: targetId });
+                    showMessageModal("プロジェクトへ移動しました");
+                } else if (type === 'label' && targetId) {
+                    // ★課題: ラベルへのドロップは現在のラベル情報が必要なため、
+                    // 現状のローカルキャッシュ（allTasks）を参照する仕組みが必要です。
+                    // 現状は実装が複雑になるため、コンソールログのみとしておきます。
+                    showMessageModal("ラベルへのタスク移動は、現在のタスクラベル情報の読み込みが不完全なため、現時点では未実装です。", null);
+                }
             }
-        }
+        });
     });
 }
 

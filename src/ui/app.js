@@ -1,3 +1,5 @@
+// @miyter:20251129
+
 // (既存のインポート等はそのまま)
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
@@ -47,6 +49,7 @@ function startDataSync(userId) {
         renderLabels(allLabels, allTasks);
         updateUI();
     });
+    // ★修正: データ同期開始時にもサイドバーのイベントを設定する（nav-dashboardクリックを有効にするため）
     initSidebar();
 }
 
@@ -67,11 +70,14 @@ function updateUI() {
     const taskView = document.getElementById('task-view');
     const dashboardView = document.getElementById('dashboard-view');
     const settingsView = document.getElementById('settings-view');
-    if (!taskView) return;
+    
+    if (!taskView || !dashboardView || !settingsView) return; // 要素がない場合は早期リターン
 
     // ヘッダー情報取得
     const searchKeyword = document.getElementById('search-input')?.value || '';
-    const showCompleted = document.getElementById('toggle-completed-btn')?.classList.contains('text-blue-500') || false;
+    // トグルボタンの状態を確認
+    const toggleButton = document.getElementById('toggle-completed-btn');
+    const showCompleted = toggleButton?.classList.contains('text-blue-500') || false;
 
     // ビュー切り替え
     if (currentFilter.type === 'dashboard') {
@@ -82,7 +88,7 @@ function updateUI() {
     }
     if (currentFilter.type === 'settings') {
         showView(settingsView, [taskView, dashboardView]);
-        initSettings();
+        initSettings(auth.currentUser.uid); // ★修正: initSettingsにuserIdを渡す
         updateHeaderTitle('設定');
         return;
     }
@@ -93,8 +99,8 @@ function updateUI() {
     // ★重要: フィルタリングロジックの修正
     // filterTasks関数が正しく動作することを前提に、引数を渡す
     const filteredTasks = filterTasks(allTasks, {
-        type: currentFilter.type, // 'inbox', 'project', 'label'
-        id: currentFilter.id,     // プロジェクトID or ラベルID
+        projectId: currentFilter.type === 'project' ? currentFilter.id : null, 
+        labelId: currentFilter.type === 'label' ? currentFilter.id : null,     
         keyword: searchKeyword,
         showCompleted: showCompleted
     });
@@ -132,15 +138,21 @@ function updateHeaderTitleByFilter() {
 
 function renderLoginState() {
     const v = document.getElementById('task-view');
+    const d = document.getElementById('dashboard-view');
+    const s = document.getElementById('settings-view');
+
     if (v) v.innerHTML = `<div class="p-10 text-center text-gray-400">ログインしてください</div>`;
+    if (d) d.innerHTML = '';
+    if (s) s.innerHTML = '';
 }
 
 function setupGlobalEventListeners() {
+    // サイドバーからのルーティング変更イベント
     document.addEventListener('route-change', (e) => {
         currentFilter = { type: e.detail.page, id: e.detail.id };
         updateUI();
-        // モバイル用: サイドバーを閉じる処理などがあればここに
     });
+    // 検索、トグル、ソートの変更イベント
     document.getElementById('search-input')?.addEventListener('input', updateUI);
     document.getElementById('toggle-completed-btn')?.addEventListener('click', (e) => {
         e.currentTarget.classList.toggle('text-blue-500');

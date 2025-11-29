@@ -1,4 +1,5 @@
-// @miyter:20251125
+// @miyter:20251129
+
 // Vite導入に伴い、Chart.jsをnpmパッケージからインポートするように修正
 // --- ダッシュボード制御 (完全版) ---
 
@@ -91,7 +92,8 @@ function renderProjectChart(tasks, allProjects) {
     // 未完了タスクのみをカウント
     tasks.filter(t => t.status === 'todo').forEach(t => {
         // プロジェクト名を取得（getProjectNameはsidebar.jsに依存）
-        const projectName = t.projectId ? getProjectName(t.projectId, allProjects) : 'インボックス';
+        // ★修正: getProjectNameにallProjectsを渡す
+        const projectName = getProjectName(t.projectId, allProjects); 
         const label = projectName || '未分類';
         counts[label] = (counts[label] || 0) + 1;
     });

@@ -1,7 +1,12 @@
+// @miyter:20251129
+
 import { updateTask, deleteTask } from '../store/store.js';
 import { showMessageModal } from './components.js';
 // task-modal-labels.js がある前提 (ラベル機能用)
 import { renderModalLabels, setupLabelSelectOptions } from './task-modal-labels.js';
+
+// ★追加: Firebase Authをインポート
+import { auth } from '../core/firebase.js';
 
 let currentTask = null;
 
@@ -130,12 +135,13 @@ export function openTaskEditModal(task) {
         setupLabelSelectOptions(addLabelSelect);
         
         addLabelSelect.onchange = async (e) => {
+            const userId = auth.currentUser?.uid; // ★修正: userIdを取得
             const labelId = e.target.value;
-            if (labelId && currentTask) {
+            if (labelId && currentTask && userId) { // ★修正: userIdチェックを追加
                 const currentLabels = currentTask.labelIds || [];
                 if (!currentLabels.includes(labelId)) {
                     const newLabelIds = [...currentLabels, labelId];
-                    await updateTask(currentTask.id, { labelIds: newLabelIds });
+                    await updateTask(userId, currentTask.id, { labelIds: newLabelIds }); // ★修正: userIdを渡す
                     currentTask.labelIds = newLabelIds;
                     refreshLabelsDisplay();
                     showMessageModal("タグを追加しました");
@@ -162,6 +168,12 @@ export function closeTaskModal() {
 // =========================================================
 
 function setupModalEvents(container) {
+    const userId = auth.currentUser?.uid; // ★修正: userIdを取得
+    if (!userId) {
+        showMessageModal("エラー", "認証ユーザーが見つかりません。再ログインしてください。", null);
+        return;
+    }
+    
     document.getElementById('close-modal-btn')?.addEventListener('click', closeTaskModal);
     document.getElementById('cancel-modal-btn')?.addEventListener('click', closeTaskModal);
     
@@ -178,25 +190,26 @@ function setupModalEvents(container) {
         const newRecurrence = document.getElementById('modal-task-recurrence').value;
         
         if (!newTitle) {
-            alert("タイトルを入力してください");
+            showMessageModal("タイトルを入力してください", null); // alertをshowMessageModalに置き換え
             return;
         }
 
         const updates = {
             title: newTitle,
             description: newDesc,
+            // 日付文字列をDateオブジェクトに変換
             dueDate: newDateVal ? new Date(newDateVal) : null,
             recurrence: newRecurrence !== 'none' ? { type: newRecurrence } : null
         };
 
-        await updateTask(currentTask.id, updates);
+        await updateTask(userId, currentTask.id, updates); // ★修正: userIdを渡す
         closeTaskModal();
     });
 
     // 削除
     document.getElementById('delete-task-modal-btn')?.addEventListener('click', () => {
         showMessageModal('本当に削除しますか？', async () => {
-            await deleteTask(currentTask.id);
+            await deleteTask(userId, currentTask.id); // ★修正: userIdを渡す
             closeTaskModal();
         });
     });
@@ -204,7 +217,9 @@ function setupModalEvents(container) {
 
 function refreshLabelsDisplay() {
     const container = document.getElementById('modal-task-labels');
-    if (!container || !currentTask) return;
+    const userId = auth.currentUser?.uid; // ★修正: userIdを取得
+
+    if (!container || !currentTask || !userId) return;
     
     const labelIds = currentTask.labelIds || [];
     
@@ -212,7 +227,7 @@ function refreshLabelsDisplay() {
         renderModalLabels(container, labelIds, async (labelIdToRemove, labelName) => {
             if (!currentTask) return;
             const newLabelIds = (currentTask.labelIds || []).filter(id => id !== labelIdToRemove);
-            await updateTask(currentTask.id, { labelIds: newLabelIds });
+            await updateTask(userId, currentTask.id, { labelIds: newLabelIds }); // ★修正: userIdを渡す
             currentTask.labelIds = newLabelIds;
             refreshLabelsDisplay();
             showMessageModal(`タグ「${labelName}」を外しました`);
@@ -227,3 +242,8 @@ function formatDateForInput(date) {
     const dd = String(date.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
 }
+```EOF
+
+### `src/store/store.js` の修正
+
+`updateTask` 関数はすでに `userId` を受け取るように定義されていますが、`updateTaskStatus` も同様に `userId` が必要です。また、`addTask` も呼び出し元で `userId` を受け取るように修正します。
