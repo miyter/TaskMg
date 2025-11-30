@@ -4,7 +4,6 @@
 import { auth } from '../core/firebase.js';
 import { showMessageModal } from '../ui/components.js';
 
-// ★修正: store-rawをインポート (updateProjectRawを追加)
 import { 
     subscribeToProjectsRaw,
     addProjectRaw,
@@ -32,7 +31,7 @@ function requireAuth() {
 /**
  * プロジェクトのリアルタイム購読 (ラッパー)
  */
-export function subscribeToProjects(onUpdate) { // ★修正: ここでexportを維持 (App.jsが直接インポートするため)
+function subscribeToProjects(onUpdate) { // ★修正: exportを削除
     const userId = auth.currentUser?.uid;
     // 認証前に呼ばれる可能性もあるため、userIdが存在すれば購読
     if (userId) {
@@ -44,7 +43,7 @@ export function subscribeToProjects(onUpdate) { // ★修正: ここでexportを
  * 新しいプロジェクトを追加する (ラッパー)
  * @param {string} name - プロジェクト名
  */
-export async function addProject(name) {
+async function addProject(name) { // ★修正: exportを削除
     const userId = requireAuth();
     return addProjectRaw(userId, name);
 }
@@ -54,21 +53,19 @@ export async function addProject(name) {
  * @param {string} projectId - プロジェクトID
  * @param {object} updates - 更新内容
  */
-export async function updateProject(projectId, updates) {
+async function updateProject(projectId, updates) { // ★修正: exportを削除
     const userId = requireAuth();
     return updateProjectRaw(userId, projectId, updates);
 }
-
 
 /**
  * プロジェクトを削除する (ラッパー)
  * @param {string} projectId - プロジェクトID
  */
-export async function deleteProject(projectId) {
+async function deleteProject(projectId) { // ★修正: exportを削除
     const userId = requireAuth();
     return deleteProjectRaw(userId, projectId);
 }
 
-// ★修正: 重複していた export { subscribeToProjects, ... } の行を削除。
-// subscribeToProjectsは関数宣言時にexportされているため、残りの関数のみを export 文で公開します。
-export { addProject, updateProject, deleteProject };
+// ★修正: 全ての公開関数をファイル末尾で一度だけエクスポート
+export { subscribeToProjects, addProject, updateProject, deleteProject };

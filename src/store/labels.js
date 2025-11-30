@@ -8,7 +8,7 @@ import { showMessageModal } from '../ui/components.js';
 import { 
     subscribeToLabelsRaw,
     addLabelRaw,
-    updateLabelRaw, // 更新用のRAW関数をインポート済み
+    updateLabelRaw, 
     deleteLabelRaw
 } from './labels-raw.js';
 
@@ -32,7 +32,7 @@ function requireAuth() {
 /**
  * ラベルのリアルタイム購読 (ラッパー)
  */
-export function subscribeToLabels(onUpdate) { // ★修正: 関数宣言時にexportを維持
+function subscribeToLabels(onUpdate) { // ★修正: exportを削除
     const userId = auth.currentUser?.uid;
     // 認証前に呼ばれる可能性もあるため、userIdが存在すれば購読
     if (userId) {
@@ -45,7 +45,7 @@ export function subscribeToLabels(onUpdate) { // ★修正: 関数宣言時にex
  * @param {string} name - ラベル名
  * @param {string} color - ラベルの色
  */
-export async function addLabel(name, color) {
+async function addLabel(name, color) { // ★修正: exportを削除
     const userId = requireAuth();
     return addLabelRaw(userId, name, color);
 }
@@ -55,7 +55,7 @@ export async function addLabel(name, color) {
  * @param {string} labelId - ラベルID
  * @param {object} updates - 更新内容
  */
-export async function updateLabel(labelId, updates) {
+async function updateLabel(labelId, updates) { // ★修正: exportを削除
     const userId = requireAuth();
     return updateLabelRaw(userId, labelId, updates);
 }
@@ -64,11 +64,10 @@ export async function updateLabel(labelId, updates) {
  * ラベルを削除する (ラッパー)
  * @param {string} labelId - ラベルID
  */
-export async function deleteLabel(labelId) {
+async function deleteLabel(labelId) { // ★修正: exportを削除
     const userId = requireAuth();
     return deleteLabelRaw(userId, labelId);
 }
 
-// ★修正: 重複していた export { subscribeToLabels, ... } の行を削除。
-// subscribeToLabelsは関数宣言時にexportされているため、残りの関数のみを export 文で公開します。
-export { addLabel, updateLabel, deleteLabel };
+// ★修正: 全ての公開関数をファイル末尾で一度だけエクスポート
+export { subscribeToLabels, addLabel, updateLabel, deleteLabel };

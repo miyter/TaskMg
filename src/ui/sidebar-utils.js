@@ -205,3 +205,20 @@ export function showItemContextMenu(e, type, itemData, allProjects, allLabels) {
 // ドロップゾーン/カウント
 // [Immersive content redacted for brevity.]
 // ==========================================================
+export function getRandomColor() {
+    const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6'];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+/**
+ * プロジェクトIDからプロジェクト名を取得する
+ * @param {string | null} projectId - 取得したいプロジェクトID
+ * @param {Array<object>} allProjects - 全プロジェクトのリスト
+ * @returns {string} プロジェクト名 ('インボックス' or '未分類'を含む)
+ */
+export function getProjectName(projectId, allProjects = []) {
+    if (!projectId || projectId === 'inbox' || projectId === 'INBOX') return 'インボックス';
+    if (!allProjects || !Array.isArray(allProjects)) return '未分類';
+    const project = allProjects.find(p => p.id === projectId);
+    return project ? project.name : '未分類';
+}
