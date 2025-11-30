@@ -88,7 +88,8 @@ export function renderLayout() {
                         </div>
 
                         <!-- ログイン状態の時に表示 -->
-                        <div id="user-info" class="hidden flex items-center space-x-2">
+                        <!-- ★修正: flexを削除し、hiddenとitems-center space-x-2のみにする -->
+                        <div id="user-info" class="hidden items-center space-x-2">
                             <span id="user-display-name" class="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[100px]"></span>
                             <button id="logout-btn" 
                                     class="bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-3 rounded shadow-md transition duration-150">

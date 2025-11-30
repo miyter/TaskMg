@@ -89,40 +89,45 @@ export function updateAuthUI(user) {
     // ★修正: layout.js に追加された新しいIDを使用
     const loginForm = document.getElementById('login-form-container');
     const userInfo = document.getElementById('user-info');
+    const userNameObj = document.getElementById('user-display-name');
     const emailInput = document.getElementById('email-input');
     const passInput = document.getElementById('password-input');
     const logoutBtn = document.getElementById('logout-btn');
     const loginBtn = document.getElementById('email-login-btn'); // ログインボタンも参照
 
-    // ★修正: UI要素がなくてもデータ同期は開始する必要があるため、早期リターンを削除
+    // 要素がまだ描画されていない場合はスキップ（app.js の onAuthStateChanged が renderLayout() より先に実行された場合）
+    if (!loginForm || !userInfo) return;
 
     if (user) {
         // ログイン時
-        if (loginForm) loginForm.classList.add('hidden');
-        if (userInfo) userInfo.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+        
+        // ★修正: hidden を削除し、明示的に flex を追加してレイアウトを修正
+        userInfo.classList.remove('hidden');
+        userInfo.classList.add('flex'); // <--- ここで flex を追加
 
-        const userMenu = document.getElementById('user-menu-trigger');
-        if (userMenu) {
-            const avatar = userMenu.querySelector('div');
-            if (avatar) avatar.textContent = user.email ? user.email.charAt(0).toUpperCase() : 'U';
+        if (userNameObj) {
+            // UIDの代わりにメールアドレスを表示
+            userNameObj.textContent = user.email || 'ユーザー';
         }
-
     } else {
         // ログアウト時
-        if (loginForm) loginForm.classList.remove('hidden');
-        if (userInfo) userInfo.classList.add('hidden');
+        loginForm.classList.remove('hidden');
+        userInfo.classList.add('hidden');
+        userInfo.classList.remove('flex'); // <--- ここで flex を削除
+        
+        if (userNameObj) userNameObj.textContent = '';
         
         // フォームクリア
         if (emailInput) emailInput.value = '';
         if (passInput) passInput.value = '';
     }
 
-    // ★イベントリスナーの設定は要素が存在する場合のみ行う
+    // ★追加: イベントリスナーを再設定 (layout.jsのDOM生成後に一度だけ実行)
     if (loginBtn && !loginBtn.hasListener) {
         loginBtn.addEventListener('click', async () => {
             try {
-                // emailInput, passInput が null でないかチェック
-                if (!emailInput?.value || !passInput?.value) {
+                if (!emailInput.value || !passInput.value) {
                     showMessageModal("メールアドレスとパスワードを入力してください。", null);
                     return;
                 }
