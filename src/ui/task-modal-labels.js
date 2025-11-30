@@ -1,6 +1,6 @@
 // タスクモーダル内のラベル（タグ）UI制御
 
-import { getLabelDetails } from './sidebar.js';
+import { getLabelDetails } from './sidebar.js'; // ★修正: sidebar.js からエクスポートされた関数をインポート
 
 /**
  * モーダル内のラベルバッジを描画する
@@ -50,7 +50,8 @@ export function setupLabelSelectOptions(selectElement) {
     // sidebar.jsが描画したDOMからラベル情報を取得
     const allLabels = Array.from(labelList ? labelList.querySelectorAll('li') : []).map(li => ({
         id: li.dataset.id,
-        name: li.textContent.trim()
+        // ★修正: textContentを取得後、trim()を追加し余分な空白文字を削除
+        name: li.textContent ? li.textContent.trim() : ''
     }));
     
     selectElement.innerHTML = '<option value="">＋ タグを追加...</option>';

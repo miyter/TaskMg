@@ -12,6 +12,7 @@ import { auth } from '../core/firebase.js'; // authはsetupDropZone内で必要
 
 let labelMap = {};
 
+// ★修正: getLabelDetails 関数をエクスポートする
 export function getLabelDetails(labelId) {
     return labelMap[labelId];
 }
@@ -134,6 +135,7 @@ export function renderLabels(labels, tasks = []) {
     const list = document.getElementById('label-list');
     if (!list) return;
     list.innerHTML = '';
+    // ★修正: labelMapを更新
     labelMap = {};
     labels.forEach(l => labelMap[l.id] = l);
 

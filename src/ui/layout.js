@@ -9,8 +9,9 @@ export function renderLayout() {
 
     // 以前の固定幅クラス (w-[280px]) を削除し、インラインスタイルで幅を制御
     // リサイズハンドル (#sidebar-resizer) を追加
+    // ★修正: `hidden` を `sm:hidden` に修正し、`md:flex`との競合を解消
     app.innerHTML = `
-        <aside id="sidebar" class="hidden md:flex flex-col flex-shrink-0 bg-gray-50 dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transition-colors duration-200 relative group" style="width: 280px;">
+        <aside id="sidebar" class="sm:hidden md:flex flex-col flex-shrink-0 bg-gray-50 dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transition-colors duration-200 relative group" style="width: 280px;">
             <!-- ロゴ -->
             <div class="h-[48px] flex items-center px-4 flex-shrink-0">
                 <div class="flex items-center text-blue-600 dark:text-blue-400 font-bold text-lg cursor-pointer hover:opacity-80 transition select-none">
