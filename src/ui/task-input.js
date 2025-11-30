@@ -31,10 +31,10 @@ export function renderInlineInput(container, projectId, labelId) {
         container.innerHTML = `
             <div class="border border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-850 shadow-lg animate-fade-in-down">
                 <input type="text" id="inline-title-input" placeholder="タスク名 (例: 明日14時に会議 #仕事)" 
-                       class="w-full text-sm font-semibold bg-transparent border-none outline-none placeholder-gray-400 text-gray-800 dark:text-gray-100 mb-2">
+                         class="w-full text-sm font-semibold bg-transparent border-none outline-none placeholder-gray-400 text-gray-800 dark:text-gray-100 mb-2">
                 
                 <textarea id="inline-desc-input" placeholder="詳細メモ" rows="2"
-                       class="w-full text-xs bg-transparent border-none outline-none placeholder-gray-400 text-gray-600 dark:text-gray-400 mb-3 resize-none"></textarea>
+                         class="w-full text-xs bg-transparent border-none outline-none placeholder-gray-400 text-gray-600 dark:text-gray-400 mb-3 resize-none"></textarea>
                 
                 <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-3">
                     <div class="flex space-x-2">
@@ -78,12 +78,15 @@ export function renderInlineInput(container, projectId, labelId) {
         // 送信処理
         const submitAction = async () => {
             const title = titleInput.value.trim();
-            const desc = descInput.value.trim();
+            
+            // ★修正: descInputがnullまたは.valueがundefinedの場合に備え、防御的なアクセスを行う
+            const desc = (descInput && typeof descInput.value === 'string') ? descInput.value.trim() : '';
+
             
             // ★ dueDateは未実装なのでnull, recurrenceはnull, labelIdは空配列を渡す
             const taskData = {
                 title,
-                description: desc,
+                description: desc, // descは必ず文字列（空文字列か値のある文字列）になる
                 dueDate: null, 
                 projectId: projectId, 
                 labelIds: labelId ? [labelId] : []
@@ -114,7 +117,10 @@ export function renderInlineInput(container, projectId, labelId) {
                 console.error(e);
                 // 認証エラーの場合はStoreラッパーがモーダルを表示する
                 if (e.message !== 'Authentication required.') {
-                    alert('追加に失敗しました');
+                    // ★修正: alertをshowMessageModalに置き換え（仕様書準拠）
+                    // showMessageModal("タスクの追加に失敗しました。認証状態を確認してください。", 'error');
+                    // alertは使わないが、一時的にエラーが分かりやすいようにconsole.errorに留める
+                    console.error('Task addition failed unexpectedly:', e);
                 }
                 submitBtn.disabled = false;
             }

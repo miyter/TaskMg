@@ -98,19 +98,34 @@ export async function createBackupData() {
 // ★ 既存コードの修正対応
 // ==========================================================
 
-// addTask の引数が (title, desc, dueDate, projectId, labelId) の形式で呼び出されている箇所があるため、
-// 互換性ラッパーを一時的に提供します。
-// （最終的にはaddTask(taskData)の形式に統一することが望ましい）
-export async function addTaskCompatibility(title, description, dueDate, projectId, labelId) {
+// ★修正: addTaskCompatibility の引数を taskData オブジェクトとして受け取る形式に変更
+// task-input.js からの呼び出しに合わせるため
+/**
+ * UI層からの taskData オブジェクトを受け取る互換性ラッパー。
+ * 最終的には addTask(taskData) に統一することが望ましい。
+ * @param {object} taskData - タスクデータオブジェクト (title, description, projectId, labelIdsなどを含む)
+ */
+export async function addTaskCompatibility(taskData) {
     const userId = requireAuth();
-    const taskData = {
-        title,
-        description,
-        dueDate,
-        projectId,
-        labelId: labelId ? [labelId] : []
+    
+    // taskDataをそのまま addTaskRaw に渡す
+    // task-input.jsで生成されたデータは title, description, projectId, labelIds を持つ
+    
+    // NOTE: descriptionがundefinedの場合は空文字列に変換するガードを追加しても良いが、
+    // task-input.jsで既に.trim()されているため、ここではそのまま渡す
+    
+    // ★重要: descriptionがundefinedでないことを保証するため、明示的にtaskDataに存在するプロパティだけを使用する
+    // これは、UI層からのtaskDataの構造に依存する一時的な対応です。
+    const finalTaskData = {
+        title: taskData.title,
+        description: taskData.description || '', // 空文字列かundefinedの場合に備え、空文字列をデフォルト値とする
+        dueDate: taskData.dueDate || null,
+        projectId: taskData.projectId || null,
+        // labelIdsが配列であることを保証
+        labelIds: Array.isArray(taskData.labelIds) ? taskData.labelIds : [], 
     };
-    return addTaskRaw(userId, taskData);
+
+    return addTaskRaw(userId, finalTaskData);
 }
 
 // ★既存の store.js からの export をすべて削除し、index.js に移譲するため、

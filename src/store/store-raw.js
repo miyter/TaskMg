@@ -64,7 +64,8 @@ export async function addTaskRaw(userId, taskData) {
         ...taskData,
         ownerId: userId,
         status: 'todo',
-        createdAt: new Date()
+        // ★修正: createdAtを明示的にTimestampとして追加する
+        createdAt: Timestamp.fromDate(new Date()) 
     });
 }
 
@@ -93,7 +94,11 @@ export async function updateTaskRaw(userId, taskId, updates) {
     const safeUpdates = { ...updates };
     // 日付オブジェクトの変換
     if (safeUpdates.dueDate && !(safeUpdates.dueDate instanceof Date) && !(safeUpdates.dueDate instanceof Timestamp)) {
-          safeUpdates.dueDate = new Date(safeUpdates.dueDate);
+        // ★修正: dueDateもTimestampに変換する
+        safeUpdates.dueDate = Timestamp.fromDate(new Date(safeUpdates.dueDate)); 
+    } else if (safeUpdates.dueDate instanceof Date) {
+        // Dateオブジェクトの場合もTimestampに変換
+        safeUpdates.dueDate = Timestamp.fromDate(safeUpdates.dueDate);
     }
     
     // ★修正: recurrenceオブジェクトが渡された場合、そのままFirestoreに渡す
