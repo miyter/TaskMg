@@ -2,6 +2,8 @@
 // タスクモーダル用のHTML構造を生成する
 
 import { formatDateForInput } from './modal-helpers.js';
+// ★追加: 繰り返し初期日付計算ヘルパーをインポート
+import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
 
 /**
  * 繰り返し設定の曜日チェックボックスHTMLを生成する。
@@ -13,7 +15,7 @@ function createDaysCheckboxesHTML(recurrenceDays = []) {
     return dayLabels.map((day, index) => `
         <label class="flex items-center space-x-1 cursor-pointer">
             <input type="checkbox" data-day-index="${index}" ${recurrenceDays.includes(index) ? 'checked' : ''} 
-                   class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded">
+                    class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded">
             <span class="text-xs text-gray-700 dark:text-gray-300">${day}</span>
         </label>
     `).join('');
@@ -25,13 +27,26 @@ function createDaysCheckboxesHTML(recurrenceDays = []) {
  * @returns {string} モーダルHTML文字列
  */
 export function buildModalHTML(task) {
-    const dueDateValue = task.dueDate && task.dueDate.toDate 
-        ? formatDateForInput(task.dueDate.toDate()) 
-        : (task.dueDate ? formatDateForInput(new Date(task.dueDate)) : '');
-
+    let dueDate = task.dueDate;
     const recurrenceType = task.recurrence?.type || 'none';
     const recurrenceDays = task.recurrence?.days || [];
     
+    // ★修正: 繰り返し設定があるが、dueDateがない場合、日付を自動で設定する
+    if (recurrenceType !== 'none' && !dueDate) {
+        // recurrenceDaysが設定されていればweeklyと判断し、初期日付を計算
+        const tempRecurrence = { 
+            type: recurrenceType,
+            days: recurrenceType === 'weekly' ? recurrenceDays : []
+        };
+        dueDate = getInitialDueDateFromRecurrence(tempRecurrence);
+    }
+    
+    // DateオブジェクトまたはFirestore TimestampをYYYY-MM-DD形式に変換
+    const dueDateValue = dueDate && dueDate.toDate 
+        ? formatDateForInput(dueDate.toDate()) 
+        : (dueDate ? formatDateForInput(new Date(dueDate)) : '');
+
+
     const daysCheckboxes = createDaysCheckboxesHTML(recurrenceDays);
 
     return `

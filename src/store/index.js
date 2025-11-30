@@ -3,6 +3,7 @@
 
 import { auth } from '../core/firebase.js';
 import { showMessageModal } from '../ui/components.js';
+import { getNextRecurrenceDate } from '../utils/date.js'; // ★追加: 繰り返し日付計算用のヘルパー
 
 import { 
     subscribeToTasksRaw,
@@ -10,7 +11,8 @@ import {
     updateTaskStatusRaw,
     updateTaskRaw, 
     deleteTaskRaw,
-    createBackupDataRaw
+    createBackupDataRaw,
+    getTaskByIdRaw // ★追加: タスク情報を取得するため
 } from './store-raw.js';
 
 /**
@@ -26,6 +28,52 @@ function requireAuth() {
         throw new Error('Authentication required.'); 
     }
     return userId;
+}
+
+// ==========================================================
+// ★ 繰り返しタスクの処理ロジック (暫定フロントエンド実装)
+// ==========================================================
+
+/**
+ * 完了したタスクに繰り返し設定がある場合、次期タスクを生成する
+ * @param {object} completedTask - 完了したタスクオブジェクト
+ */
+async function handleRecurringTask(completedTask) {
+    if (completedTask.status !== 'completed' || !completedTask.recurrence) {
+        return;
+    }
+
+    const { recurrence, dueDate } = completedTask;
+
+    // dueDateがない、またはrecurrenceの型がおかしい場合はスキップ
+    if (!dueDate || typeof recurrence !== 'object' || !recurrence.type) {
+        return;
+    }
+
+    // 次の期限日を計算 (utils/date.jsに依存)
+    const nextDueDate = getNextRecurrenceDate(dueDate, recurrence);
+
+    if (nextDueDate) {
+        // 新しいタスクデータを作成
+        const newTaskData = {
+            title: completedTask.title,
+            description: completedTask.description || '',
+            status: 'todo', // 次期タスクは未完了
+            dueDate: nextDueDate, // 新しい期限日
+            projectId: completedTask.projectId,
+            labelIds: completedTask.labelIds,
+            recurrence: completedTask.recurrence, // 繰り返し設定は引き継ぐ
+        };
+
+        try {
+            // 新しいタスクとしてFirestoreに追加
+            await addTask(newTaskData);
+            console.log(`Generated next recurring task for: ${completedTask.title}, next due: ${nextDueDate}`);
+        } catch (e) {
+            console.error('Failed to generate next recurring task:', e);
+            // ユーザーへの通知は省略
+        }
+    }
 }
 
 // ==========================================================
@@ -63,7 +111,22 @@ export async function addTask(taskData) {
  */
 export async function updateTaskStatus(taskId, status) {
     const userId = requireAuth();
-    return updateTaskStatusRaw(userId, taskId, status);
+    
+    // 1. ステータスを更新する
+    const result = await updateTaskStatusRaw(userId, taskId, status);
+    
+    // 2. 完了ステータスに変更した場合、繰り返しタスクをチェック
+    if (status === 'completed') {
+        // 完了したタスクのデータを取得
+        const task = await getTaskByIdRaw(userId, taskId);
+        if (task) {
+            // ★追加: 繰り返しタスクの処理を実行
+            // この処理は非同期で実行するが、UIのブロックは避けるためawaitしない
+            handleRecurringTask(task).catch(e => console.error('Recurring task handler failed:', e));
+        }
+    }
+    
+    return result;
 }
 
 /**
@@ -103,26 +166,20 @@ export async function createBackupData() {
 /**
  * UI層からの taskData オブジェクトを受け取る互換性ラッパー。
  * 最終的には addTask(taskData) に統一することが望ましい。
- * @param {object} taskData - タスクデータオブジェクト (title, description, projectId, labelIdsなどを含む)
+ * @param {object} data - タスクデータオブジェクト (title, description, projectId, labelIdsなどを含む)
  */
-export async function addTaskCompatibility(taskData) {
+export async function addTaskCompatibility(data) {
     const userId = requireAuth();
     
-    // taskDataをそのまま addTaskRaw に渡す
-    // task-input.jsで生成されたデータは title, description, projectId, labelIds を持つ
-    
-    // NOTE: descriptionがundefinedの場合は空文字列に変換するガードを追加しても良いが、
-    // task-input.jsで既に.trim()されているため、ここではそのまま渡す
-    
-    // ★重要: descriptionがundefinedでないことを保証するため、明示的にtaskDataに存在するプロパティだけを使用する
-    // これは、UI層からのtaskDataの構造に依存する一時的な対応です。
+    // descriptionがundefinedでないこと、labelIdsが配列であることを保証
     const finalTaskData = {
-        title: taskData.title,
-        description: taskData.description || '', // 空文字列かundefinedの場合に備え、空文字列をデフォルト値とする
-        dueDate: taskData.dueDate || null,
-        projectId: taskData.projectId || null,
+        title: data.title,
+        description: data.description || '', // undefinedの場合に空文字列にフォールバック
+        dueDate: data.dueDate || null,
+        projectId: data.projectId || null,
         // labelIdsが配列であることを保証
-        labelIds: Array.isArray(taskData.labelIds) ? taskData.labelIds : [], 
+        labelIds: Array.isArray(data.labelIds) ? data.labelIds : [], 
+        recurrence: data.recurrence || null, // ★追加: recurrenceもここで拾っておく
     };
 
     return addTaskRaw(userId, finalTaskData);

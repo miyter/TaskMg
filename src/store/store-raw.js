@@ -9,13 +9,32 @@ import {
     doc, 
     query, 
     onSnapshot, 
-    getDocs,
+    getDoc, 
+    getDocs, // ★修正: getDocsをインポートに追加
     Timestamp 
 } from "firebase/firestore";
 // 相対パスを維持
 import { db } from '../core/firebase.js';
 
 let unsubscribe = null;
+
+/**
+ * FirestoreドキュメントデータをJavaScriptオブジェクトに変換するヘルパー
+ * @param {string} id - ドキュメントID
+ * @param {object} data - ドキュメントデータ
+ * @returns {object} 変換後のタスクオブジェクト
+ */
+function deserializeTask(id, data) {
+    return {
+        id,
+        ...data,
+        // TimestampをDateオブジェクトに変換
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt || Date.now()),
+        dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : (data.dueDate || null),
+        recurrence: data.recurrence || null,
+    };
+}
+
 
 // ==========================================================
 // ★ RAW FUNCTIONS (userId必須) - UI層からは直接呼び出さない
@@ -28,27 +47,35 @@ let unsubscribe = null;
  */
 export function subscribeToTasksRaw(userId, onUpdate) {
     if (unsubscribe) unsubscribe();
-    if (!userId) return;
+    if (!userId) {
+        onUpdate([]); // ユーザーIDがない場合は空のリストを返す
+        return;
+    }
     
     const appId = window.GLOBAL_APP_ID;
     const path = `/artifacts/${appId}/users/${userId}/tasks`;
     const q = query(collection(db, path));
 
     unsubscribe = onSnapshot(q, (snapshot) => {
-        const tasks = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                ...data,
-                // TimestampをDateオブジェクトに変換
-                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || Date.now()),
-                dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : (data.dueDate ? new Date(data.dueDate) : null),
-                // ★修正: recurrenceがMap/Objectの場合もそのまま渡す (UI側で必要なプロパティはそのまま)
-                recurrence: data.recurrence || null,
-            };
-        });
+        const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
         onUpdate(tasks);
     });
+}
+
+/**
+ * タスクをIDで取得 (RAW)
+ * @param {string} userId - ユーザーID (必須)
+ * @param {string} taskId - タスクID
+ * @returns {object|null} タスクオブジェクト
+ */
+export async function getTaskByIdRaw(userId, taskId) {
+    const appId = window.GLOBAL_APP_ID;
+    const ref = doc(db, `/artifacts/${appId}/users/${userId}/tasks`, taskId);
+    const docSnap = await getDoc(ref);
+    if (docSnap.exists()) {
+        return deserializeTask(docSnap.id, docSnap.data());
+    }
+    return null;
 }
 
 /**
@@ -60,11 +87,16 @@ export async function addTaskRaw(userId, taskData) {
     const appId = window.GLOBAL_APP_ID;
     const path = `/artifacts/${appId}/users/${userId}/tasks`;
     
+    // dueDateがDateオブジェクトの場合はTimestampに変換
+    const safeTaskData = { ...taskData };
+    if (safeTaskData.dueDate instanceof Date) {
+        safeTaskData.dueDate = Timestamp.fromDate(safeTaskData.dueDate);
+    }
+    
     await addDoc(collection(db, path), {
-        ...taskData,
+        ...safeTaskData,
         ownerId: userId,
         status: 'todo',
-        // ★修正: createdAtを明示的にTimestampとして追加する
         createdAt: Timestamp.fromDate(new Date()) 
     });
 }
@@ -92,25 +124,24 @@ export async function updateTaskRaw(userId, taskId, updates) {
     const ref = doc(db, `/artifacts/${appId}/users/${userId}/tasks`, taskId);
     
     const safeUpdates = { ...updates };
+
     // 日付オブジェクトの変換
-    if (safeUpdates.dueDate && !(safeUpdates.dueDate instanceof Date) && !(safeUpdates.dueDate instanceof Timestamp)) {
-        // ★修正: dueDateもTimestampに変換する
-        safeUpdates.dueDate = Timestamp.fromDate(new Date(safeUpdates.dueDate)); 
-    } else if (safeUpdates.dueDate instanceof Date) {
-        // Dateオブジェクトの場合もTimestampに変換
-        safeUpdates.dueDate = Timestamp.fromDate(safeUpdates.dueDate);
+    if (safeUpdates.dueDate && !(safeUpdates.dueDate instanceof Timestamp)) {
+        if (safeUpdates.dueDate instanceof Date) {
+            safeUpdates.dueDate = Timestamp.fromDate(safeUpdates.dueDate);
+        } else if (typeof safeUpdates.dueDate === 'string' || typeof safeUpdates.dueDate === 'number') {
+            safeUpdates.dueDate = Timestamp.fromDate(new Date(safeUpdates.dueDate));
+        } else if (safeUpdates.dueDate === null) {
+            safeUpdates.dueDate = null;
+        }
     }
     
-    // ★修正: recurrenceオブジェクトが渡された場合、そのままFirestoreに渡す
+    // recurrence: null または object をそのまま渡す
     if (safeUpdates.recurrence === undefined) {
-        // 何もしない
+        delete safeUpdates.recurrence;
     } else if (safeUpdates.recurrence === null) {
         safeUpdates.recurrence = null;
-    } else if (typeof safeUpdates.recurrence === 'object') {
-        // recurrence: { type: 'weekly', days: [...] } のようなMapをそのまま渡す
-        // Firestoreは自動的にMapとして処理する
-        safeUpdates.recurrence = safeUpdates.recurrence;
-    }
+    } 
 
     await updateDoc(ref, safeUpdates);
 }

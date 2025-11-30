@@ -8,6 +8,8 @@ import { renderModalLabels, setupLabelSelectOptions } from './modal/task-modal-l
 
 // ★修正: 分割したモジュールをインポート
 import { buildModalHTML } from './modal/modal-dom-generator.js';
+// ★追加: 日付ヘルパーをインポート
+import { getInitialDueDateFromRecurrence } from '../utils/date.js';
 
 let currentTask = null;
 
@@ -62,6 +64,7 @@ export function openTaskEditModal(task) {
                 const currentLabels = currentTask.labelIds || [];
                 if (!currentLabels.includes(labelId)) {
                     const newLabelIds = [...currentLabels, labelId];
+                    // ★Firestoreを直接更新
                     await updateTask(currentTask.id, { labelIds: newLabelIds });
                     currentTask.labelIds = newLabelIds;
                     refreshLabelsDisplay();
@@ -72,19 +75,82 @@ export function openTaskEditModal(task) {
         };
     }
     
-    // 繰り返しタイプの変更イベント
+    // 繰り返しタイプの変更イベントと曜日コンテナの制御
     const recurrenceSelect = document.getElementById('modal-task-recurrence');
     const daysContainer = document.getElementById('recurrence-days-container');
-    if (recurrenceSelect && daysContainer) {
-        recurrenceSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'weekly') {
+    const dueDateInput = document.getElementById('modal-task-date'); // ★期限日入力フィールドを取得
+
+    if (recurrenceSelect && daysContainer && dueDateInput) {
+        // ★修正: 繰り返しタイプの変更時、期限日を自動設定するロジックを追加
+        const handleRecurrenceChange = (e) => {
+            const newRecurrenceType = e.target.value;
+            const isWeekly = newRecurrenceType === 'weekly';
+
+            if (isWeekly) {
                 daysContainer.classList.remove('hidden');
             } else {
                 daysContainer.classList.add('hidden');
             }
-        });
+            
+            // ★繰り返しが設定された場合、期限日を自動で設定
+            if (newRecurrenceType !== 'none') {
+                // 繰り返し設定オブジェクトを作成 (daysはまだ未設定だが、typeは分かる)
+                const tempRecurrence = { type: newRecurrenceType };
+
+                // 曜日設定の初期化/イベント設定
+                if (isWeekly) {
+                    // 週間設定の場合は、曜日チェックボックスのイベントを設定
+                    setupWeeklyDaysEvents(dueDateInput, daysContainer);
+                    // 選択された曜日に基づき、初期日付を設定（初期状態で何もチェックされていなければ今日）
+                    const checkedDays = Array.from(daysContainer.querySelectorAll('input[type="checkbox"]:checked'))
+                        .map(cb => parseInt(cb.dataset.dayIndex, 10));
+                    tempRecurrence.days = checkedDays;
+                }
+                
+                // 新しい期限日を計算し、フィールドに反映
+                const newDate = getInitialDueDateFromRecurrence(tempRecurrence);
+                dueDateInput.value = newDate.toISOString().substring(0, 10); // YYYY-MM-DD形式
+            } else {
+                // noneに戻した場合、日付をクリアするかどうかはユーザーの判断に委ねるため、ここでは変更しない
+            }
+        };
+
+        recurrenceSelect.addEventListener('change', handleRecurrenceChange);
+
+        // ★初期表示がweeklyの場合、曜日チェックボックスのイベントを設定
+        if (recurrenceSelect.value === 'weekly') {
+            daysContainer.classList.remove('hidden');
+            setupWeeklyDaysEvents(dueDateInput, daysContainer);
+        }
     }
 }
+
+// ★追加: 毎週繰り返しの曜日チェックボックスイベント設定
+function setupWeeklyDaysEvents(dueDateInput, daysContainer) {
+    // チェックボックス全てにイベントを設定
+    const checkboxes = daysContainer.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        // イベントリスナーを一度だけ追加するために、既存のものを削除（DOM生成の都合上）
+        cb.removeEventListener('change', updateDueDateOnDayChange);
+        cb.addEventListener('change', updateDueDateOnDayChange);
+    });
+
+    function updateDueDateOnDayChange() {
+        // 現在チェックされている曜日を取得
+        const checkedDays = Array.from(daysContainer.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(cb => parseInt(cb.dataset.dayIndex, 10));
+
+        if (checkedDays.length > 0) {
+            // 新しい繰り返し設定を作成
+            const tempRecurrence = { type: 'weekly', days: checkedDays };
+            
+            // 新しい期限日を計算し、フィールドに反映
+            const newDate = getInitialDueDateFromRecurrence(tempRecurrence);
+            dueDateInput.value = newDate.toISOString().substring(0, 10); // YYYY-MM-DD形式
+        }
+    }
+}
+
 
 /**
  * モーダルを閉じる
@@ -142,6 +208,7 @@ function setupModalEvents(container) {
         const updates = {
             title: newTitle,
             description: newDesc,
+            // ★修正: 日付入力フィールドが空の場合（""）はnullにする。
             dueDate: newDateVal ? new Date(newDateVal) : null,
             recurrence: recurrenceData // 更新された繰り返しデータ
         };
