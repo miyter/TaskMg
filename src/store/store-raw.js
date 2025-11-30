@@ -42,7 +42,9 @@ export function subscribeToTasksRaw(userId, onUpdate) {
                 ...data,
                 // TimestampをDateオブジェクトに変換
                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || Date.now()),
-                dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : (data.dueDate ? new Date(data.dueDate) : null)
+                dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : (data.dueDate ? new Date(data.dueDate) : null),
+                // ★修正: recurrenceがMap/Objectの場合もそのまま渡す (UI側で必要なプロパティはそのまま)
+                recurrence: data.recurrence || null,
             };
         });
         onUpdate(tasks);
@@ -89,10 +91,22 @@ export async function updateTaskRaw(userId, taskId, updates) {
     const ref = doc(db, `/artifacts/${appId}/users/${userId}/tasks`, taskId);
     
     const safeUpdates = { ...updates };
+    // 日付オブジェクトの変換
     if (safeUpdates.dueDate && !(safeUpdates.dueDate instanceof Date) && !(safeUpdates.dueDate instanceof Timestamp)) {
           safeUpdates.dueDate = new Date(safeUpdates.dueDate);
     }
     
+    // ★修正: recurrenceオブジェクトが渡された場合、そのままFirestoreに渡す
+    if (safeUpdates.recurrence === undefined) {
+        // 何もしない
+    } else if (safeUpdates.recurrence === null) {
+        safeUpdates.recurrence = null;
+    } else if (typeof safeUpdates.recurrence === 'object') {
+        // recurrence: { type: 'weekly', days: [...] } のようなMapをそのまま渡す
+        // Firestoreは自動的にMapとして処理する
+        safeUpdates.recurrence = safeUpdates.recurrence;
+    }
+
     await updateDoc(ref, safeUpdates);
 }
 

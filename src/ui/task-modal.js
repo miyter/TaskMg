@@ -7,10 +7,6 @@ import { showMessageModal } from './components.js';
 // task-modal-labels.js がある前提 (ラベル機能用)
 import { renderModalLabels, setupLabelSelectOptions } from './task-modal-labels.js';
 
-// ★修正: auth はラッパー内で処理されるため不要だが、認証ガードのメッセージのために残す（または削除）
-// 今回はupdateTask/deleteTaskが認証ガードを持つため、authインポートは削除し、userIdチェックも削除します。
-// import { auth } from '../core/firebase.js';
-
 let currentTask = null;
 
 // =========================================================
@@ -51,6 +47,19 @@ export function openTaskEditModal(task) {
         : (task.dueDate ? formatDateForInput(new Date(task.dueDate)) : '');
 
     const recurrenceType = (task.recurrence && task.recurrence.type) ? task.recurrence.type : 'none';
+    
+    // 曜日選択の初期状態を取得 (日曜=0, 月曜=1, ..., 土曜=6)
+    const recurrenceDays = task.recurrence?.days || [];
+    const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+    
+    // 曜日選択チェックボックスのHTMLを生成
+    const daysCheckboxes = dayLabels.map((day, index) => `
+        <label class="flex items-center space-x-1 cursor-pointer">
+            <input type="checkbox" data-day-index="${index}" ${recurrenceDays.includes(index) ? 'checked' : ''} 
+                   class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded">
+            <span class="text-xs text-gray-700 dark:text-gray-300">${day}</span>
+        </label>
+    `).join('');
 
     // HTML生成
     modalContainer.innerHTML = `
@@ -89,6 +98,14 @@ export function openTaskEditModal(task) {
                                 <option value="weekly" ${recurrenceType === 'weekly' ? 'selected' : ''}>毎週</option>
                                 <option value="monthly" ${recurrenceType === 'monthly' ? 'selected' : ''}>毎月</option>
                             </select>
+                        </div>
+                    </div>
+                    
+                    <!-- ★追加: 曜日選択 (weekly選択時のみ表示) -->
+                    <div id="recurrence-days-container" class="${recurrenceType !== 'weekly' ? 'hidden' : ''} pt-2 border-t border-gray-100 dark:border-gray-700">
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">繰り返す曜日</label>
+                        <div id="recurrence-days-checkboxes" class="flex flex-wrap gap-x-4 gap-y-2">
+                            ${daysCheckboxes}
                         </div>
                     </div>
 
@@ -152,6 +169,19 @@ export function openTaskEditModal(task) {
             }
         };
     }
+    
+    // ★追加: 繰り返しタイプの変更イベント
+    const recurrenceSelect = document.getElementById('modal-task-recurrence');
+    const daysContainer = document.getElementById('recurrence-days-container');
+    if (recurrenceSelect && daysContainer) {
+        recurrenceSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'weekly') {
+                daysContainer.classList.remove('hidden');
+            } else {
+                daysContainer.classList.add('hidden');
+            }
+        });
+    }
 }
 
 /**
@@ -170,7 +200,7 @@ export function closeTaskModal() {
 // =========================================================
 
 function setupModalEvents(container) {
-    // ★修正: userIdの取得とチェックを削除。認証はラッパー関数が担当する
+    // ★修正: userIdの取得とチェックを削除
     
     document.getElementById('close-modal-btn')?.addEventListener('click', closeTaskModal);
     document.getElementById('cancel-modal-btn')?.addEventListener('click', closeTaskModal);
@@ -185,18 +215,35 @@ function setupModalEvents(container) {
         const newTitle = document.getElementById('modal-task-title').value.trim();
         const newDesc = document.getElementById('modal-task-desc').value.trim();
         const newDateVal = document.getElementById('modal-task-date').value;
-        const newRecurrence = document.getElementById('modal-task-recurrence').value;
+        const newRecurrenceType = document.getElementById('modal-task-recurrence').value;
         
         if (!newTitle) {
             showMessageModal("タイトルを入力してください", null);
             return;
         }
 
+        let recurrenceData = null;
+        if (newRecurrenceType !== 'none') {
+            if (newRecurrenceType === 'weekly') {
+                const checkedDays = Array.from(document.querySelectorAll('#recurrence-days-checkboxes input[type="checkbox"]:checked'))
+                    .map(cb => parseInt(cb.dataset.dayIndex, 10))
+                    .sort((a, b) => a - b);
+                
+                if (checkedDays.length === 0) {
+                    showMessageModal("毎週繰り返す設定の場合、少なくとも一つ曜日を選択してください。", null);
+                    return;
+                }
+                recurrenceData = { type: newRecurrenceType, days: checkedDays };
+            } else {
+                recurrenceData = { type: newRecurrenceType };
+            }
+        }
+
         const updates = {
             title: newTitle,
             description: newDesc,
             dueDate: newDateVal ? new Date(newDateVal) : null,
-            recurrence: newRecurrence !== 'none' ? { type: newRecurrence } : null
+            recurrence: recurrenceData // 更新された繰り返しデータ
         };
 
         // ★修正: userIdの引数を削除
