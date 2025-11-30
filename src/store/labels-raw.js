@@ -1,7 +1,7 @@
 // @ts-nocheck
 // @miyter:20251125
 
-import { collection, addDoc, deleteDoc, doc, query, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot } from "firebase/firestore"; // ★修正: updateDocをインポートに追加
 
 // ★修正: ローカルモジュールへのインポートパスを相対パスに変更
 import { db } from '../core/firebase.js';
@@ -42,6 +42,19 @@ export async function addLabelRaw(userId, name, color) {
         ownerId: userId,
         createdAt: new Date()
     });
+}
+
+/**
+ * ラベルを更新する (RAW)。
+ * @param {string} userId - ユーザーID (必須)
+ * @param {string} labelId - ラベルID
+ * @param {object} updates - 更新内容
+ */
+export async function updateLabelRaw(userId, labelId, updates) {
+    const appId = window.GLOBAL_APP_ID;
+    const path = `/artifacts/${appId}/users/${userId}/labels`;
+    const ref = doc(db, path, labelId);
+    return updateDoc(ref, updates);
 }
 
 /**

@@ -6,8 +6,8 @@
 // --- 修正: Chart.jsをnpmパッケージからインポート ---
 import Chart from 'chart.js/auto';
 
-// --- 修正: プロジェクト名解決のために sidebar からインポート ---
-import { getProjectName } from "./sidebar.js";
+// --- 修正: プロジェクト名解決のために sidebar-utils からインポート ---
+import { getProjectName } from "./sidebar-utils.js";
 
 let statusChartInstance = null;
 let projectChartInstance = null;
@@ -97,7 +97,7 @@ function renderProjectChart(tasks, allProjects) {
     
     // 未完了タスクのみをカウント
     tasks.filter(t => t.status === 'todo').forEach(t => {
-        // プロジェクト名を取得（getProjectNameはsidebar.jsに依存）
+        // プロジェクト名を取得（getProjectNameはsidebar-utils.jsに依存）
         // ★修正: getProjectNameにallProjectsを渡す
         const projectName = getProjectName(t.projectId, allProjects); 
         const label = projectName || '未分類';

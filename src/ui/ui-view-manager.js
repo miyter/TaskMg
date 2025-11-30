@@ -35,7 +35,7 @@ export function getCurrentFilter() {
  * @param {Array} allProjects - 全プロジェクトデータ
  * @param {Array} allLabels - 全ラベルデータ
  */
-export function updateView(allTasks, allProjects, allLabels) {
+export function updateView(allTasks, allProjects, allLabels) { // allProjectsを受け取る
     const taskView = document.getElementById('task-view');
     const dashboardView = document.getElementById('dashboard-view');
     const settingsView = document.getElementById('settings-view');
@@ -79,8 +79,10 @@ export function updateView(allTasks, allProjects, allLabels) {
         showCompleted: showCompleted
     });
 
+    // ★修正: renderTaskViewにallProjectsを追加
     renderTaskView(
         filteredTasks, 
+        allProjects, // ★追加: プロジェクトデータを渡す
         currentFilter.type === 'project' ? currentFilter.id : null, 
         currentFilter.type === 'label' ? currentFilter.id : null
     );

@@ -20,10 +20,11 @@ export { renderTaskList };
 /**
  * タスクビュー全体（リスト＋入力欄）を描画するメイン関数
  * @param {Array} tasks - 表示するタスクの配列
+ * @param {Array} allProjects - 全プロジェクトの配列 ★追加
  * @param {string|null} projectId - 現在のプロジェクトID
  * @param {string|null} labelId - 現在のラベルID
  */
-export function renderTaskView(tasks, projectId = null, labelId = null) {
+export function renderTaskView(tasks, allProjects, projectId = null, labelId = null) {
     currentProjectId = projectId;
     currentLabelId = labelId;
     
@@ -41,7 +42,8 @@ export function renderTaskView(tasks, projectId = null, labelId = null) {
     container.innerHTML = '';
 
     // 1. リストの描画 (task-list.js の機能を利用)
-    renderTaskList(container, sortedTasks);
+    // ★修正: renderTaskList に allProjects を渡す
+    renderTaskList(container, sortedTasks, allProjects);
 
     // 2. インライン入力フォームの描画 (task-input.js の機能を利用)
     const inputContainer = document.createElement('div');

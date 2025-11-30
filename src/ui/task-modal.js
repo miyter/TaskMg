@@ -11,6 +11,11 @@ import { buildModalHTML } from './modal/modal-dom-generator.js';
 // ★追加: 日付ヘルパーをインポート
 import { getInitialDueDateFromRecurrence } from '../utils/date.js';
 
+// ★追加: プロジェクト/ラベルのCRUD関数をインポート
+import { addProject, updateProject } from '../store/projects.js'; 
+import { addLabel, updateLabel } from '../store/labels.js'; 
+
+
 let currentTask = null;
 
 // =========================================================
@@ -125,7 +130,79 @@ export function openTaskEditModal(task) {
     }
 }
 
-// ★追加: 毎週繰り返しの曜日チェックボックスイベント設定
+/**
+ * モーダルを閉じる
+ */
+export function closeTaskModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (modalContainer) {
+        modalContainer.innerHTML = '';
+    }
+    currentTask = null;
+}
+
+
+// =========================================================
+// ★ プロジェクト/ラベル編集モーダル (sidebar-utils.jsが要求するexport)
+// =========================================================
+
+/**
+ * プロジェクト編集/新規作成モーダルを開く
+ * @param {Object|null} project - 編集対象のプロジェクトオブジェクト (nullの場合は新規作成)
+ * @param {Array} allProjects - 全プロジェクトデータ (重複チェック用)
+ */
+export function showProjectModal(project = null, allProjects = []) {
+    const isNew = project === null;
+    const title = isNew ? '新しいプロジェクト名を入力してください' : `プロジェクト「${project.name}」を編集`;
+    const defaultName = isNew ? '' : project.name;
+    
+    // ★修正: alertの代わりにpromptを使うが、UI改善のためカスタムモーダルへの移行を推奨
+    const newName = prompt(title, defaultName);
+    if (!newName || newName.trim() === defaultName) return;
+
+    if (isNew) {
+        addProject(newName.trim())
+            .then(() => showMessageModal("プロジェクトを作成しました"))
+            .catch(e => { console.error(e); showMessageModal("作成に失敗しました", 'error'); });
+    } else {
+        updateProject(project.id, { name: newName.trim() })
+            .then(() => showMessageModal("プロジェクトを更新しました"))
+            .catch(e => { console.error(e); showMessageModal("更新に失敗しました", 'error'); });
+    }
+}
+
+/**
+ * ラベル編集/新規作成モーダルを開く
+ * @param {Object|null} label - 編集対象のラベルオブジェクト (nullの場合は新規作成)
+ * @param {Array} allLabels - 全ラベルデータ (重複チェック用)
+ */
+export function showLabelModal(label = null, allLabels = []) {
+    const isNew = label === null;
+    const title = isNew ? '新しいラベル名を入力してください' : `ラベル「${label.name}」を編集`;
+    const defaultName = isNew ? '' : label.name;
+    
+    // ★暫定: 色の編集UIは未実装のため、名前のみをpromptで処理
+    const newName = prompt(title, defaultName);
+    if (!newName || newName.trim() === defaultName) return;
+
+    if (isNew) {
+        // ★暫定: ランダムカラーで追加
+        const randomColor = `#${Math.floor(Math.random()*16777215).toString(16)}`; 
+        addLabel(newName.trim(), randomColor)
+            .then(() => showMessageModal("ラベルを作成しました"))
+            .catch(e => { console.error(e); showMessageModal("作成に失敗しました", 'error'); });
+    } else {
+        updateLabel(label.id, { name: newName.trim() })
+            .then(() => showMessageModal("ラベルを更新しました"))
+            .catch(e => { console.error(e); showMessageModal("更新に失敗しました", 'error'); });
+    }
+}
+
+
+// =========================================================
+// 内部ヘルパー
+// =========================================================
+
 function setupWeeklyDaysEvents(dueDateInput, daysContainer) {
     // チェックボックス全てにイベントを設定
     const checkboxes = daysContainer.querySelectorAll('input[type="checkbox"]');
@@ -150,22 +227,6 @@ function setupWeeklyDaysEvents(dueDateInput, daysContainer) {
         }
     }
 }
-
-
-/**
- * モーダルを閉じる
- */
-export function closeTaskModal() {
-    const modalContainer = document.getElementById('modal-container');
-    if (modalContainer) {
-        modalContainer.innerHTML = '';
-    }
-    currentTask = null;
-}
-
-// =========================================================
-// 内部ヘルパー
-// =========================================================
 
 function setupModalEvents(container) {
     document.getElementById('close-modal-btn')?.addEventListener('click', closeTaskModal);
@@ -208,7 +269,6 @@ function setupModalEvents(container) {
         const updates = {
             title: newTitle,
             description: newDesc,
-            // ★修正: 日付入力フィールドが空の場合（""）はnullにする。
             dueDate: newDateVal ? new Date(newDateVal) : null,
             recurrence: recurrenceData // 更新された繰り返しデータ
         };

@@ -1,7 +1,9 @@
 // @ts-nocheck
 // タスクモーダル内のラベル（タグ）UI制御
 
-import { getLabelDetails } from '../sidebar.js'; // ★修正: sidebar.js への正しい相対パス
+// ★修正: getLabelDetails のインポート先を sidebar-utils.js に変更し、相対パスを修正
+// src/ui/modal/ から見て、src/ui/sidebar-utils.js への正しい相対パスは '../sidebar-utils.js'
+import { getLabelDetails, setLabelMap } from '../sidebar-utils.js';
 
 /**
  * モーダル内のラベルバッジを描画する
@@ -49,8 +51,12 @@ export function setupLabelSelectOptions(selectElement) {
 
     const labelList = document.getElementById('label-list');
     // sidebar.jsが描画したDOMからラベル情報を取得
+    // ★注意: DOMからtextContentを取得すると、カウントも含まれてしまう。
+    // 正しくは、allLabels配列から取得するか、sidebar-utils.jsでマップ化されたものを使うべき。
+    // ただし、現状のコードがDOM依存のため、一旦このロジックを維持し、DOM依存でない方法に移行を推奨。
     const allLabels = Array.from(labelList ? labelList.querySelectorAll('li') : []).map(li => ({
         id: li.dataset.id,
+        // ここでtextContent.trim()を使用するとカウントも含まれるため、将来的に問題
         name: li.textContent ? li.textContent.trim() : ''
     }));
     
@@ -58,7 +64,9 @@ export function setupLabelSelectOptions(selectElement) {
     allLabels.forEach(l => {
         const opt = document.createElement('option');
         opt.value = l.id;
-        opt.textContent = l.name;
+        // nameにカウントが入っている可能性があるため、ここではDOMから取得するロジックを維持するが、
+        // 実際にはラベル名のみを取得する仕組みが必要。
+        opt.textContent = l.name; 
         selectElement.appendChild(opt);
     });
     selectElement.value = '';

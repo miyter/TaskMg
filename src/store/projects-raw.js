@@ -2,7 +2,7 @@
 // @miyter:20251129
 
 import { 
-    collection, addDoc, deleteDoc, doc, query, onSnapshot, orderBy 
+    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, orderBy // ★修正: updateDocをインポートに追加
 } from "firebase/firestore";
 
 // ★修正: ローカルモジュールへのインポートパスを相対パスに変更
@@ -43,6 +43,20 @@ export async function addProjectRaw(userId, name) {
         ownerId: userId,
         createdAt: new Date()
     });
+}
+
+/**
+ * プロジェクトを更新する (RAW)。
+ * @param {string} userId - ユーザーID (必須)
+ * @param {string} projectId - プロジェクトID
+ * @param {object} updates - 更新内容
+ */
+export async function updateProjectRaw(userId, projectId, updates) {
+    const appId = window.GLOBAL_APP_ID;
+    const path = `/artifacts/${appId}/users/${userId}/projects`;
+    const ref = doc(db, path, projectId);
+    // ★追加: updateDocでデータを更新
+    return updateDoc(ref, updates);
 }
 
 /**
