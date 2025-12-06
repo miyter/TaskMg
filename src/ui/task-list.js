@@ -18,7 +18,6 @@ export function renderTaskList(container, tasks) {
             const li = createTaskItem(task);
             list.appendChild(li);
         });
-        // ドラッグによる並び替えイベントを設定
         setupListDragEvents(list);
     }
     container.appendChild(list);
@@ -27,18 +26,19 @@ export function renderTaskList(container, tasks) {
 function createTaskItem(task) {
     const li = document.createElement('li');
     li.setAttribute('data-id', task.id);
-    li.setAttribute('draggable', 'true'); // ドラッグ可能にする
+    li.setAttribute('draggable', 'true'); 
     
     const isCompleted = task.status === 'completed';
     const dateText = formatDateCompact(task.dueDate);
     const dateColorClass = getTaskDateColor(task.dueDate);
     const isRecurring = !!task.recurrence; 
+    // ラベル数を取得（未設定なら0）
+    const labelCount = task.labelIds ? task.labelIds.length : 0;
 
-    // ドラッグ時のカーソルスタイルを追加 (cursor-move はドラッグハンドル用だが、全体ドラッグ可にするため)
     li.className = `group flex items-start gap-2 sm:gap-3 py-2 px-2 rounded -mx-2 transition-all duration-200 cursor-default border border-transparent ${isCompleted ? 'opacity-60 bg-gray-50 dark:bg-gray-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-gray-100 dark:hover:border-gray-700'}`;
 
     li.innerHTML = `
-        <!-- ドラッグハンドル (マウスホバーでカーソル変更) -->
+        <!-- ドラッグハンドル -->
         <div class="task-drag-handle mt-1 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing hidden sm:block mr-1">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
         </div>
@@ -54,16 +54,20 @@ function createTaskItem(task) {
             </div>
             <div class="col-span-1 sm:col-span-3 flex items-center sm:justify-end space-x-2 text-xs h-full mt-1 sm:mt-0">
                 ${isRecurring ? `<div class="text-blue-500 dark:text-blue-400" title="繰り返し設定あり">🔁</div>` : ''}
+                
                 ${dateText ? `<div class="flex items-center ${dateColorClass} bg-gray-50 dark:bg-gray-800/50 px-1.5 py-0.5 rounded"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${dateText}</div>` : ''}
-                ${task.labelIds?.length > 0 ? `<span class="text-gray-400 group-hover:text-gray-500 flex items-center"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg><span class="ml-0.5">${task.labelIds.length}</span></span>` : ''}
+                
+                <!-- ラベル数表示 (0でも常に表示) -->
+                <span class="text-gray-400 group-hover:text-gray-500 flex items-center" title="ラベル数">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                    <span class="ml-0.5">${labelCount}</span>
+                </span>
             </div>
         </div>
     `;
 
-    // ドラッグ開始イベント
     li.addEventListener('dragstart', (e) => {
         li.classList.add('opacity-50');
-        // サイドバーへのドロップ用にIDを設定
         e.dataTransfer.setData('text/plain', task.id);
         e.dataTransfer.effectAllowed = 'move';
     });
@@ -78,9 +82,7 @@ function createTaskItem(task) {
         await updateTaskStatus(task.id, isCompleted ? 'todo' : 'completed');
     });
 
-    // タスククリックで編集
     li.addEventListener('click', (e) => {
-        // ドラッグハンドルやチェックボックス以外をクリックした場合のみ
         if (!e.target.closest('.task-checkbox') && !e.target.closest('.task-drag-handle')) {
             openTaskEditModal(task);
         }
@@ -95,23 +97,11 @@ function createTaskItem(task) {
     return li;
 }
 
-/**
- * リスト内のドラッグ＆ドロップ（並び替え）イベントを設定
- */
 function setupListDragEvents(list) {
     list.addEventListener('dragover', (e) => {
-        e.preventDefault(); // ドロップを許可
+        e.preventDefault(); 
         const afterElement = getDragAfterElement(list, e.clientY);
-        const draggable = document.querySelector('.dragging'); // 現在ドラッグ中の要素（あれば）
-        // ※注意: draggableクラスの付与はdragstartで行うのが一般的だが、
-        // ここでは簡易的に opacity-50 になっている要素を対象とするか、
-        // dragstartでクラスをつける実装を追加するのが望ましい。
-        // 今回はシンプルに、data-idを持つドラッグ中の要素を探す。
-        // ただし、他ウィンドウからのドラッグなどで要素がない場合を除く。
     });
-    
-    // 簡易的な並び替えプレビュー (SortableJSなどが無いため、DOM操作のみ)
-    // 本格的な並び替え保存にはバックエンドの順序カラムが必要
 }
 
 function getDragAfterElement(container, y) {
@@ -128,9 +118,6 @@ function getDragAfterElement(container, y) {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-/**
- * タスク用のコンテキストメニューを表示する
- */
 function showTaskContextMenu(task, x, y) {
     document.getElementById('task-context-menu')?.remove();
 

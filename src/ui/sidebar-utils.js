@@ -21,12 +21,10 @@ export function getLabelDetails(labelId) {
 }
 
 export function getCurrentFilter() {
-    // 暫定: App.jsから渡される想定
     return { type: 'inbox', id: null }; 
 }
 
 export function getCurrentFilterData(allProjects, allLabels) {
-    // 簡易実装
     return null;
 }
 
@@ -39,17 +37,17 @@ export function updateSidebarState(sidebar, mainContent) {
     isSidebarCollapsed = storedState === 'true';
 
     if (isSidebarCollapsed) {
-        // 閉じる: 幅を0にして非表示に
+        // 閉じる
         sidebar.style.width = '0px';
         sidebar.style.padding = '0px';
-        sidebar.classList.add('invisible'); // 中身も見えなくする
+        sidebar.classList.add('invisible');
     } else {
-        // 開く: 保存された幅に戻す
+        // 開く
         sidebar.style.width = `${sidebarWidth}px`;
-        sidebar.style.padding = ''; // paddingをリセット
+        sidebar.style.padding = '';
         sidebar.classList.remove('invisible');
     }
-    // ★削除: mainContent.style.marginLeft の操作は不要（Flexboxが自動調整するため）
+    // ★重要: mainContent.style.marginLeft の操作を完全削除
 }
 
 export function setupResizer(sidebar, mainContent, resizer) {
@@ -70,7 +68,7 @@ export function setupResizer(sidebar, mainContent, resizer) {
         if (isSidebarCollapsed) return;
         isResizing = true;
         document.body.style.cursor = 'col-resize';
-        document.body.classList.add('select-none'); // ドラッグ中の選択防止
+        document.body.classList.add('select-none');
         document.addEventListener('mousemove', resize);
         document.addEventListener('mouseup', stopResize);
         e.preventDefault();
@@ -88,7 +86,7 @@ export function setupResizer(sidebar, mainContent, resizer) {
         sidebarWidth = newWidth;
         sidebar.style.width = `${newWidth}px`;
         
-        // ★削除: mainContent.style.marginLeft の操作は不要
+        // ★重要: ここでも mainContent.style.marginLeft を操作しない
     };
 
     const stopResize = () => {

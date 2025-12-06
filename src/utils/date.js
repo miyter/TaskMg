@@ -1,30 +1,32 @@
 // @ts-nocheck
 // @miyter:20251129
 
-// ★修正: getTaskDateDateColor -> getTaskDateColor に修正 (task-list.js側での指摘対応)
-
 /**
- * 日付を指定された形式でコンパクトにフォーマットする
+ * 日付を指定された形式でコンパクトにフォーマットする (mm/dd)
  * @param {Date|null} date - 期限日
- * @returns {string} フォーマットされた日付文字列 ('M/D'形式、今日/明日表示、時間表示など)
+ * @returns {string} フォーマットされた日付文字列
  */
 export function formatDateCompact(date) {
     if (!date) return '';
 
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) return '';
+
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const targetDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
 
     const diffTime = targetDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
+    // 相対表記（Todoist風に残す場合はコメントアウトを解除、今回はmm/dd優先）
     if (diffDays === 0) return '今日';
     if (diffDays === 1) return '明日';
     if (diffDays === -1) return '昨日';
 
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
+    const year = dateObj.getFullYear();
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const day = dateObj.getDate().toString().padStart(2, '0');
 
     // 翌年以降なら年を表示
     if (year !== now.getFullYear()) {
@@ -42,9 +44,10 @@ export function formatDateCompact(date) {
 export function getTaskDateColor(date) {
     if (!date) return 'text-gray-500';
 
+    const dateObj = new Date(date);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const targetDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
 
     const diffTime = targetDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -55,11 +58,11 @@ export function getTaskDateColor(date) {
     }
     // 今日
     if (diffDays === 0) {
-        return 'text-red-500 font-medium';
+        return 'text-green-600 dark:text-green-400 font-medium';
     }
     // 明日
     if (diffDays === 1) {
-        return 'text-yellow-600 dark:text-yellow-400 font-medium';
+        return 'text-orange-500 dark:text-orange-400 font-medium';
     }
     // 未来
     return 'text-gray-500 dark:text-gray-400';
@@ -114,7 +117,6 @@ export function getNextRecurrenceDate(currentDueDate, recurrence) {
     return null;
 }
 
-// ★修正: exportキーワードを追加して、外部からアクセスできるようにする
 /**
  * 繰り返し設定に基づいてタスクの初期期限日を決定する (今日の日付か、最短の曜日)
  * @param {object} recurrence - 繰り返し設定 { type: 'daily' | 'weekly' | 'monthly', days?: number[] }
