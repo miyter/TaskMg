@@ -1,3 +1,4 @@
+import '../index.css';
 // アプリケーションのエントリーポイント
 import { initializeApp } from './app.js';
 
