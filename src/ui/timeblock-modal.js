@@ -99,7 +99,8 @@ function renderBlockRow(block, container) {
     const data = block || { id: '', name: '', start: '09:00', end: '10:00', color: '#808080' };
     
     const row = document.createElement('div');
-    row.className = 'tb-row flex items-center gap-3 p-3 bg-white dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm transition-all hover:shadow-md group';
+    // 修正: dark:bg-gray-750 -> dark:bg-gray-700 (有効なクラスに変更)
+    row.className = 'tb-row flex items-center gap-3 p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm transition-all hover:shadow-md group';
     if (!isNew) row.dataset.id = data.id;
 
     // カラーパレット
@@ -116,13 +117,15 @@ function renderBlockRow(block, container) {
         </div>
 
         <div class="flex-1">
-            <input type="text" class="tb-name w-full px-2 py-1 text-sm border-b border-gray-300 dark:border-gray-600 bg-transparent focus:border-blue-500 focus:outline-none placeholder-gray-400" placeholder="名前 (例: 朝集中)" value="${data.name}">
+            <!-- 修正: text-gray-800 dark:text-white を追加 -->
+            <input type="text" class="tb-name w-full px-2 py-1 text-sm text-gray-800 dark:text-white border-b border-gray-300 dark:border-gray-600 bg-transparent focus:border-blue-500 focus:outline-none placeholder-gray-400" placeholder="名前 (例: 朝集中)" value="${data.name}">
         </div>
 
         <div class="flex items-center gap-2">
-            <input type="time" class="tb-start px-2 py-1 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${data.start}">
+            <!-- 修正: text-gray-800 dark:text-white を追加 -->
+            <input type="time" class="tb-start px-2 py-1 text-sm text-gray-800 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${data.start}">
             <span class="text-gray-400">-</span>
-            <input type="time" class="tb-end px-2 py-1 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${data.end}">
+            <input type="time" class="tb-end px-2 py-1 text-sm text-gray-800 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${data.end}">
         </div>
 
         <div class="flex items-center gap-1">

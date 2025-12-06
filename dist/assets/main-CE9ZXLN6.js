@@ -3478,7 +3478,7 @@ This typically indicates that your device does not have a healthy Internet conne
                 </button>
             </div>
         </div>
-    `,document.body.appendChild(e),Wy(t),document.getElementById("close-tb-modal").addEventListener("click",()=>e.remove()),document.getElementById("close-tb-footer").addEventListener("click",()=>{e.remove();const s=new CustomEvent("timeblocks-updated");document.dispatchEvent(s)}),document.getElementById("add-tb-btn").addEventListener("click",()=>{qy(null,document.getElementById("tb-list")),ho()})}function Wy(n){const t=document.getElementById("tb-list");t.innerHTML="",n.forEach(e=>qy(e,t))}function ho(){const n=document.getElementById("add-tb-btn");document.querySelectorAll(".tb-row").length>=5?(n.disabled=!0,n.style.opacity="0.5",n.style.cursor="not-allowed"):(n.disabled=!1,n.style.opacity="1",n.style.cursor="pointer")}function qy(n,t){const e=!n,i=n||{id:"",name:"",start:"09:00",end:"10:00",color:"#808080"},s=document.createElement("div");s.className="tb-row flex items-center gap-3 p-3 bg-white dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm transition-all hover:shadow-md group",e||(s.dataset.id=i.id),s.innerHTML=`
+    `,document.body.appendChild(e),Wy(t),document.getElementById("close-tb-modal").addEventListener("click",()=>e.remove()),document.getElementById("close-tb-footer").addEventListener("click",()=>{e.remove();const s=new CustomEvent("timeblocks-updated");document.dispatchEvent(s)}),document.getElementById("add-tb-btn").addEventListener("click",()=>{qy(null,document.getElementById("tb-list")),ho()})}function Wy(n){const t=document.getElementById("tb-list");t.innerHTML="",n.forEach(e=>qy(e,t))}function ho(){const n=document.getElementById("add-tb-btn");document.querySelectorAll(".tb-row").length>=5?(n.disabled=!0,n.style.opacity="0.5",n.style.cursor="not-allowed"):(n.disabled=!1,n.style.opacity="1",n.style.cursor="pointer")}function qy(n,t){const e=!n,i=n||{id:"",name:"",start:"09:00",end:"10:00",color:"#808080"},s=document.createElement("div");s.className="tb-row flex items-center gap-3 p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm transition-all hover:shadow-md group",e||(s.dataset.id=i.id),s.innerHTML=`
         <div class="cursor-move text-gray-400 hover:text-gray-600 p-1 handle">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
         </div>
@@ -3489,13 +3489,15 @@ This typically indicates that your device does not have a healthy Internet conne
         </div>
 
         <div class="flex-1">
-            <input type="text" class="tb-name w-full px-2 py-1 text-sm border-b border-gray-300 dark:border-gray-600 bg-transparent focus:border-blue-500 focus:outline-none placeholder-gray-400" placeholder="名前 (例: 朝集中)" value="${i.name}">
+            <!-- 修正: text-gray-800 dark:text-white を追加 -->
+            <input type="text" class="tb-name w-full px-2 py-1 text-sm text-gray-800 dark:text-white border-b border-gray-300 dark:border-gray-600 bg-transparent focus:border-blue-500 focus:outline-none placeholder-gray-400" placeholder="名前 (例: 朝集中)" value="${i.name}">
         </div>
 
         <div class="flex items-center gap-2">
-            <input type="time" class="tb-start px-2 py-1 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${i.start}">
+            <!-- 修正: text-gray-800 dark:text-white を追加 -->
+            <input type="time" class="tb-start px-2 py-1 text-sm text-gray-800 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${i.start}">
             <span class="text-gray-400">-</span>
-            <input type="time" class="tb-end px-2 py-1 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${i.end}">
+            <input type="time" class="tb-end px-2 py-1 text-sm text-gray-800 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${i.end}">
         </div>
 
         <div class="flex items-center gap-1">
