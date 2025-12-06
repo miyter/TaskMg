@@ -8,7 +8,6 @@ import { setCurrentFilter } from './ui-view-manager.js';
 
 /**
  * サイドバーのリストアイテム要素を作成する (汎用)
- * ※ renderer.js 等でHTML文字列を作って渡す方式にも対応可能
  * @param {string} name - アイテム名
  * @param {string} type - 'project' | 'timeblock' | 'duration' etc
  * @param {string} id - ID
@@ -18,9 +17,16 @@ import { setCurrentFilter } from './ui-view-manager.js';
  */
 export function createSidebarItem(name, type, id, color, count) {
     const item = document.createElement('li');
+    
+    // ★設定に基づいてパディングを切り替え
+    const isCompact = localStorage.getItem('sidebar_compact') === 'true';
+    const paddingClass = isCompact ? 'py-0.5' : 'py-1.5';
+    
     item.dataset.type = type;
     item.dataset.id = id;
-    item.className = 'group flex items-center justify-between px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target';
+    
+    // sidebar-item-row クラスを追加して後で一括変更可能にする
+    item.className = `group flex items-center justify-between px-3 ${paddingClass} text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target sidebar-item-row`;
 
     let iconHtml = '';
     if (type === 'project') {
@@ -49,7 +55,6 @@ export function createSidebarItem(name, type, id, color, count) {
  * プロジェクトの右クリックメニューを表示する
  */
 export function showItemContextMenu(e, type, itemData, allProjects) {
-    // 時間帯の編集はモーダルで行うので、コンテキストメニューはプロジェクトのみ対象
     if (type !== 'project') return;
 
     document.getElementById('sidebar-context-menu')?.remove();
@@ -73,13 +78,11 @@ export function showItemContextMenu(e, type, itemData, allProjects) {
 
     document.body.appendChild(menu);
 
-    // 編集ボタンのイベント
     document.getElementById('context-edit-btn').addEventListener('click', () => {
         menu.remove();
         showProjectModal(itemData, allProjects);
     });
 
-    // 削除ボタンのイベント
     document.getElementById('context-delete-btn').addEventListener('click', () => {
         menu.remove();
         showMessageModal(`${itemData.name} を削除しますか？\n（関連するタスクのプロジェクト情報も削除されます）`, async () => {
@@ -94,7 +97,6 @@ export function showItemContextMenu(e, type, itemData, allProjects) {
         });
     });
 
-    // 画面のどこかをクリックしたらメニューを閉じる
     const dismissMenu = (ev) => {
         if (!menu.contains(ev.target)) {
             menu.remove();

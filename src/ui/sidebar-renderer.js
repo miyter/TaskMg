@@ -58,7 +58,7 @@ export function renderTimeBlocks(tasks = []) {
 
     // カスタムブロック
     blocks.forEach(block => {
-        // ★修正: タスク数をカウント (IDは文字列比較推奨)
+        // タスク数をカウント (IDは文字列比較推奨)
         const count = tasks ? tasks.filter(t => 
             String(t.timeBlockId) === String(block.id) && t.status !== 'completed'
         ).length : 0;
@@ -113,7 +113,7 @@ export function renderDurations(tasks = []) {
     const durations = [30, 45, 60, 75, 90];
 
     durations.forEach(mins => {
-        // ★修正: タスク数をカウント
+        // タスク数をカウント
         const count = tasks ? tasks.filter(t => Number(t.duration) === mins && t.status !== 'completed').length : 0;
         
         // createSidebarItemは色アイコン(丸)を生成してしまうため、アイコン部分を時計マークに差し替える加工を行う
@@ -122,7 +122,8 @@ export function renderDurations(tasks = []) {
         const firstDiv = item.firstElementChild;
         if (firstDiv) {
             // 色アイコン(span)を削除
-            const colorSpan = firstDiv.querySelector('span.w-2.5');
+            // ★修正: 'span.w-2.5' はセレクタエラーになるため属性セレクタを使用
+            const colorSpan = firstDiv.querySelector('span[class*="w-2.5"]');
             if (colorSpan) colorSpan.remove();
             
             // 時計アイコン挿入

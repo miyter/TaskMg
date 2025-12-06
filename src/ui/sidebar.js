@@ -13,9 +13,9 @@ import { renderSidebarItems, renderProjects } from './sidebar-renderer.js';
 export { renderSidebarItems, renderProjects };
 export { initSidebar as renderSidebar };
 
-// 廃止された機能や移動した機能への参照エラーを防ぐためのダミーエクスポート
-export function renderLabels() { /* 廃止: 時間帯ブロックへ移行 */ }
-export function updateInboxCount() { /* renderSidebarItems内で更新されるため空でOK */ }
+// ダミーエクスポート
+export function renderLabels() { }
+export function updateInboxCount() { }
 
 let sidebarWidth = 280;
 
@@ -43,13 +43,23 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
     
-    // 初期化時にリストを描画する
     renderSidebarItems(sidebar, allTasks, allProjects, allLabels);
     
-    // 時間帯更新イベントの購読（モーダルからの更新通知）
     document.addEventListener('timeblocks-updated', () => {
-        // 再描画をトリガー（実際はApp.jsからデータを受け取る構造なので、簡易的なリフレッシュ）
         renderSidebarItems(document.getElementById('sidebar'), allTasks, allProjects, []);
+    });
+
+    // ★追加: サイドバー設定変更イベントの購読 (即座にスタイル反映)
+    window.addEventListener('sidebar-settings-updated', (e) => {
+        const isCompact = e.detail.compact;
+        const items = document.querySelectorAll('.sidebar-item-row');
+        items.forEach(item => {
+            if (isCompact) {
+                item.classList.replace('py-1.5', 'py-0.5');
+            } else {
+                item.classList.replace('py-0.5', 'py-1.5');
+            }
+        });
     });
 }
 
@@ -70,7 +80,6 @@ function setupSidebarEvents() {
         showFilterModal();
     });
     
-    // 時間帯編集ボタン
     document.getElementById('edit-timeblocks-btn')?.addEventListener('click', () => {
         showTimeBlockModal();
     });
