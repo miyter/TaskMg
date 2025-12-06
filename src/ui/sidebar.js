@@ -3,9 +3,10 @@
 
 import { updateView, setCurrentFilter } from './ui-view-manager.js';
 import { updateSidebarState, setupResizer, getRandomColor } from './sidebar-utils.js';
-// ★修正: setupSidebarToggles をインポート
 import { buildSidebarHTML, setupDropZone, setupSidebarToggles } from './sidebar-dom.js';
 import { showProjectModal, showLabelModal } from './task-modal.js';
+// ★修正: showFilterModal をインポート
+import { showFilterModal } from './filter-modal.js';
 import { renderProjects, renderLabels, updateInboxCount, renderSidebarItems } from './sidebar-renderer.js';
 
 // 外部公開する関数
@@ -44,7 +45,7 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     // 3. イベントリスナーの設定
     setupSidebarEvents();
-    // ★追加: 折りたたみイベント設定
+    // 折りたたみイベント設定
     setupSidebarToggles();
     
     // 4. インボックスへのドロップ設定 (DOM構築後に実行)
@@ -73,10 +74,9 @@ function setupSidebarEvents() {
         showLabelModal(null, []); // 新規作成
     });
     
-    // フィルター追加ボタン（現在はプレースホルダー）
+    // ★修正: フィルター追加ボタンでモーダルを表示するように変更
     document.getElementById('add-filter-btn')?.addEventListener('click', () => {
-        // 将来的にフィルター作成モーダルを表示
-        alert('フィルター作成機能は実装準備中です');
+        showFilterModal(); // 新規作成モードで開く
     });
     
     // サイドバー開閉ボタン
