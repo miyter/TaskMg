@@ -3,7 +3,8 @@
 
 import { updateView, setCurrentFilter } from './ui-view-manager.js';
 import { updateSidebarState, setupResizer, getRandomColor } from './sidebar-utils.js';
-import { buildSidebarHTML, setupDropZone } from './sidebar-dom.js';
+// ★修正: setupSidebarToggles をインポート
+import { buildSidebarHTML, setupDropZone, setupSidebarToggles } from './sidebar-dom.js';
 import { showProjectModal, showLabelModal } from './task-modal.js';
 import { renderProjects, renderLabels, updateInboxCount, renderSidebarItems } from './sidebar-renderer.js';
 
@@ -15,6 +16,9 @@ let sidebarWidth = 280;
 
 /**
  * サイドバーの初期化とイベントリスナーの設定
+ * @param {Array} allTasks - 全タスクデータ (初期化時のカウント用)
+ * @param {Array} allProjects - 全プロジェクトデータ
+ * @param {Array} allLabels - 全ラベルデータ
  */
 export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     const container = document.getElementById('sidebar-content');
@@ -31,10 +35,8 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     if (sidebar) {
         const storedWidth = localStorage.getItem('sidebarWidth');
         sidebarWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
+
         sidebar.style.width = `${sidebarWidth}px`;
-        
-        // ★削除: ここにあった mainContent.style.marginLeft の設定を削除
-        // Flexboxレイアウトなので、サイドバーの幅が変わればメインエリアは自動的に調整されます
     }
 
     updateSidebarState(sidebar, mainContent);
@@ -42,8 +44,10 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     // 3. イベントリスナーの設定
     setupSidebarEvents();
+    // ★追加: 折りたたみイベント設定
+    setupSidebarToggles();
     
-    // 4. インボックスへのドロップ設定
+    // 4. インボックスへのドロップ設定 (DOM構築後に実行)
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
 }
 
@@ -67,6 +71,12 @@ function setupSidebarEvents() {
     
     document.getElementById('add-label-btn')?.addEventListener('click', () => {
         showLabelModal(null, []); // 新規作成
+    });
+    
+    // フィルター追加ボタン（現在はプレースホルダー）
+    document.getElementById('add-filter-btn')?.addEventListener('click', () => {
+        // 将来的にフィルター作成モーダルを表示
+        alert('フィルター作成機能は実装準備中です');
     });
     
     // サイドバー開閉ボタン

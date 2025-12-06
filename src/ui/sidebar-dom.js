@@ -15,6 +15,7 @@ import { setCurrentFilter } from './ui-view-manager.js';
 
 /**
  * サイドバーの静的なDOM構造を生成する
+ * プロジェクト、ラベル、フィルターの折りたたみ可能なセクションを含む
  * @returns {string} サイドバーのHTML文字列
  */
 export function buildSidebarHTML() {
@@ -31,48 +32,88 @@ export function buildSidebarHTML() {
             </a>
         </nav>
 
-        <div class="mt-8">
-            <div class="flex items-center justify-between px-3 mb-2 group">
-                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">プロジェクト</h3>
-                <button id="add-project-btn" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
+        <div class="mt-6 select-none">
+            <!-- プロジェクトセクション -->
+            <div class="flex items-center justify-between px-3 py-2 group cursor-pointer sidebar-section-header" data-target="project-list">
+                <div class="flex items-center min-w-0">
+                    <svg class="w-3 h-3 text-gray-400 mr-2 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">プロジェクト</h3>
+                </div>
+                <button id="add-project-btn" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
             </div>
-            <ul id="project-list" class="space-y-0.5 mb-6"></ul>
+            <ul id="project-list" class="space-y-0.5 mb-4 pl-1"></ul>
 
-            <div class="flex items-center justify-between px-3 mb-2 group">
-                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">ラベル</h3>
-                <button id="add-label-btn" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
+            <!-- ラベルセクション -->
+            <div class="flex items-center justify-between px-3 py-2 group cursor-pointer sidebar-section-header" data-target="label-list">
+                <div class="flex items-center min-w-0">
+                    <svg class="w-3 h-3 text-gray-400 mr-2 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">ラベル</h3>
+                </div>
+                <button id="add-label-btn" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
             </div>
-            <ul id="label-list" class="space-y-0.5"></ul>
+            <ul id="label-list" class="space-y-0.5 mb-4 pl-1"></ul>
+
+            <!-- フィルターセクション -->
+            <div class="flex items-center justify-between px-3 py-2 group cursor-pointer sidebar-section-header" data-target="filter-list">
+                <div class="flex items-center min-w-0">
+                    <svg class="w-3 h-3 text-gray-400 mr-2 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">フィルター</h3>
+                </div>
+                <button id="add-filter-btn" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
+            </div>
+            <ul id="filter-list" class="space-y-0.5 pl-1">
+                <!-- フィルターは未実装のため空 -->
+            </ul>
         </div>
     `;
+}
+
+/**
+ * サイドバーの開閉トグル機能を設定する
+ */
+export function setupSidebarToggles() {
+    document.querySelectorAll('.sidebar-section-header').forEach(header => {
+        header.addEventListener('click', (e) => {
+            // 追加ボタンのクリックなら折りたたみ処理をスキップ
+            if (e.target.closest('button')) return;
+
+            const targetId = header.dataset.target;
+            const list = document.getElementById(targetId);
+            const icon = header.querySelector('svg');
+
+            if (list) {
+                list.classList.toggle('hidden');
+                
+                // アイコンの回転 (開いている時は0度、閉じている時は-90度)
+                if (list.classList.contains('hidden')) {
+                    icon.style.transform = 'rotate(-90deg)';
+                } else {
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            }
+        });
+    });
 }
 
 // ==========================================================
 // サイドバーアイテム生成
 // ==========================================================
 
-/**
- * サイドバーのリストアイテム要素を作成する
- * @param {string} name - アイテム名
- * @param {string} type - 'project' | 'label'
- * @param {string} id - ID
- * @param {string} color - 色コード (ラベル用) またはクラス
- * @param {number} count - タスク数
- * @returns {HTMLElement} 作成されたli要素
- */
 export function createSidebarItem(name, type, id, color, count) {
     const item = document.createElement('li');
     item.dataset.type = type;
     item.dataset.id = id;
     item.className = 'group flex items-center justify-between px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target';
 
-    // アイコン部分の生成
     let iconHtml = '';
     if (type === 'project') {
-        iconHtml = `<svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`;
-    } else {
+        iconHtml = `<svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`;
+    } else if (type === 'label') {
         const colorStyle = color ? `background-color: ${color};` : 'background-color: #a0aec0;';
         iconHtml = `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="${colorStyle}"></span>`;
+    } else {
+        // その他（フィルターなど）
+        iconHtml = `<svg class="mr-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>`;
     }
 
     const countHtml = count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : '';
@@ -86,9 +127,6 @@ export function createSidebarItem(name, type, id, color, count) {
             ${countHtml}
         </div>
     `;
-
-    // ★ドロップゾーンとして設定
-    setupDropZone(item, type, id);
 
     return item;
 }
@@ -148,7 +186,6 @@ export function showItemContextMenu(e, type, itemData, allProjects, allLabels) {
         });
     });
 
-    // 画面のどこかをクリックしたらメニューを閉じる
     const dismissMenu = (ev) => {
         if (!menu.contains(ev.target)) {
             menu.remove();
@@ -190,7 +227,6 @@ export function setupDropZone(element, type, id = null) {
                     await updateTask(taskId, { projectId: id });
                     showMessageModal("プロジェクトへ移動しました");
                 } else if (type === 'label' && id) {
-                    // ラベル追加ロジックは Store 側で対応が必要
                     showMessageModal("ラベルへのタスク移動は、現在のタスクラベル情報の読み込みが不完全なため、現時点では未実装です。", null);
                 }
             } catch (error) {
