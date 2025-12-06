@@ -1,105 +1,123 @@
 // @ts-nocheck
 // フィルター作成・編集モーダル
 
+import { getAllProjects } from '../store/projects.js';
+import { getTimeBlocks } from '../store/timeblocks.js';
+import { addFilter } from '../store/store.js'; // store.jsからインポート
 import { showMessageModal } from './components.js';
 
 /**
  * フィルター作成モーダルを表示する
- * @param {Object|null} filter - 編集モードの場合は既存のフィルターオブジェクト
  */
-export function showFilterModal(filter = null) {
-    const isEdit = !!filter;
-    const modalId = 'filter-modal';
-    
-    // 既存のモーダルがあれば削除
+export function showFilterModal() {
+    const modalId = 'filter-creation-modal';
     document.getElementById(modalId)?.remove();
 
-    // モーダルコンテナ
+    const projects = getAllProjects();
+    const timeBlocks = getTimeBlocks();
+    const durations = [15, 30, 45, 60, 75, 90, 120, 180];
+
     const modalOverlay = document.createElement('div');
     modalOverlay.id = modalId;
-    modalOverlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4';
+    modalOverlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4';
 
-    // デフォルト値
-    const name = filter ? filter.name : '';
-    const query = filter ? filter.query : '';
-    const color = filter ? filter.color : 'charcoal';
-    const isFavorite = filter ? filter.isFavorite : false;
-
-    // カラーパレット定義
-    const colors = [
-        { id: 'charcoal', bg: '#808080' },
-        { id: 'red', bg: '#dc4c3e' },
-        { id: 'orange', bg: '#e8953f' },
-        { id: 'yellow', bg: '#ebda2a' },
-        { id: 'green', bg: '#589f3b' },
-        { id: 'blue', bg: '#3a7fcc' },
-        { id: 'purple', bg: '#a350c9' },
-        { id: 'pink', bg: '#db6c99' }
-    ];
-
-    // ★修正: UIデザインをモダンに変更 (ヘッダー/フッターの一体化、余白調整)
     modalOverlay.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all ring-1 ring-black/5">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden ring-1 ring-black/5 flex flex-col max-h-[90vh]">
+            
             <!-- ヘッダー -->
-            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-gray-700/50">
-                <h3 class="text-lg font-bold text-gray-800 dark:text-white">
-                    ${isEdit ? 'フィルターを編集' : 'フィルターを追加'}
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700/50 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    カスタムフィルター作成
                 </h3>
-                <button id="close-filter-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors focus:outline-none p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button id="close-filter-modal" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            
-            <div class="p-6 space-y-5">
+
+            <!-- ボディ -->
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                
                 <!-- フィルター名 -->
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">フィルター名</label>
-                    <input type="text" id="filter-name" value="${name}" class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white dark:bg-gray-750 text-gray-800 dark:text-gray-100 text-sm transition-shadow" placeholder="例: 今日の重要タスク">
+                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">フィルター名</label>
+                    <input type="text" id="filter-name" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-gray-800 dark:text-white placeholder-gray-400" placeholder="例: 午前の重要タスク">
                 </div>
 
-                <!-- クエリ -->
-                <div>
-                    <div class="flex justify-between items-center mb-1.5">
-                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300">検索クエリ</label>
-                        <a href="#" class="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium" title="ヘルプ">文法を見る</a>
-                    </div>
-                    <textarea id="filter-query" rows="3" class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white dark:bg-gray-750 text-gray-800 dark:text-gray-100 text-sm font-mono leading-relaxed transition-shadow" placeholder="例: 今日 & @重要">${query}</textarea>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5 ml-1">例: (今日 | 明日) & #仕事</p>
-                </div>
-
-                <!-- カラー選択 -->
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">カラー</label>
-                    <div class="flex flex-wrap gap-3" id="color-selector">
-                        ${colors.map(c => `
-                            <button type="button" 
-                                class="w-6 h-6 rounded-full focus:outline-none ring-2 ring-offset-2 dark:ring-offset-gray-800 transition-all hover:scale-110 color-btn ${color === c.id ? 'ring-blue-500 scale-110' : 'ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600'}"
-                                style="background-color: ${c.bg};"
-                                data-color="${c.id}">
-                            </button>
-                        `).join('')}
-                    </div>
-                    <input type="hidden" id="selected-color" value="${color}">
-                </div>
-
-                <!-- オプション -->
-                <div class="flex items-center pt-2">
-                    <label class="inline-flex items-center cursor-pointer group">
-                        <div class="relative flex items-center">
-                            <input type="checkbox" id="filter-favorite" class="peer h-4 w-4 cursor-pointer text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500/50 dark:focus:ring-offset-gray-800 transition-colors" ${isFavorite ? 'checked' : ''}>
+                <!-- 3カラム選択エリア -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- 1. プロジェクト選択 -->
+                    <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900/30 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div class="p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                            <span class="font-bold text-sm text-gray-700 dark:text-gray-200">プロジェクト</span>
+                            <span class="text-xs text-gray-400">複数選択可</span>
                         </div>
-                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">お気に入りに追加</span>
-                    </label>
+                        <div class="p-2 overflow-y-auto max-h-60 custom-scrollbar space-y-1" id="project-select-container">
+                            ${projects.length === 0 ? '<div class="text-xs text-gray-400 p-2">プロジェクトがありません</div>' : ''}
+                            ${projects.map(p => `
+                                <label class="flex items-center p-2 rounded hover:bg-white dark:hover:bg-gray-800 cursor-pointer transition-colors">
+                                    <input type="checkbox" value="${p.id}" class="filter-project-checkbox form-checkbox h-4 w-4 text-purple-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate">${p.name}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- 2. 時間帯選択 -->
+                    <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900/30 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div class="p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                            <span class="font-bold text-sm text-gray-700 dark:text-gray-200">時間帯</span>
+                            <span class="text-xs text-gray-400">複数選択可</span>
+                        </div>
+                        <div class="p-2 overflow-y-auto max-h-60 custom-scrollbar space-y-1">
+                            <!-- 未定（ID: null/unassigned） -->
+                            <label class="flex items-center p-2 rounded hover:bg-white dark:hover:bg-gray-800 cursor-pointer transition-colors">
+                                <input type="checkbox" value="null" class="filter-timeblock-checkbox form-checkbox h-4 w-4 text-purple-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                <span class="ml-2 w-3 h-3 rounded-full bg-gray-400"></span>
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">未定</span>
+                            </label>
+
+                            ${timeBlocks.map(tb => `
+                                <label class="flex items-center p-2 rounded hover:bg-white dark:hover:bg-gray-800 cursor-pointer transition-colors">
+                                    <input type="checkbox" value="${tb.id}" class="filter-timeblock-checkbox form-checkbox h-4 w-4 text-purple-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                    <span class="ml-2 w-3 h-3 rounded-full" style="background-color: ${tb.color}"></span>
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate">${tb.name}</span>
+                                    <span class="ml-1 text-xs text-gray-400">(${tb.start})</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- 3. 所要時間選択 -->
+                    <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900/30 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div class="p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                            <span class="font-bold text-sm text-gray-700 dark:text-gray-200">所要時間</span>
+                            <span class="text-xs text-gray-400">複数選択可</span>
+                        </div>
+                        <div class="p-2 overflow-y-auto max-h-60 custom-scrollbar space-y-1">
+                            ${durations.map(d => `
+                                <label class="flex items-center p-2 rounded hover:bg-white dark:hover:bg-gray-800 cursor-pointer transition-colors">
+                                    <input type="checkbox" value="${d}" class="filter-duration-checkbox form-checkbox h-4 w-4 text-purple-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">⏱️ ${d} min</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <p>※ 各カテゴリ内でチェックを入れると「OR（いずれか）」、カテゴリ間は「AND（かつ）」条件になります。</p>
+                    <p>※ 何もチェックしないカテゴリは条件に含まれません（指定なし扱い）。</p>
                 </div>
             </div>
 
             <!-- フッター -->
-            <div class="px-6 py-4 flex justify-end space-x-3 bg-gray-50/50 dark:bg-gray-800/50">
-                <button id="cancel-filter-btn" class="px-5 py-2.5 text-gray-700 dark:text-gray-300 bg-gray-200/50 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm font-bold transition-colors focus:outline-none">
-                    キャンセル
-                </button>
-                <button id="save-filter-btn" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 focus:outline-none shadow-sm hover:shadow transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                    ${isEdit ? '保存' : '追加'}
+            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700 flex-shrink-0">
+                <button id="cancel-filter-btn" class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition">キャンセル</button>
+                <button id="save-filter-btn" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5">
+                    フィルターを作成
                 </button>
             </div>
         </div>
@@ -107,71 +125,74 @@ export function showFilterModal(filter = null) {
 
     document.body.appendChild(modalOverlay);
 
-    // イベントリスナー設定
-    const closeBtn = document.getElementById('close-filter-modal');
-    const cancelBtn = document.getElementById('cancel-filter-btn');
-    const saveBtn = document.getElementById('save-filter-btn');
-    const colorBtns = document.querySelectorAll('.color-btn');
-    const colorInput = document.getElementById('selected-color');
-    const nameInput = document.getElementById('filter-name');
-    const queryInput = document.getElementById('filter-query');
-
-    const closeModal = () => {
-        modalOverlay.classList.add('opacity-0', 'scale-95'); // アニメーション用クラス
-        setTimeout(() => modalOverlay.remove(), 200);
-    };
-
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-
-    // カラー選択ロジック
-    colorBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            colorBtns.forEach(b => {
-                b.classList.remove('ring-blue-500', 'scale-110');
-                b.classList.add('ring-transparent');
-            });
-            btn.classList.remove('ring-transparent');
-            btn.classList.add('ring-blue-500', 'scale-110');
-            colorInput.value = btn.dataset.color;
-        });
+    // イベント設定
+    const close = () => modalOverlay.remove();
+    document.getElementById('close-filter-modal').addEventListener('click', close);
+    document.getElementById('cancel-filter-btn').addEventListener('click', close);
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) close();
     });
 
-    // 入力検証
-    const validateInput = () => {
-        const isValid = nameInput.value.trim().length > 0 && queryInput.value.trim().length > 0;
-        saveBtn.disabled = !isValid;
-    };
-    nameInput.addEventListener('input', validateInput);
-    queryInput.addEventListener('input', validateInput);
-    validateInput(); 
-
     // 保存処理
-    saveBtn.addEventListener('click', async () => {
+    document.getElementById('save-filter-btn').addEventListener('click', async () => {
+        const name = document.getElementById('filter-name').value.trim();
+        if (!name) {
+            showMessageModal("フィルター名を入力してください", 'error');
+            return;
+        }
+
+        // チェックボックスの値を収集
+        const getCheckedValues = (className) => {
+            return Array.from(document.querySelectorAll(`.${className}:checked`)).map(cb => cb.value);
+        };
+
+        const selectedProjects = getCheckedValues('filter-project-checkbox');
+        const selectedTimeBlocks = getCheckedValues('filter-timeblock-checkbox');
+        const selectedDurations = getCheckedValues('filter-duration-checkbox');
+
+        // クエリ文字列の生成 (例: "project:A,B timeblock:C duration:30")
+        const queryParts = [];
+        if (selectedProjects.length > 0) {
+            queryParts.push(`project:${selectedProjects.join(',')}`);
+        }
+        if (selectedTimeBlocks.length > 0) {
+            queryParts.push(`timeblock:${selectedTimeBlocks.join(',')}`);
+        }
+        if (selectedDurations.length > 0) {
+            queryParts.push(`duration:${selectedDurations.join(',')}`);
+        }
+
+        if (queryParts.length === 0) {
+            showMessageModal("少なくとも1つの条件を選択してください", 'error');
+            return;
+        }
+
+        const query = queryParts.join(' ');
+
+        // フィルター保存 (IDはランダム生成)
         const newFilter = {
-            id: filter ? filter.id : crypto.randomUUID(),
-            name: nameInput.value.trim(),
-            query: queryInput.value.trim(),
-            color: colorInput.value,
-            isFavorite: document.getElementById('filter-favorite').checked,
-            createdAt: filter ? filter.createdAt : new Date().toISOString()
+            id: 'filter-' + Date.now(),
+            name: name,
+            query: query,
+            type: 'custom'
         };
 
         try {
-            console.log('Saving filter:', newFilter);
-            // store.saveFilter(newFilter); // TODO: Store実装
-            
-            closeModal();
-            showMessageModal(`フィルター「${newFilter.name}」を${isEdit ? '更新' : '作成'}しました (保存処理は未実装)`);
-        } catch (error) {
-            console.error('Filter save error:', error);
-            showMessageModal('保存に失敗しました', 'error');
+            if (typeof addFilter === 'function') {
+                await addFilter(newFilter);
+            } else {
+                console.warn('addFilter function not found in store. Saving to localStorage manually.');
+                const filters = JSON.parse(localStorage.getItem('custom_filters') || '[]');
+                filters.push(newFilter);
+                localStorage.setItem('custom_filters', JSON.stringify(filters));
+                document.dispatchEvent(new CustomEvent('filters-updated'));
+            }
+
+            showMessageModal("フィルターを作成しました");
+            close();
+        } catch (e) {
+            console.error(e);
+            showMessageModal("保存に失敗しました", 'error');
         }
     });
-
-    modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) closeModal();
-    });
-    
-    setTimeout(() => nameInput.focus(), 50);
 }

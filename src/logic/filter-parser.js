@@ -1,261 +1,107 @@
 // @ts-nocheck
 /**
- * Todoist風カスタムフィルターパーサー
- * 文字列クエリを解析し、タスクが条件に合致するか判定する関数を返します。
+ * カスタムフィルターパーサー
+ * フィルターモーダルで生成された構造化クエリ文字列を解析し、
+ * タスクが条件に合致するか判定する関数を返します。
+ * * 対応フォーマット:
+ * - project:id1,id2  (プロジェクトIDがいずれかに一致)
+ * - timeblock:id1,null (時間帯IDがいずれかに一致、nullは未定)
+ * - duration:30,60   (所要時間がいずれかに一致)
+ * - 上記以外の文字列   (タイトルや説明文へのキーワード検索)
+ * * 各カテゴリ間は AND 条件、カテゴリ内のカンマ区切りは OR 条件として扱います。
  */
-
-// =========================================================
-// 1. トークナイザー (字句解析)
-// =========================================================
-
-const TOKENS = {
-    AND: '&',
-    OR: '|',
-    NOT: '!',
-    LPAREN: '(',
-    RPAREN: ')',
-};
-
-const KEYWORDS = {
-    TODAY: ['今日', 'today'],
-    TOMORROW: ['明日', 'tomorrow'],
-    YESTERDAY: ['昨日', 'yesterday'],
-    OVERDUE: ['期限切れ', 'overdue'],
-    NO_DATE: ['期限なし', 'no date', 'nodate'],
-    NEXT_DAYS: /^次の(\d+)日間/,
-};
 
 /**
- * クエリ文字列をトークン配列に分解する
+ * クエリ文字列からフィルタリング関数を生成する
+ * @param {string} queryString - "project:A,B timeblock:C keyword"
+ * @returns {Function} (task) => boolean
  */
-function tokenize(query) {
-    const tokens = [];
-    let i = 0;
-    
-    // 空白処理用
-    query = query.trim();
-
-    while (i < query.length) {
-        const char = query[i];
-
-        if (/\s/.test(char)) {
-            i++;
-            continue;
-        }
-
-        if (char === '&' || char === '|') {
-            tokens.push({ type: 'OPERATOR', value: char });
-            i++;
-            continue;
-        }
-        
-        if (char === '!') {
-            tokens.push({ type: 'NOT', value: char });
-            i++;
-            continue;
-        }
-
-        if (char === '(' || char === ')') {
-            tokens.push({ type: char === '(' ? 'LPAREN' : 'RPAREN', value: char });
-            i++;
-            continue;
-        }
-
-        // キーワード、日付、プロジェクト(#)、ラベル(@)、検索語の抽出
-        // 演算子や括弧、スペースが出るまでを1つの塊とする
-        let value = '';
-        while (i < query.length && !['&', '|', '!', '(', ')', ' '].includes(query[i])) {
-            value += query[i];
-            i++;
-        }
-        
-        if (value) {
-            tokens.push({ type: 'TERM', value: value });
-        }
+export function createFilter(queryString) {
+    if (!queryString || !queryString.trim()) {
+        return () => true;
     }
-    return tokens;
-}
 
-// =========================================================
-// 2. パーサー (構文解析 - 逆ポーランド記法への変換)
-// =========================================================
+    // 1. クエリの解析
+    const conditions = {
+        projectIds: null, // Set<string> | null
+        timeBlockIds: null, // Set<string> | null
+        durations: null, // Set<number> | null
+        keywords: [] // string[]
+    };
 
-const PRECEDENCE = {
-    '!': 3,
-    '&': 2,
-    '|': 1,
-    '(': 0
-};
+    // 空白で分割して各パートを解析
+    const parts = queryString.trim().split(/\s+/);
 
-/**
- * 中置記法のトークン列を後置記法(RPN)に変換 (操車場アルゴリズム簡略版)
- */
-function toRPN(tokens) {
-    const outputQueue = [];
-    const operatorStack = [];
-
-    // 暗黙のAND補完 (例: "@a @b" -> "@a & @b")
-    // トークン間で TERM同士、あるいは ) と TERM などが連続する場合に & を挿入する処理は省略（Todoistはスペース=AND）
-    // 今回はシンプルに明示的な演算子のみを扱うが、スペースをANDとするならここでトークン加工が必要
-
-    tokens.forEach(token => {
-        if (token.type === 'TERM') {
-            outputQueue.push(token);
-        } else if (token.type === 'NOT') {
-            operatorStack.push(token);
-        } else if (token.type === 'OPERATOR') {
-            while (
-                operatorStack.length > 0 &&
-                operatorStack[operatorStack.length - 1].type !== 'LPAREN' &&
-                PRECEDENCE[operatorStack[operatorStack.length - 1].value] >= PRECEDENCE[token.value]
-            ) {
-                outputQueue.push(operatorStack.pop());
+    parts.forEach(part => {
+        if (part.startsWith('project:')) {
+            const val = part.substring(8); // 'project:'.length
+            if (val) {
+                // 既存の条件があればマージする（あるいは上書き）
+                const ids = val.split(',').filter(s => s);
+                if (!conditions.projectIds) conditions.projectIds = new Set();
+                ids.forEach(id => conditions.projectIds.add(id));
             }
-            operatorStack.push(token);
-        } else if (token.type === 'LPAREN') {
-            operatorStack.push(token);
-        } else if (token.type === 'RPAREN') {
-            while (operatorStack.length > 0 && operatorStack[operatorStack.length - 1].type !== 'LPAREN') {
-                outputQueue.push(operatorStack.pop());
+        } else if (part.startsWith('timeblock:')) {
+            const val = part.substring(10); // 'timeblock:'.length
+            if (val) {
+                const ids = val.split(',').filter(s => s);
+                if (!conditions.timeBlockIds) conditions.timeBlockIds = new Set();
+                ids.forEach(id => conditions.timeBlockIds.add(id));
             }
-            operatorStack.pop(); // '(' を捨てる
+        } else if (part.startsWith('duration:')) {
+            const val = part.substring(9); // 'duration:'.length
+            if (val) {
+                const mins = val.split(',').map(v => parseInt(v, 10)).filter(n => !isNaN(n));
+                if (!conditions.durations) conditions.durations = new Set();
+                mins.forEach(m => conditions.durations.add(m));
+            }
+        } else {
+            // キーワード検索（除外キーワード '-' は未対応だが拡張可能）
+            conditions.keywords.push(part.toLowerCase());
         }
     });
 
-    while (operatorStack.length > 0) {
-        outputQueue.push(operatorStack.pop());
-    }
+    // 2. 評価関数の返却
+    return (task) => {
+        // プロジェクト判定 (OR条件)
+        if (conditions.projectIds) {
+            // タスクのプロジェクトIDが条件セットに含まれているか
+            // プロジェクト未設定のタスク(null)は、条件に'null'文字列が含まれていればヒットとする運用も可能だが、
+            // 現状のUIではプロジェクトIDのみ扱う
+            if (!task.projectId || !conditions.projectIds.has(task.projectId)) {
+                return false;
+            }
+        }
 
-    return outputQueue;
-}
+        // 時間帯判定 (OR条件)
+        if (conditions.timeBlockIds) {
+            // タスクの時間帯ID (未設定は null)
+            // モーダル側で "null" という文字列を未定として扱っているため、文字列比較を行う
+            const taskTbId = task.timeBlockId === null ? 'null' : task.timeBlockId;
+            if (!conditions.timeBlockIds.has(taskTbId)) {
+                return false;
+            }
+        }
 
-// =========================================================
-// 3. 評価器 (条件判定)
-// =========================================================
+        // 所要時間判定 (OR条件)
+        if (conditions.durations) {
+            const taskDuration = task.duration || 0; // 未設定は0扱い、またはヒットしないようにするか
+            // task.duration が undefined/null の場合の扱い
+            if (!task.duration || !conditions.durations.has(task.duration)) {
+                return false;
+            }
+        }
 
-/**
- * 単一の条件（TERM）を評価する関数
- */
-function evaluateTerm(task, term, allProjects = [], allLabels = []) {
-    const lowerTerm = term.toLowerCase();
+        // キーワード判定 (AND条件)
+        if (conditions.keywords.length > 0) {
+            const text = `${task.title} ${task.description || ''}`.toLowerCase();
+            // すべてのキーワードが含まれていること
+            const isMatch = conditions.keywords.every(kw => text.includes(kw));
+            if (!isMatch) {
+                return false;
+            }
+        }
 
-    // ラベル検索 (@)
-    if (term.startsWith('@')) {
-        const labelName = term.substring(1).toLowerCase();
-        if (!task.labelIds || task.labelIds.length === 0) return false;
-        // ラベルIDから名前を引いて一致判定が必要だが、
-        // ここでは簡易的に allLabels を使って名前マッチを探す
-        const targetLabels = allLabels.filter(l => l.name.toLowerCase().includes(labelName));
-        const targetIds = targetLabels.map(l => l.id);
-        return task.labelIds.some(id => targetIds.includes(id));
-    }
-
-    // プロジェクト検索 (#)
-    if (term.startsWith('#')) {
-        const projName = term.substring(1).toLowerCase();
-        if (!task.projectId) return false;
-        const project = allProjects.find(p => p.id === task.projectId);
-        return project && project.name.toLowerCase().includes(projName);
-    }
-
-    // 優先度 (p1-p4) - Todoist: p1=4(High), p4=1(Normal) だが、ここでは p1=1 と仮定
-    if (/^p[1-4]$/.test(lowerTerm)) {
-        // DB設計次第だが、task.priority があると仮定
-        // const priority = parseInt(lowerTerm.charAt(1));
-        // return task.priority === priority;
-        return false; // 未実装
-    }
-
-    // 日付判定
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    
-    let taskDate = null;
-    if (task.dueDate) {
-        taskDate = new Date(task.dueDate);
-        taskDate.setHours(0,0,0,0);
-    }
-
-    // 期限なし
-    if (KEYWORDS.NO_DATE.includes(lowerTerm)) {
-        return !task.dueDate;
-    }
-
-    // 日付がないタスクはこれ以降の期限判定でfalse
-    if (!taskDate) return false;
-
-    // 今日
-    if (KEYWORDS.TODAY.includes(lowerTerm)) {
-        return taskDate.getTime() === today.getTime();
-    }
-    // 明日
-    if (KEYWORDS.TOMORROW.includes(lowerTerm)) {
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        return taskDate.getTime() === tomorrow.getTime();
-    }
-    // 昨日
-    if (KEYWORDS.YESTERDAY.includes(lowerTerm)) {
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        return taskDate.getTime() === yesterday.getTime();
-    }
-    // 期限切れ
-    if (KEYWORDS.OVERDUE.includes(lowerTerm)) {
-        return taskDate.getTime() < today.getTime();
-    }
-    // 次のX日間 (正規表現)
-    const nextDaysMatch = term.match(KEYWORDS.NEXT_DAYS);
-    if (nextDaysMatch) {
-        const days = parseInt(nextDaysMatch[1]);
-        const endDay = new Date(today);
-        endDay.setDate(endDay.getDate() + days);
-        return taskDate.getTime() >= today.getTime() && taskDate.getTime() <= endDay.getTime();
-    }
-
-    // テキスト検索 (タイトル or 説明)
-    return (task.title && task.title.toLowerCase().includes(lowerTerm)) || 
-           (task.description && task.description.toLowerCase().includes(lowerTerm));
-}
-
-/**
- * クエリに基づいてタスクをフィルタリングする関数を生成
- * @param {string} queryString 
- * @param {Array} allProjects 
- * @param {Array} allLabels 
- * @returns {Function} (task) => boolean
- */
-export function createFilter(queryString, allProjects = [], allLabels = []) {
-    if (!queryString) return () => true;
-
-    try {
-        const tokens = tokenize(queryString);
-        const rpn = toRPN(tokens);
-
-        return (task) => {
-            const stack = [];
-
-            rpn.forEach(token => {
-                if (token.type === 'TERM') {
-                    stack.push(evaluateTerm(task, token.value, allProjects, allLabels));
-                } else if (token.type === 'NOT') {
-                    const a = stack.pop();
-                    stack.push(!a);
-                } else if (token.type === 'OPERATOR') {
-                    const b = stack.pop();
-                    const a = stack.pop();
-                    if (token.value === '&') {
-                        stack.push(a && b);
-                    } else if (token.value === '|') {
-                        stack.push(a || b);
-                    }
-                }
-            });
-
-            return stack.length > 0 ? stack[0] : true;
-        };
-    } catch (e) {
-        console.error("Filter parse error:", e);
-        return () => false; // エラー時は何も表示しない
-    }
+        return true;
+    };
 }
