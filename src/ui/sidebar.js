@@ -7,14 +7,13 @@ import { buildSidebarHTML, setupDropZone, setupSidebarToggles } from './sidebar-
 import { showProjectModal } from './task-modal.js';
 import { showFilterModal } from './filter-modal.js';
 import { showTimeBlockModal } from './timeblock-modal.js'; 
-// ★修正: renderProjects を追加インポート
 import { renderSidebarItems, renderProjects } from './sidebar-renderer.js';
 
 // 外部公開
 export { renderSidebarItems, renderProjects };
 export { initSidebar as renderSidebar };
 
-// ★追加: 廃止された機能や移動した機能への参照エラーを防ぐためのダミーエクスポート
+// 廃止された機能や移動した機能への参照エラーを防ぐためのダミーエクスポート
 export function renderLabels() { /* 廃止: 時間帯ブロックへ移行 */ }
 export function updateInboxCount() { /* renderSidebarItems内で更新されるため空でOK */ }
 
@@ -44,6 +43,9 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
     
+    // 初期化時にリストを描画する
+    renderSidebarItems(sidebar, allTasks, allProjects, allLabels);
+    
     // 時間帯更新イベントの購読（モーダルからの更新通知）
     document.addEventListener('timeblocks-updated', () => {
         // 再描画をトリガー（実際はApp.jsからデータを受け取る構造なので、簡易的なリフレッシュ）
@@ -64,13 +66,11 @@ function setupSidebarEvents() {
         showProjectModal(null, []);
     });
     
-    // ラベル追加ボタンは削除されたのでイベントリスナーも不要
-    
     document.getElementById('add-filter-btn')?.addEventListener('click', () => {
         showFilterModal();
     });
     
-    // ★追加: 時間帯編集ボタン
+    // 時間帯編集ボタン
     document.getElementById('edit-timeblocks-btn')?.addEventListener('click', () => {
         showTimeBlockModal();
     });
