@@ -17,7 +17,7 @@ export function showFilterModal(filter = null) {
     // モーダルコンテナ
     const modalOverlay = document.createElement('div');
     modalOverlay.id = modalId;
-    modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in';
+    modalOverlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4';
 
     // デフォルト値
     const name = filter ? filter.name : '';
@@ -37,41 +37,43 @@ export function showFilterModal(filter = null) {
         { id: 'pink', bg: '#db6c99' }
     ];
 
+    // ★修正: UIデザインをモダンに変更 (ヘッダー/フッターの一体化、余白調整)
     modalOverlay.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all">
-            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-850">
-                <h3 class="text-sm font-bold text-gray-700 dark:text-gray-200">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all ring-1 ring-black/5">
+            <!-- ヘッダー -->
+            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-gray-700/50">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">
                     ${isEdit ? 'フィルターを編集' : 'フィルターを追加'}
                 </h3>
-                <button id="close-filter-modal" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                <button id="close-filter-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors focus:outline-none p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
-            <div class="p-4 space-y-4">
+            <div class="p-6 space-y-5">
                 <!-- フィルター名 -->
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">フィルター名</label>
-                    <input type="text" id="filter-name" value="${name}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-sm" placeholder="例: 今日の重要タスク">
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">フィルター名</label>
+                    <input type="text" id="filter-name" value="${name}" class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white dark:bg-gray-750 text-gray-800 dark:text-gray-100 text-sm transition-shadow" placeholder="例: 今日の重要タスク">
                 </div>
 
                 <!-- クエリ -->
                 <div>
-                    <div class="flex justify-between items-center mb-1">
+                    <div class="flex justify-between items-center mb-1.5">
                         <label class="block text-xs font-bold text-gray-700 dark:text-gray-300">検索クエリ</label>
-                        <a href="#" class="text-xs text-blue-500 hover:underline" title="ヘルプ">文法を見る</a>
+                        <a href="#" class="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium" title="ヘルプ">文法を見る</a>
                     </div>
-                    <textarea id="filter-query" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-sm font-mono" placeholder="例: 今日 & @重要">${query}</textarea>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">例: (今日 | 明日) & #仕事</p>
+                    <textarea id="filter-query" rows="3" class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-white dark:bg-gray-750 text-gray-800 dark:text-gray-100 text-sm font-mono leading-relaxed transition-shadow" placeholder="例: 今日 & @重要">${query}</textarea>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5 ml-1">例: (今日 | 明日) & #仕事</p>
                 </div>
 
                 <!-- カラー選択 -->
                 <div>
                     <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">カラー</label>
-                    <div class="flex flex-wrap gap-2" id="color-selector">
+                    <div class="flex flex-wrap gap-3" id="color-selector">
                         ${colors.map(c => `
                             <button type="button" 
-                                class="w-6 h-6 rounded-full focus:outline-none ring-2 ring-offset-1 dark:ring-offset-gray-800 transition-transform hover:scale-110 color-btn ${color === c.id ? 'ring-blue-500 scale-110' : 'ring-transparent'}"
+                                class="w-6 h-6 rounded-full focus:outline-none ring-2 ring-offset-2 dark:ring-offset-gray-800 transition-all hover:scale-110 color-btn ${color === c.id ? 'ring-blue-500 scale-110' : 'ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600'}"
                                 style="background-color: ${c.bg};"
                                 data-color="${c.id}">
                             </button>
@@ -81,19 +83,22 @@ export function showFilterModal(filter = null) {
                 </div>
 
                 <!-- オプション -->
-                <div class="flex items-center">
-                    <label class="inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="filter-favorite" class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700" ${isFavorite ? 'checked' : ''}>
-                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">お気に入りに追加</span>
+                <div class="flex items-center pt-2">
+                    <label class="inline-flex items-center cursor-pointer group">
+                        <div class="relative flex items-center">
+                            <input type="checkbox" id="filter-favorite" class="peer h-4 w-4 cursor-pointer text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500/50 dark:focus:ring-offset-gray-800 transition-colors" ${isFavorite ? 'checked' : ''}>
+                        </div>
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">お気に入りに追加</span>
                     </label>
                 </div>
             </div>
 
-            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-850 flex justify-end space-x-2 border-t border-gray-200 dark:border-gray-700">
-                <button id="cancel-filter-btn" class="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none transition-colors">
+            <!-- フッター -->
+            <div class="px-6 py-4 flex justify-end space-x-3 bg-gray-50/50 dark:bg-gray-800/50">
+                <button id="cancel-filter-btn" class="px-5 py-2.5 text-gray-700 dark:text-gray-300 bg-gray-200/50 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm font-bold transition-colors focus:outline-none">
                     キャンセル
                 </button>
-                <button id="save-filter-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <button id="save-filter-btn" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 focus:outline-none shadow-sm hover:shadow transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
                     ${isEdit ? '保存' : '追加'}
                 </button>
             </div>
@@ -112,7 +117,7 @@ export function showFilterModal(filter = null) {
     const queryInput = document.getElementById('filter-query');
 
     const closeModal = () => {
-        modalOverlay.classList.add('opacity-0');
+        modalOverlay.classList.add('opacity-0', 'scale-95'); // アニメーション用クラス
         setTimeout(() => modalOverlay.remove(), 200);
     };
 
@@ -122,31 +127,29 @@ export function showFilterModal(filter = null) {
     // カラー選択ロジック
     colorBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // 他の選択を解除
             colorBtns.forEach(b => {
                 b.classList.remove('ring-blue-500', 'scale-110');
                 b.classList.add('ring-transparent');
             });
-            // 選択状態にする
             btn.classList.remove('ring-transparent');
             btn.classList.add('ring-blue-500', 'scale-110');
             colorInput.value = btn.dataset.color;
         });
     });
 
-    // 入力検証（簡易）
+    // 入力検証
     const validateInput = () => {
         const isValid = nameInput.value.trim().length > 0 && queryInput.value.trim().length > 0;
         saveBtn.disabled = !isValid;
     };
     nameInput.addEventListener('input', validateInput);
     queryInput.addEventListener('input', validateInput);
-    validateInput(); // 初期チェック
+    validateInput(); 
 
     // 保存処理
     saveBtn.addEventListener('click', async () => {
         const newFilter = {
-            id: filter ? filter.id : crypto.randomUUID(), // 新規ならID生成
+            id: filter ? filter.id : crypto.randomUUID(),
             name: nameInput.value.trim(),
             query: queryInput.value.trim(),
             color: colorInput.value,
@@ -155,29 +158,20 @@ export function showFilterModal(filter = null) {
         };
 
         try {
-            // ★TODO: ここでStoreのフィルター保存処理を呼び出す
-            // 現在はコンソール出力とメッセージ表示のみ
             console.log('Saving filter:', newFilter);
-            
-            // ダミーの保存完了メッセージ
-            // store.saveFilter(newFilter); 
+            // store.saveFilter(newFilter); // TODO: Store実装
             
             closeModal();
             showMessageModal(`フィルター「${newFilter.name}」を${isEdit ? '更新' : '作成'}しました (保存処理は未実装)`);
-            
-            // サイドバー再描画のトリガーが必要ならここでイベント発火などを行う
-            
         } catch (error) {
             console.error('Filter save error:', error);
             showMessageModal('保存に失敗しました', 'error');
         }
     });
 
-    // モーダル外クリックで閉じる
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) closeModal();
     });
     
-    // フォーカス
     setTimeout(() => nameInput.focus(), 50);
 }

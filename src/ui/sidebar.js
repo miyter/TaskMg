@@ -2,33 +2,30 @@
 // @miyter:20251129
 
 import { updateView, setCurrentFilter } from './ui-view-manager.js';
-import { updateSidebarState, setupResizer, getRandomColor } from './sidebar-utils.js';
+import { updateSidebarState, setupResizer } from './sidebar-utils.js';
 import { buildSidebarHTML, setupDropZone, setupSidebarToggles } from './sidebar-dom.js';
-import { showProjectModal, showLabelModal } from './task-modal.js';
-// ★修正: showFilterModal をインポート
+import { showProjectModal } from './task-modal.js';
 import { showFilterModal } from './filter-modal.js';
-import { renderProjects, renderLabels, updateInboxCount, renderSidebarItems } from './sidebar-renderer.js';
+import { showTimeBlockModal } from './timeblock-modal.js'; 
+// ★修正: renderProjects を追加インポート
+import { renderSidebarItems, renderProjects } from './sidebar-renderer.js';
 
-// 外部公開する関数
-export { renderSidebarItems, updateInboxCount, renderProjects, renderLabels };
+// 外部公開
+export { renderSidebarItems, renderProjects };
 export { initSidebar as renderSidebar };
+
+// ★追加: 廃止された機能や移動した機能への参照エラーを防ぐためのダミーエクスポート
+export function renderLabels() { /* 廃止: 時間帯ブロックへ移行 */ }
+export function updateInboxCount() { /* renderSidebarItems内で更新されるため空でOK */ }
 
 let sidebarWidth = 280;
 
-/**
- * サイドバーの初期化とイベントリスナーの設定
- * @param {Array} allTasks - 全タスクデータ (初期化時のカウント用)
- * @param {Array} allProjects - 全プロジェクトデータ
- * @param {Array} allLabels - 全ラベルデータ
- */
 export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     const container = document.getElementById('sidebar-content');
     if (!container) return;
     
-    // 1. DOMの構築
     container.innerHTML = buildSidebarHTML();
     
-    // 2. リサイズ/開閉ロジックの適用
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.getElementById('main-content');
     const resizer = document.getElementById('sidebar-resizer');
@@ -36,57 +33,53 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     if (sidebar) {
         const storedWidth = localStorage.getItem('sidebarWidth');
         sidebarWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
-
         sidebar.style.width = `${sidebarWidth}px`;
     }
 
     updateSidebarState(sidebar, mainContent);
     setupResizer(sidebar, mainContent, resizer);
     
-    // 3. イベントリスナーの設定
     setupSidebarEvents();
-    // 折りたたみイベント設定
     setupSidebarToggles();
     
-    // 4. インボックスへのドロップ設定 (DOM構築後に実行)
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
+    
+    // 時間帯更新イベントの購読（モーダルからの更新通知）
+    document.addEventListener('timeblocks-updated', () => {
+        // 再描画をトリガー（実際はApp.jsからデータを受け取る構造なので、簡易的なリフレッシュ）
+        renderSidebarItems(document.getElementById('sidebar'), allTasks, allProjects, []);
+    });
 }
 
-/**
- * 静的なナビゲーションとボタンのイベントを設定する
- */
 function setupSidebarEvents() {
     const dispatch = (page, id = null) => document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
     
-    // 固定リンク
     document.getElementById('nav-dashboard')?.addEventListener('click', (e) => { 
         e.preventDefault(); 
         dispatch('dashboard'); 
     });
     document.getElementById('nav-inbox')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('inbox'); });
     
-    // プロジェクト/ラベル追加ボタン
     document.getElementById('add-project-btn')?.addEventListener('click', () => {
-        showProjectModal(null, []); // 新規作成
+        showProjectModal(null, []);
     });
     
-    document.getElementById('add-label-btn')?.addEventListener('click', () => {
-        showLabelModal(null, []); // 新規作成
-    });
+    // ラベル追加ボタンは削除されたのでイベントリスナーも不要
     
-    // ★修正: フィルター追加ボタンでモーダルを表示するように変更
     document.getElementById('add-filter-btn')?.addEventListener('click', () => {
-        showFilterModal(); // 新規作成モードで開く
+        showFilterModal();
     });
     
-    // サイドバー開閉ボタン
+    // ★追加: 時間帯編集ボタン
+    document.getElementById('edit-timeblocks-btn')?.addEventListener('click', () => {
+        showTimeBlockModal();
+    });
+    
     document.getElementById('sidebar-toggle-btn')?.addEventListener('click', (e) => {
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.getElementById('main-content');
         const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        const newState = !isCollapsed;
-
-        localStorage.setItem('sidebarCollapsed', newState);
+        localStorage.setItem('sidebarCollapsed', !isCollapsed);
         updateSidebarState(sidebar, mainContent);
     });
 }

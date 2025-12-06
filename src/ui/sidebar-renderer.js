@@ -1,151 +1,164 @@
 // @ts-nocheck
 // @miyter:20251129
 
-// ★修正: showItemContextMenu をここから削除 (sidebar-dom.jsへ移動したため)
-import { getCurrentFilter, setLabelMap, getCurrentFilterData } from './sidebar-utils.js';
 import { updateView, setCurrentFilter } from './ui-view-manager.js';
-// ★修正: showItemContextMenu をここに追加
-import { createSidebarItem, setupDropZone, showItemContextMenu } from './sidebar-dom.js'; 
+import { setupDropZone, showItemContextMenu } from './sidebar-dom.js';
+import { getTimeBlocks } from '../store/timeblocks.js';
+import { showTimeBlockModal } from './timeblock-modal.js';
 
-// ==========================================================
-// レンダリング関数群
-// ==========================================================
+// DOM生成ヘルパー
+function createListItem(html, type, id, onClick, onContextMenu) {
+    const li = document.createElement('li');
+    li.className = 'group flex items-center justify-between px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target';
+    li.dataset.type = type;
+    li.dataset.id = id;
+    li.innerHTML = html;
+    
+    if (onClick) li.addEventListener('click', onClick);
+    if (onContextMenu) li.addEventListener('contextmenu', onContextMenu);
+    
+    // ドロップゾーン設定
+    setupDropZone(li, type, id);
+    
+    return li;
+}
 
 /**
- * プロジェクトリストを描画する
+ * プロジェクトリストを描画
  */
-export function renderProjects(projects, tasks = [], allLabels = []) {
+export function renderProjects(projects, tasks = []) {
     const list = document.getElementById('project-list');
     if (!list) return;
     list.innerHTML = '';
 
     projects.forEach(proj => {
         const count = tasks ? tasks.filter(t => t.projectId === proj.id && t.status !== 'completed').length : 0;
-        
-        // sidebar-dom.js の createSidebarItem を使用
-        const item = createSidebarItem(
-            proj.name, 
-            'project', 
-            proj.id, 
-            proj.color || 'blue', 
-            count
+        const iconHtml = `<svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`;
+        const countHtml = count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : '';
+
+        const html = `
+            <div class="flex items-center flex-1 min-w-0 pointer-events-none">
+                ${iconHtml}
+                <span class="truncate">${proj.name}</span>
+            </div>
+            <div class="flex items-center">${countHtml}</div>
+        `;
+
+        const item = createListItem(html, 'project', proj.id, 
+            () => {
+                setCurrentFilter({ type: 'project', id: proj.id });
+                updateView(tasks, projects, []);
+            },
+            (e) => {
+                e.preventDefault();
+                showItemContextMenu(e, 'project', proj, projects);
+            }
         );
-
-        // クリックイベント
-        item.addEventListener('click', () => {
-            setCurrentFilter({ type: 'project', id: proj.id });
-            updateView(tasks, projects, allLabels);
-        });
-        
-        // 右クリックイベント
-        item.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            showItemContextMenu(e, 'project', proj, projects, allLabels);
-        });
-
         list.appendChild(item);
     });
 }
 
 /**
- * ラベルリストを描画する
+ * 時間帯ブロックを描画
  */
-export function renderLabels(labels, tasks = [], allProjects = []) {
-    const list = document.getElementById('label-list');
+export function renderTimeBlocks(tasks = []) {
+    const list = document.getElementById('timeblock-list');
     if (!list) return;
     list.innerHTML = '';
-    
-    setLabelMap(labels);
 
-    labels.forEach(label => {
-        const count = tasks ? tasks.filter(t => t.labelIds && t.labelIds.includes(label.id) && t.status !== 'completed').length : 0;
+    const blocks = getTimeBlocks();
 
-        const item = createSidebarItem(
-            label.name, 
-            'label', 
-            label.id, 
-            label.color || 'gray',
-            count
+    // カスタムブロック
+    blocks.forEach(block => {
+        // timeBlockId でフィルタリング
+        const count = tasks ? tasks.filter(t => t.timeBlockId === block.id && t.status !== 'completed').length : 0;
+        
+        const html = `
+            <div class="flex items-center flex-1 min-w-0 pointer-events-none">
+                <span class="w-3 h-3 rounded-full mr-3 flex-shrink-0" style="background-color: ${block.color};"></span>
+                <span class="truncate">${block.name}</span>
+                <span class="ml-2 text-xs text-gray-400 font-normal">(${block.start}-${block.end})</span>
+            </div>
+            <div class="flex items-center">
+                ${count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : ''}
+            </div>
+        `;
+
+        const item = createListItem(html, 'timeblock', block.id,
+            () => {
+                // フィルタリング機能は未実装だが、クリック時のアクションとして定義
+                console.log('Filter by timeblock:', block.id);
+            },
+            (e) => {
+                e.preventDefault();
+                // 右クリックで編集モーダルを開く
+                showTimeBlockModal();
+            }
         );
+        list.appendChild(item);
+    });
 
-        // クリックイベント
-        item.addEventListener('click', () => {
-            setCurrentFilter({ type: 'label', id: label.id });
-            updateView(tasks, allProjects, labels);
-        });
+    // 固定「未定」ブロック
+    const unassignedCount = tasks ? tasks.filter(t => t.timeBlockId === null && t.status !== 'completed').length : 0;
+    const unassignedHtml = `
+        <div class="flex items-center flex-1 min-w-0 pointer-events-none">
+            <span class="w-3 h-3 rounded-full mr-3 flex-shrink-0 bg-gray-300 dark:bg-gray-600"></span>
+            <span class="truncate text-gray-500 dark:text-gray-400">未定</span>
+        </div>
+        <div class="flex items-center">
+             ${unassignedCount > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${unassignedCount}</span>` : ''}
+        </div>
+    `;
+    // IDは 'unassigned' とする
+    const unassignedItem = createListItem(unassignedHtml, 'timeblock', 'unassigned', null, null);
+    list.appendChild(unassignedItem);
+}
 
-        // 右クリックイベント
-        item.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            showItemContextMenu(e, 'label', label, allProjects, labels);
-        });
+/**
+ * 所要時間リストを描画
+ */
+export function renderDurations(tasks = []) {
+    const list = document.getElementById('duration-list');
+    if (!list) return;
+    list.innerHTML = '';
 
+    const durations = [30, 45, 60, 75, 90];
+
+    durations.forEach(mins => {
+        const count = tasks ? tasks.filter(t => t.duration === mins && t.status !== 'completed').length : 0;
+        
+        const html = `
+            <div class="flex items-center flex-1 min-w-0 pointer-events-none">
+                <span class="mr-3 text-lg">⏱️</span>
+                <span class="truncate">${mins} min</span>
+            </div>
+            <div class="flex items-center">
+                 ${count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : ''}
+            </div>
+        `;
+
+        const item = createListItem(html, 'duration', mins.toString(), null, null);
         list.appendChild(item);
     });
 }
 
 /**
- * UI全体を最新のデータとフィルターに基づいて更新するメイン関数
+ * 全体の描画
  */
 export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels) {
     if (!sidebar) return;
     
-    // UIを再構築
-    renderProjects(allProjects, allTasks, allLabels);
-    renderLabels(allLabels, allTasks, allProjects);
+    renderProjects(allProjects, allTasks);
+    // renderLabels は廃止
+    renderTimeBlocks(allTasks);
+    renderDurations(allTasks);
 
-    // フィルターのデータが存在しない場合はインボックスに切り替える
-    const currentFilter = getCurrentFilterData(allProjects, allLabels);
-    if (!currentFilter) {
-        setCurrentFilter({ type: 'inbox', id: null });
-    }
-
-    // アクティブリンクの更新
-    updateActiveLink(); 
-}
-
-/**
- * インボックスの未完了タスク数を更新する
- */
-export function updateInboxCount(allTasks) {
+    // インボックスカウント更新
     const inboxCountEl = document.getElementById('inbox-count');
-    if (!inboxCountEl) return;
-    
-    const count = allTasks ? allTasks.filter(t => !t.projectId && t.status !== 'completed').length : 0;
-    
-    inboxCountEl.textContent = count;
-    if (count > 0) {
-        inboxCountEl.classList.remove('hidden');
-    } else {
-        inboxCountEl.classList.add('hidden');
-    }
-}
-
-// 内部ヘルパー: アクティブリンク更新
-function updateActiveLink() {
-    // 既存の全てのアクティブクラスを削除
-    document.querySelectorAll('.sidebar-link-active').forEach(el => {
-        el.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'text-blue-700', 'dark:text-blue-300', 'sidebar-link-active');
-        el.classList.add('text-gray-700', 'dark:text-gray-200', 'hover:bg-gray-100', 'dark:hover:bg-gray-700');
-    });
-
-    const filter = getCurrentFilter();
-    let targetElement = null;
-
-    if (filter.type === 'dashboard') {
-        targetElement = document.getElementById('nav-dashboard');
-    } else if (filter.type === 'settings') {
-        targetElement = document.getElementById('settings-link'); 
-    } else if (filter.type === 'inbox') {
-        targetElement = document.getElementById('nav-inbox');
-    } else {
-        targetElement = document.querySelector(`li[data-type="${filter.type}"][data-id="${filter.id}"]`);
-    }
-
-    if (targetElement) {
-        targetElement.classList.remove('text-gray-700', 'dark:text-gray-200', 'hover:bg-gray-100', 'dark:hover:bg-gray-700');
-        targetElement.classList.add('bg-blue-100', 'dark:bg-blue-900', 'text-blue-700', 'dark:text-blue-300', 'sidebar-link-active');
+    if (inboxCountEl) {
+        const count = allTasks ? allTasks.filter(t => !t.projectId && t.status !== 'completed').length : 0;
+        inboxCountEl.textContent = count;
+        if (count > 0) inboxCountEl.classList.remove('hidden');
+        else inboxCountEl.classList.add('hidden');
     }
 }

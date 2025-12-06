@@ -4,10 +4,12 @@
 
 import { updateTask } from '../store/store.js';
 import { deleteProject } from '../store/projects.js';
-import { deleteLabel } from '../store/labels.js';
 import { showMessageModal } from './components.js';
-import { showProjectModal, showLabelModal } from './task-modal.js';
+import { showProjectModal } from './task-modal.js';
 import { setCurrentFilter } from './ui-view-manager.js';
+// 時間帯編集モーダルは sidebar.js 等でイベントリスナー設定時に呼ばれるか、
+// renderer.js で右クリック時に呼ばれる想定ですが、ここでの import は不要な場合もあります。
+// ただし依存関係として定義しておきます。
 
 // ==========================================================
 // サイドバー静的構造生成
@@ -15,7 +17,7 @@ import { setCurrentFilter } from './ui-view-manager.js';
 
 /**
  * サイドバーの静的なDOM構造を生成する
- * プロジェクト、ラベル、フィルターの折りたたみ可能なセクションを含む
+ * プロジェクト、時間帯、所要時間、フィルターの各セクションを含む
  * @returns {string} サイドバーのHTML文字列
  */
 export function buildSidebarHTML() {
@@ -43,15 +45,31 @@ export function buildSidebarHTML() {
             </div>
             <ul id="project-list" class="space-y-0.5 mb-4 pl-1"></ul>
 
-            <!-- ラベルセクション -->
-            <div class="flex items-center justify-between px-3 py-2 group cursor-pointer sidebar-section-header" data-target="label-list">
+            <!-- 時間帯ブロックセクション -->
+            <div class="flex items-center justify-between px-3 py-2 group cursor-pointer sidebar-section-header" data-target="timeblock-list">
                 <div class="flex items-center min-w-0">
                     <svg class="w-3 h-3 text-gray-400 mr-2 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">ラベル</h3>
+                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">時間帯 (Time Blocks)</h3>
                 </div>
-                <button id="add-label-btn" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
+                <!-- 編集ボタン -->
+                <button id="edit-timeblocks-btn" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700" title="編集">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
             </div>
-            <ul id="label-list" class="space-y-0.5 mb-4 pl-1"></ul>
+            <ul id="timeblock-list" class="space-y-0.5 mb-4 pl-1">
+                <!-- 時間帯ブロックがここに描画される -->
+            </ul>
+
+            <!-- 所要時間セクション -->
+            <div class="flex items-center justify-between px-3 py-2 group cursor-pointer sidebar-section-header" data-target="duration-list">
+                <div class="flex items-center min-w-0">
+                    <svg class="w-3 h-3 text-gray-400 mr-2 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">所要時間 (Duration)</h3>
+                </div>
+            </div>
+            <ul id="duration-list" class="space-y-0.5 mb-4 pl-1">
+                <!-- 所要時間固定リスト -->
+            </ul>
 
             <!-- フィルターセクション -->
             <div class="flex items-center justify-between px-3 py-2 group cursor-pointer sidebar-section-header" data-target="filter-list">
@@ -61,9 +79,7 @@ export function buildSidebarHTML() {
                 </div>
                 <button id="add-filter-btn" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
             </div>
-            <ul id="filter-list" class="space-y-0.5 pl-1">
-                <!-- フィルターは未実装のため空 -->
-            </ul>
+            <ul id="filter-list" class="space-y-0.5 pl-1"></ul>
         </div>
     `;
 }
@@ -96,9 +112,69 @@ export function setupSidebarToggles() {
 }
 
 // ==========================================================
-// サイドバーアイテム生成
+// ドロップゾーン設定
 // ==========================================================
 
+export function setupDropZone(element, type, value = null) {
+    if (!element) return;
+
+    element.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        element.classList.add('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+    });
+
+    element.addEventListener('dragleave', () => {
+        element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+    });
+
+    element.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+        const taskId = e.dataTransfer.getData('text/plain');
+
+        if (taskId) {
+            try {
+                if (type === 'inbox') {
+                    await updateTask(taskId, { projectId: null });
+                    showMessageModal("タスクをインボックスに戻しました");
+                } else if (type === 'project' && value) {
+                    await updateTask(taskId, { projectId: value });
+                    showMessageModal("プロジェクトへ移動しました");
+                } 
+                // 時間帯へのドロップ
+                else if (type === 'timeblock') {
+                    // value が null (文字列の'null'や'unassigned') なら未定、それ以外はID
+                    const timeBlockId = (value === 'unassigned' || value === null) ? null : value;
+                    await updateTask(taskId, { timeBlockId: timeBlockId });
+                    showMessageModal(timeBlockId ? "時間帯を設定しました" : "時間帯を未定にしました");
+                }
+                // 所要時間へのドロップ
+                else if (type === 'duration' && value) {
+                    const minutes = parseInt(value, 10);
+                    await updateTask(taskId, { duration: minutes });
+                    showMessageModal(`所要時間を ${minutes}分 に設定しました`);
+                }
+            } catch (error) {
+                console.error("Drop Error:", error);
+            }
+        }
+    });
+}
+
+// ==========================================================
+// アイテム生成ヘルパー (リストアイテム)
+// ==========================================================
+
+/**
+ * サイドバーのリストアイテム要素を作成する (汎用)
+ * ※ renderer.js 等でHTML文字列を作って渡す方式にも対応可能
+ * @param {string} name - アイテム名
+ * @param {string} type - 'project' | 'timeblock' | 'duration' etc
+ * @param {string} id - ID
+ * @param {string} color - 色コード
+ * @param {number} count - カウント数
+ * @returns {HTMLElement} 作成されたli要素
+ */
 export function createSidebarItem(name, type, id, color, count) {
     const item = document.createElement('li');
     item.dataset.type = type;
@@ -107,13 +183,10 @@ export function createSidebarItem(name, type, id, color, count) {
 
     let iconHtml = '';
     if (type === 'project') {
-        iconHtml = `<svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`;
-    } else if (type === 'label') {
+        iconHtml = `<svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`;
+    } else {
         const colorStyle = color ? `background-color: ${color};` : 'background-color: #a0aec0;';
         iconHtml = `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="${colorStyle}"></span>`;
-    } else {
-        // その他（フィルターなど）
-        iconHtml = `<svg class="mr-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>`;
     }
 
     const countHtml = count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : '';
@@ -131,10 +204,17 @@ export function createSidebarItem(name, type, id, color, count) {
     return item;
 }
 
+// ==========================================================
+// コンテキストメニュー (プロジェクト用)
+// ==========================================================
+
 /**
- * プロジェクト/ラベルの右クリックメニューを表示する
+ * プロジェクトの右クリックメニューを表示する
  */
-export function showItemContextMenu(e, type, itemData, allProjects, allLabels) {
+export function showItemContextMenu(e, type, itemData, allProjects) {
+    // 時間帯の編集はモーダルで行うので、コンテキストメニューはプロジェクトのみ対象
+    if (type !== 'project') return;
+
     document.getElementById('sidebar-context-menu')?.remove();
 
     const menu = document.createElement('div');
@@ -159,26 +239,17 @@ export function showItemContextMenu(e, type, itemData, allProjects, allLabels) {
     // 編集ボタンのイベント
     document.getElementById('context-edit-btn').addEventListener('click', () => {
         menu.remove();
-        if (type === 'project') {
-            showProjectModal(itemData, allProjects);
-        } else if (type === 'label') {
-            showLabelModal(itemData, allLabels);
-        }
+        showProjectModal(itemData, allProjects);
     });
 
     // 削除ボタンのイベント
     document.getElementById('context-delete-btn').addEventListener('click', () => {
         menu.remove();
-        showMessageModal(`${itemData.name} を削除しますか？\n（関連するタスクの${type === 'project' ? 'プロジェクト' : 'ラベル'}情報も削除されます）`, async () => {
+        showMessageModal(`${itemData.name} を削除しますか？\n（関連するタスクのプロジェクト情報も削除されます）`, async () => {
             try {
-                if (type === 'project') {
-                    await deleteProject(itemData.id);
-                } else if (type === 'label') {
-                    await deleteLabel(itemData.id);
-                }
+                await deleteProject(itemData.id);
                 setCurrentFilter({ type: 'inbox', id: null });
                 showMessageModal(`${itemData.name} を削除しました。`);
-
             } catch (error) {
                 console.error('Delete failed:', error);
                 showMessageModal("削除に失敗しました。", 'error');
@@ -186,6 +257,7 @@ export function showItemContextMenu(e, type, itemData, allProjects, allLabels) {
         });
     });
 
+    // 画面のどこかをクリックしたらメニューを閉じる
     const dismissMenu = (ev) => {
         if (!menu.contains(ev.target)) {
             menu.remove();
@@ -195,43 +267,4 @@ export function showItemContextMenu(e, type, itemData, allProjects, allLabels) {
     setTimeout(() => {
         document.addEventListener('click', dismissMenu);
     }, 0);
-}
-
-// ==========================================================
-// ドロップゾーン
-// ==========================================================
-
-export function setupDropZone(element, type, id = null) {
-    if (!element) return;
-
-    element.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        element.classList.add('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
-    });
-
-    element.addEventListener('dragleave', () => {
-        element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
-    });
-
-    element.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
-        const taskId = e.dataTransfer.getData('text/plain');
-
-        if (taskId) {
-            try {
-                if (type === 'inbox') {
-                    await updateTask(taskId, { projectId: null });
-                    showMessageModal("タスクをインボックスに戻しました");
-                } else if (type === 'project' && id) {
-                    await updateTask(taskId, { projectId: id });
-                    showMessageModal("プロジェクトへ移動しました");
-                } else if (type === 'label' && id) {
-                    showMessageModal("ラベルへのタスク移動は、現在のタスクラベル情報の読み込みが不完全なため、現時点では未実装です。", null);
-                }
-            } catch (error) {
-                console.error("Drop Error:", error);
-            }
-        }
-    });
 }
