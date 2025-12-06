@@ -2,8 +2,9 @@
 // タスクモーダル用のHTML構造を生成する
 
 import { formatDateForInput } from './modal-helpers.js';
-// ★追加: 繰り返し初期日付計算ヘルパーをインポート
 import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
+// ★追加: 時間帯データを取得するためにインポート
+import { getTimeBlocks } from '../../store/timeblocks.js';
 
 /**
  * 繰り返し設定の曜日チェックボックスHTMLを生成する。
@@ -31,9 +32,8 @@ export function buildModalHTML(task) {
     const recurrenceType = task.recurrence?.type || 'none';
     const recurrenceDays = task.recurrence?.days || [];
     
-    // ★修正: 繰り返し設定があるが、dueDateがない場合、日付を自動で設定する
+    // 繰り返し設定があるが、dueDateがない場合、日付を自動で設定する
     if (recurrenceType !== 'none' && !dueDate) {
-        // recurrenceDaysが設定されていればweeklyと判断し、初期日付を計算
         const tempRecurrence = { 
             type: recurrenceType,
             days: recurrenceType === 'weekly' ? recurrenceDays : []
@@ -48,6 +48,24 @@ export function buildModalHTML(task) {
 
 
     const daysCheckboxes = createDaysCheckboxesHTML(recurrenceDays);
+
+    // ★追加: 時間帯の選択肢生成
+    const timeBlocks = getTimeBlocks();
+    const selectedTimeBlockId = task.timeBlockId || '';
+    const timeBlockOptions = timeBlocks.map(tb => 
+        `<option value="${tb.id}" ${tb.id === selectedTimeBlockId ? 'selected' : ''}>
+            ${tb.name} (${tb.start}-${tb.end})
+        </option>`
+    ).join('');
+
+    // ★追加: 所要時間の選択肢生成
+    const selectedDuration = task.duration || '';
+    const durations = [15, 30, 45, 60, 75, 90, 120, 180];
+    const durationOptions = durations.map(d => 
+        `<option value="${d}" ${d == selectedDuration ? 'selected' : ''}>
+            ${d} min
+        </option>`
+    ).join('');
 
     return `
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fade-in p-4">
@@ -71,19 +89,41 @@ export function buildModalHTML(task) {
 
                     <!-- メタ情報 -->
                     <div class="grid grid-cols-2 gap-4">
+                        <!-- 期限日 -->
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">期限日</label>
                             <input type="date" id="modal-task-date" value="${dueDateValue}"
                                 class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm">
                         </div>
+                        <!-- 繰り返し -->
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">繰り返し</label>
                             <select id="modal-task-recurrence" 
-                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none">
+                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
                                 <option value="none" ${recurrenceType === 'none' ? 'selected' : ''}>繰り返しなし</option>
                                 <option value="daily" ${recurrenceType === 'daily' ? 'selected' : ''}>毎日</option>
                                 <option value="weekly" ${recurrenceType === 'weekly' ? 'selected' : ''}>毎週</option>
                                 <option value="monthly" ${recurrenceType === 'monthly' ? 'selected' : ''}>毎月</option>
+                            </select>
+                        </div>
+                        
+                        <!-- ★追加: 時間帯 -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">時間帯</label>
+                            <select id="modal-task-timeblock" 
+                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
+                                <option value="">未定</option>
+                                ${timeBlockOptions}
+                            </select>
+                        </div>
+
+                        <!-- ★追加: 所要時間 -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">所要時間</label>
+                            <select id="modal-task-duration" 
+                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
+                                <option value="">指定なし</option>
+                                ${durationOptions}
                             </select>
                         </div>
                     </div>
@@ -101,8 +141,9 @@ export function buildModalHTML(task) {
                         <div class="flex justify-between items-end mb-2">
                             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">タグ (ラベル)</label>
                             <div class="relative">
-                                <select id="modal-add-label-select" class="text-xs bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition focus:ring-0">
-                                    <option value="">+ 追加</option>
+                                <select id="modal-add-label-select" class="text-xs bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition focus:ring-0 appearance-none">
+                                    <option value="" selected disabled>+ 追加</option>
+                                    <!-- ラベル選択肢がここに注入されます -->
                                 </select>
                             </div>
                         </div>

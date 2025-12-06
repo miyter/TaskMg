@@ -18,7 +18,7 @@ export function showTimeBlockModal() {
     modalOverlay.innerHTML = `
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden ring-1 ring-black/5 flex flex-col max-h-[90vh]">
             <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700/50 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
-                <h3 class="text-lg font-bold text-gray-800 dark:text-white">時間帯設定 (Time Blocks)</h3>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">時間帯設定</h3>
                 <button id="close-tb-modal" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
@@ -62,8 +62,6 @@ export function showTimeBlockModal() {
     document.getElementById('close-tb-modal').addEventListener('click', () => modalOverlay.remove());
     document.getElementById('close-tb-footer').addEventListener('click', () => {
         modalOverlay.remove();
-        // サイドバーを更新するためにリロード的な処理を入れる（簡易実装としてグローバルなレンダラーを呼ぶ）
-        // 実際はStoreのsubscribeなどで自動更新されるのがベスト
         const event = new CustomEvent('timeblocks-updated');
         document.dispatchEvent(event);
     });
@@ -99,8 +97,8 @@ function renderBlockRow(block, container) {
     const data = block || { id: '', name: '', start: '09:00', end: '10:00', color: '#808080' };
     
     const row = document.createElement('div');
-    // 修正: dark:bg-gray-750 -> dark:bg-gray-700 (有効なクラスに変更)
-    row.className = 'tb-row flex items-center gap-3 p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm transition-all hover:shadow-md group';
+    // ダークモード時の背景色を修正
+    row.className = 'tb-row flex items-center gap-3 p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm transition-all hover:shadow-md group';
     if (!isNew) row.dataset.id = data.id;
 
     // カラーパレット
@@ -117,15 +115,13 @@ function renderBlockRow(block, container) {
         </div>
 
         <div class="flex-1">
-            <!-- 修正: text-gray-800 dark:text-white を追加 -->
-            <input type="text" class="tb-name w-full px-2 py-1 text-sm text-gray-800 dark:text-white border-b border-gray-300 dark:border-gray-600 bg-transparent focus:border-blue-500 focus:outline-none placeholder-gray-400" placeholder="名前 (例: 朝集中)" value="${data.name}">
+            <input type="text" class="tb-name w-full px-2 py-1 text-sm text-gray-900 dark:text-white border-b border-gray-300 dark:border-gray-500 bg-transparent focus:border-blue-500 focus:outline-none placeholder-gray-400" placeholder="名前 (例: 朝集中)" value="${data.name}">
         </div>
 
         <div class="flex items-center gap-2">
-            <!-- 修正: text-gray-800 dark:text-white を追加 -->
-            <input type="time" class="tb-start px-2 py-1 text-sm text-gray-800 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${data.start}">
+            <input type="time" class="tb-start px-2 py-1 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${data.start}">
             <span class="text-gray-400">-</span>
-            <input type="time" class="tb-end px-2 py-1 text-sm text-gray-800 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${data.end}">
+            <input type="time" class="tb-end px-2 py-1 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${data.end}">
         </div>
 
         <div class="flex items-center gap-1">
@@ -163,10 +159,9 @@ function renderBlockRow(block, container) {
             row.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50');
             setTimeout(() => row.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50'), 1000);
             
-            // 新規作成だった場合、IDなどが確定するのでリスト再描画が望ましいが、簡易的に済ます
             if (isNew) {
                 const blocks = getTimeBlocks();
-                renderBlockList(blocks); // リフレッシュ
+                renderBlockList(blocks);
                 updateAddButtonState();
             }
         } catch (e) {
