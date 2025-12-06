@@ -2,8 +2,10 @@
 // @miyter:20251129
 
 import { updateView, setCurrentFilter } from './ui-view-manager.js';
-import { updateSidebarState, setupResizer, setupDropZone, getRandomColor } from './sidebar-utils.js';
-import { buildSidebarHTML } from './sidebar-dom.js';
+// ★修正: setupDropZone をここから削除
+import { updateSidebarState, setupResizer, getRandomColor } from './sidebar-utils.js';
+// ★修正: setupDropZone をここに追加
+import { buildSidebarHTML, setupDropZone } from './sidebar-dom.js';
 import { showProjectModal, showLabelModal } from './task-modal.js';
 // ★修正: renderProjects, renderLabels, updateInboxCount, renderSidebarItems を新しいファイルからインポート
 import { renderProjects, renderLabels, updateInboxCount, renderSidebarItems } from './sidebar-renderer.js';
@@ -42,7 +44,10 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
         sidebarWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
 
         sidebar.style.width = `${sidebarWidth}px`;
-        mainContent.style.marginLeft = `${sidebarWidth}px`;
+        // mainContentがない場合のエラー回避
+        if (mainContent) {
+            mainContent.style.marginLeft = `${sidebarWidth}px`;
+        }
     }
 
     updateSidebarState(sidebar, mainContent);
