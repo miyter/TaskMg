@@ -5,11 +5,10 @@ import { updateView, setCurrentFilter } from './ui-view-manager.js';
 import { updateSidebarState, setupResizer, setupDropZone, getRandomColor } from './sidebar-utils.js';
 import { buildSidebarHTML } from './sidebar-dom.js';
 import { showProjectModal, showLabelModal } from './task-modal.js';
-// ★修正: renderProjects, renderLabels をインポートに追加
-import { updateInboxCount, renderSidebarItems, renderProjects, renderLabels } from './sidebar-renderer.js';
+// ★修正: renderProjects, renderLabels, updateInboxCount, renderSidebarItems を新しいファイルからインポート
+import { renderProjects, renderLabels, updateInboxCount, renderSidebarItems } from './sidebar-renderer.js';
 
 // 外部公開する関数
-// ★修正: renderProjects, renderLabels をエクスポートに追加
 export { renderSidebarItems, updateInboxCount, renderProjects, renderLabels };
 
 // ★追加: layout.js が renderSidebar という名前でインポートしているため、initSidebar をエイリアスとしてエクスポート
