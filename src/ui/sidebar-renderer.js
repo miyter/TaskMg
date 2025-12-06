@@ -153,3 +153,19 @@ function getCurrentFilterData(allProjects, allLabels) {
     }
     return null;
 }
+
+// ★追加: updateInboxCountをエクスポート
+export function updateInboxCount(allTasks) {
+    const inboxCountEl = document.getElementById('inbox-count');
+    if (!inboxCountEl) return;
+    
+    // インボックス（プロジェクトなし）かつ未完了のタスク数を計算
+    const count = allTasks ? allTasks.filter(t => !t.projectId && t.status !== 'completed').length : 0;
+    
+    inboxCountEl.textContent = count;
+    if (count > 0) {
+        inboxCountEl.classList.remove('hidden');
+    } else {
+        inboxCountEl.classList.add('hidden');
+    }
+}

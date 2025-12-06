@@ -10,6 +10,7 @@ export default defineConfig({
   build: {
     outDir: 'dist', 
     emptyOutDir: true, 
+    chunkSizeWarningLimit: 800, // ★追加: 警告を抑制するためにチャンクサイズ制限を800kBに引き上げ
     // ★修正1: inputを明示的に指定
     // index.htmlをルートに移動済みであれば、単に 'index.html' でOKです
     rollupOptions: {

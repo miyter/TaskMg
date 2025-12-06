@@ -130,8 +130,46 @@ export function setupResizer(sidebar, mainContent, resizer) {
 
 // ==========================================================
 // サイドバーアイテム生成
-// [Immersive content redacted for brevity.]
 // ==========================================================
+
+/**
+ * サイドバーのリストアイテム要素を作成する
+ * @param {string} name - アイテム名
+ * @param {string} type - 'project' | 'label'
+ * @param {string} id - ID
+ * @param {string} color - 色コード (ラベル用) またはクラス
+ * @param {number} count - タスク数
+ * @returns {HTMLElement} 作成されたli要素
+ */
+export function createSidebarItem(name, type, id, color, count) {
+    const item = document.createElement('li');
+    item.dataset.type = type;
+    item.dataset.id = id;
+    item.className = 'group flex items-center justify-between px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target';
+
+    // アイコン部分の生成
+    let iconHtml = '';
+    if (type === 'project') {
+        iconHtml = `<svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`;
+    } else {
+        const colorStyle = color ? `background-color: ${color};` : 'background-color: #a0aec0;';
+        iconHtml = `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="${colorStyle}"></span>`;
+    }
+
+    const countHtml = count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : '';
+
+    item.innerHTML = `
+        <div class="flex items-center flex-1 min-w-0 pointer-events-none">
+            ${iconHtml}
+            <span class="truncate">${name}</span>
+        </div>
+        <div class="flex items-center">
+            ${countHtml}
+        </div>
+    `;
+
+    return item;
+}
 
 /**
  * プロジェクト/ラベルの右クリックメニューを表示する
@@ -203,8 +241,46 @@ export function showItemContextMenu(e, type, itemData, allProjects, allLabels) {
 
 // ==========================================================
 // ドロップゾーン/カウント
-// [Immersive content redacted for brevity.]
 // ==========================================================
+
+export function setupDropZone(element, type, id = null) {
+    if (!element) return;
+
+    element.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        element.classList.add('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+    });
+
+    element.addEventListener('dragleave', () => {
+        element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+    });
+
+    element.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+        const taskId = e.dataTransfer.getData('text/plain');
+
+        if (taskId) {
+            try {
+                if (type === 'inbox') {
+                    await updateTask(taskId, { projectId: null });
+                    showMessageModal("タスクをインボックスに戻しました");
+                } else if (type === 'project' && id) {
+                    await updateTask(taskId, { projectId: id });
+                    showMessageModal("プロジェクトへ移動しました");
+                } else if (type === 'label' && id) {
+                    // ラベル追加ロジックは少し複雑（既存のラベル配列に追加）なため、
+                    // ここでは簡易的にメッセージのみ、またはStore側で対応が必要
+                    // 現状は未実装としておくか、別途対応
+                    showMessageModal("ラベルへのタスク移動は、現在のタスクラベル情報の読み込みが不完全なため、現時点では未実装です。", null);
+                }
+            } catch (error) {
+                console.error("Drop Error:", error);
+            }
+        }
+    });
+}
+
 export function getRandomColor() {
     const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6'];
     return colors[Math.floor(Math.random() * colors.length)];
