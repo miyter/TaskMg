@@ -2,29 +2,19 @@
 // @miyter:20251129
 
 import { updateView, setCurrentFilter } from './ui-view-manager.js';
-// ★修正: setupDropZone をここから削除
 import { updateSidebarState, setupResizer, getRandomColor } from './sidebar-utils.js';
-// ★修正: setupDropZone をここに追加
 import { buildSidebarHTML, setupDropZone } from './sidebar-dom.js';
 import { showProjectModal, showLabelModal } from './task-modal.js';
-// ★修正: renderProjects, renderLabels, updateInboxCount, renderSidebarItems を新しいファイルからインポート
 import { renderProjects, renderLabels, updateInboxCount, renderSidebarItems } from './sidebar-renderer.js';
 
 // 外部公開する関数
 export { renderSidebarItems, updateInboxCount, renderProjects, renderLabels };
-
-// ★追加: layout.js が renderSidebar という名前でインポートしているため、initSidebar をエイリアスとしてエクスポート
 export { initSidebar as renderSidebar };
 
-
-let sidebarWidth = 280; // ★ここで初期幅を定義
-
+let sidebarWidth = 280;
 
 /**
  * サイドバーの初期化とイベントリスナーの設定
- * @param {Array} allTasks - 全タスクデータ (初期化時のカウント用)
- * @param {Array} allProjects - 全プロジェクトデータ
- * @param {Array} allLabels - 全ラベルデータ
  */
 export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     const container = document.getElementById('sidebar-content');
@@ -35,19 +25,16 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     // 2. リサイズ/開閉ロジックの適用
     const sidebar = document.getElementById('sidebar');
-    const toggleBtn = document.getElementById('sidebar-toggle-btn');
     const mainContent = document.getElementById('main-content');
     const resizer = document.getElementById('sidebar-resizer');
 
     if (sidebar) {
         const storedWidth = localStorage.getItem('sidebarWidth');
         sidebarWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
-
         sidebar.style.width = `${sidebarWidth}px`;
-        // mainContentがない場合のエラー回避
-        if (mainContent) {
-            mainContent.style.marginLeft = `${sidebarWidth}px`;
-        }
+        
+        // ★削除: ここにあった mainContent.style.marginLeft の設定を削除
+        // Flexboxレイアウトなので、サイドバーの幅が変わればメインエリアは自動的に調整されます
     }
 
     updateSidebarState(sidebar, mainContent);
@@ -56,7 +43,7 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     // 3. イベントリスナーの設定
     setupSidebarEvents();
     
-    // 4. インボックスへのドロップ設定 (DOM構築後に実行)
+    // 4. インボックスへのドロップ設定
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
 }
 
@@ -90,8 +77,6 @@ function setupSidebarEvents() {
         const newState = !isCollapsed;
 
         localStorage.setItem('sidebarCollapsed', newState);
-        // DOMはrenderLayoutで構築済みだが、再計算のためにupdateSidebarStateを呼び出す
         updateSidebarState(sidebar, mainContent);
     });
-
 }

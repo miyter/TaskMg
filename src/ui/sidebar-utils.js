@@ -1,8 +1,8 @@
 // @ts-nocheck
 // @miyter:20251129
-// サイドバーの状態管理、ユーティリティ、レイアウト制御
+// サイドバーの状態管理、ユーティリティ
 
-// 内部状態変数（リサイズ、開閉）
+// 内部状態変数
 let isSidebarCollapsed = false;
 let sidebarWidth = 280; 
 let labelMap = {};
@@ -21,21 +21,12 @@ export function getLabelDetails(labelId) {
 }
 
 export function getCurrentFilter() {
-    // ui-view-managerのgetCurrentFilterに依存
-    // ここでは循環参照を避けるため、実装を省略またはApp.js側で取得
-    // ★暫定: App.jsから渡される想定
+    // 暫定: App.jsから渡される想定
     return { type: 'inbox', id: null }; 
 }
 
 export function getCurrentFilterData(allProjects, allLabels) {
-    const filter = getCurrentFilter(); // ★実際のgetCurrentFilterロジックを呼び出す
-    if (filter.type === 'project') {
-        return allProjects.find(p => p.id === filter.id);
-    } else if (filter.type === 'label') {
-        return allLabels.find(l => l.id === filter.id);
-    } else if (['inbox', 'dashboard', 'settings'].includes(filter.type)) {
-        return true; 
-    }
+    // 簡易実装
     return null;
 }
 
@@ -43,48 +34,43 @@ export function getCurrentFilterData(allProjects, allLabels) {
 // UI状態制御 (開閉/リサイズ)
 // ==========================================================
 
-// 動的幅クラスを削除する正規表現ヘルパー
-const removeDynamicWidthClasses = (element) => {
-    // 'w-[...px]' の形式のクラスを全て削除
-    element.classList.remove(...Array.from(element.classList).filter(c => c.startsWith('w-[')));
-};
-
 export function updateSidebarState(sidebar, mainContent) {
     const storedState = localStorage.getItem('sidebarCollapsed');
     isSidebarCollapsed = storedState === 'true';
 
     if (isSidebarCollapsed) {
-        // 閉じる
-        sidebar.classList.add('w-0', 'p-0');
-        removeDynamicWidthClasses(sidebar); 
-        mainContent.style.marginLeft = '0px';
+        // 閉じる: 幅を0にして非表示に
+        sidebar.style.width = '0px';
+        sidebar.style.padding = '0px';
+        sidebar.classList.add('invisible'); // 中身も見えなくする
     } else {
-        // 開く
-        sidebar.classList.remove('w-0', 'p-0');
-        removeDynamicWidthClasses(sidebar);
-        sidebar.classList.add(`w-[${sidebarWidth}px]`);
-        mainContent.style.marginLeft = `${sidebarWidth}px`; 
+        // 開く: 保存された幅に戻す
+        sidebar.style.width = `${sidebarWidth}px`;
+        sidebar.style.padding = ''; // paddingをリセット
+        sidebar.classList.remove('invisible');
     }
+    // ★削除: mainContent.style.marginLeft の操作は不要（Flexboxが自動調整するため）
 }
 
 export function setupResizer(sidebar, mainContent, resizer) {
     if (!resizer) return;
     let isResizing = false;
 
-    // 初期設定
+    // 初期化
     if (sidebar) {
         const storedWidth = localStorage.getItem('sidebarWidth');
         sidebarWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
         
-        removeDynamicWidthClasses(sidebar);
-        sidebar.classList.add(`w-[${sidebarWidth}px]`);
-        mainContent.style.marginLeft = `${sidebarWidth}px`;
+        if (!isSidebarCollapsed) {
+            sidebar.style.width = `${sidebarWidth}px`;
+        }
     }
 
     const startResize = (e) => {
         if (isSidebarCollapsed) return;
         isResizing = true;
         document.body.style.cursor = 'col-resize';
+        document.body.classList.add('select-none'); // ドラッグ中の選択防止
         document.addEventListener('mousemove', resize);
         document.addEventListener('mouseup', stopResize);
         e.preventDefault();
@@ -100,16 +86,15 @@ export function setupResizer(sidebar, mainContent, resizer) {
         if (newWidth > maxWidth) newWidth = maxWidth;
 
         sidebarWidth = newWidth;
+        sidebar.style.width = `${newWidth}px`;
         
-        removeDynamicWidthClasses(sidebar);
-        sidebar.classList.add(`w-[${newWidth}px]`);
-
-        mainContent.style.marginLeft = `${newWidth}px`; 
+        // ★削除: mainContent.style.marginLeft の操作は不要
     };
 
     const stopResize = () => {
         isResizing = false;
         document.body.style.cursor = '';
+        document.body.classList.remove('select-none');
         document.removeEventListener('mousemove', resize);
         document.removeEventListener('mouseup', stopResize);
         localStorage.setItem('sidebarWidth', sidebarWidth);
@@ -127,12 +112,6 @@ export function getRandomColor() {
     return colors[Math.floor(Math.random() * colors.length)];
 }
 
-/**
- * プロジェクトIDからプロジェクト名を取得する
- * @param {string | null} projectId - 取得したいプロジェクトID
- * @param {Array<object>} allProjects - 全プロジェクトのリスト
- * @returns {string} プロジェクト名 ('インボックス' or '未分類'を含む)
- */
 export function getProjectName(projectId, allProjects = []) {
     if (!projectId || projectId === 'inbox' || projectId === 'INBOX') return 'インボックス';
     if (!allProjects || !Array.isArray(allProjects)) return '未分類';
