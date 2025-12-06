@@ -3,6 +3,8 @@
 
 import { updateTaskStatus, deleteTask } from '../store/store.js';
 import { getTaskDateColor, formatDateCompact } from '../utils/date.js';
+// 時間帯情報を取得するために追加
+import { getTimeBlocks } from '../store/timeblocks.js';
 import { openTaskEditModal } from './task-modal.js';
 import { showMessageModal } from './components.js';
 
@@ -32,8 +34,13 @@ function createTaskItem(task) {
     const dateText = formatDateCompact(task.dueDate);
     const dateColorClass = getTaskDateColor(task.dueDate);
     const isRecurring = !!task.recurrence; 
-    // ラベル数を取得（未設定なら0）
-    const labelCount = task.labelIds ? task.labelIds.length : 0;
+
+    // 時間帯情報の取得
+    const timeBlocks = getTimeBlocks();
+    const timeBlock = task.timeBlockId ? timeBlocks.find(tb => tb.id === task.timeBlockId) : null;
+    
+    // 所要時間
+    const duration = task.duration;
 
     li.className = `group flex items-start gap-2 sm:gap-3 py-2 px-2 rounded -mx-2 transition-all duration-200 cursor-default border border-transparent ${isCompleted ? 'opacity-60 bg-gray-50 dark:bg-gray-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-gray-100 dark:hover:border-gray-700'}`;
 
@@ -48,20 +55,31 @@ function createTaskItem(task) {
         </div>
         
         <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 items-center">
-            <div class="col-span-1 sm:col-span-9 flex flex-col justify-center">
+            <div class="col-span-1 sm:col-span-7 flex flex-col justify-center">
                 <div class="text-[0.93rem] leading-snug truncate font-medium transition-colors ${isCompleted ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}">${task.title}</div>
                 ${task.description ? `<div class="text-xs text-gray-400 truncate mt-0.5 font-light">${task.description}</div>` : ''}
             </div>
-            <div class="col-span-1 sm:col-span-3 flex items-center sm:justify-end space-x-2 text-xs h-full mt-1 sm:mt-0">
-                ${isRecurring ? `<div class="text-blue-500 dark:text-blue-400" title="繰り返し設定あり">🔁</div>` : ''}
+            
+            <!-- メタ情報エリア -->
+            <div class="col-span-1 sm:col-span-5 flex items-center sm:justify-end space-x-2 text-xs h-full mt-1 sm:mt-0 overflow-hidden">
+                ${isRecurring ? `<div class="text-blue-500 dark:text-blue-400 flex-shrink-0" title="繰り返し設定あり">🔁</div>` : ''}
                 
-                ${dateText ? `<div class="flex items-center ${dateColorClass} bg-gray-50 dark:bg-gray-800/50 px-1.5 py-0.5 rounded"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${dateText}</div>` : ''}
-                
-                <!-- ラベル数表示 (0でも常に表示) -->
-                <span class="text-gray-400 group-hover:text-gray-500 flex items-center" title="ラベル数">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
-                    <span class="ml-0.5">${labelCount}</span>
-                </span>
+                <!-- 時間帯バッジ -->
+                ${timeBlock ? `
+                    <div class="flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[100px]" title="${timeBlock.name} (${timeBlock.start}-${timeBlock.end})">
+                        <span class="w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style="background-color: ${timeBlock.color}"></span>
+                        <span class="truncate">${timeBlock.name}</span>
+                    </div>
+                ` : ''}
+
+                <!-- 所要時間バッジ -->
+                ${duration ? `
+                    <div class="flex items-center text-gray-500 dark:text-gray-400 whitespace-nowrap" title="所要時間: ${duration}分">
+                        <span class="mr-0.5 text-[10px]">⏱️</span>${duration}m
+                    </div>
+                ` : ''}
+
+                ${dateText ? `<div class="flex items-center ${dateColorClass} bg-gray-50 dark:bg-gray-800/50 px-1.5 py-0.5 rounded flex-shrink-0"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${dateText}</div>` : ''}
             </div>
         </div>
     `;

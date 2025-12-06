@@ -2,15 +2,17 @@
 // @miyter:20251129
 
 import { 
-    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, orderBy // ★修正: updateDocをインポートに追加
+    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, orderBy 
 } from "firebase/firestore";
 
-// ★修正: ローカルモジュールへのインポートパスを相対パスに変更
 import { db } from '../core/firebase.js';
 
 // ==========================================================
 // ★ RAW FUNCTIONS (userId必須) - ラッパー層からのみ呼び出し
 // ==========================================================
+
+// プロジェクトリストのキャッシュ（同期的に取得するため）
+let _cachedProjects = [];
 
 /**
  * プロジェクトデータのリアルタイムリスナーを開始する (RAW)。
@@ -26,8 +28,18 @@ export function subscribeToProjectsRaw(userId, onUpdate) {
 
     return onSnapshot(q, (snapshot) => {
         const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        // キャッシュを更新
+        _cachedProjects = projects;
         onUpdate(projects);
     });
+}
+
+/**
+ * 現在キャッシュされているプロジェクトリストを取得する
+ * @returns {Array} プロジェクトの配列
+ */
+export function getProjects() {
+    return _cachedProjects;
 }
 
 /**
@@ -55,7 +67,6 @@ export async function updateProjectRaw(userId, projectId, updates) {
     const appId = window.GLOBAL_APP_ID;
     const path = `/artifacts/${appId}/users/${userId}/projects`;
     const ref = doc(db, path, projectId);
-    // ★追加: updateDocでデータを更新
     return updateDoc(ref, updates);
 }
 

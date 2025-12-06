@@ -8,7 +8,8 @@ import {
     subscribeToProjectsRaw,
     addProjectRaw,
     updateProjectRaw, 
-    deleteProjectRaw
+    deleteProjectRaw,
+    getProjects // ★追加: 同期的にプロジェクトリストを取得する関数をインポート
 } from './projects-raw.js';
 
 /**
@@ -31,7 +32,7 @@ function requireAuth() {
 /**
  * プロジェクトのリアルタイム購読 (ラッパー)
  */
-function subscribeToProjects(onUpdate) { // ★修正: exportを削除
+function subscribeToProjects(onUpdate) {
     const userId = auth.currentUser?.uid;
     // 認証前に呼ばれる可能性もあるため、userIdが存在すれば購読
     if (userId) {
@@ -43,7 +44,7 @@ function subscribeToProjects(onUpdate) { // ★修正: exportを削除
  * 新しいプロジェクトを追加する (ラッパー)
  * @param {string} name - プロジェクト名
  */
-async function addProject(name) { // ★修正: exportを削除
+async function addProject(name) {
     const userId = requireAuth();
     return addProjectRaw(userId, name);
 }
@@ -53,7 +54,7 @@ async function addProject(name) { // ★修正: exportを削除
  * @param {string} projectId - プロジェクトID
  * @param {object} updates - 更新内容
  */
-async function updateProject(projectId, updates) { // ★修正: exportを削除
+async function updateProject(projectId, updates) {
     const userId = requireAuth();
     return updateProjectRaw(userId, projectId, updates);
 }
@@ -62,10 +63,10 @@ async function updateProject(projectId, updates) { // ★修正: exportを削除
  * プロジェクトを削除する (ラッパー)
  * @param {string} projectId - プロジェクトID
  */
-async function deleteProject(projectId) { // ★修正: exportを削除
+async function deleteProject(projectId) {
     const userId = requireAuth();
     return deleteProjectRaw(userId, projectId);
 }
 
-// ★修正: 全ての公開関数をファイル末尾で一度だけエクスポート
-export { subscribeToProjects, addProject, updateProject, deleteProject };
+// ★修正: getProjects もエクスポートに追加
+export { subscribeToProjects, addProject, updateProject, deleteProject, getProjects };

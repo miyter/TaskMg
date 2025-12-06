@@ -2,26 +2,13 @@
 // @miyter:20251129
 
 import { updateView, setCurrentFilter } from './ui-view-manager.js';
-import { setupDropZone, showItemContextMenu } from './sidebar-dom.js';
+// 分割されたモジュールからインポート
+import { setupDropZone } from './sidebar-drag-drop.js';
+import { createSidebarItem, showItemContextMenu } from './sidebar-components.js';
 import { getTimeBlocks } from '../store/timeblocks.js';
 import { showTimeBlockModal } from './timeblock-modal.js';
 
-// DOM生成ヘルパー
-function createListItem(html, type, id, onClick, onContextMenu) {
-    const li = document.createElement('li');
-    li.className = 'group flex items-center justify-between px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target';
-    li.dataset.type = type;
-    li.dataset.id = id;
-    li.innerHTML = html;
-    
-    if (onClick) li.addEventListener('click', onClick);
-    if (onContextMenu) li.addEventListener('contextmenu', onContextMenu);
-    
-    // ドロップゾーン設定
-    setupDropZone(li, type, id);
-    
-    return li;
-}
+// createListItem は sidebar-components.js の createSidebarItem に置き換えるため削除
 
 /**
  * プロジェクトリストを描画
@@ -32,28 +19,29 @@ export function renderProjects(projects, tasks = []) {
     list.innerHTML = '';
 
     projects.forEach(proj => {
+        // 未完了タスクをカウント
         const count = tasks ? tasks.filter(t => t.projectId === proj.id && t.status !== 'completed').length : 0;
-        const iconHtml = `<svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`;
-        const countHtml = count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : '';
 
-        const html = `
-            <div class="flex items-center flex-1 min-w-0 pointer-events-none">
-                ${iconHtml}
-                <span class="truncate">${proj.name}</span>
-            </div>
-            <div class="flex items-center">${countHtml}</div>
-        `;
-
-        const item = createListItem(html, 'project', proj.id, 
-            () => {
-                setCurrentFilter({ type: 'project', id: proj.id });
-                updateView(tasks, projects, []);
-            },
-            (e) => {
-                e.preventDefault();
-                showItemContextMenu(e, 'project', proj, projects);
-            }
-        );
+        // リストアイテム生成 (createSidebarItemを使用)
+        const item = createSidebarItem(proj.name, 'project', proj.id, null, count);
+        
+        // クリックイベント: フィルタリング
+        item.addEventListener('click', () => {
+            setCurrentFilter({ type: 'project', id: proj.id });
+            updateView(tasks, projects, []);
+            // ルーティングイベント発火（必要であれば）
+            document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'project', id: proj.id } }));
+        });
+        
+        // 右クリックイベント: コンテキストメニュー
+        item.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showItemContextMenu(e, 'project', proj, projects);
+        });
+        
+        // ドロップゾーン設定
+        setupDropZone(item, 'project', proj.id);
+        
         list.appendChild(item);
     });
 }
@@ -70,47 +58,47 @@ export function renderTimeBlocks(tasks = []) {
 
     // カスタムブロック
     blocks.forEach(block => {
-        // timeBlockId でフィルタリング
-        const count = tasks ? tasks.filter(t => t.timeBlockId === block.id && t.status !== 'completed').length : 0;
+        // ★修正: タスク数をカウント (IDは文字列比較推奨)
+        const count = tasks ? tasks.filter(t => 
+            String(t.timeBlockId) === String(block.id) && t.status !== 'completed'
+        ).length : 0;
         
-        const html = `
-            <div class="flex items-center flex-1 min-w-0 pointer-events-none">
-                <span class="w-3 h-3 rounded-full mr-3 flex-shrink-0" style="background-color: ${block.color};"></span>
-                <span class="truncate">${block.name}</span>
-                <span class="ml-2 text-xs text-gray-400 font-normal">(${block.start}-${block.end})</span>
-            </div>
-            <div class="flex items-center">
-                ${count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : ''}
-            </div>
-        `;
+        const item = createSidebarItem(block.name, 'timeblock', block.id, block.color, count);
+        
+        // 時間帯の補足情報 (開始-終了) を名前の後ろに追加する処理
+        const nameSpan = item.querySelector('.truncate');
+        if (nameSpan) {
+             nameSpan.innerHTML = `${block.name} <span class="text-xs text-gray-400 font-normal ml-1">(${block.start}-${block.end})</span>`;
+        }
 
-        const item = createListItem(html, 'timeblock', block.id,
-            () => {
-                // フィルタリング機能は未実装だが、クリック時のアクションとして定義
-                console.log('Filter by timeblock:', block.id);
-            },
-            (e) => {
-                e.preventDefault();
-                // 右クリックで編集モーダルを開く
-                showTimeBlockModal();
-            }
-        );
+        // クリックイベント: フィルター適用
+        item.addEventListener('click', () => {
+             console.log('Filter by timeblock:', block.id);
+             // フィルター画面への遷移やフィルタリング処理
+             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'filter', query: `timeblock:${block.id}` } }));
+        });
+        
+        // 右クリックイベント: 編集モーダル
+        item.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showTimeBlockModal();
+        });
+
+        setupDropZone(item, 'timeblock', block.id);
         list.appendChild(item);
     });
 
     // 固定「未定」ブロック
-    const unassignedCount = tasks ? tasks.filter(t => t.timeBlockId === null && t.status !== 'completed').length : 0;
-    const unassignedHtml = `
-        <div class="flex items-center flex-1 min-w-0 pointer-events-none">
-            <span class="w-3 h-3 rounded-full mr-3 flex-shrink-0 bg-gray-300 dark:bg-gray-600"></span>
-            <span class="truncate text-gray-500 dark:text-gray-400">未定</span>
-        </div>
-        <div class="flex items-center">
-             ${unassignedCount > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${unassignedCount}</span>` : ''}
-        </div>
-    `;
-    // IDは 'unassigned' とする
-    const unassignedItem = createListItem(unassignedHtml, 'timeblock', 'unassigned', null, null);
+    // null または 文字列の'null' を未定として扱う
+    const unassignedCount = tasks ? tasks.filter(t => (t.timeBlockId === null || t.timeBlockId === 'null') && t.status !== 'completed').length : 0;
+    
+    const unassignedItem = createSidebarItem('未定', 'timeblock', 'unassigned', '#a0aec0', unassignedCount);
+    
+    unassignedItem.addEventListener('click', () => {
+        document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'filter', query: `timeblock:null` } }));
+    });
+    
+    setupDropZone(unassignedItem, 'timeblock', 'unassigned');
     list.appendChild(unassignedItem);
 }
 
@@ -125,19 +113,30 @@ export function renderDurations(tasks = []) {
     const durations = [30, 45, 60, 75, 90];
 
     durations.forEach(mins => {
-        const count = tasks ? tasks.filter(t => t.duration === mins && t.status !== 'completed').length : 0;
+        // ★修正: タスク数をカウント
+        const count = tasks ? tasks.filter(t => Number(t.duration) === mins && t.status !== 'completed').length : 0;
         
-        const html = `
-            <div class="flex items-center flex-1 min-w-0 pointer-events-none">
-                <span class="mr-3 text-lg">⏱️</span>
-                <span class="truncate">${mins} min</span>
-            </div>
-            <div class="flex items-center">
-                 ${count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : ''}
-            </div>
-        `;
+        // createSidebarItemは色アイコン(丸)を生成してしまうため、アイコン部分を時計マークに差し替える加工を行う
+        const item = createSidebarItem(`${mins} min`, 'duration', mins.toString(), null, count);
+        
+        const firstDiv = item.firstElementChild;
+        if (firstDiv) {
+            // 色アイコン(span)を削除
+            const colorSpan = firstDiv.querySelector('span.w-2.5');
+            if (colorSpan) colorSpan.remove();
+            
+            // 時計アイコン挿入
+            const clockIcon = document.createElement('span');
+            clockIcon.className = 'mr-3 text-lg';
+            clockIcon.textContent = '⏱️';
+            firstDiv.insertBefore(clockIcon, firstDiv.firstChild);
+        }
 
-        const item = createListItem(html, 'duration', mins.toString(), null, null);
+        item.addEventListener('click', () => {
+             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'filter', query: `duration:${mins}` } }));
+        });
+
+        setupDropZone(item, 'duration', mins.toString());
         list.appendChild(item);
     });
 }
@@ -149,7 +148,7 @@ export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels) {
     if (!sidebar) return;
     
     renderProjects(allProjects, allTasks);
-    // renderLabels は廃止
+    // renderLabels は廃止済み
     renderTimeBlocks(allTasks);
     renderDurations(allTasks);
 

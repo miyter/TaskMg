@@ -1,7 +1,8 @@
 // @ts-nocheck
 // フィルター作成・編集モーダル
 
-import { getAllProjects } from '../store/projects.js';
+// ★修正: getAllProjects -> getProjects に変更
+import { getProjects } from '../store/projects.js';
 import { getTimeBlocks } from '../store/timeblocks.js';
 import { addFilter } from '../store/store.js'; // store.jsからインポート
 import { showMessageModal } from './components.js';
@@ -13,7 +14,8 @@ export function showFilterModal() {
     const modalId = 'filter-creation-modal';
     document.getElementById(modalId)?.remove();
 
-    const projects = getAllProjects();
+    // ★修正: getProjects() を呼び出し
+    const projects = getProjects();
     const timeBlocks = getTimeBlocks();
     const durations = [15, 30, 45, 60, 75, 90, 120, 180];
 
