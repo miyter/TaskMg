@@ -141,13 +141,27 @@ export function updateView(allTasks, allProjects, allLabels) {
     } else if (currentFilter.type === 'duration') {
         filteredTasks = filteredTasks.filter(t => Number(t.duration) === Number(currentFilter.id));
     }
+    
+    // ★修正: フリッカー防止ロジックを適用
+    // 1. 瞬時に opacity:0 にしてフリッカーを完全に隠す
+    taskView.style.opacity = '0';
+    
+    // 2. 次のリペイントまで待機（DOMの読み書きを分離）
+    requestAnimationFrame(() => {
+        // ここでDOM操作（renderTaskView）を行う
+        renderTaskView(
+            filteredTasks, 
+            allProjects, 
+            currentFilter.type === 'project' ? currentFilter.id : null, 
+            currentFilter.type === 'label' ? currentFilter.id : null
+        );
 
-    renderTaskView(
-        filteredTasks, 
-        allProjects, 
-        currentFilter.type === 'project' ? currentFilter.id : null, 
-        currentFilter.type === 'label' ? currentFilter.id : null
-    );
+        // 3. 次のフレームで opacity:1 に戻す（スムーズにフェードイン）
+        requestAnimationFrame(() => {
+            // transitionクラスはlayout.jsのタスクビューコンテナに設定されている前提
+            taskView.style.opacity = '1'; 
+        });
+    });
     
     updateHeaderTitleByFilter(allProjects, allLabels);
 }

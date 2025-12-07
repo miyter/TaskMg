@@ -59,6 +59,10 @@ export function renderLayout() {
                                 <option value="createdAt_desc">作成日(新しい順)</option>
                                 <option value="createdAt_asc">作成日(古い順)</option>
                                 <option value="dueDate_asc">期限日(近い順)</option>
+                                <!-- ★追加: 新しい並び替え項目 -->
+                                <option value="timeBlockId_asc">時間帯順</option>
+                                <option value="projectId_asc">プロジェクト名順</option>
+                                <option value="title_asc">タスク名順</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -84,7 +88,8 @@ export function renderLayout() {
                 <!-- メインコンテンツエリア -->
                 <div id="main-content" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar scroll-smooth">
                     <div class="w-full max-w-4xl mx-auto">
-                        <div id="task-view" class="w-full animate-fade-in"></div>
+                        <!-- ★修正: task-viewコンテナにトランジションクラスを追加 -->
+                        <div id="task-view" class="w-full animate-fade-in transition-opacity duration-150" style="opacity: 1;"></div>
                         <div id="search-view" class="hidden w-full animate-fade-in"></div>
                         <div id="dashboard-view" class="hidden w-full animate-fade-in"></div>
                         <div id="settings-view" class="hidden w-full animate-fade-in"></div>
