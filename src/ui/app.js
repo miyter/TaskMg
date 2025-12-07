@@ -115,9 +115,6 @@ function setupGlobalEventListeners() {
         updateUI();
     });
     
-    // ★修正: ネイティブな sort-select のリスナーを削除し、カスタムドロップダウンロジックを実装
-    // document.getElementById('sort-select')?.addEventListener('change', updateUI); // <- 削除
-
     setupCustomSortDropdown();
 
     // 設定ボタン: 設定モーダルを直接開く
@@ -142,20 +139,6 @@ function setupCustomSortDropdown() {
     if (!trigger || !menu || !label) return;
     
     // --- メニュー開閉ロジック ---
-    const toggleMenu = (open) => {
-        if (open) {
-            menu.classList.remove('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
-            menu.classList.add('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
-            // 外クリックで閉じるリスナーを設定
-            setTimeout(() => { 
-                document.addEventListener('click', closeMenu); 
-            }, 0);
-        } else {
-            menu.classList.remove('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
-            menu.classList.add('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
-            document.removeEventListener('click', closeMenu);
-        }
-    };
     
     const closeMenu = (e) => {
         // メニュー内クリックまたはトリガークリックでない場合のみ閉じる
@@ -163,6 +146,24 @@ function setupCustomSortDropdown() {
             return;
         }
         toggleMenu(false);
+    };
+    
+    const toggleMenu = (open) => {
+        if (open) {
+            // 開く: クラスを切り替え、リスナーを即座に登録 (setTimeoutを削除)
+            menu.classList.replace('opacity-0', 'opacity-100');
+            menu.classList.replace('invisible', 'visible');
+            menu.classList.replace('scale-95', 'scale-100');
+            menu.classList.replace('pointer-events-none', 'pointer-events-auto');
+            document.addEventListener('click', closeMenu); 
+        } else {
+            // 閉じる: クラスを切り替え、リスナーを解除
+            menu.classList.replace('opacity-100', 'opacity-0');
+            menu.classList.replace('visible', 'invisible');
+            menu.classList.replace('scale-100', 'scale-95');
+            menu.classList.replace('pointer-events-auto', 'pointer-events-none');
+            document.removeEventListener('click', closeMenu);
+        }
     };
 
     trigger.addEventListener('click', (e) => {
@@ -180,32 +181,22 @@ function setupCustomSortDropdown() {
             // 1. UI更新
             label.textContent = text;
             
-            // 2. 内部的な値を更新 (ここではカスタムドロップダウンなので、DOM要素は使えない)
-            // 擬似的に `<select>` と同じように振る舞うため、カスタムイベントを発火させる
-            // または、直接 updateUI を呼ぶ
-            
-            // updateUIのロジックがソートオプションをどこから取得しているか確認
-            // -> sort.jsでcriteriaとして渡される。criteriaはどこから来る？
-            // -> updateView (ui-view-manager.js)が filterTasks の前にソートオプションを読み込むロジックがない。
-
-            // 【重要】ソートオプションを保存する仕組みがないため、ここで直接DOMにセットする
-            // 以前のネイティブ select の値を取得していた場所がないため、
-            // 新しいロジックでは、ソートオプションをグローバルに保存する変数が必要になる。
-            // しかし、現状の `updateUI` は引数を取らない。ソート値は DOM から取得すべき。
-
-            // 暫定的に、ソート値をトリガーボタンのdata属性に保存し、そこから取得するようにする。
+            // 2. ソート値をトリガーボタンのdata属性に保存
             trigger.dataset.value = value;
             
-            // ソートイベント発火 (updateUIを呼び出す)
+            // 3. ソートイベント発火 (updateUIを呼び出す)
             updateUI(); 
 
-            // 3. メニュー閉じる
+            // 4. メニュー閉じる
             toggleMenu(false);
         });
     });
 
     // 初期ソート値のセットアップ
     // 初期のソート基準は 'createdAt_desc'
-    trigger.dataset.value = 'createdAt_desc';
-    label.textContent = "作成日(新しい順)";
+    if (!trigger.dataset.value) {
+        trigger.dataset.value = 'createdAt_desc';
+        // label.textContent は layout.js で初期値が設定されているため不要だが、念のため
+        label.textContent = "作成日(新しい順)";
+    }
 }
