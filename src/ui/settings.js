@@ -1,14 +1,15 @@
 // @ts-nocheck
 // 設定モーダル (表示設定、データ管理、アカウント)
 
-// ★修正: インポート元を正しく分割
 import { auth } from '../core/firebase.js';
 import { updateUserPassword } from './auth.js';
+// ★修正: signOutをインポート
+import { signOut } from 'firebase/auth';
 
 import { createBackupData } from '../store/store.js';
 import { showMessageModal } from './components.js';
 
-// エントリーポイント: 既存のボタンにイベントを設定
+// エントリーポイント
 export function initSettings() {
     const settingsBtn = document.getElementById('settings-btn');
     if (settingsBtn) {
@@ -58,6 +59,27 @@ export function showSettingsModal() {
                         表示設定
                     </h4>
                     
+                    <!-- ★追加: テーマ設定 -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">テーマ</label>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <label class="flex items-center cursor-pointer p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex-1">
+                                <input type="radio" name="app-theme" value="light" class="form-radio text-blue-600 focus:ring-blue-500">
+                                <div class="ml-3 flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                                    <span class="block text-sm font-medium text-gray-900 dark:text-white">ライト</span>
+                                </div>
+                            </label>
+                            <label class="flex items-center cursor-pointer p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex-1">
+                                <input type="radio" name="app-theme" value="dark" class="form-radio text-blue-600 focus:ring-blue-500">
+                                <div class="ml-3 flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                                    <span class="block text-sm font-medium text-gray-900 dark:text-white">ダーク</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">サイドバーの密度</label>
                         <div class="flex flex-col sm:flex-row gap-4">
@@ -121,6 +143,14 @@ export function showSettingsModal() {
                         </div>
                         <p class="text-xs text-gray-500">※ セキュリティのため、再ログインが必要になる場合があります。</p>
                     </div>
+
+                    <!-- ★追加: ログアウトボタン -->
+                    <div class="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
+                        <button id="logout-btn-settings" class="w-full py-3 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 font-bold rounded-xl border border-red-200 dark:border-red-800 transition-colors flex items-center justify-center gap-2 group">
+                            <svg class="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            ログアウト
+                        </button>
+                    </div>
                 </section>
 
             </div>
@@ -143,6 +173,24 @@ export function showSettingsModal() {
     document.getElementById('close-settings-footer').addEventListener('click', closeModal);
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) closeModal();
+    });
+
+    // 0. テーマ切り替え
+    const currentTheme = localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    const themeRadios = document.querySelectorAll('input[name="app-theme"]');
+    themeRadios.forEach(radio => {
+        if (radio.value === currentTheme) radio.checked = true;
+        
+        radio.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val === 'dark') {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        });
     });
 
     // 1. サイドバー表示設定の変更
@@ -202,6 +250,19 @@ export function showSettingsModal() {
             } else {
                 showMessageModal("変更に失敗しました: " + error.message, 'error');
             }
+        }
+    });
+
+    // ★追加: ログアウト処理
+    const logoutBtn = document.getElementById('logout-btn-settings');
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            closeModal();
+            // onAuthStateChangedが検知してUIを更新するため、ここでは閉じるだけでOK
+        } catch (error) {
+            console.error(error);
+            showMessageModal("ログアウトに失敗しました", 'error');
         }
     });
 }
