@@ -29,7 +29,7 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     // ★修正: HTMLに静的に組み込んだため、JSでの動的挿入ロジックは削除
     
     const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('main-content');
+    // mainContentではなく、親のapp全体で開閉状態を管理する (今回は不要だが、ロジック変更)
     const resizer = document.getElementById('sidebar-resizer');
 
     setupResizer(sidebar, document.querySelector('main'), resizer);
@@ -56,7 +56,48 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
             }
         });
     });
+    
+    // ★追加: 初期状態で開閉ボタンの表示/非表示を決定
+    updateSidebarVisibility();
+    window.addEventListener('resize', updateSidebarVisibility);
 }
+
+/**
+ * サイドバーの開閉状態に応じて、ヘッダーの開閉ボタンの表示を制御する
+ */
+function updateSidebarVisibility() {
+    const sidebar = document.getElementById('sidebar');
+    const openBtn = document.getElementById('sidebar-open-btn');
+    const closeBtn = document.getElementById('sidebar-close-btn');
+
+    if (!sidebar || !openBtn || !closeBtn) return;
+
+    // サイドバーが閉じている状態かチェック
+    const isClosed = sidebar.classList.contains('sidebar-closed');
+
+    // デスクトップの場合
+    if (window.innerWidth >= 768) {
+        // 閉じていれば開くボタンを表示し、閉じるボタンを非表示
+        openBtn.classList.toggle('hidden', !isClosed); 
+        closeBtn.classList.toggle('hidden', isClosed);
+        // 閉じた状態ではサイドバー自体を非表示 (領域を解放)
+        sidebar.classList.toggle('hidden', isClosed); 
+
+        // リサイズハンドルも非表示にする
+        const resizer = document.getElementById('sidebar-resizer');
+        if (resizer) {
+            resizer.classList.toggle('hidden', isClosed);
+        }
+
+    } else {
+        // モバイルの場合 (常に開くボタンは表示、閉じるボタンはサイドバー内)
+        // モバイルでは `translate-x-full` で制御するため、`hidden` は使わない
+        openBtn.classList.remove('hidden'); // モバイルでは常にハンバーガーを表示
+        closeBtn.classList.remove('hidden');
+        sidebar.classList.remove('hidden'); 
+    }
+}
+
 
 function setupSidebarEvents() {
     const dispatch = (page, id = null) => document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
@@ -96,22 +137,30 @@ function setupSidebarEvents() {
         const isMobile = window.innerWidth < 768;
 
         if (isMobile) {
+            // モバイル: translateで開閉
             sidebar.classList.toggle('-translate-x-full');
         } else {
-            const currentWidth = sidebar.style.width;
+            // デスクトップ: カスタムクラスで開閉し、幅を維持
+            sidebar.classList.toggle('sidebar-closed');
             
-            if (currentWidth === '0px' || currentWidth === '0') {
+            // 開閉状態に応じて、開閉ボタンの表示を更新
+            updateSidebarVisibility();
+
+            // サイドバーを閉じるときは、リサイズで設定されたwidthを保存
+            if (!sidebar.classList.contains('sidebar-closed')) {
+                // 開くとき: 保存された幅に戻す
                 const savedWidth = localStorage.getItem('sidebarWidth') || '280';
                 sidebar.style.width = `${savedWidth}px`;
-                sidebar.classList.remove('border-none', 'overflow-hidden');
             } else {
-                sidebar.style.width = '0px';
-                sidebar.classList.add('border-none', 'overflow-hidden');
+                // 閉じるとき: 現在の幅を保存し、一旦widthをクリア
+                localStorage.setItem('sidebarWidth', sidebar.style.width.replace('px', ''));
+                sidebar.style.width = ''; // CSSで非表示にするためwidthをクリア
             }
         }
     };
 
-    document.getElementById('sidebar-toggle-btn')?.addEventListener('click', toggleSidebar);
+    document.getElementById('sidebar-open-btn')?.addEventListener('click', toggleSidebar);
     document.getElementById('sidebar-close-btn')?.addEventListener('click', toggleSidebar);
+    // モバイルクローズボタンはモバイル時にのみ使われるが、ロジックは統合
     document.getElementById('sidebar-close-mobile')?.addEventListener('click', toggleSidebar);
 }

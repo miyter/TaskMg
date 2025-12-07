@@ -1,3 +1,4 @@
+/* @ts-nocheck */
 /* @miyter:20251125 */
 /* Tailwind CSSのインポートディレクティブ */
 @tailwind base;
@@ -8,4 +9,41 @@
 body {
     font-family: 'M PLUS 2', sans-serif;
     transition: background-color 0.3s ease;
+}
+
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1; /* gray-300 */
+    border-radius: 3px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #374151; /* gray-700 */
+}
+
+/* Custom fade-in animation for views */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* ---------------------------------------------------- */
+/* ★追加: デスクトップ版のサイドバー開閉用カスタムクラス */
+/* ---------------------------------------------------- */
+/* デスクトップでサイドバーを閉じたときのスタイル */
+@media (min-width: 768px) {
+    #sidebar.sidebar-closed {
+        /* hiddenクラスをトグルすることで領域を解放し、開閉ボタンの表示を切り替える */
+        /* JS側で hidden クラスをトグルするため、ここでは定義不要だが、念のためコメントとして残す */
+        /* display: none; は JSで操作される */
+    }
 }
