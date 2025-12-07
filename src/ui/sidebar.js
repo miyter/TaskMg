@@ -23,13 +23,14 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     container.innerHTML = buildSidebarHTML();
 
-    // ★追加: インボックスの下に「検索」項目を挿入
     insertSearchNavItem();
     
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.getElementById('main-content');
     const resizer = document.getElementById('sidebar-resizer');
 
+    // ★修正: リサイズロジックに任せるため、style初期化はlayout.jsに委ねる
+    // setupResizerはそのまま呼び出す
     setupResizer(sidebar, document.querySelector('main'), resizer);
     
     setupSidebarEvents();
@@ -43,7 +44,6 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
         renderSidebarItems(document.getElementById('sidebar'), allTasks, allProjects, []);
     });
 
-    // サイドバー設定変更イベントの購読
     window.addEventListener('sidebar-settings-updated', (e) => {
         const isCompact = e.detail.compact;
         const items = document.querySelectorAll('.sidebar-item-row');
@@ -62,7 +62,6 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
  */
 function insertSearchNavItem() {
     const inboxNav = document.getElementById('nav-inbox');
-    // 既に存在する場合は何もしない
     if (inboxNav && !document.getElementById('nav-search')) {
         const searchHTML = `
             <div id="nav-search" class="sidebar-item-row flex items-center px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors mb-1 group">
@@ -87,7 +86,6 @@ function setupSidebarEvents() {
     });
     document.getElementById('nav-inbox')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('inbox'); });
     
-    // ★追加: 検索ボタンのイベント
     document.getElementById('nav-search')?.addEventListener('click', (e) => {
         e.preventDefault();
         dispatch('search');
@@ -105,6 +103,7 @@ function setupSidebarEvents() {
         showTimeBlockModal();
     });
     
+    // ★修正: サイドバーの開閉トグルロジック (style操作に変更)
     const toggleSidebar = () => {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
@@ -112,18 +111,21 @@ function setupSidebarEvents() {
         const isMobile = window.innerWidth < 768;
 
         if (isMobile) {
+            // モバイル: スライドイン/アウト (-translate-x-full をトグル)
             sidebar.classList.toggle('-translate-x-full');
         } else {
-            if (sidebar.classList.contains('w-[280px]')) {
-                sidebar.classList.remove('w-[280px]');
-                sidebar.classList.add('w-0');
-                sidebar.classList.add('border-none');
-                sidebar.classList.add('overflow-hidden');
+            // デスクトップ: width を直接操作
+            const currentWidth = sidebar.style.width;
+            
+            if (currentWidth === '0px' || currentWidth === '0') {
+                // 開く (前回保存した幅、なければ280px)
+                const savedWidth = localStorage.getItem('sidebarWidth') || '280';
+                sidebar.style.width = `${savedWidth}px`;
+                sidebar.classList.remove('border-none', 'overflow-hidden');
             } else {
-                sidebar.classList.remove('w-0');
-                sidebar.classList.remove('border-none');
-                sidebar.classList.remove('overflow-hidden');
-                sidebar.classList.add('w-[280px]');
+                // 閉じる
+                sidebar.style.width = '0px';
+                sidebar.classList.add('border-none', 'overflow-hidden');
             }
         }
     };

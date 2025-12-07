@@ -3,7 +3,7 @@
 
 import { formatDateForInput } from './modal-helpers.js';
 import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
-// ★追加: 時間帯データを取得するためにインポート
+// 時間帯データを取得するためにインポート
 import { getTimeBlocks } from '../../store/timeblocks.js';
 
 /**
@@ -49,17 +49,17 @@ export function buildModalHTML(task) {
 
     const daysCheckboxes = createDaysCheckboxesHTML(recurrenceDays);
 
-    // ★追加: 時間帯の選択肢生成
+    // 時間帯の選択肢生成
     const timeBlocks = getTimeBlocks();
     const selectedTimeBlockId = task.timeBlockId || '';
     const timeBlockOptions = timeBlocks.map(tb => 
-        // ★修正: 表示を「start-end」のみに変更
+        // 表示を「start-end」のみに変更
         `<option value="${tb.id}" ${tb.id === selectedTimeBlockId ? 'selected' : ''}>
             ${tb.start} - ${tb.end}
         </option>`
     ).join('');
 
-    // ★修正: 指定の5つに統一
+    // 指定の5つに統一
     const selectedDuration = task.duration || '';
     const durations = [30, 45, 60, 75, 90];
     const durationOptions = durations.map(d => 
@@ -68,9 +68,9 @@ export function buildModalHTML(task) {
         </option>`
     ).join('');
 
-    // ★ アコーディオンの初期開閉状態を判定
+    // アコーディオンの初期開閉状態を判定
     const hasScheduleSettings = dueDateValue || (recurrenceType !== 'none') || selectedTimeBlockId || selectedDuration;
-    // ★修正: 設定があれば閉じる('')、なければ開く('open')
+    // 設定があれば閉じる('')、なければ開く('open')
     const detailsOpenAttr = hasScheduleSettings ? '' : 'open';
 
     return `
@@ -93,7 +93,7 @@ export function buildModalHTML(task) {
                             class="w-full text-lg font-bold bg-transparent border-b-2 border-transparent hover:border-gray-200 focus:border-blue-500 outline-none text-gray-800 dark:text-gray-100 transition-colors placeholder-gray-400 dark:placeholder-gray-600 pb-1">
                     </div>
 
-                    <!-- ★修正: メタ情報をアコーディオン (details) に変更 -->
+                    <!-- メタ情報 (アコーディオン) -->
                     <details class="group border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/30 overflow-hidden transition-all" ${detailsOpenAttr}>
                         <summary class="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors select-none list-none outline-none">
                             <span class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -125,7 +125,7 @@ export function buildModalHTML(task) {
                                     </select>
                                 </div>
                                 
-                                <!-- ★追加: 時間帯 -->
+                                <!-- 時間帯 -->
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">時間帯</label>
                                     <select id="modal-task-timeblock" 
@@ -135,7 +135,7 @@ export function buildModalHTML(task) {
                                     </select>
                                 </div>
 
-                                <!-- ★追加: 所要時間 -->
+                                <!-- 所要時間 -->
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">所要時間</label>
                                     <select id="modal-task-duration" 
@@ -166,8 +166,9 @@ export function buildModalHTML(task) {
 
                 <!-- フッター -->
                 <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-center border-t border-gray-100 dark:border-gray-700 flex-shrink-0">
-                    <button id="delete-task-modal-btn" class="text-red-500 hover:text-red-700 text-sm font-semibold flex items-center transition px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <!-- ★修正: 削除ボタンを薄い赤（グレーベースでホバー時に赤）に変更 -->
+                    <button id="delete-task-modal-btn" class="text-gray-400 hover:text-red-500 text-sm font-medium flex items-center transition px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 group">
+                        <svg class="w-4 h-4 mr-1.5 text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         削除
                     </button>
                     <div class="flex space-x-3">

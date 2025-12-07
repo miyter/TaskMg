@@ -14,7 +14,8 @@ export function renderLayout() {
     app.innerHTML = `
         <div class="flex h-screen w-full overflow-hidden bg-white dark:bg-gray-900 transition-colors duration-200">
             <!-- サイドバー -->
-            <aside id="sidebar" class="flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 relative group z-20 w-[280px] fixed md:relative h-full md:translate-x-0 -translate-x-full shadow-xl md:shadow-none">
+            <!-- ★修正: クラスでの幅指定をやめて style="width: 280px" に戻し、確実に制御する -->
+            <aside id="sidebar" class="flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 relative group z-20 fixed md:relative h-full md:translate-x-0 -translate-x-full shadow-xl md:shadow-none" style="width: 280px;">
                 <!-- ロゴエリア -->
                 <div class="h-12 flex items-center px-4 flex-shrink-0 justify-between">
                     <div class="flex items-center text-blue-600 dark:text-blue-400 font-bold text-lg cursor-pointer hover:opacity-80 transition select-none">
@@ -55,8 +56,6 @@ export function renderLayout() {
                     </div>
 
                     <div class="flex items-center space-x-1 sm:space-x-2">
-                        <!-- ★修正: ヘッダー内の検索ボックスとプロジェクト選択プルダウンを削除しました -->
-                        
                         <!-- ソート -->
                         <div class="relative">
                             <select id="sort-select" class="appearance-none bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 text-xs py-1.5 pl-2 pr-6 rounded cursor-pointer focus:outline-none">
@@ -89,7 +88,6 @@ export function renderLayout() {
                 <div id="main-content" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar scroll-smooth">
                     <div class="w-full max-w-4xl mx-auto">
                         <div id="task-view" class="w-full animate-fade-in"></div>
-                        <!-- ★追加: 検索画面用のコンテナ -->
                         <div id="search-view" class="hidden w-full animate-fade-in"></div>
                         <div id="dashboard-view" class="hidden w-full animate-fade-in"></div>
                         <div id="settings-view" class="hidden w-full animate-fade-in"></div>
@@ -112,12 +110,8 @@ export function renderLayout() {
     }
     
     document.addEventListener('keydown', (e) => {
-        // ★修正: ヘッダーから検索ボックスが消えたので、ショートカットキーも新検索画面のinputへ向ける
         if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
             e.preventDefault();
-            // 検索ページに遷移していなければ遷移させるなどの処理が必要だが、
-            // ここでは簡易的に「検索画面が開いているならフォーカス」等の制御にとどめるか、あるいは削除しても良い。
-            // 今回は検索画面内のinputへフォーカスする形にする
             document.getElementById('page-search-input')?.focus();
         }
     });
