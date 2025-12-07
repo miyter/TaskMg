@@ -28,24 +28,25 @@ export function renderInlineInput(container, projectId, labelId) {
         });
     } else {
         // 展開状態: 入力フォーム
+        // ★修正: dark:bg-gray-850 -> dark:bg-gray-800 に修正し、ボーダーや文字色をダークモード最適化
         container.innerHTML = `
-            <div class="border border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-850 shadow-lg animate-fade-in-down">
+            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800 shadow-lg animate-fade-in-down">
                 <input type="text" id="inline-title-input" placeholder="タスク名 (例: 明日14時に会議 #仕事)" 
-                         class="w-full text-sm font-semibold bg-transparent border-none outline-none placeholder-gray-400 text-gray-800 dark:text-gray-100 mb-2">
+                         class="w-full text-sm font-semibold bg-transparent border-none outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100 mb-2">
                 
                 <textarea id="inline-desc-input" placeholder="詳細メモ" rows="2"
-                         class="w-full text-xs bg-transparent border-none outline-none placeholder-gray-400 text-gray-600 dark:text-gray-400 mb-3 resize-none"></textarea>
+                         class="w-full text-xs bg-transparent border-none outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-600 dark:text-gray-300 mb-3 resize-none"></textarea>
                 
                 <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-3">
                     <div class="flex space-x-2">
                         <!-- 期限日ボタン（将来拡張用） -->
-                        <button class="flex items-center px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-700 transition">
+                        <button class="flex items-center px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition">
                             <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             期限日
                         </button>
                     </div>
                     <div class="flex space-x-2">
-                        <button id="cancel-input-btn" class="px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">キャンセル</button>
+                        <button id="cancel-input-btn" class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">キャンセル</button>
                         <button id="submit-task-btn" class="px-4 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
                             タスクを追加
                         </button>

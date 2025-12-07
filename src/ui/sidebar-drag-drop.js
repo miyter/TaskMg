@@ -41,13 +41,13 @@ export function setupDropZone(element, type, value = null) {
                     // value が null (文字列の'null'や'unassigned') なら未定、それ以外はID
                     const timeBlockId = (value === 'unassigned' || value === null) ? null : value;
                     await updateTask(taskId, { timeBlockId: timeBlockId });
-                    showMessageModal(timeBlockId ? "時間帯を設定しました" : "時間帯を未定にしました");
+                    // ポップアップ削除
                 }
                 // 所要時間へのドロップ
                 else if (type === 'duration' && value) {
                     const minutes = parseInt(value, 10);
                     await updateTask(taskId, { duration: minutes });
-                    showMessageModal(`所要時間を ${minutes}分 に設定しました`);
+                    // ポップアップ削除
                 }
             } catch (error) {
                 console.error("Drop Error:", error);
