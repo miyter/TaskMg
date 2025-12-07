@@ -31,6 +31,35 @@ export function getCurrentFilter() {
 }
 
 /**
+ * ヘッダーの検索ボックス横のプロジェクト選択プルダウンを更新する
+ * @param {Array} projects - 全プロジェクトリスト
+ */
+function renderSearchOptions(projects) {
+    const select = document.getElementById('search-project-select');
+    if (!select) return;
+
+    const currentValue = select.value;
+
+    select.innerHTML = '<option value="">全プロジェクト</option>';
+    projects.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        select.appendChild(opt);
+    });
+
+    if (currentValue) {
+        select.value = currentValue;
+    }
+
+    // 重複登録を避けるため、onchangeプロパティを使用
+    select.onchange = () => {
+        // 検索ボックスのイベントを発火させて updateUI を呼び出す
+        document.getElementById('search-input')?.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+}
+
+/**
  * ビューを切り替えて描画を行う。
  * @param {Array} allTasks - 全タスクデータ
  * @param {Array} allProjects - 全プロジェクトデータ
@@ -43,29 +72,30 @@ export function updateView(allTasks, allProjects, allLabels) {
 
     if (!taskView || !dashboardView || !settingsView) return;
 
-    const searchKeyword = document.getElementById('search-input')?.value || '';
+    // 検索オプションの更新
+    renderSearchOptions(allProjects);
+
+    const searchInput = document.getElementById('search-input');
+    const searchKeyword = searchInput?.value || '';
+    const searchProjectSelect = document.getElementById('search-project-select');
+    const searchProjectId = searchProjectSelect?.value || null;
+
     const toggleButton = document.getElementById('toggle-completed-btn');
     const showCompleted = toggleButton?.classList.contains('text-blue-500') || false;
     
     // --- ビュー切り替えロジック ---
     if (currentFilter.type === 'dashboard') {
         showView(dashboardView, [taskView, settingsView]);
-        
-        // DashboardのDOMを生成してからChart関数を呼び出す
         dashboardView.innerHTML = buildDashboardViewHTML(renderKPIItem);
         renderDashboard(allTasks, allProjects);
-        
         updateHeaderTitle('ダッシュボード');
         return;
     }
     
     if (currentFilter.type === 'settings') {
         showView(settingsView, [taskView, dashboardView]);
-
-        // SettingsのDOMを生成してからinitSettingsを呼び出す
         settingsView.innerHTML = buildSettingsViewHTML();
         initSettings(); 
-        
         updateHeaderTitle('設定');
         return;
     }
@@ -73,33 +103,53 @@ export function updateView(allTasks, allProjects, allLabels) {
     // タスクビュー表示
     showView(taskView, [dashboardView, settingsView]);
 
-    // 既存のフィルター処理
-    let filteredTasks = filterTasks(allTasks, {
-        projectId: currentFilter.type === 'project' ? currentFilter.id : null, 
-        labelId: currentFilter.type === 'label' ? currentFilter.id : null,     
+    // フィルタリング設定
+    let filterConfig = {
         keyword: searchKeyword,
         showCompleted: showCompleted
-    });
+    };
 
-    // 時間帯と所要時間のフィルター適用
-    if (currentFilter.type === 'timeblock') {
-        if (currentFilter.id === 'unassigned') {
-            filteredTasks = filteredTasks.filter(t => !t.timeBlockId || t.timeBlockId === 'null');
-        } else {
-            filteredTasks = filteredTasks.filter(t => String(t.timeBlockId) === String(currentFilter.id));
+    // ★検索ロジックの分岐
+    if (searchKeyword) {
+        // 検索中: サイドバーの選択を無視して横断検索 (オプションでプロジェクト絞り込み)
+        filterConfig.projectId = searchProjectId; 
+        filterConfig.labelId = null;
+    } else {
+        // 通常時: サイドバーの選択(currentFilter)に従う
+        filterConfig.projectId = currentFilter.type === 'project' ? currentFilter.id : null;
+        filterConfig.labelId = currentFilter.type === 'label' ? currentFilter.id : null;
+    }
+
+    let filteredTasks = filterTasks(allTasks, filterConfig);
+
+    // ★検索中でない場合のみ、追加フィルタ（時間帯・所要時間）を適用
+    if (!searchKeyword) {
+        if (currentFilter.type === 'timeblock') {
+            if (currentFilter.id === 'unassigned') {
+                filteredTasks = filteredTasks.filter(t => !t.timeBlockId || t.timeBlockId === 'null');
+            } else {
+                filteredTasks = filteredTasks.filter(t => String(t.timeBlockId) === String(currentFilter.id));
+            }
+        } else if (currentFilter.type === 'duration') {
+            filteredTasks = filteredTasks.filter(t => Number(t.duration) === Number(currentFilter.id));
         }
-    } else if (currentFilter.type === 'duration') {
-        filteredTasks = filteredTasks.filter(t => Number(t.duration) === Number(currentFilter.id));
     }
 
     renderTaskView(
         filteredTasks, 
         allProjects, 
-        currentFilter.type === 'project' ? currentFilter.id : null, 
-        currentFilter.type === 'label' ? currentFilter.id : null
+        // 検索中は新規作成時のデフォルトプロジェクトIDなどをクリアしておく（混乱を防ぐため）
+        searchKeyword ? null : (currentFilter.type === 'project' ? currentFilter.id : null), 
+        searchKeyword ? null : (currentFilter.type === 'label' ? currentFilter.id : null)
     );
     
-    updateHeaderTitleByFilter(allProjects, allLabels);
+    // ヘッダータイトルの更新
+    if (searchKeyword) {
+        const projName = searchProjectId ? allProjects.find(p => p.id === searchProjectId)?.name : '全プロジェクト';
+        updateHeaderTitle(`検索: "${searchKeyword}" (${projName})`);
+    } else {
+        updateHeaderTitleByFilter(allProjects, allLabels);
+    }
 }
 
 /**

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { renderSidebar } from './sidebar.js';
 import { toggleTheme, initTheme } from './theme.js';
-// sidebar-utilsからリサイズ機能をインポート（もし別ファイルにある場合は適宜パス調整）
+// sidebar-utilsからリサイズ機能をインポート
 import { setupResizer } from './sidebar-utils.js'; 
 
 export function renderLayout() {
@@ -11,7 +11,6 @@ export function renderLayout() {
     initTheme();
 
     // レイアウト: サイドバーとメインコンテンツをFlexboxで配置
-    // サイドバーの開閉はクラス操作で行うため、初期状態を定義
     app.innerHTML = `
         <div class="flex h-screen w-full overflow-hidden bg-white dark:bg-gray-900 transition-colors duration-200">
             <!-- サイドバー -->
@@ -31,7 +30,7 @@ export function renderLayout() {
                 <div class="p-3 border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
                     <button id="settings-btn" class="w-full text-left px-2 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition flex items-center">
                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                       設定
+                        設定
                     </button>
                 </div>
 
@@ -59,6 +58,17 @@ export function renderLayout() {
                             </div>
                             <input type="text" id="search-input" placeholder="検索 (/)" 
                                    class="w-32 lg:w-48 bg-gray-100 dark:bg-gray-800 text-sm rounded py-1 pl-8 pr-2 focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all duration-200 border-none outline-none placeholder-gray-500 dark:text-gray-200">
+                        </div>
+
+                        <!-- ★追加: 検索用プロジェクト選択プルダウン -->
+                        <div class="relative hidden sm:block">
+                            <select id="search-project-select" class="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs py-1.5 pl-2 pr-6 rounded cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 border-none appearance-none" style="max-width: 140px;">
+                                <option value="">全プロジェクト</option>
+                                <!-- JSでオプションを注入 -->
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
                         </div>
                         
                         <!-- ソート -->
@@ -97,9 +107,8 @@ export function renderLayout() {
                     </div>
                 </header>
 
-                <!-- メインコンテンツエリア: flex-colで中央寄せを制御 -->
+                <!-- メインコンテンツエリア -->
                 <div id="main-content" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar scroll-smooth">
-                    <!-- コンテンツコンテナ: 幅を制限して中央に配置 -->
                     <div class="w-full max-w-4xl mx-auto">
                         <div id="task-view" class="w-full animate-fade-in"></div>
                         <div id="dashboard-view" class="hidden w-full animate-fade-in"></div>
@@ -114,12 +123,10 @@ export function renderLayout() {
 
     renderSidebar();
 
-    // リサイズ機能の初期化
     const sidebar = document.getElementById('sidebar');
-    const mainContent = document.querySelector('main'); // メインコンテンツラッパーを取得
+    const mainContent = document.querySelector('main');
     const resizer = document.getElementById('sidebar-resizer');
     
-    // sidebar-utilsのsetupResizerを使用
     if (setupResizer) {
         setupResizer(sidebar, mainContent, resizer);
     }
