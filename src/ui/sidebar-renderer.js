@@ -9,6 +9,23 @@ import { getTimeBlocks } from '../store/timeblocks.js';
 import { showTimeBlockModal } from './timeblock-modal.js';
 
 /**
+ * インボックスのタスク数を更新する
+ * @param {Array} allTasks - 全タスクデータ
+ */
+export function updateInboxCount(allTasks) {
+    const inboxCountEl = document.getElementById('inbox-count');
+    if (inboxCountEl) {
+        // プロジェクトに属しておらず、未完了のタスクをカウント
+        const count = allTasks ? allTasks.filter(t => !t.projectId && t.status !== 'completed').length : 0;
+        inboxCountEl.textContent = count;
+        // カウントが0より大きい場合のみ表示
+        if (count > 0) inboxCountEl.classList.remove('hidden');
+        else inboxCountEl.classList.add('hidden');
+    }
+}
+
+
+/**
  * プロジェクトリストを描画
  */
 export function renderProjects(projects, tasks = []) {
@@ -139,17 +156,15 @@ export function renderDurations(tasks = []) {
 export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels) {
     if (!sidebar) return;
     
+    // ★修正: renderProjects/renderTimeBlocks/renderDurations内でカウントロジックが実行されるため、
+    // ここからプロジェクトのカウントロジックを削除し、純粋にレンダリング関数を呼び出す。
+    // インボックスカウント更新は独立した関数 (updateInboxCount) に移行。
+
     renderProjects(allProjects, allTasks);
     // renderLabels は廃止済み
     renderTimeBlocks(allTasks);
     renderDurations(allTasks);
 
-    // インボックスカウント更新
-    const inboxCountEl = document.getElementById('inbox-count');
-    if (inboxCountEl) {
-        const count = allTasks ? allTasks.filter(t => !t.projectId && t.status !== 'completed').length : 0;
-        inboxCountEl.textContent = count;
-        if (count > 0) inboxCountEl.classList.remove('hidden');
-        else inboxCountEl.classList.add('hidden');
-    }
+    // インボックスカウントの更新を独立した関数に委譲
+    updateInboxCount(allTasks);
 }

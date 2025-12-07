@@ -77,7 +77,8 @@ export function buildModalHTML(task) {
     const taskDescription = task.description || '';
 
     return `
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fade-in p-4">
+        <!-- ★修正: animate-fade-in と backdrop-blur-sm を削除し、瞬時に表示する -->
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
             <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden transform transition-all scale-100 flex flex-col max-h-[90vh]" role="dialog" aria-modal="true">
                 
                 <!-- ヘッダー -->
