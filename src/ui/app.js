@@ -11,8 +11,8 @@ import { renderLayout } from './layout.js';
 import { initTheme } from './theme.js';
 import { initTaskModal } from './task-modal.js';
 import { initSidebar, renderProjects, renderLabels, updateInboxCount } from './sidebar.js';
-// ★追加: レンダラーから直接インポート
 import { renderTimeBlocks, renderDurations } from './sidebar-renderer.js';
+import { showSettingsModal } from './settings.js';
 
 // Store関連
 import { subscribeToTasks } from '../store/store.js';
@@ -23,7 +23,6 @@ import { subscribeToLabels } from '../store/labels.js';
 import { 
     updateView, 
     setCurrentFilter, 
-    getCurrentFilter, 
     renderLoginState 
 } from './ui-view-manager.js';
 
@@ -91,9 +90,8 @@ function updateUI() {
     // サイドバーの更新
     updateInboxCount(allTasks);
     if (allProjects.length) renderProjects(allProjects, allTasks);
-    // renderLabelsは廃止傾向だが一応残す、ただしTimeBlockとDurationを追加
     
-    // ★追加: 時間帯と所要時間のカウントを更新
+    // 時間帯と所要時間のカウントを更新
     renderTimeBlocks(allTasks);
     renderDurations(allTasks);
     
@@ -119,9 +117,12 @@ function setupGlobalEventListeners() {
     
     document.getElementById('sort-select')?.addEventListener('change', updateUI);
 
-    // ★追加: 設定ボタンのイベントリスナーを復活
-    document.getElementById('settings-btn')?.addEventListener('click', () => {
-        setCurrentFilter({ type: 'settings', id: null });
-        updateUI();
+    // 設定ボタン: 設定モーダルを直接開く
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('#settings-btn');
+        if (btn) {
+            e.preventDefault();
+            showSettingsModal();
+        }
     });
 }

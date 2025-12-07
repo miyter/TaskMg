@@ -58,13 +58,11 @@ export function renderTimeBlocks(tasks = []) {
             String(t.timeBlockId) === String(block.id) && t.status !== 'completed'
         ).length : 0;
         
-        // ★修正: 表示名を「時間範囲 (start-end)」のみに変更
+        // 表示名を「時間範囲 (start-end)」のみに変更
         const displayName = `${block.start} - ${block.end}`;
         
         const item = createSidebarItem(displayName, 'timeblock', block.id, block.color, count);
         
-        // 名前操作ロジックは削除（createSidebarItemの時点で表示名が決まっているため）
-
         // クリックイベント: フィルタリング
         item.addEventListener('click', () => {
              document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: block.id } }));
@@ -119,7 +117,8 @@ export function renderDurations(tasks = []) {
             
             // 時計アイコン挿入
             const clockIcon = document.createElement('span');
-            clockIcon.className = 'mr-3 text-lg';
+            // ★修正: text-lg を削除し、text-sm に変更して行高さを他の項目と統一
+            clockIcon.className = 'mr-3 text-sm'; 
             clockIcon.textContent = '⏱️';
             firstDiv.insertBefore(clockIcon, firstDiv.firstChild);
         }
