@@ -14,13 +14,19 @@ export function renderLayout() {
     app.innerHTML = `
         <div class="flex h-screen w-full overflow-hidden bg-white dark:bg-gray-900 transition-colors duration-200">
             <!-- サイドバー -->
-            <aside id="sidebar" class="flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 relative group z-20" style="width: 280px;">
+            <!-- ★修正: style属性を削除し、Tailwindクラスで幅と開閉状態を管理 -->
+            <!-- 初期状態: 幅280px, モバイルでは画面外(-translate-x-full) -->
+            <aside id="sidebar" class="flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 relative group z-20 w-[280px] fixed md:relative h-full md:translate-x-0 -translate-x-full shadow-xl md:shadow-none">
                 <!-- ロゴエリア -->
-                <div class="h-12 flex items-center px-4 flex-shrink-0">
+                <div class="h-12 flex items-center px-4 flex-shrink-0 justify-between">
                     <div class="flex items-center text-blue-600 dark:text-blue-400 font-bold text-lg cursor-pointer hover:opacity-80 transition select-none">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         mytask
                     </div>
+                    <!-- モバイル用閉じるボタン -->
+                    <button id="sidebar-close-mobile" class="md:hidden text-gray-500 hover:text-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
                 </div>
                 
                 <!-- サイドバーコンテンツ -->
@@ -43,7 +49,8 @@ export function renderLayout() {
                 <!-- ヘッダー -->
                 <header class="h-12 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-white dark:bg-gray-900 z-10">
                     <div class="flex items-center min-w-0 flex-1 mr-4">
-                        <button id="toggle-sidebar-btn" class="md:hidden mr-2 text-gray-500 hover:text-gray-700">
+                        <!-- ★修正: md:hidden を削除し、IDを sidebar-toggle-btn に変更 -->
+                        <button id="sidebar-toggle-btn" class="mr-3 text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                         </button>
                         <h2 id="header-title" class="text-base font-bold truncate text-gray-800 dark:text-gray-100">インボックス</h2>
@@ -60,11 +67,10 @@ export function renderLayout() {
                                    class="w-32 lg:w-48 bg-gray-100 dark:bg-gray-800 text-sm rounded py-1 pl-8 pr-2 focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all duration-200 border-none outline-none placeholder-gray-500 dark:text-gray-200">
                         </div>
 
-                        <!-- ★追加: 検索用プロジェクト選択プルダウン -->
+                        <!-- 検索用プロジェクト選択プルダウン -->
                         <div class="relative hidden sm:block">
                             <select id="search-project-select" class="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs py-1.5 pl-2 pr-6 rounded cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 border-none appearance-none" style="max-width: 140px;">
                                 <option value="">全プロジェクト</option>
-                                <!-- JSでオプションを注入 -->
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -84,9 +90,7 @@ export function renderLayout() {
                         </div>
 
                         <!-- 各種ボタン -->
-                        <button id="toggle-completed-btn" class="p-1.5 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition" title="完了タスク表示切替">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </button>
+                        <!-- ★修正: 完了タスク表示切替ボタン(チェックマーク)を削除しました -->
                         <button id="theme-toggle" class="p-1.5 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                             <svg id="theme-icon-moon" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                             <svg id="theme-icon-sun" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -95,12 +99,16 @@ export function renderLayout() {
                         <!-- 認証UI -->
                         <div id="auth-ui" class="ml-1 flex items-center space-x-2">
                              <div id="login-form-container" class="space-x-2 flex items-center">
+                                <!-- ★修正: 未ログイン表示を追加 -->
+                                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap">未ログイン</span>
                                 <input type="email" id="email-input" placeholder="メール" class="w-24 lg:w-32 bg-gray-100 dark:bg-gray-800 text-sm rounded py-1 px-2 focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800 border-none outline-none placeholder-gray-500 dark:text-gray-200" style="min-width: 0;">
                                 <input type="password" id="password-input" placeholder="パスワード" class="w-24 lg:w-32 bg-gray-100 dark:bg-gray-800 text-sm rounded py-1 px-2 focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800 border-none outline-none placeholder-gray-500 dark:text-gray-200" style="min-width: 0;">
                                 <button id="email-login-btn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1 px-2 rounded shadow-md transition duration-150">ログイン</button>
                             </div>
                             <div id="user-info" class="hidden items-center space-x-2">
-                                <span id="user-display-name" class="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[100px]"></span>
+                                <!-- ★修正: アドレス(user-display-name)を非表示にし、代わりに「ログイン中」を表示 -->
+                                <span id="user-display-name" class="hidden text-sm text-gray-600 dark:text-gray-300 truncate max-w-[100px]"></span>
+                                <span class="text-xs font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">ログイン中</span>
                                 <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-3 rounded shadow-md transition duration-150">ログアウト</button>
                             </div>
                         </div>

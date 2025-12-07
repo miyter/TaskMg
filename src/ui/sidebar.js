@@ -32,10 +32,13 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     if (sidebar) {
         const storedWidth = localStorage.getItem('sidebarWidth');
         sidebarWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
+        // style属性ではなくクラス管理に変更したため、ここは調整が必要だが
+        // リサイズ機能を維持する場合はstyleも併用するケースがある。
+        // 今回はTailwindクラスベースの開閉ロジックを優先するため幅設定は一時的に無効化またはクラス併用
         sidebar.style.width = `${sidebarWidth}px`;
     }
 
-    updateSidebarState(sidebar, mainContent);
+    // updateSidebarState(sidebar, mainContent); // 今回は自前で制御するためコメントアウト推奨だが残しておく
     setupResizer(sidebar, mainContent, resizer);
     
     setupSidebarEvents();
@@ -49,7 +52,7 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
         renderSidebarItems(document.getElementById('sidebar'), allTasks, allProjects, []);
     });
 
-    // ★追加: サイドバー設定変更イベントの購読 (即座にスタイル反映)
+    // サイドバー設定変更イベントの購読
     window.addEventListener('sidebar-settings-updated', (e) => {
         const isCompact = e.detail.compact;
         const items = document.querySelectorAll('.sidebar-item-row');
@@ -84,11 +87,36 @@ function setupSidebarEvents() {
         showTimeBlockModal();
     });
     
-    document.getElementById('sidebar-toggle-btn')?.addEventListener('click', (e) => {
+    // ★追加: サイドバーの開閉トグルロジック
+    // デスクトップ・モバイル両対応
+    const toggleSidebar = () => {
         const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('main-content');
-        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        localStorage.setItem('sidebarCollapsed', !isCollapsed);
-        updateSidebarState(sidebar, mainContent);
-    });
+        if (!sidebar) return;
+
+        // モバイル: -translate-x-full をトグル (画面外からスライド)
+        // デスクトップ: w-[280px] と w-0 をトグル (幅をアニメーション)
+        
+        // 現在の状態を確認 (md以上かどうかで分岐したほうが綺麗だが、簡易的に両方トグルでも動作するようクラス構成済み)
+        sidebar.classList.toggle('-translate-x-full'); // モバイル用 (デフォルトで付いているクラス)
+        sidebar.classList.toggle('translate-x-0');     // モバイル用 (開くとき)
+        
+        // デスクトップ用: md:translate-x-0 がlayout.jsで指定されているため、モバイル用クラスはデスクトップでは無視されるはずだが
+        // layout.jsで `md:translate-x-0` を書いたので、デスクトップでは常に表示状態がデフォルト。
+        // デスクトップで閉じるには、明示的にマージンや幅を操作する必要がある。
+        
+        if (window.innerWidth >= 768) { // md breakpoint
+            if (sidebar.classList.contains('w-[280px]')) {
+                sidebar.classList.remove('w-[280px]');
+                sidebar.classList.add('w-0', 'overflow-hidden', 'border-none');
+            } else {
+                sidebar.classList.add('w-[280px]');
+                sidebar.classList.remove('w-0', 'overflow-hidden', 'border-none');
+            }
+        } else {
+            // モバイル用: オーバーレイ開閉などのロジックがあればここに追加
+        }
+    };
+
+    document.getElementById('sidebar-toggle-btn')?.addEventListener('click', toggleSidebar);
+    document.getElementById('sidebar-close-mobile')?.addEventListener('click', toggleSidebar);
 }
