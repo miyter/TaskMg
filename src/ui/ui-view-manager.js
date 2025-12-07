@@ -154,23 +154,19 @@ export function updateView(allTasks, allProjects, allLabels) {
 
 /**
  * 指定した要素を表示し、残りを非表示にする。
- * モダンなフェードインアニメーションを適用。
+ * ★鉄則に従い、ページ切り替えは瞬時に行う（アニメーションなし）。
  */
 function showView(show, hides) {
     // 非表示にする要素
     hides.forEach(el => {
         el.classList.add('hidden');
-        el.classList.remove('animate-fade-in'); // アニメーションクラスをリセット
+        // アニメーションクラスがあれば削除（念のため）
+        el.classList.remove('animate-fade-in');
     });
 
     // 表示する要素
     show.classList.remove('hidden');
-    
-    // リフローを強制してアニメーションを最初から再生させる
-    void show.offsetWidth;
-    
-    // フェードインアニメーションを適用
-    show.classList.add('animate-fade-in');
+    // 不要なアニメーションクラスは追加しない
 }
 
 /**
