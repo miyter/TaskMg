@@ -5,7 +5,7 @@ import { renderDashboard } from './dashboard.js';
 import { renderTaskView } from './task-view.js';
 import { initSettings } from './settings.js';
 import { filterTasks } from '../logic/search.js';
-import { getTimeBlockById } from '../store/timeblocks.js'; // 追加
+import { getTimeBlockById } from '../store/timeblocks.js';
 import { 
     buildDashboardViewHTML, 
     buildSettingsViewHTML, 
@@ -81,7 +81,7 @@ export function updateView(allTasks, allProjects, allLabels) {
         showCompleted: showCompleted
     });
 
-    // ★追加: 時間帯と所要時間のフィルター適用 (search.jsにロジックがない場合の補完)
+    // 時間帯と所要時間のフィルター適用
     if (currentFilter.type === 'timeblock') {
         if (currentFilter.id === 'unassigned') {
             filteredTasks = filteredTasks.filter(t => !t.timeBlockId || t.timeBlockId === 'null');
@@ -104,10 +104,23 @@ export function updateView(allTasks, allProjects, allLabels) {
 
 /**
  * 指定した要素を表示し、残りを非表示にする。
+ * モダンなフェードインアニメーションを適用。
  */
 function showView(show, hides) {
+    // 非表示にする要素
+    hides.forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('animate-fade-in'); // アニメーションクラスをリセット
+    });
+
+    // 表示する要素
     show.classList.remove('hidden');
-    hides.forEach(el => el.classList.add('hidden'));
+    
+    // リフローを強制してアニメーションを最初から再生させる
+    void show.offsetWidth;
+    
+    // フェードインアニメーションを適用
+    show.classList.add('animate-fade-in');
 }
 
 /**
@@ -133,7 +146,7 @@ function updateHeaderTitleByFilter(allProjects, allLabels) {
             updateHeaderTitle('時間帯: 未定');
         } else {
             const block = getTimeBlockById(currentFilter.id);
-            updateHeaderTitle(block ? `時間帯: ${block.name}` : '時間帯: 不明');
+            updateHeaderTitle(block ? `時間帯: ${block.start} - ${block.end}` : '時間帯: 不明');
         }
     } else if (currentFilter.type === 'duration') {
         updateHeaderTitle(`所要時間: ${currentFilter.id}分`);
