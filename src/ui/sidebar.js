@@ -113,10 +113,13 @@ function setupSidebarEvents() {
         dispatch('search');
     });
 
+    // ★削除: フッターの設定ボタンが削除されたため、イベントリスナーも削除
+    /*
     document.getElementById('nav-settings')?.addEventListener('click', (e) => {
         e.preventDefault();
         showSettingsModal();
     });
+    */
     
     document.getElementById('add-project-btn')?.addEventListener('click', () => {
         showProjectModal(null, []);
