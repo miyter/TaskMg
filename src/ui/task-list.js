@@ -34,6 +34,8 @@ function createTaskItem(task) {
     const dateText = formatDateCompact(task.dueDate);
     const dateColorClass = getTaskDateColor(task.dueDate);
     const isRecurring = !!task.recurrence; 
+    // ★追加: 期限があり、かつ繰り返しではない場合
+    const isOneTime = !!task.dueDate && !isRecurring;
 
     // 時間帯情報の取得
     const timeBlocks = getTimeBlocks();
@@ -64,11 +66,13 @@ function createTaskItem(task) {
             <div class="col-span-1 sm:col-span-5 flex items-center sm:justify-end space-x-2 text-xs h-full mt-1 sm:mt-0 overflow-hidden">
                 ${isRecurring ? `<div class="text-blue-500 dark:text-blue-400 flex-shrink-0" title="繰り返し設定あり">🔁</div>` : ''}
                 
+                <!-- ★追加: 単発タスク（期限あり・繰り返しなし） -->
+                ${isOneTime ? `<div class="text-gray-400 dark:text-gray-500 flex-shrink-0" title="期限あり">▶️</div>` : ''}
+                
                 <!-- 時間帯バッジ -->
                 ${timeBlock ? `
                     <div class="flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[140px]" title="${timeBlock.start} - ${timeBlock.end}">
                         <span class="w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style="background-color: ${timeBlock.color}"></span>
-                        <!-- ★修正: 名前ではなく時間範囲を表示 -->
                         <span class="truncate font-mono text-[11px]">${timeBlock.start} - ${timeBlock.end}</span>
                     </div>
                 ` : ''}

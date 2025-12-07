@@ -2,19 +2,68 @@
 // UI要素のHTMLスニペットを生成するユーティリティ関数
 
 /**
- * KPIカードのHTMLを生成する。
- * @param {string} title - カードのタイトル
- * @param {string} id - 値を表示する要素のID
- * @param {string} colors - Tailwind CSSのカラースタイル
- * @returns {string} KPIカードのHTML文字列
+ * ダッシュボード画面のHTML構造全体を生成する。
+ * 3つのグラフエリア（日次、週次、月次）を配置
+ * @returns {string} ダッシュボード画面のHTML文字列
  */
-export function renderKPIItem(title, id, colors) {
+export function buildDashboardViewHTML() {
     return `
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow flex items-center justify-between">
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">${title}</span>
-            <span id="${id}" class="text-2xl font-bold ${colors} px-3 py-1 rounded-lg">0</span>
+        <div class="space-y-6">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white px-1">ダッシュボード</h2>
+
+            <!-- グリッドレイアウト -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- 1. 直近4日間の完了数 -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow border border-gray-100 dark:border-gray-700">
+                    <h3 class="text-md font-bold text-gray-700 dark:text-gray-200 mb-4 flex items-center">
+                        <span class="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-1.5 rounded-lg mr-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </span>
+                        日次完了数 (直近4日)
+                    </h3>
+                    <div class="h-64 relative w-full">
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 2. 直近4週間の完了数 -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow border border-gray-100 dark:border-gray-700">
+                    <h3 class="text-md font-bold text-gray-700 dark:text-gray-200 mb-4 flex items-center">
+                        <span class="bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 p-1.5 rounded-lg mr-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        </span>
+                        週間完了数 (直近4週 / 日曜起算)
+                    </h3>
+                    <div class="h-64 relative w-full">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 3. 直近4ヶ月の完了数 -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow border border-gray-100 dark:border-gray-700 lg:col-span-2">
+                    <h3 class="text-md font-bold text-gray-700 dark:text-gray-200 mb-4 flex items-center">
+                        <span class="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 p-1.5 rounded-lg mr-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        </span>
+                        月次完了数 (直近4ヶ月)
+                    </h3>
+                    <div class="h-64 relative w-full">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
         </div>
     `;
+}
+
+/**
+ * KPIカードのHTMLを生成する (dashboard.jsでの呼び出し互換性のために残すが、今回は使用しない想定)
+ */
+export function renderKPIItem(title, id, colors) {
+    // 互換性のため残置
+    return ''; 
 }
 
 /**
@@ -46,42 +95,6 @@ export function buildSettingsViewHTML() {
                 <button id="export-data-btn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition">
                     データのエクスポート
                 </button>
-            </div>
-        </div>
-    `;
-}
-
-/**
- * ダッシュボード画面のHTML構造全体を生成する。
- * @param {function} renderKPIItemFn - KPIアイテムのHTMLを生成する関数
- * @returns {string} ダッシュボード画面のHTML文字列
- */
-export function buildDashboardViewHTML(renderKPIItemFn) {
-    return `
-        <div class="space-y-6">
-            <!-- KPI -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                ${renderKPIItemFn('未完了タスク', 'kpi-todo', 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400')}
-                ${renderKPIItemFn('完了タスク', 'kpi-done', 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400')}
-                ${renderKPIItemFn('期限切れ', 'kpi-overdue', 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400')}
-                ${renderKPIItemFn('今週の予定', 'kpi-upcoming', 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400')}
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- ステータス別グラフ -->
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow">
-                    <h3 class="text-md font-semibold text-gray-800 dark:text-gray-100 mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">ステータス別</h3>
-                    <div class="h-64">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                </div>
-                <!-- プロジェクト別グラフ -->
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow">
-                    <h3 class="text-md font-semibold text-gray-800 dark:text-gray-100 mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">プロジェクト別（未完了）</h3>
-                    <div class="h-64">
-                        <canvas id="projectChart"></canvas>
-                    </div>
-                </div>
             </div>
         </div>
     `;
