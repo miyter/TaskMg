@@ -2,6 +2,8 @@
 
 // ★修正: store.js ではなく、ラッパー層の index.js (store.js経由) からインポート
 import { addTaskCompatibility } from '../store/store.js';
+// ★追加: 時間帯データを取得
+import { getTimeBlocks } from '../store/timeblocks.js';
 
 let isInputExpanded = false; // 入力フォームの開閉状態を管理
 
@@ -28,6 +30,13 @@ export function renderInlineInput(container, projectId, labelId) {
         });
     } else {
         // 展開状態: 入力フォーム
+        
+        // ★追加: 時間帯の選択肢を生成 (表示は start - end)
+        const timeBlocks = getTimeBlocks();
+        const timeBlockOptions = timeBlocks.map(tb => 
+            `<option value="${tb.id}">${tb.start} - ${tb.end}</option>`
+        ).join('');
+
         // ★修正: dark:bg-gray-850 -> dark:bg-gray-800 に修正し、ボーダーや文字色をダークモード最適化
         container.innerHTML = `
             <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800 shadow-lg animate-fade-in-down">
@@ -44,6 +53,17 @@ export function renderInlineInput(container, projectId, labelId) {
                             <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             期限日
                         </button>
+                        
+                        <!-- ★追加: 時間帯選択プルダウン -->
+                        <div class="relative">
+                            <select id="inline-timeblock-select" class="appearance-none pl-2 pr-6 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value="">時間帯 (未定)</option>
+                                ${timeBlockOptions}
+                            </select>
+                           <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
                     </div>
                     <div class="flex space-x-2">
                         <button id="cancel-input-btn" class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">キャンセル</button>
@@ -57,6 +77,7 @@ export function renderInlineInput(container, projectId, labelId) {
         
         const titleInput = container.querySelector('#inline-title-input');
         const descInput = container.querySelector('#inline-desc-input');
+        const timeBlockSelect = container.querySelector('#inline-timeblock-select'); // ★追加
         const submitBtn = container.querySelector('#submit-task-btn');
         
         // 自動フォーカス
@@ -82,7 +103,7 @@ export function renderInlineInput(container, projectId, labelId) {
             
             // ★修正: descInputがnullまたは.valueがundefinedの場合に備え、防御的なアクセスを行う
             const desc = (descInput && typeof descInput.value === 'string') ? descInput.value.trim() : '';
-
+            const timeBlockId = timeBlockSelect.value; // ★追加
             
             // ★ dueDateは未実装なのでnull, recurrenceはnull, labelIdは空配列を渡す
             const taskData = {
@@ -90,7 +111,8 @@ export function renderInlineInput(container, projectId, labelId) {
                 description: desc, // descは必ず文字列（空文字列か値のある文字列）になる
                 dueDate: null, 
                 projectId: projectId, 
-                labelIds: labelId ? [labelId] : []
+                labelIds: labelId ? [labelId] : [],
+                timeBlockId: timeBlockId || null // ★追加
             };
 
             if (!title) return;
@@ -105,6 +127,8 @@ export function renderInlineInput(container, projectId, labelId) {
                 // フォームをリセット（連続入力のため閉じない）
                 titleInput.value = '';
                 descInput.value = '';
+                // 選択状態もリセットしたい場合は以下を追加
+                // timeBlockSelect.value = '';
                 titleInput.focus();
                 
                 // フィードバック
