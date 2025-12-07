@@ -3,17 +3,13 @@
 
 /**
  * ダッシュボード画面のHTML構造全体を生成する。
- * 3つのグラフエリア（日次、週次、月次）を配置
- * @returns {string} ダッシュボード画面のHTML文字列
  */
 export function buildDashboardViewHTML() {
     return `
         <div class="space-y-6">
             <h2 class="text-xl font-bold text-gray-800 dark:text-white px-1">ダッシュボード</h2>
 
-            <!-- グリッドレイアウト -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
                 <!-- 1. 直近4日間の完了数 -->
                 <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow border border-gray-100 dark:border-gray-700">
                     <h3 class="text-md font-bold text-gray-700 dark:text-gray-200 mb-4 flex items-center">
@@ -59,7 +55,50 @@ export function buildDashboardViewHTML() {
 }
 
 /**
- * KPIカードのHTMLを生成する (dashboard.jsでの呼び出し互換性のために残すが、今回は使用しない想定)
+ * 検索画面のHTML構造を生成する
+ * @param {Array} projects - プロジェクトリスト
+ */
+export function buildSearchViewHTML(projects) {
+    const options = projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    
+    return `
+        <div class="max-w-3xl mx-auto mt-4">
+            <h2 class="text-xl font-bold mb-6 text-gray-800 dark:text-white flex items-center gap-2 px-1">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                タスク検索
+            </h2>
+            
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-8">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">キーワード</label>
+                        <input type="text" id="page-search-input" placeholder="タスク名を入力..." 
+                            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 dark:text-white placeholder-gray-400 transition-colors text-sm">
+                    </div>
+                    <div class="md:w-1/3">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">プロジェクト</label>
+                        <select id="page-search-project" 
+                            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 dark:text-white transition-colors text-sm appearance-none cursor-pointer">
+                            <option value="">全てのプロジェクト</option>
+                            ${options}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="search-results-container">
+                <!-- 検索結果がここに表示されます -->
+                <div class="text-center text-gray-400 py-16 flex flex-col items-center">
+                    <svg class="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <span class="text-sm">キーワードを入力してタスクを検索</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * KPIカードのHTMLを生成する
  */
 export function renderKPIItem(title, id, colors) {
     // 互換性のため残置
@@ -68,7 +107,6 @@ export function renderKPIItem(title, id, colors) {
 
 /**
  * 設定画面のHTML構造全体を生成する。
- * @returns {string} 設定画面のHTML文字列
  */
 export function buildSettingsViewHTML() {
     return `
