@@ -29,8 +29,7 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     const mainContent = document.getElementById('main-content');
     const resizer = document.getElementById('sidebar-resizer');
 
-    // ★修正: リサイズロジックに任せるため、style初期化はlayout.jsに委ねる
-    // setupResizerはそのまま呼び出す
+    // リサイズ機能初期化
     setupResizer(sidebar, document.querySelector('main'), resizer);
     
     setupSidebarEvents();
@@ -103,7 +102,7 @@ function setupSidebarEvents() {
         showTimeBlockModal();
     });
     
-    // ★修正: サイドバーの開閉トグルロジック (style操作に変更)
+    // サイドバーの開閉トグルロジック (style操作)
     const toggleSidebar = () => {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
@@ -111,7 +110,7 @@ function setupSidebarEvents() {
         const isMobile = window.innerWidth < 768;
 
         if (isMobile) {
-            // モバイル: スライドイン/アウト (-translate-x-full をトグル)
+            // モバイル: スライドイン/アウト
             sidebar.classList.toggle('-translate-x-full');
         } else {
             // デスクトップ: width を直接操作
@@ -130,6 +129,8 @@ function setupSidebarEvents() {
         }
     };
 
+    // ヘッダーのハンバーガーボタン
     document.getElementById('sidebar-toggle-btn')?.addEventListener('click', toggleSidebar);
-    document.getElementById('sidebar-close-mobile')?.addEventListener('click', toggleSidebar);
+    // ★修正: サイドバー内の閉じるボタン (mobile用IDから変更)
+    document.getElementById('sidebar-close-btn')?.addEventListener('click', toggleSidebar);
 }
