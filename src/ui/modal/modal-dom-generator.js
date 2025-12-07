@@ -78,21 +78,22 @@ export function buildModalHTML(task) {
             <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden transform transition-all scale-100 flex flex-col max-h-[90vh]" role="dialog" aria-modal="true">
                 
                 <!-- ヘッダー -->
+                <!-- ★修正: ヘッダーから「タスク詳細」のタイトルを削除し、タイトル入力欄をヘッダー直下に移動させるため、ヘッダーにタスク入力欄のスタイルを適用する -->
                 <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
-                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">タスク詳細</h3>
-                    <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                    <!-- タスクタイトル入力欄をヘッダーのように配置 -->
+                    <input type="text" id="modal-task-title" value="${task.title}" placeholder="タスクのタイトル"
+                        class="w-full text-lg font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600">
+                    
+                    <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition ml-4">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
                 <!-- ボディ -->
-                <div class="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
-                    <!-- タイトル -->
-                    <div>
-                        <input type="text" id="modal-task-title" value="${task.title}" placeholder="タスクのタイトル"
-                            class="w-full text-lg font-bold bg-transparent border-b-2 border-transparent hover:border-gray-200 focus:border-blue-500 outline-none text-gray-800 dark:text-gray-100 transition-colors placeholder-gray-400 dark:placeholder-gray-600 pb-1">
-                    </div>
-
+                <!-- ★修正: タイトル入力欄をヘッダーに移動したため、ここからタイトルdivを削除し、padding-topを調整 -->
+                <div class="px-6 py-4 space-y-5 overflow-y-auto custom-scrollbar flex-1">
+                    <!-- タイトル入力欄はヘッダーに移動したため削除 -->
+                    
                     <!-- メタ情報 (アコーディオン) -->
                     <details class="group border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/30 overflow-hidden transition-all" ${detailsOpenAttr}>
                         <summary class="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors select-none list-none outline-none">
