@@ -4,8 +4,7 @@
 import { updateTask, deleteTask } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
-// ★修正: ラベル関連のインポートを削除 (機能が不要になったため)
-// import { renderModalLabels, setupLabelSelectOptions } from './task-modal-labels.js';
+// ★修正: ラベル関連のインポートを削除 (機能が不要になったため、インポート行自体を削除)
 import { simpleMarkdownToHtml } from '../../utils/markdown.js';
 
 
@@ -41,9 +40,6 @@ export function setupTaskModalEvents(container, currentTask, onClose) {
     // 繰り返し・日付制御のセットアップ
     setupRecurrenceControls();
 
-    // ★削除: ラベル機能のセットアップを削除
-    // setupLabelControls(currentTask); 
-    
     // Markdown入力/プレビューの制御
     setupMarkdownControls();
 }
@@ -223,50 +219,3 @@ function setupWeeklyDaysEvents(dueDateInput, daysContainer) {
         }
     }
 }
-
-// ★削除: ラベル操作のセットアップ関数を削除
-/*
-function setupLabelControls(currentTask) {
-    refreshLabelsDisplay(currentTask);
-    
-    const addLabelSelect = document.getElementById('modal-add-label-select');
-    if (addLabelSelect && typeof setupLabelSelectOptions === 'function') {
-        setupLabelSelectOptions(addLabelSelect);
-        
-        addLabelSelect.onchange = async (e) => {
-            const labelId = e.target.value;
-            if (labelId && currentTask) { 
-                const currentLabels = currentTask.labelIds || [];
-                if (!currentLabels.includes(labelId)) {
-                    const newLabelIds = [...currentLabels, labelId];
-                    await updateTask(currentTask.id, { labelIds: newLabelIds });
-                    
-                    // タスクオブジェクトを更新して再描画
-                    currentTask.labelIds = newLabelIds;
-                    refreshLabelsDisplay(currentTask);
-                    showMessageModal("タグを追加しました");
-                }
-                e.target.value = '';
-            }
-        };
-    }
-}
-
-function refreshLabelsDisplay(currentTask) {
-    const container = document.getElementById('modal-task-labels');
-    if (!container || !currentTask) return;
-    
-    const labelIds = currentTask.labelIds || [];
-    
-    if (typeof renderModalLabels === 'function') {
-        renderModalLabels(container, labelIds, async (labelIdToRemove, labelName) => {
-            if (!currentTask) return;
-            const newLabelIds = (currentTask.labelIds || []).filter(id => id !== labelIdToRemove);
-            await updateTask(currentTask.id, { labelIds: newLabelIds });
-            currentTask.labelIds = newLabelIds;
-            refreshLabelsDisplay(currentTask);
-            showMessageModal(`タグ「${labelName}」を外しました`);
-        });
-    }
-}
-*/
