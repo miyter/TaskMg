@@ -53,19 +53,36 @@ export function renderLayout() {
                     </div>
 
                     <div class="flex items-center space-x-1 sm:space-x-2">
-                        <!-- ソート -->
-                        <div class="relative">
-                            <select id="sort-select" class="appearance-none bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 text-xs py-1.5 pl-2 pr-6 rounded cursor-pointer focus:outline-none">
-                                <option value="createdAt_desc">作成日(新しい順)</option>
-                                <option value="createdAt_asc">作成日(古い順)</option>
-                                <option value="dueDate_asc">期限日(近い順)</option>
-                                <!-- ★追加: 新しい並び替え項目 -->
-                                <option value="timeBlockId_asc">時間帯順</option>
-                                <option value="projectId_asc">プロジェクト名順</option>
-                                <option value="title_asc">タスク名順</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
-                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <!-- ソート (カスタムドロップダウンに置き換え) -->
+                        <div id="custom-sort-dropdown" class="relative inline-block text-left z-10">
+                            <!-- トリガー（ボタン） -->
+                            <!-- デフォルトの選択肢に合わせて、初期値を 'createdAt_desc' に設定 -->
+                            <button 
+                                id="sort-trigger"
+                                type="button"
+                                class="appearance-none bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 text-xs py-1.5 pl-2 pr-6 rounded cursor-pointer focus:outline-none flex items-center">
+                                <span id="sort-label">作成日(新しい順)</span>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
+                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </button>
+
+                            <!-- ドロップダウンメニュー（初期は非表示） -->
+                            <div 
+                                id="sort-menu"
+                                class="absolute right-0 mt-2 w-[180px] origin-top-right rounded-lg shadow-lg 
+                                       bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 
+                                       opacity-0 invisible scale-95 transition-all duration-150 ease-out 
+                                       pointer-events-none z-50">
+                                <div class="py-1">
+                                    <!-- data-valueはsrc/logic/sort.jsで定義されたcriteriaに一致させる -->
+                                    <button data-value="createdAt_desc"  class="sort-option block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">作成日(新しい順)</button>
+                                    <button data-value="createdAt_asc"   class="sort-option block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">作成日(古い順)</button>
+                                    <button data-value="dueDate_asc"     class="sort-option block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">期限日(近い順)</button>
+                                    <button data-value="timeBlockId_asc" class="sort-option block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">時間帯順</button>
+                                    <button data-value="projectId_asc"   class="sort-option block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">プロジェクト名順</button>
+                                    <button data-value="title_asc"       class="sort-option block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">タスク名順</button>
+                                </div>
                             </div>
                         </div>
 

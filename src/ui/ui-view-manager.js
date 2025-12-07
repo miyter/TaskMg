@@ -44,6 +44,10 @@ export function updateView(allTasks, allProjects, allLabels) {
     const dashboardView = document.getElementById('dashboard-view');
     const searchView = document.getElementById('search-view'); // ★追加
     const settingsView = document.getElementById('settings-view');
+    
+    // ★追加: ソート基準をカスタムドロップダウンから取得
+    const sortTrigger = document.getElementById('sort-trigger');
+    const currentSortCriteria = sortTrigger ? sortTrigger.dataset.value || 'createdAt_desc' : 'createdAt_desc';
 
     if (!taskView || !dashboardView || !settingsView || !searchView) return;
 
@@ -126,7 +130,8 @@ export function updateView(allTasks, allProjects, allLabels) {
         keyword: '', // リスト画面での検索は廃止
         showCompleted: showCompleted,
         projectId: currentFilter.type === 'project' ? currentFilter.id : null,
-        labelId: currentFilter.type === 'label' ? currentFilter.id : null
+        labelId: currentFilter.type === 'label' ? currentFilter.id : null,
+        sortCriteria: currentSortCriteria // ★追加: ソート基準を渡す
     };
 
     let filteredTasks = filterTasks(allTasks, filterConfig);
@@ -153,7 +158,8 @@ export function updateView(allTasks, allProjects, allLabels) {
             filteredTasks, 
             allProjects, 
             currentFilter.type === 'project' ? currentFilter.id : null, 
-            currentFilter.type === 'label' ? currentFilter.id : null
+            currentFilter.type === 'label' ? currentFilter.id : null,
+            currentSortCriteria // ★追加: renderTaskView にソート基準を渡す
         );
 
         // 3. 次のフレームで opacity:1 に戻す（スムーズにフェードイン）

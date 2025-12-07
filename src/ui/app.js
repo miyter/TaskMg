@@ -115,7 +115,10 @@ function setupGlobalEventListeners() {
         updateUI();
     });
     
-    document.getElementById('sort-select')?.addEventListener('change', updateUI);
+    // ★修正: ネイティブな sort-select のリスナーを削除し、カスタムドロップダウンロジックを実装
+    // document.getElementById('sort-select')?.addEventListener('change', updateUI); // <- 削除
+
+    setupCustomSortDropdown();
 
     // 設定ボタン: 設定モーダルを直接開く
     document.addEventListener('click', (e) => {
@@ -125,4 +128,84 @@ function setupGlobalEventListeners() {
             showSettingsModal();
         }
     });
+}
+
+/**
+ * カスタムソートドロップダウンのイベントロジックを設定する
+ */
+function setupCustomSortDropdown() {
+    const trigger = document.getElementById('sort-trigger');
+    const menu = document.getElementById('sort-menu');
+    const label = document.getElementById('sort-label');
+    const options = document.querySelectorAll('.sort-option');
+
+    if (!trigger || !menu || !label) return;
+    
+    // --- メニュー開閉ロジック ---
+    const toggleMenu = (open) => {
+        if (open) {
+            menu.classList.remove('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
+            menu.classList.add('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
+            // 外クリックで閉じるリスナーを設定
+            setTimeout(() => { 
+                document.addEventListener('click', closeMenu); 
+            }, 0);
+        } else {
+            menu.classList.remove('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
+            menu.classList.add('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    
+    const closeMenu = (e) => {
+        // メニュー内クリックまたはトリガークリックでない場合のみ閉じる
+        if (e && (menu.contains(e.target) || trigger.contains(e.target))) {
+            return;
+        }
+        toggleMenu(false);
+    };
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation(); // documentへの伝播を防ぎ、closeMenuが即発火するのを防ぐ
+        const isOpen = menu.classList.contains('opacity-100');
+        toggleMenu(!isOpen);
+    });
+    
+    // --- 選択処理 ---
+    options.forEach(option => {
+        option.addEventListener('click', (e) => {
+            const value = option.dataset.value;
+            const text = option.textContent;
+            
+            // 1. UI更新
+            label.textContent = text;
+            
+            // 2. 内部的な値を更新 (ここではカスタムドロップダウンなので、DOM要素は使えない)
+            // 擬似的に `<select>` と同じように振る舞うため、カスタムイベントを発火させる
+            // または、直接 updateUI を呼ぶ
+            
+            // updateUIのロジックがソートオプションをどこから取得しているか確認
+            // -> sort.jsでcriteriaとして渡される。criteriaはどこから来る？
+            // -> updateView (ui-view-manager.js)が filterTasks の前にソートオプションを読み込むロジックがない。
+
+            // 【重要】ソートオプションを保存する仕組みがないため、ここで直接DOMにセットする
+            // 以前のネイティブ select の値を取得していた場所がないため、
+            // 新しいロジックでは、ソートオプションをグローバルに保存する変数が必要になる。
+            // しかし、現状の `updateUI` は引数を取らない。ソート値は DOM から取得すべき。
+
+            // 暫定的に、ソート値をトリガーボタンのdata属性に保存し、そこから取得するようにする。
+            trigger.dataset.value = value;
+            
+            // ソートイベント発火 (updateUIを呼び出す)
+            updateUI(); 
+
+            // 3. メニュー閉じる
+            toggleMenu(false);
+        });
+    });
+
+    // 初期ソート値のセットアップ
+    // 初期のソート基準は 'createdAt_desc'
+    trigger.dataset.value = 'createdAt_desc';
+    label.textContent = "作成日(新しい順)";
 }
