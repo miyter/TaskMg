@@ -55,24 +55,7 @@ export function renderLayout() {
                     </div>
 
                     <div class="flex items-center space-x-1 sm:space-x-2">
-                        <!-- 検索ボックス -->
-                        <div class="relative group hidden sm:block">
-                            <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                                <svg class="h-4 w-4 text-gray-400 group-focus-within:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></path></svg>
-                            </div>
-                            <input type="text" id="search-input" placeholder="検索 (/)" 
-                                   class="w-32 lg:w-48 bg-gray-100 dark:bg-gray-800 text-sm rounded py-1 pl-8 pr-2 focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all duration-200 border-none outline-none placeholder-gray-500 dark:text-gray-200">
-                        </div>
-
-                        <!-- 検索用プロジェクト選択プルダウン -->
-                        <div class="relative hidden sm:block">
-                            <select id="search-project-select" class="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs py-1.5 pl-2 pr-6 rounded cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 border-none appearance-none" style="max-width: 140px;">
-                                <option value="">全プロジェクト</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
-                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </div>
-                        </div>
+                        <!-- ★修正: ヘッダー内の検索ボックスとプロジェクト選択プルダウンを削除しました -->
                         
                         <!-- ソート -->
                         <div class="relative">
@@ -85,9 +68,6 @@ export function renderLayout() {
                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
-
-                        <!-- 各種ボタン -->
-                        <!-- ★修正: テーマ切り替えボタンを削除しました -->
 
                         <!-- 認証UI -->
                         <div id="auth-ui" class="ml-1 flex items-center space-x-2">
@@ -109,6 +89,8 @@ export function renderLayout() {
                 <div id="main-content" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar scroll-smooth">
                     <div class="w-full max-w-4xl mx-auto">
                         <div id="task-view" class="w-full animate-fade-in"></div>
+                        <!-- ★追加: 検索画面用のコンテナ -->
+                        <div id="search-view" class="hidden w-full animate-fade-in"></div>
                         <div id="dashboard-view" class="hidden w-full animate-fade-in"></div>
                         <div id="settings-view" class="hidden w-full animate-fade-in"></div>
                     </div>
@@ -129,13 +111,14 @@ export function renderLayout() {
         setupResizer(sidebar, mainContent, resizer);
     }
     
-    // ★修正: theme-toggleのイベントリスナー削除に伴い、ここも削除
-    // document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
-    
     document.addEventListener('keydown', (e) => {
+        // ★修正: ヘッダーから検索ボックスが消えたので、ショートカットキーも新検索画面のinputへ向ける
         if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
             e.preventDefault();
-            document.getElementById('search-input')?.focus();
+            // 検索ページに遷移していなければ遷移させるなどの処理が必要だが、
+            // ここでは簡易的に「検索画面が開いているならフォーカス」等の制御にとどめるか、あるいは削除しても良い。
+            // 今回は検索画面内のinputへフォーカスする形にする
+            document.getElementById('page-search-input')?.focus();
         }
     });
 }

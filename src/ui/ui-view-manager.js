@@ -3,12 +3,15 @@
 
 import { renderDashboard } from './dashboard.js';
 import { renderTaskView } from './task-view.js';
+// ★追加: 検索画面内でリスト描画するためにインポート
+import { renderTaskList } from './task-list.js';
 import { initSettings } from './settings.js';
 import { filterTasks } from '../logic/search.js';
 import { getTimeBlockById } from '../store/timeblocks.js';
 import { 
     buildDashboardViewHTML, 
     buildSettingsViewHTML, 
+    buildSearchViewHTML, // ★追加
     renderKPIItem 
 } from './ui-dom-utils.js';
 
@@ -31,35 +34,6 @@ export function getCurrentFilter() {
 }
 
 /**
- * ヘッダーの検索ボックス横のプロジェクト選択プルダウンを更新する
- * @param {Array} projects - 全プロジェクトリスト
- */
-function renderSearchOptions(projects) {
-    const select = document.getElementById('search-project-select');
-    if (!select) return;
-
-    const currentValue = select.value;
-
-    select.innerHTML = '<option value="">全プロジェクト</option>';
-    projects.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name;
-        select.appendChild(opt);
-    });
-
-    if (currentValue) {
-        select.value = currentValue;
-    }
-
-    // 重複登録を避けるため、onchangeプロパティを使用
-    select.onchange = () => {
-        // 検索ボックスのイベントを発火させて updateUI を呼び出す
-        document.getElementById('search-input')?.dispatchEvent(new Event('input', { bubbles: true }));
-    };
-}
-
-/**
  * ビューを切り替えて描画を行う。
  * @param {Array} allTasks - 全タスクデータ
  * @param {Array} allProjects - 全プロジェクトデータ
@@ -68,24 +42,14 @@ function renderSearchOptions(projects) {
 export function updateView(allTasks, allProjects, allLabels) {
     const taskView = document.getElementById('task-view');
     const dashboardView = document.getElementById('dashboard-view');
+    const searchView = document.getElementById('search-view'); // ★追加
     const settingsView = document.getElementById('settings-view');
 
-    if (!taskView || !dashboardView || !settingsView) return;
+    if (!taskView || !dashboardView || !settingsView || !searchView) return;
 
-    // 検索オプションの更新
-    renderSearchOptions(allProjects);
-
-    const searchInput = document.getElementById('search-input');
-    const searchKeyword = searchInput?.value || '';
-    const searchProjectSelect = document.getElementById('search-project-select');
-    const searchProjectId = searchProjectSelect?.value || null;
-
-    const toggleButton = document.getElementById('toggle-completed-btn');
-    const showCompleted = toggleButton?.classList.contains('text-blue-500') || false;
-    
     // --- ビュー切り替えロジック ---
     if (currentFilter.type === 'dashboard') {
-        showView(dashboardView, [taskView, settingsView]);
+        showView(dashboardView, [taskView, settingsView, searchView]);
         dashboardView.innerHTML = buildDashboardViewHTML(renderKPIItem);
         renderDashboard(allTasks, allProjects);
         updateHeaderTitle('ダッシュボード');
@@ -93,80 +57,111 @@ export function updateView(allTasks, allProjects, allLabels) {
     }
     
     if (currentFilter.type === 'settings') {
-        showView(settingsView, [taskView, dashboardView]);
+        showView(settingsView, [taskView, dashboardView, searchView]);
         settingsView.innerHTML = buildSettingsViewHTML();
         initSettings(); 
         updateHeaderTitle('設定');
         return;
     }
 
-    // タスクビュー表示
-    showView(taskView, [dashboardView, settingsView]);
+    // ★追加: 検索画面
+    if (currentFilter.type === 'search') {
+        showView(searchView, [taskView, dashboardView, settingsView]);
+        
+        // 検索画面を描画
+        searchView.innerHTML = buildSearchViewHTML(allProjects);
+        
+        const searchInput = document.getElementById('page-search-input');
+        const projectSelect = document.getElementById('page-search-project');
+        const resultsContainer = document.getElementById('search-results-container');
+
+        // 自動フォーカス
+        searchInput?.focus();
+
+        // 検索実行関数
+        const performSearch = () => {
+            const keyword = searchInput.value.trim();
+            const projectId = projectSelect.value;
+
+            if (!keyword) {
+                resultsContainer.innerHTML = `
+                    <div class="text-center text-gray-400 py-16 flex flex-col items-center">
+                        <svg class="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <span class="text-sm">キーワードを入力してタスクを検索</span>
+                    </div>
+                `;
+                return;
+            }
+
+            const filtered = filterTasks(allTasks, {
+                keyword: keyword,
+                projectId: projectId || null,
+                showCompleted: true // 検索時は完了済みも含めるのが一般的
+            });
+
+            if (filtered.length === 0) {
+                resultsContainer.innerHTML = `<div class="text-center text-gray-400 py-10">該当するタスクが見つかりませんでした</div>`;
+            } else {
+                resultsContainer.innerHTML = ''; // クリア
+                renderTaskList(resultsContainer, filtered);
+            }
+        };
+
+        // イベントリスナー
+        searchInput?.addEventListener('input', performSearch);
+        projectSelect?.addEventListener('change', performSearch);
+
+        updateHeaderTitle('検索');
+        return;
+    }
+
+    // タスクビュー表示 (インボックス、プロジェクト別など)
+    showView(taskView, [dashboardView, settingsView, searchView]);
+
+    const toggleButton = document.getElementById('toggle-completed-btn');
+    const showCompleted = toggleButton?.classList.contains('text-blue-500') || false;
 
     // フィルタリング設定
     let filterConfig = {
-        keyword: searchKeyword,
-        showCompleted: showCompleted
+        keyword: '', // リスト画面での検索は廃止
+        showCompleted: showCompleted,
+        projectId: currentFilter.type === 'project' ? currentFilter.id : null,
+        labelId: currentFilter.type === 'label' ? currentFilter.id : null
     };
-
-    // ★検索ロジックの分岐
-    if (searchKeyword) {
-        // 検索中: サイドバーの選択を無視して横断検索 (オプションでプロジェクト絞り込み)
-        filterConfig.projectId = searchProjectId; 
-        filterConfig.labelId = null;
-    } else {
-        // 通常時: サイドバーの選択(currentFilter)に従う
-        filterConfig.projectId = currentFilter.type === 'project' ? currentFilter.id : null;
-        filterConfig.labelId = currentFilter.type === 'label' ? currentFilter.id : null;
-    }
 
     let filteredTasks = filterTasks(allTasks, filterConfig);
 
-    // ★検索中でない場合のみ、追加フィルタ（時間帯・所要時間）を適用
-    if (!searchKeyword) {
-        if (currentFilter.type === 'timeblock') {
-            if (currentFilter.id === 'unassigned') {
-                filteredTasks = filteredTasks.filter(t => !t.timeBlockId || t.timeBlockId === 'null');
-            } else {
-                filteredTasks = filteredTasks.filter(t => String(t.timeBlockId) === String(currentFilter.id));
-            }
-        } else if (currentFilter.type === 'duration') {
-            filteredTasks = filteredTasks.filter(t => Number(t.duration) === Number(currentFilter.id));
+    // 追加フィルタ（時間帯・所要時間）
+    if (currentFilter.type === 'timeblock') {
+        if (currentFilter.id === 'unassigned') {
+            filteredTasks = filteredTasks.filter(t => !t.timeBlockId || t.timeBlockId === 'null');
+        } else {
+            filteredTasks = filteredTasks.filter(t => String(t.timeBlockId) === String(currentFilter.id));
         }
+    } else if (currentFilter.type === 'duration') {
+        filteredTasks = filteredTasks.filter(t => Number(t.duration) === Number(currentFilter.id));
     }
 
     renderTaskView(
         filteredTasks, 
         allProjects, 
-        // 検索中は新規作成時のデフォルトプロジェクトIDなどをクリアしておく（混乱を防ぐため）
-        searchKeyword ? null : (currentFilter.type === 'project' ? currentFilter.id : null), 
-        searchKeyword ? null : (currentFilter.type === 'label' ? currentFilter.id : null)
+        currentFilter.type === 'project' ? currentFilter.id : null, 
+        currentFilter.type === 'label' ? currentFilter.id : null
     );
     
-    // ヘッダータイトルの更新
-    if (searchKeyword) {
-        const projName = searchProjectId ? allProjects.find(p => p.id === searchProjectId)?.name : '全プロジェクト';
-        updateHeaderTitle(`検索: "${searchKeyword}" (${projName})`);
-    } else {
-        updateHeaderTitleByFilter(allProjects, allLabels);
-    }
+    updateHeaderTitleByFilter(allProjects, allLabels);
 }
 
 /**
  * 指定した要素を表示し、残りを非表示にする。
- * ★鉄則に従い、ページ切り替えは瞬時に行う（アニメーションなし）。
  */
 function showView(show, hides) {
-    // 非表示にする要素
     hides.forEach(el => {
         el.classList.add('hidden');
-        // アニメーションクラスがあれば削除（念のため）
         el.classList.remove('animate-fade-in');
     });
 
-    // 表示する要素
     show.classList.remove('hidden');
-    // 不要なアニメーションクラスは追加しない
 }
 
 /**

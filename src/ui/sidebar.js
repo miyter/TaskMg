@@ -22,20 +22,14 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     if (!container) return;
     
     container.innerHTML = buildSidebarHTML();
+
+    // ★追加: インボックスの下に「検索」項目を挿入
+    insertSearchNavItem();
     
     const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('main-content'); // layout.jsでIDが変更されている場合は注意
+    const mainContent = document.getElementById('main-content');
     const resizer = document.getElementById('sidebar-resizer');
 
-    // ★修正: style属性による幅指定を削除し、クラスベースの管理に任せる
-    // if (sidebar) {
-    //     const storedWidth = localStorage.getItem('sidebarWidth');
-    //     sidebarWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
-    //     sidebar.style.width = `${sidebarWidth}px`;
-    // }
-
-    // リサイズ機能はクラスベースの開閉と競合するため、必要ならロジック調整が必要だが今回はsetupResizerをそのまま呼ぶ
-    // (ただし開閉時はリサイズ無効化などの考慮が必要)
     setupResizer(sidebar, document.querySelector('main'), resizer);
     
     setupSidebarEvents();
@@ -63,6 +57,27 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     });
 }
 
+/**
+ * インボックスの下に検索ボタンを挿入する
+ */
+function insertSearchNavItem() {
+    const inboxNav = document.getElementById('nav-inbox');
+    // 既に存在する場合は何もしない
+    if (inboxNav && !document.getElementById('nav-search')) {
+        const searchHTML = `
+            <div id="nav-search" class="sidebar-item-row flex items-center px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors mb-1 group">
+                <div class="flex items-center flex-1 min-w-0">
+                    <span class="mr-3 text-lg text-gray-400 group-hover:text-blue-500 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                    <span class="text-sm font-medium truncate">検索</span>
+                </div>
+            </div>
+        `;
+        inboxNav.insertAdjacentHTML('afterend', searchHTML);
+    }
+}
+
 function setupSidebarEvents() {
     const dispatch = (page, id = null) => document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
     
@@ -71,6 +86,12 @@ function setupSidebarEvents() {
         dispatch('dashboard'); 
     });
     document.getElementById('nav-inbox')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('inbox'); });
+    
+    // ★追加: 検索ボタンのイベント
+    document.getElementById('nav-search')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        dispatch('search');
+    });
     
     document.getElementById('add-project-btn')?.addEventListener('click', () => {
         showProjectModal(null, []);
@@ -84,29 +105,21 @@ function setupSidebarEvents() {
         showTimeBlockModal();
     });
     
-    // ★追加: サイドバーの開閉トグルロジック (クラスベース)
     const toggleSidebar = () => {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
 
-        // モバイルかどうか判定 (Tailwindのmdブレークポイント: 768px)
         const isMobile = window.innerWidth < 768;
 
         if (isMobile) {
-            // モバイル: スライドイン/アウト (-translate-x-full をトグル)
             sidebar.classList.toggle('-translate-x-full');
-            // 必要に応じてオーバーレイなどの制御を追加
         } else {
-            // デスクトップ: 幅のアニメーション
-            // 初期状態は w-[280px]
             if (sidebar.classList.contains('w-[280px]')) {
-                // 閉じる
                 sidebar.classList.remove('w-[280px]');
                 sidebar.classList.add('w-0');
-                sidebar.classList.add('border-none'); // 閉じたときにボーダーも消す
+                sidebar.classList.add('border-none');
                 sidebar.classList.add('overflow-hidden');
             } else {
-                // 開く
                 sidebar.classList.remove('w-0');
                 sidebar.classList.remove('border-none');
                 sidebar.classList.remove('overflow-hidden');
@@ -115,7 +128,6 @@ function setupSidebarEvents() {
         }
     };
 
-    // イベントリスナーの登録（重複防止のため一度削除してから登録はしないが、初期化時に1回呼ばれる前提）
     document.getElementById('sidebar-toggle-btn')?.addEventListener('click', toggleSidebar);
     document.getElementById('sidebar-close-mobile')?.addEventListener('click', toggleSidebar);
 }
