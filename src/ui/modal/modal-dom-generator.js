@@ -177,16 +177,18 @@ export function buildModalHTML(task) {
                         </div>
                     </div>
 
+                    <!-- ★削除: ラベルエリアと追加セレクトボックスを完全に削除 -->
                     <!-- ラベルエリア (Placeholder for task-modal-labels.js) -->
-                    <div id="modal-task-labels"></div>
+                    <!-- <div id="modal-task-labels"></div> -->
                     <!-- ラベル追加セレクトボックス -->
+                    <!-- 
                     <div class="flex items-center space-x-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                         <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">タグを追加:</span>
                         <select id="modal-add-label-select" class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-800 dark:text-gray-100 text-sm p-1 cursor-pointer">
                             <option value="">選択...</option>
-                            <!-- ラベルオプションは task-modal-labels.js で動的に挿入されます -->
-                        </select>
-                    </div>
+                            </select>
+                    </div> 
+                    -->
                 </div>
 
                 <!-- フッター -->

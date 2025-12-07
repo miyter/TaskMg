@@ -4,11 +4,9 @@
 import { updateTask, deleteTask } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
-// ★修正: Markdown変換関数をutilsからインポート
+// ★修正: ラベル関連のインポートを削除 (機能が不要になったため)
+// import { renderModalLabels, setupLabelSelectOptions } from './task-modal-labels.js';
 import { simpleMarkdownToHtml } from '../../utils/markdown.js';
-import { renderModalLabels, setupLabelSelectOptions } from './task-modal-labels.js';
-
-// ★削除: simpleMarkdownToHtml 関数を utils/markdown.js へ移動
 
 
 /**
@@ -43,10 +41,10 @@ export function setupTaskModalEvents(container, currentTask, onClose) {
     // 繰り返し・日付制御のセットアップ
     setupRecurrenceControls();
 
-    // ラベル機能のセットアップ
-    setupLabelControls(currentTask);
+    // ★削除: ラベル機能のセットアップを削除
+    // setupLabelControls(currentTask); 
     
-    // ★追加: Markdown入力/プレビューの制御
+    // Markdown入力/プレビューの制御
     setupMarkdownControls();
 }
 
@@ -150,6 +148,10 @@ async function handleSaveTask(currentTask, onClose) {
         duration: newDuration ? parseInt(newDuration, 10) : null
     };
 
+    // ★削除: ラベルIDの更新を削除 (ラベル機能自体がなくなったため)
+    // if (currentTask.labelIds) updates.labelIds = currentTask.labelIds;
+
+
     await updateTask(currentTask.id, updates);
     onClose();
 }
@@ -222,9 +224,8 @@ function setupWeeklyDaysEvents(dueDateInput, daysContainer) {
     }
 }
 
-/**
- * ラベル操作のセットアップ
- */
+// ★削除: ラベル操作のセットアップ関数を削除
+/*
 function setupLabelControls(currentTask) {
     refreshLabelsDisplay(currentTask);
     
@@ -251,9 +252,6 @@ function setupLabelControls(currentTask) {
     }
 }
 
-/**
- * ラベル表示のリフレッシュ
- */
 function refreshLabelsDisplay(currentTask) {
     const container = document.getElementById('modal-task-labels');
     if (!container || !currentTask) return;
@@ -271,3 +269,4 @@ function refreshLabelsDisplay(currentTask) {
         });
     }
 }
+*/

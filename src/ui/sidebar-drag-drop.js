@@ -31,23 +31,23 @@ export function setupDropZone(element, type, value = null) {
             try {
                 if (type === 'inbox') {
                     await updateTask(taskId, { projectId: null });
-                    showMessageModal("タスクをインボックスに戻しました");
+                    // showMessageModal("タスクをインボックスに戻しました"); // ★削除
                 } else if (type === 'project' && value) {
                     await updateTask(taskId, { projectId: value });
-                    showMessageModal("プロジェクトへ移動しました");
+                    // showMessageModal("プロジェクトへ移動しました"); // ★削除
                 } 
                 // 時間帯へのドロップ
                 else if (type === 'timeblock') {
                     // value が null (文字列の'null'や'unassigned') なら未定、それ以外はID
                     const timeBlockId = (value === 'unassigned' || value === null) ? null : value;
                     await updateTask(taskId, { timeBlockId: timeBlockId });
-                    // ポップアップ削除
+                    // ポップアップ削除 (元々コメントで「ポップアップ削除」と書かれていたため、何もしない)
                 }
                 // 所要時間へのドロップ
                 else if (type === 'duration' && value) {
                     const minutes = parseInt(value, 10);
                     await updateTask(taskId, { duration: minutes });
-                    // ポップアップ削除
+                    // ポップアップ削除 (元々コメントで「ポップアップ削除」と書かれていたため、何もしない)
                 }
             } catch (error) {
                 console.error("Drop Error:", error);
