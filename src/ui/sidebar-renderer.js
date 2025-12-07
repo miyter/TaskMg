@@ -58,13 +58,12 @@ export function renderTimeBlocks(tasks = []) {
             String(t.timeBlockId) === String(block.id) && t.status !== 'completed'
         ).length : 0;
         
-        const item = createSidebarItem(block.name, 'timeblock', block.id, block.color, count);
+        // ★修正: 表示名を「時間範囲 (start-end)」のみに変更
+        const displayName = `${block.start} - ${block.end}`;
         
-        // 時間帯の補足情報 (開始-終了) を名前の後ろに追加
-        const nameSpan = item.querySelector('.truncate');
-        if (nameSpan) {
-             nameSpan.innerHTML = `${block.name} <span class="text-xs text-gray-400 font-normal ml-1">(${block.start}-${block.end})</span>`;
-        }
+        const item = createSidebarItem(displayName, 'timeblock', block.id, block.color, count);
+        
+        // 名前操作ロジックは削除（createSidebarItemの時点で表示名が決まっているため）
 
         // クリックイベント: フィルタリング
         item.addEventListener('click', () => {
@@ -102,6 +101,7 @@ export function renderDurations(tasks = []) {
     if (!list) return;
     list.innerHTML = '';
 
+    // 指定の5つに統一
     const durations = [30, 45, 60, 75, 90];
 
     durations.forEach(mins => {

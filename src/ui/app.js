@@ -11,6 +11,8 @@ import { renderLayout } from './layout.js';
 import { initTheme } from './theme.js';
 import { initTaskModal } from './task-modal.js';
 import { initSidebar, renderProjects, renderLabels, updateInboxCount } from './sidebar.js';
+// ★追加: レンダラーから直接インポート
+import { renderTimeBlocks, renderDurations } from './sidebar-renderer.js';
 
 // Store関連
 import { subscribeToTasks } from '../store/store.js';
@@ -89,7 +91,11 @@ function updateUI() {
     // サイドバーの更新
     updateInboxCount(allTasks);
     if (allProjects.length) renderProjects(allProjects, allTasks);
-    if (allLabels.length) renderLabels(allLabels, allTasks);
+    // renderLabelsは廃止傾向だが一応残す、ただしTimeBlockとDurationを追加
+    
+    // ★追加: 時間帯と所要時間のカウントを更新
+    renderTimeBlocks(allTasks);
+    renderDurations(allTasks);
     
     // ビューのレンダリングと切り替えを委譲
     updateView(allTasks, allProjects, allLabels);

@@ -53,8 +53,9 @@ export function buildModalHTML(task) {
     const timeBlocks = getTimeBlocks();
     const selectedTimeBlockId = task.timeBlockId || '';
     const timeBlockOptions = timeBlocks.map(tb => 
+        // ★修正: 表示を「start-end」のみに変更
         `<option value="${tb.id}" ${tb.id === selectedTimeBlockId ? 'selected' : ''}>
-            ${tb.name} (${tb.start}-${tb.end})
+            ${tb.start} - ${tb.end}
         </option>`
     ).join('');
 
