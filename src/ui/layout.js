@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { renderSidebar } from './sidebar.js';
 import { toggleTheme, initTheme } from './theme.js';
 // sidebar-utilsからリサイズ機能をインポート
 import { setupResizer } from './sidebar-utils.js'; 
@@ -100,8 +101,7 @@ export function renderLayout() {
         <div id="modal-container" class="z-50 relative"></div>
     `;
 
-    // ★修正: ここでの renderSidebar() 呼び出しを削除
-    // renderSidebar();
+    renderSidebar();
 
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.querySelector('main');
