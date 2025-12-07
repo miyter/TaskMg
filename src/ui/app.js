@@ -112,9 +112,4 @@ function setupGlobalEventListeners() {
     });
     
     document.getElementById('sort-select')?.addEventListener('change', updateUI);
-    
-    document.getElementById('settings-btn')?.addEventListener('click', () => {
-        setCurrentFilter({ type: 'settings', id: null });
-        updateUI();
-    });
 }

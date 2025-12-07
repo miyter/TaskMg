@@ -58,9 +58,9 @@ export function buildModalHTML(task) {
         </option>`
     ).join('');
 
-    // ★追加: 所要時間の選択肢生成
+    // ★修正: 指定の5つに統一
     const selectedDuration = task.duration || '';
-    const durations = [15, 30, 45, 60, 75, 90, 120, 180];
+    const durations = [30, 45, 60, 75, 90];
     const durationOptions = durations.map(d => 
         `<option value="${d}" ${d == selectedDuration ? 'selected' : ''}>
             ${d} min
@@ -134,20 +134,6 @@ export function buildModalHTML(task) {
                         <div id="recurrence-days-checkboxes" class="flex flex-wrap gap-x-4 gap-y-2">
                             ${daysCheckboxes}
                         </div>
-                    </div>
-
-                    <!-- ラベル -->
-                    <div>
-                        <div class="flex justify-between items-end mb-2">
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">タグ (ラベル)</label>
-                            <div class="relative">
-                                <select id="modal-add-label-select" class="text-xs bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition focus:ring-0 appearance-none">
-                                    <option value="" selected disabled>+ 追加</option>
-                                    <!-- ラベル選択肢がここに注入されます -->
-                                </select>
-                            </div>
-                        </div>
-                        <div id="modal-task-labels" class="flex flex-wrap gap-2 min-h-[28px]"></div>
                     </div>
 
                     <!-- メモ -->

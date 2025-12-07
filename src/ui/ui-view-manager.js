@@ -5,6 +5,7 @@ import { renderDashboard } from './dashboard.js';
 import { renderTaskView } from './task-view.js';
 import { initSettings } from './settings.js';
 import { filterTasks } from '../logic/search.js';
+import { getTimeBlockById } from '../store/timeblocks.js'; // 追加
 import { 
     buildDashboardViewHTML, 
     buildSettingsViewHTML, 
@@ -35,7 +36,7 @@ export function getCurrentFilter() {
  * @param {Array} allProjects - 全プロジェクトデータ
  * @param {Array} allLabels - 全ラベルデータ
  */
-export function updateView(allTasks, allProjects, allLabels) { // allProjectsを受け取る
+export function updateView(allTasks, allProjects, allLabels) {
     const taskView = document.getElementById('task-view');
     const dashboardView = document.getElementById('dashboard-view');
     const settingsView = document.getElementById('settings-view');
@@ -72,17 +73,28 @@ export function updateView(allTasks, allProjects, allLabels) { // allProjectsを
     // タスクビュー表示
     showView(taskView, [dashboardView, settingsView]);
 
-    const filteredTasks = filterTasks(allTasks, {
+    // 既存のフィルター処理
+    let filteredTasks = filterTasks(allTasks, {
         projectId: currentFilter.type === 'project' ? currentFilter.id : null, 
         labelId: currentFilter.type === 'label' ? currentFilter.id : null,     
         keyword: searchKeyword,
         showCompleted: showCompleted
     });
 
-    // ★修正: renderTaskViewにallProjectsを追加
+    // ★追加: 時間帯と所要時間のフィルター適用 (search.jsにロジックがない場合の補完)
+    if (currentFilter.type === 'timeblock') {
+        if (currentFilter.id === 'unassigned') {
+            filteredTasks = filteredTasks.filter(t => !t.timeBlockId || t.timeBlockId === 'null');
+        } else {
+            filteredTasks = filteredTasks.filter(t => String(t.timeBlockId) === String(currentFilter.id));
+        }
+    } else if (currentFilter.type === 'duration') {
+        filteredTasks = filteredTasks.filter(t => Number(t.duration) === Number(currentFilter.id));
+    }
+
     renderTaskView(
         filteredTasks, 
-        allProjects, // ★追加: プロジェクトデータを渡す
+        allProjects, 
         currentFilter.type === 'project' ? currentFilter.id : null, 
         currentFilter.type === 'label' ? currentFilter.id : null
     );
@@ -116,6 +128,15 @@ function updateHeaderTitleByFilter(allProjects, allLabels) {
     } else if (currentFilter.type === 'label') {
         const l = allLabels.find(x => x.id === currentFilter.id);
         updateHeaderTitle(l ? l.name : '不明なラベル');
+    } else if (currentFilter.type === 'timeblock') {
+        if (currentFilter.id === 'unassigned') {
+            updateHeaderTitle('時間帯: 未定');
+        } else {
+            const block = getTimeBlockById(currentFilter.id);
+            updateHeaderTitle(block ? `時間帯: ${block.name}` : '時間帯: 不明');
+        }
+    } else if (currentFilter.type === 'duration') {
+        updateHeaderTitle(`所要時間: ${currentFilter.id}分`);
     } else {
         updateHeaderTitle('インボックス');
     }

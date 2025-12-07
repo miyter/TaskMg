@@ -8,8 +8,6 @@ import { createSidebarItem, showItemContextMenu } from './sidebar-components.js'
 import { getTimeBlocks } from '../store/timeblocks.js';
 import { showTimeBlockModal } from './timeblock-modal.js';
 
-// createListItem は sidebar-components.js の createSidebarItem に置き換えるため削除
-
 /**
  * プロジェクトリストを描画
  */
@@ -22,14 +20,11 @@ export function renderProjects(projects, tasks = []) {
         // 未完了タスクをカウント
         const count = tasks ? tasks.filter(t => t.projectId === proj.id && t.status !== 'completed').length : 0;
 
-        // リストアイテム生成 (createSidebarItemを使用)
+        // リストアイテム生成
         const item = createSidebarItem(proj.name, 'project', proj.id, null, count);
         
         // クリックイベント: フィルタリング
         item.addEventListener('click', () => {
-            setCurrentFilter({ type: 'project', id: proj.id });
-            updateView(tasks, projects, []);
-            // ルーティングイベント発火（必要であれば）
             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'project', id: proj.id } }));
         });
         
@@ -58,24 +53,22 @@ export function renderTimeBlocks(tasks = []) {
 
     // カスタムブロック
     blocks.forEach(block => {
-        // タスク数をカウント (IDは文字列比較推奨)
+        // タスク数をカウント
         const count = tasks ? tasks.filter(t => 
             String(t.timeBlockId) === String(block.id) && t.status !== 'completed'
         ).length : 0;
         
         const item = createSidebarItem(block.name, 'timeblock', block.id, block.color, count);
         
-        // 時間帯の補足情報 (開始-終了) を名前の後ろに追加する処理
+        // 時間帯の補足情報 (開始-終了) を名前の後ろに追加
         const nameSpan = item.querySelector('.truncate');
         if (nameSpan) {
              nameSpan.innerHTML = `${block.name} <span class="text-xs text-gray-400 font-normal ml-1">(${block.start}-${block.end})</span>`;
         }
 
-        // クリックイベント: フィルター適用
+        // クリックイベント: フィルタリング
         item.addEventListener('click', () => {
-             console.log('Filter by timeblock:', block.id);
-             // フィルター画面への遷移やフィルタリング処理
-             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'filter', query: `timeblock:${block.id}` } }));
+             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: block.id } }));
         });
         
         // 右クリックイベント: 編集モーダル
@@ -89,13 +82,12 @@ export function renderTimeBlocks(tasks = []) {
     });
 
     // 固定「未定」ブロック
-    // null または 文字列の'null' を未定として扱う
     const unassignedCount = tasks ? tasks.filter(t => (t.timeBlockId === null || t.timeBlockId === 'null') && t.status !== 'completed').length : 0;
     
     const unassignedItem = createSidebarItem('未定', 'timeblock', 'unassigned', '#a0aec0', unassignedCount);
     
     unassignedItem.addEventListener('click', () => {
-        document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'filter', query: `timeblock:null` } }));
+        document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: 'unassigned' } }));
     });
     
     setupDropZone(unassignedItem, 'timeblock', 'unassigned');
@@ -116,13 +108,12 @@ export function renderDurations(tasks = []) {
         // タスク数をカウント
         const count = tasks ? tasks.filter(t => Number(t.duration) === mins && t.status !== 'completed').length : 0;
         
-        // createSidebarItemは色アイコン(丸)を生成してしまうため、アイコン部分を時計マークに差し替える加工を行う
+        // createSidebarItemは色アイコン(丸)を生成してしまうため、アイコン部分を時計マークに差し替える
         const item = createSidebarItem(`${mins} min`, 'duration', mins.toString(), null, count);
         
         const firstDiv = item.firstElementChild;
         if (firstDiv) {
             // 色アイコン(span)を削除
-            // ★修正: 'span.w-2.5' はセレクタエラーになるため属性セレクタを使用
             const colorSpan = firstDiv.querySelector('span[class*="w-2.5"]');
             if (colorSpan) colorSpan.remove();
             
@@ -133,8 +124,9 @@ export function renderDurations(tasks = []) {
             firstDiv.insertBefore(clockIcon, firstDiv.firstChild);
         }
 
+        // クリックイベント
         item.addEventListener('click', () => {
-             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'filter', query: `duration:${mins}` } }));
+             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'duration', id: mins.toString() } }));
         });
 
         setupDropZone(item, 'duration', mins.toString());
