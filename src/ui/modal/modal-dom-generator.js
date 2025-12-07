@@ -98,7 +98,8 @@ export function buildModalHTML(task) {
                     <!-- タイトル入力欄はヘッダーに移動したため削除 -->
                     
                     <!-- メタ情報 (アコーディオン) -->
-                    <details class="group border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/30 overflow-hidden transition-all" ${detailsOpenAttr}>
+                    <!-- ★修正: overflow-hidden を削除し、開閉アニメーションを有効にする -->
+                    <details class="group border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/30 transition-all" ${detailsOpenAttr}>
                         <summary class="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors select-none list-none outline-none">
                             <span class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                                 <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -177,7 +178,6 @@ export function buildModalHTML(task) {
                         </div>
                     </div>
 
-                    <!-- ★削除: ラベルエリアと追加セレクトボックスを完全に削除 -->
                     <!-- ラベル関連のコードを削除したため、この位置にあった空のコメントやDOM要素は完全に除去する -->
                     
                 </div>
