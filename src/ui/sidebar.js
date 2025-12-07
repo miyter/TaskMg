@@ -17,8 +17,6 @@ export { initSidebar as renderSidebar };
 export function renderLabels() { }
 export function updateInboxCount() { }
 
-let sidebarWidth = 280;
-
 export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     const container = document.getElementById('sidebar-content');
     if (!container) return;
@@ -26,20 +24,19 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     container.innerHTML = buildSidebarHTML();
     
     const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('main-content');
+    const mainContent = document.getElementById('main-content'); // layout.jsでIDが変更されている場合は注意
     const resizer = document.getElementById('sidebar-resizer');
 
-    if (sidebar) {
-        const storedWidth = localStorage.getItem('sidebarWidth');
-        sidebarWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
-        // style属性ではなくクラス管理に変更したため、ここは調整が必要だが
-        // リサイズ機能を維持する場合はstyleも併用するケースがある。
-        // 今回はTailwindクラスベースの開閉ロジックを優先するため幅設定は一時的に無効化またはクラス併用
-        sidebar.style.width = `${sidebarWidth}px`;
-    }
+    // ★修正: style属性による幅指定を削除し、クラスベースの管理に任せる
+    // if (sidebar) {
+    //     const storedWidth = localStorage.getItem('sidebarWidth');
+    //     sidebarWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
+    //     sidebar.style.width = `${sidebarWidth}px`;
+    // }
 
-    // updateSidebarState(sidebar, mainContent); // 今回は自前で制御するためコメントアウト推奨だが残しておく
-    setupResizer(sidebar, mainContent, resizer);
+    // リサイズ機能はクラスベースの開閉と競合するため、必要ならロジック調整が必要だが今回はsetupResizerをそのまま呼ぶ
+    // (ただし開閉時はリサイズ無効化などの考慮が必要)
+    setupResizer(sidebar, document.querySelector('main'), resizer);
     
     setupSidebarEvents();
     setupSidebarToggles();
@@ -87,36 +84,38 @@ function setupSidebarEvents() {
         showTimeBlockModal();
     });
     
-    // ★追加: サイドバーの開閉トグルロジック
-    // デスクトップ・モバイル両対応
+    // ★追加: サイドバーの開閉トグルロジック (クラスベース)
     const toggleSidebar = () => {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
 
-        // モバイル: -translate-x-full をトグル (画面外からスライド)
-        // デスクトップ: w-[280px] と w-0 をトグル (幅をアニメーション)
-        
-        // 現在の状態を確認 (md以上かどうかで分岐したほうが綺麗だが、簡易的に両方トグルでも動作するようクラス構成済み)
-        sidebar.classList.toggle('-translate-x-full'); // モバイル用 (デフォルトで付いているクラス)
-        sidebar.classList.toggle('translate-x-0');     // モバイル用 (開くとき)
-        
-        // デスクトップ用: md:translate-x-0 がlayout.jsで指定されているため、モバイル用クラスはデスクトップでは無視されるはずだが
-        // layout.jsで `md:translate-x-0` を書いたので、デスクトップでは常に表示状態がデフォルト。
-        // デスクトップで閉じるには、明示的にマージンや幅を操作する必要がある。
-        
-        if (window.innerWidth >= 768) { // md breakpoint
-            if (sidebar.classList.contains('w-[280px]')) {
-                sidebar.classList.remove('w-[280px]');
-                sidebar.classList.add('w-0', 'overflow-hidden', 'border-none');
-            } else {
-                sidebar.classList.add('w-[280px]');
-                sidebar.classList.remove('w-0', 'overflow-hidden', 'border-none');
-            }
+        // モバイルかどうか判定 (Tailwindのmdブレークポイント: 768px)
+        const isMobile = window.innerWidth < 768;
+
+        if (isMobile) {
+            // モバイル: スライドイン/アウト (-translate-x-full をトグル)
+            sidebar.classList.toggle('-translate-x-full');
+            // 必要に応じてオーバーレイなどの制御を追加
         } else {
-            // モバイル用: オーバーレイ開閉などのロジックがあればここに追加
+            // デスクトップ: 幅のアニメーション
+            // 初期状態は w-[280px]
+            if (sidebar.classList.contains('w-[280px]')) {
+                // 閉じる
+                sidebar.classList.remove('w-[280px]');
+                sidebar.classList.add('w-0');
+                sidebar.classList.add('border-none'); // 閉じたときにボーダーも消す
+                sidebar.classList.add('overflow-hidden');
+            } else {
+                // 開く
+                sidebar.classList.remove('w-0');
+                sidebar.classList.remove('border-none');
+                sidebar.classList.remove('overflow-hidden');
+                sidebar.classList.add('w-[280px]');
+            }
         }
     };
 
+    // イベントリスナーの登録（重複防止のため一度削除してから登録はしないが、初期化時に1回呼ばれる前提）
     document.getElementById('sidebar-toggle-btn')?.addEventListener('click', toggleSidebar);
     document.getElementById('sidebar-close-mobile')?.addEventListener('click', toggleSidebar);
 }
