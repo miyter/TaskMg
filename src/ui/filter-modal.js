@@ -17,7 +17,9 @@ export function showFilterModal() {
     // ★修正: getProjects() を呼び出し
     const projects = getProjects();
     const timeBlocks = getTimeBlocks();
-    const durations = [15, 30, 45, 60, 75, 90, 120, 180];
+    
+    // ★修正: 選択肢をシステム全体で統一 (30, 45, 60, 75, 90)
+    const durations = [30, 45, 60, 75, 90];
 
     const modalOverlay = document.createElement('div');
     modalOverlay.id = modalId;
@@ -84,8 +86,8 @@ export function showFilterModal() {
                                 <label class="flex items-center p-2 rounded hover:bg-white dark:hover:bg-gray-800 cursor-pointer transition-colors">
                                     <input type="checkbox" value="${tb.id}" class="filter-timeblock-checkbox form-checkbox h-4 w-4 text-purple-600 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700">
                                     <span class="ml-2 w-3 h-3 rounded-full" style="background-color: ${tb.color}"></span>
-                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate">${tb.name}</span>
-                                    <span class="ml-1 text-xs text-gray-400">(${tb.start})</span>
+                                    <!-- ★修正: 名前ではなく時間範囲のみ表示 -->
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate">${tb.start} - ${tb.end}</span>
                                 </label>
                             `).join('')}
                         </div>

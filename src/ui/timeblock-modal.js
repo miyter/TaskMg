@@ -31,8 +31,8 @@ export function showTimeBlockModal() {
                     </div>
                 </div>
                 
-                <button id="add-tb-btn" class="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-blue-500 hover:text-blue-500 transition-colors font-medium text-sm flex items-center justify-center gap-2" ${blocks.length >= 5 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <button id="add-tb-btn" class="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-blue-500 hover:text-blue-500 transition-colors font-medium text-sm flex items-center justify-center gap-2" ${blocks.length >= 5 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     新しい時間帯を追加 (最大5個)
                 </button>
 
@@ -97,13 +97,9 @@ function renderBlockRow(block, container) {
     const data = block || { id: '', name: '', start: '09:00', end: '10:00', color: '#808080' };
     
     const row = document.createElement('div');
-    // ダークモード時の背景色を修正
     row.className = 'tb-row flex items-center gap-3 p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm transition-all hover:shadow-md group';
     if (!isNew) row.dataset.id = data.id;
 
-    // カラーパレット
-    const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#64748B'];
-    
     row.innerHTML = `
         <div class="cursor-move text-gray-400 hover:text-gray-600 p-1 handle">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
@@ -114,21 +110,18 @@ function renderBlockRow(block, container) {
             <div class="absolute inset-0 pointer-events-none rounded border border-gray-200 dark:border-gray-600"></div>
         </div>
 
-        <div class="flex-1">
-            <input type="text" class="tb-name w-full px-2 py-1 text-sm text-gray-900 dark:text-white border-b border-gray-300 dark:border-gray-500 bg-transparent focus:border-blue-500 focus:outline-none placeholder-gray-400" placeholder="名前 (例: 朝集中)" value="${data.name}">
-        </div>
-
-        <div class="flex items-center gap-2">
-            <input type="time" class="tb-start px-2 py-1 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${data.start}">
-            <span class="text-gray-400">-</span>
-            <input type="time" class="tb-end px-2 py-1 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-blue-500 focus:outline-none" value="${data.end}">
+        <!-- ★修正: 名前入力欄を削除し、時間入力をメイン配置に -->
+        <div class="flex-1 flex items-center gap-3 pl-2">
+            <input type="time" class="tb-start px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.start}">
+            <span class="text-gray-400 font-bold">～</span>
+            <input type="time" class="tb-end px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.end}">
         </div>
 
         <div class="flex items-center gap-1">
-            <button class="tb-save p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors" title="保存">
+            <button class="tb-save p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="保存">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             </button>
-            <button class="tb-delete p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors" title="削除">
+            <button class="tb-delete p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="削除">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
         </div>
@@ -137,7 +130,6 @@ function renderBlockRow(block, container) {
     container.appendChild(row);
 
     // イベント設定
-    const nameInput = row.querySelector('.tb-name');
     const startInput = row.querySelector('.tb-start');
     const endInput = row.querySelector('.tb-end');
     const colorInput = row.querySelector('input[type="color"]');
@@ -146,12 +138,13 @@ function renderBlockRow(block, container) {
 
     // 保存
     saveBtn.addEventListener('click', async () => {
-        const name = nameInput.value.trim();
         const start = startInput.value;
         const end = endInput.value;
         const color = colorInput.value;
 
-        if (!name) return showMessageModal('名前を入力してください', 'error');
+        // ★修正: 名前は時間帯から自動生成
+        const name = `${start}-${end}`;
+
         if (start >= end) return showMessageModal('終了時間は開始時間より後にしてください', 'error');
 
         try {
@@ -177,7 +170,7 @@ function renderBlockRow(block, container) {
             return;
         }
         
-        showMessageModal(`時間帯「${data.name}」を削除しますか？`, async () => {
+        showMessageModal(`この時間帯設定を削除しますか？`, async () => {
             await deleteTimeBlock(data.id);
             row.remove();
             updateAddButtonState();
