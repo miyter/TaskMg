@@ -4,7 +4,12 @@
 import { updateTask, deleteTask } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
+// ★修正: Markdown変換関数をutilsからインポート
+import { simpleMarkdownToHtml } from '../../utils/markdown.js';
 import { renderModalLabels, setupLabelSelectOptions } from './task-modal-labels.js';
+
+// ★削除: simpleMarkdownToHtml 関数を utils/markdown.js へ移動
+
 
 /**
  * モーダル内のイベントリスナーを設定する
@@ -40,13 +45,71 @@ export function setupTaskModalEvents(container, currentTask, onClose) {
 
     // ラベル機能のセットアップ
     setupLabelControls(currentTask);
+    
+    // ★追加: Markdown入力/プレビューの制御
+    setupMarkdownControls();
 }
+
+/**
+ * Markdown入力/プレビューの制御を設定
+ */
+function setupMarkdownControls() {
+    const textarea = document.getElementById('modal-task-desc');
+    const previewDiv = document.getElementById('modal-task-desc-preview');
+    const toggleButton = document.getElementById('toggle-memo-view');
+
+    if (!textarea || !previewDiv || !toggleButton) return;
+
+    let isEditing = true;
+
+    const renderPreview = () => {
+        const markdown = textarea.value;
+        // ★修正: utilsからインポートした関数を使用
+        previewDiv.innerHTML = simpleMarkdownToHtml(markdown);
+    };
+    
+    const toggleView = () => {
+        isEditing = !isEditing;
+
+        if (isEditing) {
+            // 編集モード
+            textarea.classList.remove('hidden');
+            previewDiv.classList.add('hidden');
+            toggleButton.textContent = 'プレビュー';
+        } else {
+            // プレビューモード
+            renderPreview();
+            textarea.classList.add('hidden');
+            previewDiv.classList.remove('hidden');
+            toggleButton.textContent = '編集';
+        }
+    };
+    
+    // プレビュー/編集切り替えボタンのイベント
+    toggleButton.addEventListener('click', toggleView);
+    
+    // 入力中のリアルタイムプレビュー（プレビューモードにいない場合）
+    // NOTE: inputイベントで毎回レンダリングすると重くなる可能性があるため、
+    // ここでは編集モード中はシンプルに保ち、トグル時のみレンダリングする。
+    // しかし、初期レンダリングのため、一旦 input も残しておく。
+    textarea.addEventListener('input', renderPreview);
+    
+    // 初期状態で一度プレビューをレンダリングしておく
+    // 編集モード（デフォルト）で開くが、プレビューHTMLを初期化しておく
+    renderPreview();
+    textarea.classList.remove('hidden');
+    previewDiv.classList.add('hidden');
+    toggleButton.textContent = 'プレビュー';
+}
+
 
 /**
  * タスク保存処理
  */
 async function handleSaveTask(currentTask, onClose) {
+// ... (中略: タスクのタイトル、説明、日付、繰り返し、時間帯、所要時間を取得)
     const newTitle = document.getElementById('modal-task-title').value.trim();
+    // ★修正: プレビューモードであっても、保存するのはtextareaの値
     const newDesc = document.getElementById('modal-task-desc').value.trim();
     const newDateVal = document.getElementById('modal-task-date').value;
     const newRecurrenceType = document.getElementById('modal-task-recurrence').value;
@@ -54,6 +117,7 @@ async function handleSaveTask(currentTask, onClose) {
     // 時間帯と所要時間
     const newTimeBlockId = document.getElementById('modal-task-timeblock').value;
     const newDuration = document.getElementById('modal-task-duration').value;
+
 
     if (!newTitle) {
         showMessageModal("タイトルを入力してください", null);

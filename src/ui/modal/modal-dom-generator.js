@@ -73,6 +73,9 @@ export function buildModalHTML(task) {
     // 設定があれば閉じる('')、なければ開く('open')
     const detailsOpenAttr = hasScheduleSettings ? '' : 'open';
 
+    // メモ欄の初期値
+    const taskDescription = task.description || '';
+
     return `
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fade-in p-4">
             <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden transform transition-all scale-100 flex flex-col max-h-[90vh]" role="dialog" aria-modal="true">
@@ -90,8 +93,8 @@ export function buildModalHTML(task) {
                 </div>
 
                 <!-- ボディ -->
-                <!-- ★修正: タイトル入力欄をヘッダーに移動したため、ここからタイトルdivを削除し、padding-topを調整 -->
-                <div class="px-6 py-4 space-y-5 overflow-y-auto custom-scrollbar flex-1">
+                <!-- ★修正: Tailwindの警告を避けるため、flex-1を使用する際は明示的に'min-h-0'を追加する。 -->
+                <div class="px-6 py-4 space-y-5 overflow-y-auto custom-scrollbar flex-1 flex flex-col min-h-0">
                     <!-- タイトル入力欄はヘッダーに移動したため削除 -->
                     
                     <!-- メタ情報 (アコーディオン) -->
@@ -157,11 +160,32 @@ export function buildModalHTML(task) {
                         </div>
                     </details>
 
-                    <!-- メモ -->
+                    <!-- メモ (Markdown対応) -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">メモ</label>
-                        <textarea id="modal-task-desc" rows="5" placeholder="詳細を入力..."
-                            class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-700 dark:text-gray-300 text-sm transition-all resize-none leading-relaxed">${task.description || ''}</textarea>
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5 flex justify-between items-center">
+                            <span>メモ (Markdown対応)</span>
+                            <button id="toggle-memo-view" class="text-xs text-blue-500 hover:text-blue-400 font-normal underline">プレビュー</button>
+                        </label>
+                        
+                        <!-- 入力エリア -->
+                        <textarea id="modal-task-desc" rows="5" placeholder="詳細を入力... (箇条書きは*, ハイパーリンクは[テキスト](URL)で)"
+                            class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-700 dark:text-gray-300 text-sm transition-all resize-none leading-relaxed">${taskDescription}</textarea>
+                        
+                        <!-- プレビューエリア (最初は非表示) -->
+                        <div id="modal-task-desc-preview" class="hidden w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 text-sm transition-all markdown-output">
+                            <!-- JSによってMarkdownがレンダリングされる -->
+                        </div>
+                    </div>
+
+                    <!-- ラベルエリア (Placeholder for task-modal-labels.js) -->
+                    <div id="modal-task-labels"></div>
+                    <!-- ラベル追加セレクトボックス -->
+                    <div class="flex items-center space-x-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">タグを追加:</span>
+                        <select id="modal-add-label-select" class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-800 dark:text-gray-100 text-sm p-1 cursor-pointer">
+                            <option value="">選択...</option>
+                            <!-- ラベルオプションは task-modal-labels.js で動的に挿入されます -->
+                        </select>
                     </div>
                 </div>
 
