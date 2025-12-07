@@ -51,8 +51,8 @@ export function updateView(allTasks, allProjects, allLabels) {
 
     if (!taskView || !dashboardView || !settingsView || !searchView) return;
 
-    // --- サイドバーのハイライト処理を先に実行 ---
-    highlightSidebarItem(currentFilter);
+    // --- ★修正: 以前のハイライト処理を削除 (タイミングが早すぎた) ---
+    // highlightSidebarItem(currentFilter); // 削除
 
     // --- ビュー切り替えロジック ---
     if (currentFilter.type === 'dashboard') {
@@ -60,6 +60,7 @@ export function updateView(allTasks, allProjects, allLabels) {
         dashboardView.innerHTML = buildDashboardViewHTML(renderKPIItem);
         renderDashboard(allTasks, allProjects);
         updateHeaderTitle('ダッシュボード');
+        highlightSidebarItem(currentFilter); // 基本項目なのでDOMは安定している
         return;
     }
     
@@ -68,6 +69,7 @@ export function updateView(allTasks, allProjects, allLabels) {
         settingsView.innerHTML = buildSettingsViewHTML();
         initSettings(); 
         updateHeaderTitle('設定');
+        highlightSidebarItem(currentFilter); // 基本項目なのでDOMは安定している
         return;
     }
 
@@ -119,6 +121,7 @@ export function updateView(allTasks, allProjects, allLabels) {
         projectSelect?.addEventListener('change', performSearch);
 
         updateHeaderTitle('検索');
+        highlightSidebarItem(currentFilter); // 基本項目なのでDOMは安定している
         return;
     }
 
@@ -169,10 +172,12 @@ export function updateView(allTasks, allProjects, allLabels) {
         requestAnimationFrame(() => {
             // transitionクラスはlayout.jsのタスクビューコンテナに設定されている前提
             taskView.style.opacity = '1'; 
+            
+            // ★修正: DOMが更新された後にハイライトとヘッダータイトル更新を実行
+            highlightSidebarItem(currentFilter);
+            updateHeaderTitleByFilter(allProjects, allLabels);
         });
     });
-    
-    updateHeaderTitleByFilter(allProjects, allLabels);
 }
 
 /**
@@ -202,43 +207,31 @@ function highlightSidebarItem(filter) {
         const icon = el.querySelector('svg, span');
         if (icon) {
             icon.classList.remove('text-white', 'dark:text-white');
-            icon.classList.add('text-gray-400'); // デフォルト色
+            // プロジェクトアイコンや基本項目のアイコン色を適切にリセット
+            if (el.id.startsWith('nav-') || el.dataset.type === 'project') {
+                 icon.classList.add('text-gray-400'); 
+            }
         }
     });
 
-    let targetId = null;
+    let targetItem = null;
 
     if (filter.type === 'inbox' || filter.type === 'dashboard' || filter.type === 'search' || filter.type === 'settings') {
-        // 基本項目は ID でハイライト (nav-inbox, nav-dashboardなど)
-        targetId = `nav-${filter.type}`;
+        // 基本項目は ID でハイライト
+        targetItem = document.getElementById(`nav-${filter.type}`);
     } else if (filter.type === 'project' || filter.type === 'timeblock' || filter.type === 'duration') {
         // 動的生成項目は data-type と data-id でハイライト
         const selector = `.sidebar-item-row[data-type="${filter.type}"][data-id="${filter.id}"]`;
-        const item = document.querySelector(selector);
-        if (item) targetId = item.id; // IDがない可能性もあるのでそのまま要素を使う
-        
-        // data属性で直接ハイライトを適用
-        if (item) {
-             applyHighlightClasses(item);
-             return;
-        }
-
+        targetItem = document.querySelector(selector);
     } else if (filter.type === 'custom') {
         // カスタムフィルター (data-type=filter, data-id=filterId)
         const selector = `.sidebar-item-row[data-type="filter"][data-id="${filter.id}"]`;
-        const item = document.querySelector(selector);
-        if (item) {
-             applyHighlightClasses(item);
-             return;
-        }
+        targetItem = document.querySelector(selector);
     }
     
-    // 基本項目や、上記でIDがわかった場合
-    if (targetId) {
-        const item = document.getElementById(targetId);
-        if (item) {
-            applyHighlightClasses(item);
-        }
+    // 選択されたアイテムにハイライトを適用
+    if (targetItem) {
+        applyHighlightClasses(targetItem);
     }
 }
 
