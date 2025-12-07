@@ -118,4 +118,10 @@ function setupGlobalEventListeners() {
     });
     
     document.getElementById('sort-select')?.addEventListener('change', updateUI);
+
+    // ★追加: 設定ボタンのイベントリスナーを復活
+    document.getElementById('settings-btn')?.addEventListener('click', () => {
+        setCurrentFilter({ type: 'settings', id: null });
+        updateUI();
+    });
 }
