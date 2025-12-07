@@ -68,6 +68,11 @@ export function buildModalHTML(task) {
         </option>`
     ).join('');
 
+    // ★ アコーディオンの初期開閉状態を判定
+    const hasScheduleSettings = dueDateValue || (recurrenceType !== 'none') || selectedTimeBlockId || selectedDuration;
+    // ★修正: 設定があれば閉じる('')、なければ開く('open')
+    const detailsOpenAttr = hasScheduleSettings ? '' : 'open';
+
     return `
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fade-in p-4">
             <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden transform transition-all scale-100 flex flex-col max-h-[90vh]" role="dialog" aria-modal="true">
@@ -88,54 +93,68 @@ export function buildModalHTML(task) {
                             class="w-full text-lg font-bold bg-transparent border-b-2 border-transparent hover:border-gray-200 focus:border-blue-500 outline-none text-gray-800 dark:text-gray-100 transition-colors placeholder-gray-400 dark:placeholder-gray-600 pb-1">
                     </div>
 
-                    <!-- メタ情報 -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- 期限日 -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">期限日</label>
-                            <input type="date" id="modal-task-date" value="${dueDateValue}"
-                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm">
-                        </div>
-                        <!-- 繰り返し -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">繰り返し</label>
-                            <select id="modal-task-recurrence" 
-                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
-                                <option value="none" ${recurrenceType === 'none' ? 'selected' : ''}>繰り返しなし</option>
-                                <option value="daily" ${recurrenceType === 'daily' ? 'selected' : ''}>毎日</option>
-                                <option value="weekly" ${recurrenceType === 'weekly' ? 'selected' : ''}>毎週</option>
-                                <option value="monthly" ${recurrenceType === 'monthly' ? 'selected' : ''}>毎月</option>
-                            </select>
-                        </div>
+                    <!-- ★修正: メタ情報をアコーディオン (details) に変更 -->
+                    <details class="group border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/30 overflow-hidden transition-all" ${detailsOpenAttr}>
+                        <summary class="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors select-none list-none outline-none">
+                            <span class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                スケジュール設定
+                            </span>
+                            <span class="transform group-open:rotate-180 transition-transform duration-200 text-gray-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </summary>
                         
-                        <!-- ★追加: 時間帯 -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">時間帯</label>
-                            <select id="modal-task-timeblock" 
-                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
-                                <option value="">未定</option>
-                                ${timeBlockOptions}
-                            </select>
-                        </div>
+                        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/30">
+                            <div class="grid grid-cols-2 gap-4">
+                                <!-- 期限日 -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">期限日</label>
+                                    <input type="date" id="modal-task-date" value="${dueDateValue}"
+                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm">
+                                </div>
+                                <!-- 繰り返し -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">繰り返し</label>
+                                    <select id="modal-task-recurrence" 
+                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
+                                        <option value="none" ${recurrenceType === 'none' ? 'selected' : ''}>繰り返しなし</option>
+                                        <option value="daily" ${recurrenceType === 'daily' ? 'selected' : ''}>毎日</option>
+                                        <option value="weekly" ${recurrenceType === 'weekly' ? 'selected' : ''}>毎週</option>
+                                        <option value="monthly" ${recurrenceType === 'monthly' ? 'selected' : ''}>毎月</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- ★追加: 時間帯 -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">時間帯</label>
+                                    <select id="modal-task-timeblock" 
+                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
+                                        <option value="">未定</option>
+                                        ${timeBlockOptions}
+                                    </select>
+                                </div>
 
-                        <!-- ★追加: 所要時間 -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">所要時間</label>
-                            <select id="modal-task-duration" 
-                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
-                                <option value="">指定なし</option>
-                                ${durationOptions}
-                            </select>
+                                <!-- ★追加: 所要時間 -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">所要時間</label>
+                                    <select id="modal-task-duration" 
+                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
+                                        <option value="">指定なし</option>
+                                        ${durationOptions}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- 曜日選択 (weekly選択時のみ表示) -->
+                            <div id="recurrence-days-container" class="${recurrenceType !== 'weekly' ? 'hidden' : ''} pt-2 mt-4 border-t border-gray-100 dark:border-gray-700">
+                                <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">繰り返す曜日</label>
+                                <div id="recurrence-days-checkboxes" class="flex flex-wrap gap-x-4 gap-y-2">
+                                    ${daysCheckboxes}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- 曜日選択 (weekly選択時のみ表示) -->
-                    <div id="recurrence-days-container" class="${recurrenceType !== 'weekly' ? 'hidden' : ''} pt-2 border-t border-gray-100 dark:border-gray-700">
-                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">繰り返す曜日</label>
-                        <div id="recurrence-days-checkboxes" class="flex flex-wrap gap-x-4 gap-y-2">
-                            ${daysCheckboxes}
-                        </div>
-                    </div>
+                    </details>
 
                     <!-- メモ -->
                     <div>

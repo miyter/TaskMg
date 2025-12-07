@@ -66,9 +66,10 @@ function createTaskItem(task) {
                 
                 <!-- 時間帯バッジ -->
                 ${timeBlock ? `
-                    <div class="flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[100px]" title="${timeBlock.name} (${timeBlock.start}-${timeBlock.end})">
+                    <div class="flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[140px]" title="${timeBlock.start} - ${timeBlock.end}">
                         <span class="w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style="background-color: ${timeBlock.color}"></span>
-                        <span class="truncate">${timeBlock.name}</span>
+                        <!-- ★修正: 名前ではなく時間範囲を表示 -->
+                        <span class="truncate font-mono text-[11px]">${timeBlock.start} - ${timeBlock.end}</span>
                     </div>
                 ` : ''}
 

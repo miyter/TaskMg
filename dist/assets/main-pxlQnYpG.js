@@ -3068,11 +3068,11 @@ This typically indicates that your device does not have a healthy Internet conne
                     class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded">
             <span class="text-xs text-gray-700 dark:text-gray-300">${e}</span>
         </label>
-    `).join("")}function aP(n){var g,m;let t=n.dueDate;const e=((g=n.recurrence)==null?void 0:g.type)||"none",i=((m=n.recurrence)==null?void 0:m.days)||[];e!=="none"&&!t&&(t=Eu({type:e,days:e==="weekly"?i:[]}));const s=t&&t.toDate?pg(t.toDate()):t?pg(new Date(t)):"",r=oP(i),o=si(),a=n.timeBlockId||"",l=o.map(y=>`<option value="${y.id}" ${y.id===a?"selected":""}>
-            ${y.start} - ${y.end}
-        </option>`).join(""),u=n.duration||"",d=[30,45,60,75,90].map(y=>`<option value="${y}" ${y==u?"selected":""}>
-            ${y} min
-        </option>`).join("");return`
+    `).join("")}function aP(n){var y,v;let t=n.dueDate;const e=((y=n.recurrence)==null?void 0:y.type)||"none",i=((v=n.recurrence)==null?void 0:v.days)||[];e!=="none"&&!t&&(t=Eu({type:e,days:e==="weekly"?i:[]}));const s=t&&t.toDate?pg(t.toDate()):t?pg(new Date(t)):"",r=oP(i),o=si(),a=n.timeBlockId||"",l=o.map(w=>`<option value="${w.id}" ${w.id===a?"selected":""}>
+            ${w.start} - ${w.end}
+        </option>`).join(""),u=n.duration||"",d=[30,45,60,75,90].map(w=>`<option value="${w}" ${w==u?"selected":""}>
+            ${w} min
+        </option>`).join(""),m=s||e!=="none"||a||u?"":"open";return`
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fade-in p-4">
             <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden transform transition-all scale-100 flex flex-col max-h-[90vh]" role="dialog" aria-modal="true">
                 
@@ -3092,54 +3092,68 @@ This typically indicates that your device does not have a healthy Internet conne
                             class="w-full text-lg font-bold bg-transparent border-b-2 border-transparent hover:border-gray-200 focus:border-blue-500 outline-none text-gray-800 dark:text-gray-100 transition-colors placeholder-gray-400 dark:placeholder-gray-600 pb-1">
                     </div>
 
-                    <!-- メタ情報 -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- 期限日 -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">期限日</label>
-                            <input type="date" id="modal-task-date" value="${s}"
-                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm">
-                        </div>
-                        <!-- 繰り返し -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">繰り返し</label>
-                            <select id="modal-task-recurrence" 
-                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
-                                <option value="none" ${e==="none"?"selected":""}>繰り返しなし</option>
-                                <option value="daily" ${e==="daily"?"selected":""}>毎日</option>
-                                <option value="weekly" ${e==="weekly"?"selected":""}>毎週</option>
-                                <option value="monthly" ${e==="monthly"?"selected":""}>毎月</option>
-                            </select>
-                        </div>
+                    <!-- ★修正: メタ情報をアコーディオン (details) に変更 -->
+                    <details class="group border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/30 overflow-hidden transition-all" ${m}>
+                        <summary class="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors select-none list-none outline-none">
+                            <span class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                スケジュール設定
+                            </span>
+                            <span class="transform group-open:rotate-180 transition-transform duration-200 text-gray-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </summary>
                         
-                        <!-- ★追加: 時間帯 -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">時間帯</label>
-                            <select id="modal-task-timeblock" 
-                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
-                                <option value="">未定</option>
-                                ${l}
-                            </select>
-                        </div>
+                        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/30">
+                            <div class="grid grid-cols-2 gap-4">
+                                <!-- 期限日 -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">期限日</label>
+                                    <input type="date" id="modal-task-date" value="${s}"
+                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm">
+                                </div>
+                                <!-- 繰り返し -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">繰り返し</label>
+                                    <select id="modal-task-recurrence" 
+                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
+                                        <option value="none" ${e==="none"?"selected":""}>繰り返しなし</option>
+                                        <option value="daily" ${e==="daily"?"selected":""}>毎日</option>
+                                        <option value="weekly" ${e==="weekly"?"selected":""}>毎週</option>
+                                        <option value="monthly" ${e==="monthly"?"selected":""}>毎月</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- ★追加: 時間帯 -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">時間帯</label>
+                                    <select id="modal-task-timeblock" 
+                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
+                                        <option value="">未定</option>
+                                        ${l}
+                                    </select>
+                                </div>
 
-                        <!-- ★追加: 所要時間 -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">所要時間</label>
-                            <select id="modal-task-duration" 
-                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
-                                <option value="">指定なし</option>
-                                ${d}
-                            </select>
+                                <!-- ★追加: 所要時間 -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">所要時間</label>
+                                    <select id="modal-task-duration" 
+                                        class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-gray-100 text-sm appearance-none cursor-pointer">
+                                        <option value="">指定なし</option>
+                                        ${d}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- 曜日選択 (weekly選択時のみ表示) -->
+                            <div id="recurrence-days-container" class="${e!=="weekly"?"hidden":""} pt-2 mt-4 border-t border-gray-100 dark:border-gray-700">
+                                <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">繰り返す曜日</label>
+                                <div id="recurrence-days-checkboxes" class="flex flex-wrap gap-x-4 gap-y-2">
+                                    ${r}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- 曜日選択 (weekly選択時のみ表示) -->
-                    <div id="recurrence-days-container" class="${e!=="weekly"?"hidden":""} pt-2 border-t border-gray-100 dark:border-gray-700">
-                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">繰り返す曜日</label>
-                        <div id="recurrence-days-checkboxes" class="flex flex-wrap gap-x-4 gap-y-2">
-                            ${r}
-                        </div>
-                    </div>
+                    </details>
 
                     <!-- メモ -->
                     <div>
@@ -3190,9 +3204,10 @@ This typically indicates that your device does not have a healthy Internet conne
                 
                 <!-- 時間帯バッジ -->
                 ${a?`
-                    <div class="flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[100px]" title="${a.name} (${a.start}-${a.end})">
+                    <div class="flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[140px]" title="${a.start} - ${a.end}">
                         <span class="w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style="background-color: ${a.color}"></span>
-                        <span class="truncate">${a.name}</span>
+                        <!-- ★修正: 名前ではなく時間範囲を表示 -->
+                        <span class="truncate font-mono text-[11px]">${a.start} - ${a.end}</span>
                     </div>
                 `:""}
 
