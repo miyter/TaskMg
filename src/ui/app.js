@@ -35,8 +35,8 @@ let unsubscribeTasks, unsubscribeProjects, unsubscribeLabels;
 export function initializeApp() {
     initTheme();
     renderLayout();
+    initSettings(); // ★修正: DOM生成直後に呼び出すことで、確実にイベントを登録する
     initTaskModal();
-    initSettings(); // ★追加: 設定機能の初期化
     setupGlobalEventListeners();
     
     // 認証状態の監視

@@ -258,6 +258,8 @@ function applyHighlightClasses(el) {
 function updateHeaderTitle(text) {
     const el = document.getElementById('header-title');
     if (el) el.textContent = text;
+    // ★追加: ブラウザのタブタイトルも更新
+    document.title = `${text} | TaskMg`;
 }
 
 /**
