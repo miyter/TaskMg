@@ -12,7 +12,7 @@ import { initTheme } from './theme.js';
 import { initTaskModal } from './task-modal.js';
 import { initSidebar, renderProjects, renderLabels, updateInboxCount } from './sidebar.js';
 import { renderTimeBlocks, renderDurations } from './sidebar-renderer.js';
-import { showSettingsModal } from './settings.js';
+import { initSettings } from './settings.js';
 
 // Store関連
 import { subscribeToTasks } from '../store/store.js';
@@ -36,6 +36,7 @@ export function initializeApp() {
     initTheme();
     renderLayout();
     initTaskModal();
+    initSettings(); // ★追加: 設定機能の初期化
     setupGlobalEventListeners();
     
     // 認証状態の監視
@@ -117,14 +118,7 @@ function setupGlobalEventListeners() {
     
     setupCustomSortDropdown();
 
-    // 設定ボタン: 設定モーダルを直接開く
-    document.addEventListener('click', (e) => {
-        const btn = e.target.closest('#settings-btn');
-        if (btn) {
-            e.preventDefault();
-            showSettingsModal();
-        }
-    });
+    // ★削除: 設定ボタンのイベントリスナーは initSettings() (src/ui/settings.js) 側に集約したため削除
 }
 
 /**
