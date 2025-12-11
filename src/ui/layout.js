@@ -20,7 +20,7 @@ export function renderLayout() {
                 <div class="h-12 flex items-center px-4 flex-shrink-0 justify-between">
                     <div class="flex items-center text-blue-600 dark:text-blue-400 font-bold text-lg cursor-pointer hover:opacity-80 transition select-none">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        mytask
+                        TaskMg
                     </div>
                     <!-- サイドバー閉じるボタン (モバイル/デスクトップ共通) -->
                     <button id="sidebar-close-btn" class="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800" title="サイドバーを閉じる">
