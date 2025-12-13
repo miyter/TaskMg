@@ -19,6 +19,7 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
     });
 
     setupThemeHandlers();
+    setupFontSizeHandlers(); // ★追加
     setupDensityHandlers();
     setupExportHandler();
     setupPasswordHandler();
@@ -41,6 +42,25 @@ function setupThemeHandlers() {
                 document.documentElement.classList.remove('dark');
                 localStorage.setItem('theme', 'light');
             }
+        });
+    });
+}
+
+// ★追加: 文字サイズ設定
+function setupFontSizeHandlers() {
+    const currentSize = localStorage.getItem('fontSize') || 'medium';
+    const radios = document.querySelectorAll('input[name="font-size"]');
+    
+    radios.forEach(radio => {
+        if (radio.value === currentSize) radio.checked = true;
+        
+        radio.addEventListener('change', (e) => {
+            const val = e.target.value;
+            localStorage.setItem('fontSize', val);
+            
+            // クラスの入れ替え
+            document.body.classList.remove('font-large', 'font-medium', 'font-small');
+            document.body.classList.add(`font-${val}`);
         });
     });
 }

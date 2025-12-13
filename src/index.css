@@ -11,6 +11,11 @@ body {
     transition: background-color 0.3s ease;
 }
 
+/* ★追加: 文字サイズ設定クラス */
+body.font-large { font-size: 14px !important; }
+body.font-medium { font-size: 12px !important; }
+body.font-small { font-size: 10px !important; }
+
 /* Custom scrollbar styles */
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
@@ -35,8 +40,3 @@ body {
 .animate-fade-in {
     animation: fadeIn 0.3s ease-out;
 }
-/* ---------------------------------------------------- */
-/* ★修正: デスクトップ版のサイドバー開閉用カスタムクラスの定義を完全に削除 */
-/* ---------------------------------------------------- */
-/* JS側でTailwindの 'hidden' クラスを直接操作するため、CSSのカスタムルールは不要。
-   空のルールセットエラーを避けるため、ブロック全体を完全に削除した。 */

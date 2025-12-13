@@ -52,6 +52,25 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
                             </div>
                         </div>
 
+                        <!-- ★追加: 文字サイズ設定 -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">文字サイズ</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <label class="flex items-center justify-center cursor-pointer p-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <input type="radio" name="font-size" value="large" class="form-radio text-blue-600 w-3.5 h-3.5 focus:ring-blue-500">
+                                    <span class="ml-2 text-sm text-gray-900 dark:text-white">大</span>
+                                </label>
+                                <label class="flex items-center justify-center cursor-pointer p-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <input type="radio" name="font-size" value="medium" class="form-radio text-blue-600 w-3.5 h-3.5 focus:ring-blue-500">
+                                    <span class="ml-2 text-sm text-gray-900 dark:text-white">中</span>
+                                </label>
+                                <label class="flex items-center justify-center cursor-pointer p-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <input type="radio" name="font-size" value="small" class="form-radio text-blue-600 w-3.5 h-3.5 focus:ring-blue-500">
+                                    <span class="ml-2 text-sm text-gray-900 dark:text-white">小</span>
+                                </label>
+                            </div>
+                        </div>
+
                         <!-- サイドバー密度 -->
                         <div>
                             <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">サイドバーの密度</label>

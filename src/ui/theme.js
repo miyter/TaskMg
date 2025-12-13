@@ -1,4 +1,8 @@
+// @ts-nocheck
+// テーマと表示設定の初期化
+
 export function initTheme() {
+    // 1. テーマ設定の復元
     // ローカルストレージまたはシステム設定を確認
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
@@ -6,6 +10,12 @@ export function initTheme() {
         document.documentElement.classList.remove('dark');
     }
     updateThemeIcon();
+
+    // 2. 文字サイズ設定の復元 (★新規追加)
+    const savedFontSize = localStorage.getItem('fontSize') || 'medium';
+    // 既存クラスをクリアしてから追加
+    document.body.classList.remove('font-large', 'font-medium', 'font-small');
+    document.body.classList.add(`font-${savedFontSize}`);
 }
 
 export function toggleTheme() {

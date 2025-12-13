@@ -164,7 +164,8 @@ export function buildModalHTML(task) {
 
                     <!-- メモ (Markdown対応) -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5 flex justify-between items-center">
+                        <!-- ★修正: 'block' と 'flex' の競合を解消するため、blockを削除 -->
+                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5 flex justify-between items-center">
                             <span>メモ (Markdown対応)</span>
                             <button id="toggle-memo-view" class="text-xs text-blue-500 hover:text-blue-400 font-normal underline">プレビュー</button>
                         </label>
