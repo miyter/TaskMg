@@ -17,7 +17,7 @@ export function initTheme() {
     document.body.classList.remove('font-large', 'font-medium', 'font-small');
     document.body.classList.add(`font-${fontSize}`);
 
-    // 3. 背景の適用 → 遅延実行 (Grokレビュー対応)
+    // 3. 背景の適用 → 遅延実行
     // レンダリングタイミングをずらすことで確実に適用させる
     requestAnimationFrame(() => {
         applyBackground();
@@ -35,7 +35,7 @@ export function toggleTheme() {
         document.documentElement.classList.add('dark');
         localStorage.setItem('theme', 'dark');
     }
-    // テーマ変更に合わせて背景も再評価（ライトモードなら背景画像オフなど）
+    // テーマ変更に合わせて背景も再評価
     applyBackground();
 }
 
@@ -62,10 +62,12 @@ export function applyBackground(forceType = null) {
     mainContent.style.backgroundRepeat = '';
     
     // オーバーレイ用クラスを一旦削除
+    // ※古い設定(90/blur-sm)と新しい設定(70/60/blur-md)の両方を削除対象にする
     if (contentWrapper) {
         contentWrapper.classList.remove(
-            'bg-white/90', 'dark:bg-gray-900/90', 
-            'backdrop-blur-sm', 'p-4', 'sm:p-6', 'rounded-xl', 'shadow-sm'
+            'bg-white/90', 'dark:bg-gray-900/90', 'backdrop-blur-sm',
+            'bg-white/70', 'dark:bg-gray-900/60', 'backdrop-blur-md',
+            'p-4', 'sm:p-6', 'rounded-xl', 'shadow-sm'
         );
     }
 
@@ -86,10 +88,11 @@ export function applyBackground(forceType = null) {
         mainContent.style.backgroundRepeat = 'no-repeat';
 
         // 可読性確保のためのオーバーレイ追加
+        // ★修正: 透過度を上げ(90->70/60)、ブラーを強化(sm->md)してGlassmorphism化
         if (contentWrapper) {
             contentWrapper.classList.add(
-                'bg-white/90', 'dark:bg-gray-900/90', 
-                'backdrop-blur-sm', 'p-4', 'sm:p-6', 'rounded-xl', 'shadow-sm'
+                'bg-white/70', 'dark:bg-gray-900/60', 
+                'backdrop-blur-md', 'p-4', 'sm:p-6', 'rounded-xl', 'shadow-sm'
             );
         }
     }
