@@ -7,10 +7,10 @@ import { setupSettingsEvents } from './settings/handlers.js';
 
 // エントリーポイント
 export function initSettings() {
-    // 修正: サイドバー再描画等でボタンが動的に生成されても反応するように、
-    // documentレベルでイベントを監視する (イベント委譲)
+    // 修正: サイドバーのボタンID 'nav-settings' を監視するように変更
+    // (以前は 'settings-btn' だった)
     document.addEventListener('click', (e) => {
-        const btn = e.target.closest('#settings-btn');
+        const btn = e.target.closest('#nav-settings');
         if (btn) {
             e.preventDefault();
             showSettingsModal();
