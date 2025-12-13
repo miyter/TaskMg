@@ -181,6 +181,8 @@ export function showFilterModal() {
         try {
             if (typeof addFilter === 'function') {
                 await addFilter(newFilter);
+                // ★追加: フィルター更新イベントを発火してサイドバーを即座に更新
+                document.dispatchEvent(new CustomEvent('filters-updated'));
             } else {
                 console.warn('addFilter function not found in store. Saving to localStorage manually.');
                 const filters = JSON.parse(localStorage.getItem('custom_filters') || '[]');
