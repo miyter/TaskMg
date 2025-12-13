@@ -39,6 +39,23 @@ export function initializeApp() {
     initTaskModal();
     setupGlobalEventListeners();
     
+    // ★追加: ページ状態の復元 (リロード対策)
+    // Grokレビュー対応: localStorageから前回のページ状態を読み込んでセットする
+    try {
+        const saved = localStorage.getItem('lastPage');
+        if (saved) {
+            const { page, id } = JSON.parse(saved);
+            setCurrentFilter({ type: page, id: id || null });
+        } else {
+            setCurrentFilter({ type: 'inbox' }); // デフォルト
+        }
+    } catch (e) {
+        console.error('Failed to restore page state:', e);
+        setCurrentFilter({ type: 'inbox' });
+    }
+    // データ未ロードのためupdateUI()は呼ばないが、filter設定は完了。
+    // データ同期開始時にこのフィルター設定が適用される。
+
     // 認証状態の監視
     onAuthStateChanged(auth, (user) => {
         updateAuthUI(user);
@@ -105,6 +122,13 @@ function setupGlobalEventListeners() {
     // サイドバーからのルーティング変更イベント
     document.addEventListener('route-change', (e) => {
         setCurrentFilter({ type: e.detail.page, id: e.detail.id });
+        
+        // ★追加: ページ切り替え時に状態を保存 (リロード対策)
+        localStorage.setItem('lastPage', JSON.stringify({ 
+            page: e.detail.page, 
+            id: e.detail.id || null 
+        }));
+
         updateUI();
     });
     
