@@ -3091,8 +3091,8 @@ This typically indicates that your device does not have a healthy Internet conne
 
             <!-- メインコンテンツラッパー -->
             <main class="flex-1 flex flex-col min-w-0 bg-white dark:bg-gray-900 transition-colors duration-200 relative">
-                <!-- ヘッダー -->
-                <header class="h-12 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-white dark:bg-gray-900 z-10">
+                <!-- ヘッダー (Glassmorphism化) -->
+                <header class="h-12 flex items-center justify-between px-4 border-b border-white/20 dark:border-gray-800/50 flex-shrink-0 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md z-10">
                     <div class="flex items-center min-w-0 flex-1 mr-4">
                         <!-- サイドバーを開くボタン -->
                         <button id="sidebar-open-btn" class="mr-3 text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" title="サイドバーを開く">
@@ -3645,17 +3645,17 @@ This typically indicates that your device does not have a healthy Internet conne
                 タスク検索
             </h2>
             
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-8">
+            <div class="bg-white/70 dark:bg-gray-900/60 backdrop-blur-md p-8 rounded-2xl shadow-xl border border-white/20 dark:border-gray-800/30 mb-8">
                 <div class="flex flex-col md:flex-row gap-4">
                     <div class="flex-1">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">キーワード</label>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase mb-2">キーワード</label>
                         <input type="text" id="page-search-input" placeholder="タスク名を入力..." 
-                            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 dark:text-white placeholder-gray-400 transition-colors text-sm">
+                            class="w-full px-4 py-2.5 bg-white/50 dark:bg-gray-800/40 border border-white/30 dark:border-gray-700/50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 dark:text-white placeholder-gray-400 transition-colors text-sm">
                     </div>
                     <div class="md:w-1/3">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">プロジェクト</label>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase mb-2">プロジェクト</label>
                         <select id="page-search-project" 
-                            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 dark:text-white transition-colors text-sm appearance-none cursor-pointer">
+                            class="w-full px-4 py-2.5 bg-white/50 dark:bg-gray-800/40 border border-white/30 dark:border-gray-700/50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 dark:text-white transition-colors text-sm appearance-none cursor-pointer">
                             <option value="">全てのプロジェクト</option>
                             ${n.map(e=>`<option value="${e.id}">${e.name}</option>`).join("")}
                         </select>

@@ -41,8 +41,8 @@ export function renderLayout() {
 
             <!-- メインコンテンツラッパー -->
             <main class="flex-1 flex flex-col min-w-0 bg-white dark:bg-gray-900 transition-colors duration-200 relative">
-                <!-- ヘッダー -->
-                <header class="h-12 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-white dark:bg-gray-900 z-10">
+                <!-- ヘッダー (Glassmorphism化) -->
+                <header class="h-12 flex items-center justify-between px-4 border-b border-white/20 dark:border-gray-800/50 flex-shrink-0 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md z-10">
                     <div class="flex items-center min-w-0 flex-1 mr-4">
                         <!-- サイドバーを開くボタン -->
                         <button id="sidebar-open-btn" class="mr-3 text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" title="サイドバーを開く">
