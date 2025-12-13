@@ -7,13 +7,15 @@ import { setupSettingsEvents } from './settings/handlers.js';
 
 // エントリーポイント
 export function initSettings() {
-    const settingsBtn = document.getElementById('settings-btn');
-    if (settingsBtn) {
-        settingsBtn.onclick = (e) => {
+    // 修正: サイドバー再描画等でボタンが動的に生成されても反応するように、
+    // documentレベルでイベントを監視する (イベント委譲)
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('#settings-btn');
+        if (btn) {
             e.preventDefault();
             showSettingsModal();
-        };
-    }
+        }
+    });
 }
 
 /**
