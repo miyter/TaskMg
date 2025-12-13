@@ -17,8 +17,8 @@
         .dark ::-webkit-scrollbar-thumb { background: #4a5568; }
         ::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
     </style>
-  <script type="module" crossorigin src="/assets/main-kI-ou5e0.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-DSeDNmye.css">
+    <!-- 修正: 開発用CSSパス -->
+    <link rel="stylesheet" href="/src/index.css">
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 h-screen overflow-hidden flex flex-col transition-colors duration-200">
 
@@ -43,7 +43,8 @@
         window.GLOBAL_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     </script>
     
-    <!-- Entry Point -->
+    <!-- 修正: 開発用エントリーポイント -->
+    <script type="module" src="/src/ui/main.js"></script>
 
 </body>
 </html>
