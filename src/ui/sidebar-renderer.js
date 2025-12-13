@@ -6,8 +6,6 @@ import { setupDropZone } from './sidebar-drag-drop.js';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components.js';
 import { getTimeBlocks } from '../store/timeblocks.js';
 import { showTimeBlockModal } from './timeblock-modal.js';
-// ★追加: フィルター削除用
-import { deleteFilter } from '../store/filters.js';
 import { showMessageModal } from './components.js';
 
 /**
@@ -42,7 +40,7 @@ export function renderProjects(projects, tasks = []) {
         
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            showItemContextMenu(e, 'project', proj, projects);
+            showItemContextMenu(e, 'project', proj, { allProjects: projects });
         });
         
         setupDropZone(item, 'project', proj.id);
@@ -127,7 +125,7 @@ export function renderDurations(tasks = []) {
 }
 
 /**
- * ★追加: カスタムフィルターを描画
+ * カスタムフィルターを描画
  */
 export function renderFilters(filters = []) {
     const list = document.getElementById('filter-list');
@@ -135,8 +133,7 @@ export function renderFilters(filters = []) {
     list.innerHTML = '';
 
     filters.forEach(filter => {
-        // フィルターアイコンを適用したアイテムを作成
-        const item = createSidebarItem(filter.name, 'filter', filter.id, null, 0); // カウントは一旦0
+        const item = createSidebarItem(filter.name, 'filter', filter.id, null, 0);
         
         // アイコンを漏斗マークに差し替え
         const firstDiv = item.firstElementChild;
@@ -148,23 +145,14 @@ export function renderFilters(filters = []) {
             firstDiv.insertAdjacentHTML('afterbegin', iconHtml);
         }
 
-        // クリックイベント
         item.addEventListener('click', () => {
             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'custom', id: filter.id } }));
         });
 
-        // 右クリック削除
+        // 右クリックでコンテキストメニュー
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            showMessageModal(`フィルター「${filter.name}」を削除しますか？`, async () => {
-                try {
-                    await deleteFilter(filter.id);
-                    // 削除後のUI更新はイベントリスナー経由で行われる
-                } catch (e) {
-                    console.error(e);
-                    showMessageModal("削除に失敗しました", 'error');
-                }
-            });
+            showItemContextMenu(e, 'filter', filter);
         });
 
         list.appendChild(item);
@@ -180,7 +168,6 @@ export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels, al
     renderProjects(allProjects, allTasks);
     renderTimeBlocks(allTasks);
     renderDurations(allTasks);
-    // ★追加: フィルター描画呼び出し
     renderFilters(allFilters);
 
     updateInboxCount(allTasks);

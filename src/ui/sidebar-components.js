@@ -2,6 +2,9 @@
 // サイドバーのUIコンポーネント（リストアイテム、コンテキストメニュー）
 
 import { deleteProject } from '../store/projects.js';
+// ★追加: フィルター削除と編集モーダル
+import { deleteFilter } from '../store/filters.js';
+import { showFilterModal } from './filter-modal.js';
 import { showMessageModal } from './components.js';
 import { showProjectModal } from './task-modal.js';
 import { setCurrentFilter } from './ui-view-manager.js';
@@ -18,14 +21,13 @@ import { setCurrentFilter } from './ui-view-manager.js';
 export function createSidebarItem(name, type, id, color, count) {
     const item = document.createElement('li');
     
-    // ★設定に基づいてパディングを切り替え
+    // 設定に基づいてパディングを切り替え
     const isCompact = localStorage.getItem('sidebar_compact') === 'true';
     const paddingClass = isCompact ? 'py-0.5' : 'py-1.5';
     
     item.dataset.type = type;
     item.dataset.id = id;
     
-    // sidebar-item-row クラスを追加して後で一括変更可能にする
     item.className = `group flex items-center justify-between px-3 ${paddingClass} text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target sidebar-item-row`;
 
     let iconHtml = '';
@@ -52,45 +54,77 @@ export function createSidebarItem(name, type, id, color, count) {
 }
 
 /**
- * プロジェクトの右クリックメニューを表示する
+ * 右クリックメニューを表示する（プロジェクト & フィルター対応）
  */
-export function showItemContextMenu(e, type, itemData, allProjects) {
-    if (type !== 'project') return;
+export function showItemContextMenu(e, type, itemData, extraData = {}) {
+    // type === 'project' または 'filter' に対応
+    if (!['project', 'filter'].includes(type)) return;
 
     document.getElementById('sidebar-context-menu')?.remove();
 
     const menu = document.createElement('div');
     menu.id = 'sidebar-context-menu';
-    menu.className = 'fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 z-50 animate-fade-in text-sm min-w-[150px]';
+    menu.className = 'fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 z-50 animate-fade-in text-sm min-w-[160px]';
     menu.style.left = `${e.clientX}px`;
     menu.style.top = `${e.clientY}px`;
 
-    menu.innerHTML = `
-        <button id="context-edit-btn" class="flex w-full justify-between items-center px-3 py-2 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-            編集
-        </button>
-        <button id="context-delete-btn" class="flex w-full justify-between items-center px-3 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50 transition">
+    // 共通メニュー（編集・名前変更は同じ動作）
+    let menuItems = '';
+    if (type === 'project') {
+        menuItems = `
+            <button id="context-edit-btn" class="flex w-full items-center px-3 py-2 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                編集
+            </button>
+        `;
+    } else if (type === 'filter') {
+        menuItems = `
+            <button id="context-edit-btn" class="flex w-full items-center px-3 py-2 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                編集 / 名前変更
+            </button>
+        `;
+    }
+
+    // 削除ボタンは共通
+    menuItems += `
+        <button id="context-delete-btn" class="flex w-full items-center px-3 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50 transition">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             削除
         </button>
     `;
 
+    menu.innerHTML = menuItems;
     document.body.appendChild(menu);
 
-    document.getElementById('context-edit-btn').addEventListener('click', () => {
+    // 編集ボタン
+    document.getElementById('context-edit-btn')?.addEventListener('click', () => {
         menu.remove();
-        showProjectModal(itemData, allProjects);
+        if (type === 'project') {
+            showProjectModal(itemData, extraData.allProjects);
+        } else if (type === 'filter') {
+            // フィルター編集モーダル呼び出し
+            showFilterModal(itemData);
+        }
     });
 
+    // 削除ボタン
     document.getElementById('context-delete-btn').addEventListener('click', () => {
         menu.remove();
-        showMessageModal(`${itemData.name} を削除しますか？\n（関連するタスクのプロジェクト情報も削除されます）`, async () => {
+        const confirmMsg = type === 'project' 
+            ? `${itemData.name} を削除しますか？\n（関連するタスクのプロジェクト情報も削除されます）`
+            : `フィルター「${itemData.name}」を削除しますか？`;
+
+        showMessageModal(confirmMsg, async () => {
             try {
-                await deleteProject(itemData.id);
-                setCurrentFilter({ type: 'inbox', id: null });
-                // ★修正: 削除完了時のメッセージ表示を削除
-                // showMessageModal(`${itemData.name} を削除しました。`);
+                if (type === 'project') {
+                    await deleteProject(itemData.id);
+                    setCurrentFilter({ type: 'inbox', id: null });
+                } else if (type === 'filter') {
+                    await deleteFilter(itemData.id);
+                    // 削除後、現在の表示がそのフィルターだったらインボックスに戻す
+                    document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'inbox' } }));
+                }
             } catch (error) {
                 console.error('Delete failed:', error);
                 showMessageModal("削除に失敗しました。", 'error');
@@ -98,6 +132,7 @@ export function showItemContextMenu(e, type, itemData, allProjects) {
         });
     });
 
+    // メニュー外クリックで閉じる
     const dismissMenu = (ev) => {
         if (!menu.contains(ev.target)) {
             menu.remove();
