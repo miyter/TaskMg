@@ -21,7 +21,10 @@ export function renderLayout() {
                     <!-- ロゴ画像＋テキスト -->
                     <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition select-none">
                         <img src="/images/web-app-manifest-512x512.png" alt="TaskMg" class="h-9 w-9 rounded-lg shadow-sm">
-                        <span class="text-lg font-bold text-gray-800 dark:text-white tracking-tight">TaskMg</span>
+                        <!-- ★修正: Mg部分を青色に変更 -->
+                        <span class="text-lg font-bold text-gray-800 dark:text-white tracking-tight">
+                            Task<span class="text-blue-600 dark:text-blue-400">Mg</span>
+                        </span>
                     </div>
                     <!-- サイドバー閉じるボタン (モバイル/デスクトップ共通) -->
                     <button id="sidebar-close-btn" class="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800" title="サイドバーを閉じる">
