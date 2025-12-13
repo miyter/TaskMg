@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.head.appendChild(link);
         }
         link.type = 'image/png';
-        link.href = 'public/images/favicon-96x96.png';
+        // パス修正: public/images -> /images
+        link.href = '/images/favicon-96x96.png';
     };
     setFavicon();
 

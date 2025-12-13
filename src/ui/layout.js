@@ -20,7 +20,7 @@ export function renderLayout() {
                 <div class="h-12 flex items-center px-4 flex-shrink-0 justify-between">
                     <!-- 画像ロゴに差し替え -->
                     <div class="flex items-center cursor-pointer hover:opacity-80 transition select-none">
-                        <img src="public/images/TaskMg_title.png" alt="TaskMg" class="h-7 w-auto">
+                        <img src="/images/TaskMg_title.png" alt="TaskMg" class="h-7 w-auto">
                     </div>
                     <!-- サイドバー閉じるボタン (モバイル/デスクトップ共通) -->
                     <button id="sidebar-close-btn" class="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800" title="サイドバーを閉じる">
