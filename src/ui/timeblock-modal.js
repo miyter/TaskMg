@@ -60,10 +60,19 @@ export function showTimeBlockModal() {
 
     // イベント
     document.getElementById('close-tb-modal').addEventListener('click', () => modalOverlay.remove());
-    document.getElementById('close-tb-footer').addEventListener('click', () => {
-        modalOverlay.remove();
-        // 完了時にも念のため発火
-        document.dispatchEvent(new CustomEvent('timeblocks-updated'));
+    
+    // ★修正: 完了ボタンクリック時に全行の保存を実行してから閉じる
+    document.getElementById('close-tb-footer').addEventListener('click', async () => {
+        // 全行の保存ボタンをトリガーして、未保存の変更を反映させる
+        const saveButtons = document.querySelectorAll('.tb-save');
+        saveButtons.forEach(btn => btn.click());
+
+        // 保存処理(非同期)のキックを確実に行うため少し待ってから閉じる
+        setTimeout(() => {
+            modalOverlay.remove();
+            // サイドバー更新イベントを発火
+            document.dispatchEvent(new CustomEvent('timeblocks-updated'));
+        }, 100);
     });
 
     document.getElementById('add-tb-btn').addEventListener('click', () => {
@@ -141,7 +150,7 @@ function renderBlockRow(block, container) {
         const end = endInput.value;
         const color = colorInput.value;
 
-        // ★修正: 名前は時間帯から自動生成
+        // 名前は時間帯から自動生成
         const name = `${start}-${end}`;
 
         if (start >= end) return showMessageModal('終了時間は開始時間より後にしてください', 'error');
@@ -151,7 +160,7 @@ function renderBlockRow(block, container) {
             row.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50');
             setTimeout(() => row.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50'), 1000);
             
-            // ★追加: 保存成功時にイベント発火
+            // 保存成功時にイベント発火
             document.dispatchEvent(new CustomEvent('timeblocks-updated'));
 
             if (isNew) {
@@ -176,7 +185,7 @@ function renderBlockRow(block, container) {
             await deleteTimeBlock(data.id);
             row.remove();
             updateAddButtonState();
-            // ★追加: 削除成功時にイベント発火
+            // 削除成功時にイベント発火
             document.dispatchEvent(new CustomEvent('timeblocks-updated'));
         });
     });
