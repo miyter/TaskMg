@@ -1,9 +1,8 @@
 // @ts-nocheck
-// @miyter:20251129
+// サイドバー制御
 
 import { updateView, setCurrentFilter } from './ui-view-manager.js';
 import { updateSidebarState, setupResizer } from './sidebar-utils.js';
-// ★修正: setupDropZone を sidebar-dom.js ではなく sidebar-drag-drop.js からインポート
 import { buildSidebarHTML, setupSidebarToggles } from './sidebar-dom.js';
 import { setupDropZone } from './sidebar-drag-drop.js'; 
 import { showProjectModal } from './task-modal.js';
@@ -26,10 +25,7 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     container.innerHTML = buildSidebarHTML();
 
-    // ★修正: HTMLに静的に組み込んだため、JSでの動的挿入ロジックは削除
-    
     const sidebar = document.getElementById('sidebar');
-    // mainContentではなく、親のapp全体で開閉状態を管理する (今回は不要だが、ロジック変更)
     const resizer = document.getElementById('sidebar-resizer');
 
     setupResizer(sidebar, document.querySelector('main'), resizer);
@@ -41,7 +37,9 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     renderSidebarItems(sidebar, allTasks, allProjects, allLabels);
     
+    // 時間帯更新イベントを監視してサイドバーを再描画
     document.addEventListener('timeblocks-updated', () => {
+        // 最新の状態を反映させるため引数は最小限にするか、ストアから再取得されることを期待
         renderSidebarItems(document.getElementById('sidebar'), allTasks, allProjects, []);
     });
 
@@ -57,7 +55,6 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
         });
     });
     
-    // ★追加: 初期状態で開閉ボタンの表示/非表示を決定
     updateSidebarVisibility();
     window.addEventListener('resize', updateSidebarVisibility);
 }
@@ -90,9 +87,8 @@ function updateSidebarVisibility() {
         }
 
     } else {
-        // モバイルの場合 (常に開くボタンは表示、閉じるボタンはサイドバー内)
-        // モバイルでは `translate-x-full` で制御するため、`hidden` は使わない
-        openBtn.classList.remove('hidden'); // モバイルでは常にハンバーガーを表示
+        // モバイルの場合
+        openBtn.classList.remove('hidden');
         closeBtn.classList.remove('hidden');
         sidebar.classList.remove('hidden'); 
     }
@@ -113,13 +109,11 @@ function setupSidebarEvents() {
         dispatch('search');
     });
 
-    // ★削除: フッターの設定ボタンが削除されたため、イベントリスナーも削除
-    /*
+    // ★修正: 設定ボタンのイベントリスナーを復活
     document.getElementById('nav-settings')?.addEventListener('click', (e) => {
         e.preventDefault();
         showSettingsModal();
     });
-    */
     
     document.getElementById('add-project-btn')?.addEventListener('click', () => {
         showProjectModal(null, []);
@@ -164,6 +158,5 @@ function setupSidebarEvents() {
 
     document.getElementById('sidebar-open-btn')?.addEventListener('click', toggleSidebar);
     document.getElementById('sidebar-close-btn')?.addEventListener('click', toggleSidebar);
-    // モバイルクローズボタンはモバイル時にのみ使われるが、ロジックは統合
     document.getElementById('sidebar-close-mobile')?.addEventListener('click', toggleSidebar);
 }

@@ -62,8 +62,8 @@ export function showTimeBlockModal() {
     document.getElementById('close-tb-modal').addEventListener('click', () => modalOverlay.remove());
     document.getElementById('close-tb-footer').addEventListener('click', () => {
         modalOverlay.remove();
-        const event = new CustomEvent('timeblocks-updated');
-        document.dispatchEvent(event);
+        // 完了時にも念のため発火
+        document.dispatchEvent(new CustomEvent('timeblocks-updated'));
     });
 
     document.getElementById('add-tb-btn').addEventListener('click', () => {
@@ -110,7 +110,6 @@ function renderBlockRow(block, container) {
             <div class="absolute inset-0 pointer-events-none rounded border border-gray-200 dark:border-gray-600"></div>
         </div>
 
-        <!-- ★修正: 名前入力欄を削除し、時間入力をメイン配置に -->
         <div class="flex-1 flex items-center gap-3 pl-2">
             <input type="time" class="tb-start px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.start}">
             <span class="text-gray-400 font-bold">～</span>
@@ -152,6 +151,9 @@ function renderBlockRow(block, container) {
             row.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50');
             setTimeout(() => row.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50'), 1000);
             
+            // ★追加: 保存成功時にイベント発火
+            document.dispatchEvent(new CustomEvent('timeblocks-updated'));
+
             if (isNew) {
                 const blocks = getTimeBlocks();
                 renderBlockList(blocks);
@@ -174,6 +176,8 @@ function renderBlockRow(block, container) {
             await deleteTimeBlock(data.id);
             row.remove();
             updateAddButtonState();
+            // ★追加: 削除成功時にイベント発火
+            document.dispatchEvent(new CustomEvent('timeblocks-updated'));
         });
     });
 }
