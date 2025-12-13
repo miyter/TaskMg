@@ -24,9 +24,9 @@ export function showTimeBlockModal() {
                 </button>
             </div>
             
-            <div class="p-6 overflow-y-auto flex-1">
+            <div class="p-4 sm:p-6 overflow-y-auto flex-1">
                 <div class="mb-4">
-                    <div id="tb-list" class="space-y-2">
+                    <div id="tb-list" class="space-y-3">
                         <!-- ブロックリストがここに描画される -->
                     </div>
                 </div>
@@ -103,7 +103,8 @@ function renderBlockRow(block, container) {
     const data = block || { id: '', name: '', start: '09:00', end: '10:00', color: '#808080' };
     
     const row = document.createElement('div');
-    row.className = 'tb-row flex items-center gap-3 p-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md transition-all hover:shadow group';
+    // UI改善: 背景白カードスタイルを廃止し、ホバー時のみ背景色が変わるリストスタイルへ変更
+    row.className = 'tb-row flex items-center gap-4 py-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700/50 group';
     if (!isNew) row.dataset.id = data.id;
 
     // 時と分を分解
@@ -196,8 +197,8 @@ function renderBlockRow(block, container) {
 
         try {
             await saveTimeBlock({ id: isNew ? null : data.id, name, start, end, color });
-            row.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50');
-            setTimeout(() => row.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50'), 1000);
+            row.classList.add('bg-green-50', 'dark:bg-green-900/20');
+            setTimeout(() => row.classList.remove('bg-green-50', 'dark:bg-green-900/20'), 1000);
             
             // 保存成功時にイベント発火
             document.dispatchEvent(new CustomEvent('timeblocks-updated'));
