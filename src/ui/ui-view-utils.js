@@ -5,6 +5,7 @@ import { getTimeBlockById } from '../store/timeblocks.js';
 
 /**
  * 指定した要素を表示し、残りを非表示にする。
+ * ★修正: exportを追加してビルドエラーを解消
  */
 export function showView(show, hides) {
     hides.forEach(el => {
