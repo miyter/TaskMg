@@ -18,9 +18,9 @@ export function renderLayout() {
             <aside id="sidebar" class="flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 group z-20 fixed md:relative h-full md:translate-x-0 -translate-x-full shadow-xl md:shadow-none" style="width: 280px;">
                 <!-- ロゴエリア -->
                 <div class="h-12 flex items-center px-4 flex-shrink-0 justify-between">
-                    <div class="flex items-center text-blue-600 dark:text-blue-400 font-bold text-lg cursor-pointer hover:opacity-80 transition select-none">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        TaskMg
+                    <!-- 画像ロゴに差し替え -->
+                    <div class="flex items-center cursor-pointer hover:opacity-80 transition select-none">
+                        <img src="public/images/TaskMg_title.png" alt="TaskMg" class="h-7 w-auto">
                     </div>
                     <!-- サイドバー閉じるボタン (モバイル/デスクトップ共通) -->
                     <button id="sidebar-close-btn" class="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800" title="サイドバーを閉じる">
@@ -31,19 +31,16 @@ export function renderLayout() {
                 <!-- サイドバーコンテンツ -->
                 <div id="sidebar-content" class="flex-1 overflow-y-auto py-2 custom-scrollbar"></div>
                 
-                <!-- フッター (設定ボタン) - ★削除: 検索項目に統合されたため削除する -->
                 <!-- リサイズハンドル -->
                 <div id="sidebar-resizer" class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500 transition-colors z-50 opacity-0 group-hover:opacity-100"></div>
             </aside>
 
             <!-- メインコンテンツラッパー -->
-            <!-- ★修正: 開閉制御用にカスタムクラス 'sidebar-closed' に応じてメインコンテンツの幅を制御したい場合は、このmainタグに'flex-1'だけを設定しておく -->
             <main class="flex-1 flex flex-col min-w-0 bg-white dark:bg-gray-900 transition-colors duration-200 relative">
                 <!-- ヘッダー -->
                 <header class="h-12 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-white dark:bg-gray-900 z-10">
                     <div class="flex items-center min-w-0 flex-1 mr-4">
                         <!-- サイドバーを開くボタン -->
-                        <!-- ★修正: PCでも開閉ボタンは常に存在させ、ロジックで表示/非表示を切り替える -->
                         <button id="sidebar-open-btn" class="mr-3 text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" title="サイドバーを開く">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                         </button>
@@ -56,7 +53,6 @@ export function renderLayout() {
                         <!-- ソート (カスタムドロップダウンに置き換え) -->
                         <div id="custom-sort-dropdown" class="relative inline-block text-left z-10">
                             <!-- トリガー（ボタン） -->
-                            <!-- デフォルトの選択肢に合わせて、初期値を 'createdAt_desc' に設定 -->
                             <button 
                                 id="sort-trigger"
                                 type="button"
@@ -75,7 +71,6 @@ export function renderLayout() {
                                        opacity-0 invisible scale-95 transition-all duration-150 ease-out 
                                        pointer-events-none z-50">
                                 <div class="py-1">
-                                    <!-- data-valueはsrc/logic/sort.jsで定義されたcriteriaに一致させる -->
                                     <button data-value="createdAt_desc"  class="sort-option block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">作成日(新しい順)</button>
                                     <button data-value="createdAt_asc"   class="sort-option block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">作成日(古い順)</button>
                                     <button data-value="dueDate_asc"     class="sort-option block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">期限日(近い順)</button>
@@ -105,7 +100,6 @@ export function renderLayout() {
                 <!-- メインコンテンツエリア -->
                 <div id="main-content" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar scroll-smooth">
                     <div class="w-full max-w-4xl mx-auto">
-                        <!-- ★修正: task-viewコンテナにトランジションクラスを追加 -->
                         <div id="task-view" class="w-full animate-fade-in transition-opacity duration-150" style="opacity: 1;"></div>
                         <div id="search-view" class="hidden w-full animate-fade-in"></div>
                         <div id="dashboard-view" class="hidden w-full animate-fade-in"></div>
@@ -117,9 +111,6 @@ export function renderLayout() {
         
         <div id="modal-container" class="z-50 relative"></div>
     `;
-
-    // ★修正: ここでの renderSidebar() 呼び出しを削除
-    // renderSidebar();
 
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.querySelector('main');
