@@ -2,11 +2,11 @@
 // サイドバーのUIコンポーネント（リストアイテム、コンテキストメニュー）
 
 import { deleteProject } from '../store/projects.js';
-// ★追加: フィルター削除と編集モーダル
 import { deleteFilter } from '../store/filters.js';
 import { showFilterModal } from './filter-modal.js';
 import { showMessageModal } from './components.js';
-import { showProjectModal } from './task-modal.js';
+// ★修正: 本格モーダルへ切り替え
+import { showProjectModal } from './modal/project-modal.js';
 import { setCurrentFilter } from './ui-view-manager.js';
 
 /**
@@ -21,14 +21,12 @@ import { setCurrentFilter } from './ui-view-manager.js';
 export function createSidebarItem(name, type, id, color, count) {
     const item = document.createElement('li');
     
-    // 設定に基づいてパディングを切り替え
     const isCompact = localStorage.getItem('sidebar_compact') === 'true';
     const paddingClass = isCompact ? 'py-0.5' : 'py-1.5';
     
     item.dataset.type = type;
     item.dataset.id = id;
     
-    // ★修正: text-sm を削除してbodyのフォントサイズ設定を継承するように変更
     item.className = `group flex items-center justify-between px-3 ${paddingClass} font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target sidebar-item-row`;
 
     let iconHtml = '';
@@ -58,7 +56,6 @@ export function createSidebarItem(name, type, id, color, count) {
  * 右クリックメニューを表示する（プロジェクト & フィルター対応）
  */
 export function showItemContextMenu(e, type, itemData, extraData = {}) {
-    // type === 'project' または 'filter' に対応
     if (!['project', 'filter'].includes(type)) return;
 
     document.getElementById('sidebar-context-menu')?.remove();
@@ -69,7 +66,6 @@ export function showItemContextMenu(e, type, itemData, extraData = {}) {
     menu.style.left = `${e.clientX}px`;
     menu.style.top = `${e.clientY}px`;
 
-    // 共通メニュー（編集・名前変更は同じ動作）
     let menuItems = '';
     if (type === 'project') {
         menuItems = `
@@ -87,7 +83,6 @@ export function showItemContextMenu(e, type, itemData, extraData = {}) {
         `;
     }
 
-    // 削除ボタンは共通
     menuItems += `
         <button id="context-delete-btn" class="flex w-full items-center px-3 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50 transition">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -102,9 +97,8 @@ export function showItemContextMenu(e, type, itemData, extraData = {}) {
     document.getElementById('context-edit-btn')?.addEventListener('click', () => {
         menu.remove();
         if (type === 'project') {
-            showProjectModal(itemData, extraData.allProjects);
+            showProjectModal(itemData);
         } else if (type === 'filter') {
-            // フィルター編集モーダル呼び出し
             showFilterModal(itemData);
         }
     });
@@ -123,7 +117,6 @@ export function showItemContextMenu(e, type, itemData, extraData = {}) {
                     setCurrentFilter({ type: 'inbox', id: null });
                 } else if (type === 'filter') {
                     await deleteFilter(itemData.id);
-                    // 削除後、現在の表示がそのフィルターだったらインボックスに戻す
                     document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'inbox' } }));
                 }
             } catch (error) {
@@ -133,7 +126,6 @@ export function showItemContextMenu(e, type, itemData, extraData = {}) {
         });
     });
 
-    // メニュー外クリックで閉じる
     const dismissMenu = (ev) => {
         if (!menu.contains(ev.target)) {
             menu.remove();

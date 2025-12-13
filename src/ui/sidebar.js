@@ -5,12 +5,12 @@ import { updateView, setCurrentFilter } from './ui-view-manager.js';
 import { updateSidebarState, setupResizer } from './sidebar-utils.js';
 import { buildSidebarHTML, setupSidebarToggles } from './sidebar-dom.js';
 import { setupDropZone } from './sidebar-drag-drop.js'; 
-import { showProjectModal } from './task-modal.js';
+// ★修正: 本格モーダルへ切り替え
+import { showProjectModal } from './modal/project-modal.js';
 import { showFilterModal } from './filter-modal.js';
 import { showTimeBlockModal } from './timeblock-modal.js'; 
 import { showSettingsModal } from './settings.js';
 import { renderSidebarItems, renderProjects } from './sidebar-renderer.js';
-// ★追加: フィルターと時間帯の購読用
 import { subscribeToFilters, getFilters } from '../store/filters.js';
 import { subscribeToTimeBlocks } from '../store/timeblocks.js';
 
@@ -49,24 +49,16 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
         }
     });
 
-    // ★追加: 時間帯のリアルタイム購読
-    // Firestoreの変更を検知してサイドバーの時間帯リストを更新
+    // 時間帯のリアルタイム購読
     subscribeToTimeBlocks((timeBlocks) => {
-        // 時間帯リストのDOM要素が存在する場合のみ更新
         const tbList = document.getElementById('timeblock-list');
         if (tbList) {
-            // 現在のフィルターリストを取得 (なければ空)
             const currentFilters = getFilters();
-            // 全体を再描画 (引数のtimeBlocksはstore内で更新済みなので、
-            // renderSidebarItems内部でgetTimeBlocks()を呼べば最新が取れるはずだが、
-            // storeのキャッシュ更新タイミングと同期させるため、
-            // renderSidebarItemsが内部でgetTimeBlocks()を呼ぶ構造ならこれでOK)
             renderSidebarItems(sidebar, allTasks, allProjects, allLabels, currentFilters);
         }
     });
 
     document.addEventListener('timeblocks-updated', () => {
-        // モーダルからの手動通知用 (subscribeがあるため必須ではないが、即時性担保のため残す)
         const filters = getFilters();
         renderSidebarItems(document.getElementById('sidebar'), allTasks, allProjects, allLabels, filters);
     });
@@ -143,7 +135,7 @@ function setupSidebarEvents() {
     });
     
     document.getElementById('add-project-btn')?.addEventListener('click', () => {
-        showProjectModal(null, []);
+        showProjectModal(); // 新規作成
     });
     
     document.getElementById('add-filter-btn')?.addEventListener('click', () => {

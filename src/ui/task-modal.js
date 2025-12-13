@@ -6,7 +6,8 @@ import { buildModalHTML } from './modal/modal-dom-generator.js';
 import { setupTaskModalEvents } from './modal/task-modal-ctrl.js';
 
 // 他のモジュールから利用されているモーダル関数を再エクスポート
-export { showProjectModal, showLabelModal } from './modal/simple-modals.js';
+// ★修正: showProjectModalは削除し、showLabelModalのみエクスポート
+export { showLabelModal } from './modal/simple-modals.js';
 
 /**
  * モーダル機能の初期化
