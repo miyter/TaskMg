@@ -26,7 +26,8 @@ export function showTimeBlockModal() {
             
             <div class="p-6 overflow-y-auto flex-1">
                 <div class="mb-4">
-                    <div id="tb-list" class="space-y-3">
+                    <!-- 修正: 行間を狭く (space-y-3 -> space-y-2) -->
+                    <div id="tb-list" class="space-y-2">
                         <!-- ブロックリストがここに描画される -->
                     </div>
                 </div>
@@ -106,32 +107,37 @@ function renderBlockRow(block, container) {
     const data = block || { id: '', name: '', start: '09:00', end: '10:00', color: '#808080' };
     
     const row = document.createElement('div');
-    row.className = 'tb-row flex items-center gap-3 p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm transition-all hover:shadow-md group';
+    // 修正: パディング縮小(p-2.5), 角丸縮小(rounded-md), 影をホバー時のみ(hover:shadow)
+    row.className = 'tb-row flex items-center gap-3 p-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md transition-all hover:shadow group';
     if (!isNew) row.dataset.id = data.id;
 
-    // ★修正: input type="time" に step="900" (15分) を追加
+    // 修正: 
+    // 1. ハンドルをホバー時のみ表示 (opacity-0 group-hover:opacity-100)
+    // 2. カラーピッカーを小さく (w-7 h-7)
+    // 3. 入力フィールドをコンパクトに (py-1.5, text-sm)
+    // 4. ボタンをホバー時のみ表示、アイコンサイズ縮小 (w-4 h-4)
     row.innerHTML = `
-        <div class="cursor-move text-gray-400 hover:text-gray-600 p-1 handle">
+        <div class="cursor-move text-gray-400 hover:text-gray-600 p-1 handle opacity-0 group-hover:opacity-100 transition-opacity">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
         </div>
         
         <div class="relative">
-            <input type="color" class="w-8 h-8 rounded cursor-pointer border-0 p-0 overflow-hidden" value="${data.color}">
+            <input type="color" class="w-7 h-7 rounded cursor-pointer border-0 p-0 overflow-hidden" value="${data.color}">
             <div class="absolute inset-0 pointer-events-none rounded border border-gray-200 dark:border-gray-600"></div>
         </div>
 
-        <div class="flex-1 flex items-center gap-3 pl-2">
-            <input type="time" step="900" class="tb-start px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.start}">
-            <span class="text-gray-400 font-bold">～</span>
-            <input type="time" step="900" class="tb-end px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.end}">
+        <div class="flex-1 flex items-center gap-2 pl-1">
+            <input type="time" step="900" class="tb-start px-3 py-1.5 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.start}">
+            <span class="text-gray-400 text-sm font-bold">～</span>
+            <input type="time" step="900" class="tb-end px-3 py-1.5 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.end}">
         </div>
 
-        <div class="flex items-center gap-1">
-            <button class="tb-save p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="保存">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button class="tb-save p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors" title="保存">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             </button>
-            <button class="tb-delete p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="削除">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            <button class="tb-delete p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors" title="削除">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
         </div>
     `;
@@ -144,6 +150,33 @@ function renderBlockRow(block, container) {
     const colorInput = row.querySelector('input[type="color"]');
     const saveBtn = row.querySelector('.tb-save');
     const deleteBtn = row.querySelector('.tb-delete');
+
+    // ★追加: 15分単位に強制補正する関数
+    function snapTo15Minutes(input) {
+        if (!input.value) return;
+        const [hours, minutes] = input.value.split(':').map(Number);
+        const snappedMinutes = Math.round(minutes / 15) * 15;
+        
+        let newMinutes = snappedMinutes;
+        let newHours = hours;
+
+        if (newMinutes >= 60) {
+            newMinutes = 0;
+            newHours = (newHours + 1) % 24; // 繰り上がり処理
+        }
+
+        const formattedHours = String(newHours).padStart(2, '0');
+        const formattedMinutes = String(newMinutes).padStart(2, '0');
+        input.value = `${formattedHours}:${formattedMinutes}`;
+    }
+
+    // 変更時にスナップ処理を実行
+    startInput.addEventListener('change', () => snapTo15Minutes(startInput));
+    endInput.addEventListener('change', () => snapTo15Minutes(endInput));
+
+    // 初期表示時にも念のためスナップ処理を実行して整形
+    snapTo15Minutes(startInput);
+    snapTo15Minutes(endInput);
 
     // 保存
     saveBtn.addEventListener('click', async () => {
