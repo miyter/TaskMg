@@ -96,25 +96,47 @@ export function buildSidebarHTML() {
 
 /**
  * サイドバーの開閉トグル機能を設定する
+ * ★修正: 初期化時にLocalStorageから開閉状態を復元、クリック時に保存する機能を追加
+ * これにより sidebar.js を修正せずとも状態維持が可能になる
  */
 export function setupSidebarToggles() {
     document.querySelectorAll('.sidebar-section-header').forEach(header => {
+        const targetId = header.dataset.target;
+        const list = document.getElementById(targetId);
+        const icon = header.querySelector('svg');
+
+        if (!list || !icon) return;
+
+        // --- 1. 初期状態の復元 ---
+        // LocalStorageから状態取得 (キー例: sidebar:basic-list-open)
+        // デフォルトは "開く(true)"。明示的に "false" が保存されている場合のみ閉じる。
+        const savedState = localStorage.getItem(`sidebar:${targetId}-open`);
+        const shouldOpen = savedState === null ? true : savedState === 'true';
+
+        if (!shouldOpen) {
+            list.classList.add('hidden');
+            icon.style.transform = 'rotate(-90deg)';
+        } else {
+            list.classList.remove('hidden');
+            icon.style.transform = 'rotate(0deg)';
+        }
+
+        // --- 2. クリックイベント設定 ---
         header.addEventListener('click', (e) => {
             if (e.target.closest('button')) return;
 
-            const targetId = header.dataset.target;
-            const list = document.getElementById(targetId);
-            const icon = header.querySelector('svg');
+            list.classList.toggle('hidden');
+            const isOpen = !list.classList.contains('hidden');
 
-            if (list) {
-                list.classList.toggle('hidden');
-                
-                if (list.classList.contains('hidden')) {
-                    icon.style.transform = 'rotate(-90deg)';
-                } else {
-                    icon.style.transform = 'rotate(0deg)';
-                }
+            // アイコン回転
+            if (!isOpen) {
+                icon.style.transform = 'rotate(-90deg)';
+            } else {
+                icon.style.transform = 'rotate(0deg)';
             }
+
+            // --- 3. 状態保存 ---
+            localStorage.setItem(`sidebar:${targetId}-open`, isOpen);
         });
     });
 }
