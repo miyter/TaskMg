@@ -28,7 +28,8 @@ export function createSidebarItem(name, type, id, color, count) {
     item.dataset.type = type;
     item.dataset.id = id;
     
-    item.className = `group flex items-center justify-between px-3 ${paddingClass} text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target sidebar-item-row`;
+    // ★修正: text-sm を削除してbodyのフォントサイズ設定を継承するように変更
+    item.className = `group flex items-center justify-between px-3 ${paddingClass} font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors drop-target sidebar-item-row`;
 
     let iconHtml = '';
     if (type === 'project') {
