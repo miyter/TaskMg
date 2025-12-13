@@ -18,9 +18,10 @@ export function renderLayout() {
             <aside id="sidebar" class="flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 group z-20 fixed md:relative h-full md:translate-x-0 -translate-x-full shadow-xl md:shadow-none" style="width: 280px;">
                 <!-- ロゴエリア -->
                 <div class="h-12 flex items-center px-4 flex-shrink-0 justify-between">
-                    <!-- 画像ロゴに差し替え -->
-                    <div class="flex items-center cursor-pointer hover:opacity-80 transition select-none">
-                        <img src="/images/TaskMg_title.png" alt="TaskMg" class="h-7 w-auto">
+                    <!-- ロゴ画像＋テキスト -->
+                    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition select-none">
+                        <img src="/images/web-app-manifest-512x512.png" alt="TaskMg" class="h-9 w-9 rounded-lg shadow-sm">
+                        <span class="text-lg font-bold text-gray-800 dark:text-white tracking-tight">TaskMg</span>
                     </div>
                     <!-- サイドバー閉じるボタン (モバイル/デスクトップ共通) -->
                     <button id="sidebar-close-btn" class="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800" title="サイドバーを閉じる">
