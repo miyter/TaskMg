@@ -1,12 +1,14 @@
 // @ts-nocheck
-// @miyter:20251129
+// サイドバーのレンダリングロジック
 
 import { updateView, setCurrentFilter } from './ui-view-manager.js';
-// 分割されたモジュールからインポート
 import { setupDropZone } from './sidebar-drag-drop.js';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components.js';
 import { getTimeBlocks } from '../store/timeblocks.js';
 import { showTimeBlockModal } from './timeblock-modal.js';
+// ★追加: フィルター削除用
+import { deleteFilter } from '../store/filters.js';
+import { showMessageModal } from './components.js';
 
 /**
  * インボックスのタスク数を更新する
@@ -15,15 +17,12 @@ import { showTimeBlockModal } from './timeblock-modal.js';
 export function updateInboxCount(allTasks) {
     const inboxCountEl = document.getElementById('inbox-count');
     if (inboxCountEl) {
-        // プロジェクトに属しておらず、未完了のタスクをカウント
         const count = allTasks ? allTasks.filter(t => !t.projectId && t.status !== 'completed').length : 0;
         inboxCountEl.textContent = count;
-        // カウントが0より大きい場合のみ表示
         if (count > 0) inboxCountEl.classList.remove('hidden');
         else inboxCountEl.classList.add('hidden');
     }
 }
-
 
 /**
  * プロジェクトリストを描画
@@ -34,26 +33,19 @@ export function renderProjects(projects, tasks = []) {
     list.innerHTML = '';
 
     projects.forEach(proj => {
-        // 未完了タスクをカウント
         const count = tasks ? tasks.filter(t => t.projectId === proj.id && t.status !== 'completed').length : 0;
-
-        // リストアイテム生成
         const item = createSidebarItem(proj.name, 'project', proj.id, null, count);
         
-        // クリックイベント: フィルタリング
         item.addEventListener('click', () => {
             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'project', id: proj.id } }));
         });
         
-        // 右クリックイベント: コンテキストメニュー
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             showItemContextMenu(e, 'project', proj, projects);
         });
         
-        // ドロップゾーン設定
         setupDropZone(item, 'project', proj.id);
-        
         list.appendChild(item);
     });
 }
@@ -68,24 +60,18 @@ export function renderTimeBlocks(tasks = []) {
 
     const blocks = getTimeBlocks();
 
-    // カスタムブロック
     blocks.forEach(block => {
-        // タスク数をカウント
         const count = tasks ? tasks.filter(t => 
             String(t.timeBlockId) === String(block.id) && t.status !== 'completed'
         ).length : 0;
         
-        // 表示名を「時間範囲 (start-end)」のみに変更
         const displayName = `${block.start} - ${block.end}`;
-        
         const item = createSidebarItem(displayName, 'timeblock', block.id, block.color, count);
         
-        // クリックイベント: フィルタリング
         item.addEventListener('click', () => {
              document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: block.id } }));
         });
         
-        // 右クリックイベント: 編集モーダル
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             showTimeBlockModal();
@@ -95,9 +81,7 @@ export function renderTimeBlocks(tasks = []) {
         list.appendChild(item);
     });
 
-    // 固定「未定」ブロック
     const unassignedCount = tasks ? tasks.filter(t => (t.timeBlockId === null || t.timeBlockId === 'null') && t.status !== 'completed').length : 0;
-    
     const unassignedItem = createSidebarItem('未定', 'timeblock', 'unassigned', '#a0aec0', unassignedCount);
     
     unassignedItem.addEventListener('click', () => {
@@ -116,31 +100,23 @@ export function renderDurations(tasks = []) {
     if (!list) return;
     list.innerHTML = '';
 
-    // 指定の5つに統一
     const durations = [30, 45, 60, 75, 90];
 
     durations.forEach(mins => {
-        // タスク数をカウント
         const count = tasks ? tasks.filter(t => Number(t.duration) === mins && t.status !== 'completed').length : 0;
-        
-        // createSidebarItemは色アイコン(丸)を生成してしまうため、アイコン部分を時計マークに差し替える
         const item = createSidebarItem(`${mins} min`, 'duration', mins.toString(), null, count);
         
         const firstDiv = item.firstElementChild;
         if (firstDiv) {
-            // 色アイコン(span)を削除
             const colorSpan = firstDiv.querySelector('span[class*="w-2.5"]');
             if (colorSpan) colorSpan.remove();
             
-            // 時計アイコン挿入
             const clockIcon = document.createElement('span');
-            // ★修正: text-lg を削除し、text-sm に変更して行高さを他の項目と統一
             clockIcon.className = 'mr-3 text-sm'; 
             clockIcon.textContent = '⏱️';
             firstDiv.insertBefore(clockIcon, firstDiv.firstChild);
         }
 
-        // クリックイベント
         item.addEventListener('click', () => {
              document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'duration', id: mins.toString() } }));
         });
@@ -151,20 +127,61 @@ export function renderDurations(tasks = []) {
 }
 
 /**
+ * ★追加: カスタムフィルターを描画
+ */
+export function renderFilters(filters = []) {
+    const list = document.getElementById('filter-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    filters.forEach(filter => {
+        // フィルターアイコンを適用したアイテムを作成
+        const item = createSidebarItem(filter.name, 'filter', filter.id, null, 0); // カウントは一旦0
+        
+        // アイコンを漏斗マークに差し替え
+        const firstDiv = item.firstElementChild;
+        if (firstDiv) {
+            const colorSpan = firstDiv.querySelector('span[class*="w-2.5"]');
+            if (colorSpan) colorSpan.remove();
+            
+            const iconHtml = `<svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>`;
+            firstDiv.insertAdjacentHTML('afterbegin', iconHtml);
+        }
+
+        // クリックイベント
+        item.addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'custom', id: filter.id } }));
+        });
+
+        // 右クリック削除
+        item.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showMessageModal(`フィルター「${filter.name}」を削除しますか？`, async () => {
+                try {
+                    await deleteFilter(filter.id);
+                    // 削除後のUI更新はイベントリスナー経由で行われる
+                } catch (e) {
+                    console.error(e);
+                    showMessageModal("削除に失敗しました", 'error');
+                }
+            });
+        });
+
+        list.appendChild(item);
+    });
+}
+
+/**
  * 全体の描画
  */
-export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels) {
+export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels, allFilters = []) {
     if (!sidebar) return;
     
-    // ★修正: renderProjects/renderTimeBlocks/renderDurations内でカウントロジックが実行されるため、
-    // ここからプロジェクトのカウントロジックを削除し、純粋にレンダリング関数を呼び出す。
-    // インボックスカウント更新は独立した関数 (updateInboxCount) に移行。
-
     renderProjects(allProjects, allTasks);
-    // renderLabels は廃止済み
     renderTimeBlocks(allTasks);
     renderDurations(allTasks);
+    // ★追加: フィルター描画呼び出し
+    renderFilters(allFilters);
 
-    // インボックスカウントの更新を独立した関数に委譲
     updateInboxCount(allTasks);
 }

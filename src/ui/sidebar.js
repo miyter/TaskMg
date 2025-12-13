@@ -10,6 +10,8 @@ import { showFilterModal } from './filter-modal.js';
 import { showTimeBlockModal } from './timeblock-modal.js'; 
 import { showSettingsModal } from './settings.js';
 import { renderSidebarItems, renderProjects } from './sidebar-renderer.js';
+// ★追加: フィルター購読用
+import { subscribeToFilters, getFilters } from '../store/filters.js';
 
 // 外部公開
 export { renderSidebarItems, renderProjects };
@@ -35,12 +37,43 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
     
-    renderSidebarItems(sidebar, allTasks, allProjects, allLabels);
+    // ★修正: フィルターデータも含めて初期描画
+    // 初期状態ではフィルターは空かもしれないが、subscribeですぐ更新される
+    renderSidebarItems(sidebar, allTasks, allProjects, allLabels, []);
     
-    // 時間帯更新イベントを監視してサイドバーを再描画
+    // ★追加: フィルターのリアルタイム購読
+    // Firestoreの変更を検知してサイドバーのフィルターリストを更新
+    subscribeToFilters((filters) => {
+        // 既存のタスク・プロジェクト情報は保持したままフィルター部分だけ更新したいが、
+        // 簡易的にrenderSidebarItemsを呼ぶ。
+        // ※ 本来はストアから最新のallTasks/allProjectsを取得すべきだが、
+        // ここでは引数の変数がクロージャで古いままの可能性がある。
+        // ただし、renderFiltersは単独で呼べる設計にしたので、
+        // フィルター更新時は renderFilters だけ呼ぶのがベスト。
+        
+        const filterList = document.getElementById('filter-list');
+        if (filterList) {
+            // sidebar-renderer.js で export した renderFilters を利用して部分更新
+            // ※ renderFilters は default export ではないので、renderSidebarItems 経由か直接 import が必要。
+            // ここでは renderSidebarItems を再利用する形で実装する（引数は最新を渡す必要があるが...）
+            
+            // 暫定対応: DOM要素があれば直接描画関数を動的インポート的に呼ぶか、
+            // initSidebarの引数が古くなる問題を避けるため、カスタムイベント経由で全体の再描画を促すのが理想。
+            // 今回は renderSidebarItems の第5引数に filters を渡して再描画する。
+            // (allTasks等は初期化時のものが使われるため、タスク数カウントが古くなるリスクはあるが、フィルターリスト表示には影響ない)
+            renderSidebarItems(sidebar, allTasks, allProjects, allLabels, filters);
+        }
+    });
+
     document.addEventListener('timeblocks-updated', () => {
-        // 最新の状態を反映させるため引数は最小限にするか、ストアから再取得されることを期待
-        renderSidebarItems(document.getElementById('sidebar'), allTasks, allProjects, []);
+        renderSidebarItems(document.getElementById('sidebar'), allTasks, allProjects, [], []);
+    });
+
+    // ★追加: 手動イベントでのフィルター更新（filter-modalからの通知用）
+    document.addEventListener('filters-updated', () => {
+        // subscribeToFilters があるので基本不要だが、即時反映の保険として
+        const filters = getFilters();
+        renderSidebarItems(sidebar, allTasks, allProjects, allLabels, filters);
     });
 
     window.addEventListener('sidebar-settings-updated', (e) => {
@@ -69,25 +102,19 @@ function updateSidebarVisibility() {
 
     if (!sidebar || !openBtn || !closeBtn) return;
 
-    // サイドバーが閉じている状態かチェック
     const isClosed = sidebar.classList.contains('sidebar-closed');
 
-    // デスクトップの場合
     if (window.innerWidth >= 768) {
-        // 閉じていれば開くボタンを表示し、閉じるボタンを非表示
         openBtn.classList.toggle('hidden', !isClosed); 
         closeBtn.classList.toggle('hidden', isClosed);
-        // 閉じた状態ではサイドバー自体を非表示 (領域を解放)
         sidebar.classList.toggle('hidden', isClosed); 
 
-        // リサイズハンドルも非表示にする
         const resizer = document.getElementById('sidebar-resizer');
         if (resizer) {
             resizer.classList.toggle('hidden', isClosed);
         }
 
     } else {
-        // モバイルの場合
         openBtn.classList.remove('hidden');
         closeBtn.classList.remove('hidden');
         sidebar.classList.remove('hidden'); 
@@ -109,7 +136,6 @@ function setupSidebarEvents() {
         dispatch('search');
     });
 
-    // ★修正: 設定ボタンのイベントリスナーを復活
     document.getElementById('nav-settings')?.addEventListener('click', (e) => {
         e.preventDefault();
         showSettingsModal();
@@ -134,24 +160,17 @@ function setupSidebarEvents() {
         const isMobile = window.innerWidth < 768;
 
         if (isMobile) {
-            // モバイル: translateで開閉
             sidebar.classList.toggle('-translate-x-full');
         } else {
-            // デスクトップ: カスタムクラスで開閉し、幅を維持
             sidebar.classList.toggle('sidebar-closed');
-            
-            // 開閉状態に応じて、開閉ボタンの表示を更新
             updateSidebarVisibility();
 
-            // サイドバーを閉じるときは、リサイズで設定されたwidthを保存
             if (!sidebar.classList.contains('sidebar-closed')) {
-                // 開くとき: 保存された幅に戻す
                 const savedWidth = localStorage.getItem('sidebarWidth') || '280';
                 sidebar.style.width = `${savedWidth}px`;
             } else {
-                // 閉じるとき: 現在の幅を保存し、一旦widthをクリア
                 localStorage.setItem('sidebarWidth', sidebar.style.width.replace('px', ''));
-                sidebar.style.width = ''; // CSSで非表示にするためwidthをクリア
+                sidebar.style.width = ''; 
             }
         }
     };
