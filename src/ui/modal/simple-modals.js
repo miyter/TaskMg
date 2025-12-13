@@ -20,11 +20,11 @@ export function showProjectModal(project = null, allProjects = []) {
 
     if (isNew) {
         addProject(newName.trim())
-            .then(() => showMessageModal("プロジェクトを作成しました"))
+            // 成功メッセージは削除
             .catch(e => { console.error(e); showMessageModal("作成に失敗しました", 'error'); });
     } else {
         updateProject(project.id, { name: newName.trim() })
-            .then(() => showMessageModal("プロジェクトを更新しました"))
+            // 成功メッセージは削除
             .catch(e => { console.error(e); showMessageModal("更新に失敗しました", 'error'); });
     }
 }
@@ -45,11 +45,11 @@ export function showLabelModal(label = null, allLabels = []) {
     if (isNew) {
         const randomColor = `#${Math.floor(Math.random()*16777215).toString(16)}`; 
         addLabel(newName.trim(), randomColor)
-            .then(() => showMessageModal("ラベルを作成しました"))
+            // 成功メッセージは削除
             .catch(e => { console.error(e); showMessageModal("作成に失敗しました", 'error'); });
     } else {
         updateLabel(label.id, { name: newName.trim() })
-            .then(() => showMessageModal("ラベルを更新しました"))
+            // 成功メッセージは削除
             .catch(e => { console.error(e); showMessageModal("更新に失敗しました", 'error'); });
     }
 }
