@@ -26,7 +26,6 @@ export function showTimeBlockModal() {
             
             <div class="p-6 overflow-y-auto flex-1">
                 <div class="mb-4">
-                    <!-- 修正: 行間を狭く (space-y-3 -> space-y-2) -->
                     <div id="tb-list" class="space-y-2">
                         <!-- ブロックリストがここに描画される -->
                     </div>
@@ -64,14 +63,11 @@ export function showTimeBlockModal() {
     
     // 完了ボタンクリック時に全行の保存を実行してから閉じる
     document.getElementById('close-tb-footer').addEventListener('click', async () => {
-        // 全行の保存ボタンをトリガーして、未保存の変更を反映させる
         const saveButtons = document.querySelectorAll('.tb-save');
         saveButtons.forEach(btn => btn.click());
 
-        // 保存処理(非同期)のキックを確実に行うため少し待ってから閉じる
         setTimeout(() => {
             modalOverlay.remove();
-            // サイドバー更新イベントを発火
             document.dispatchEvent(new CustomEvent('timeblocks-updated'));
         }, 100);
     });
@@ -107,15 +103,14 @@ function renderBlockRow(block, container) {
     const data = block || { id: '', name: '', start: '09:00', end: '10:00', color: '#808080' };
     
     const row = document.createElement('div');
-    // 修正: パディング縮小(p-2.5), 角丸縮小(rounded-md), 影をホバー時のみ(hover:shadow)
     row.className = 'tb-row flex items-center gap-3 p-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md transition-all hover:shadow group';
     if (!isNew) row.dataset.id = data.id;
 
-    // 修正: 
-    // 1. ハンドルをホバー時のみ表示 (opacity-0 group-hover:opacity-100)
-    // 2. カラーピッカーを小さく (w-7 h-7)
-    // 3. 入力フィールドをコンパクトに (py-1.5, text-sm)
-    // 4. ボタンをホバー時のみ表示、アイコンサイズ縮小 (w-4 h-4)
+    // 時と分を分解
+    const [startHour, startMin] = data.start.split(':');
+    const [endHour, endMin] = data.end.split(':');
+
+    // ★修正: input type="time" を廃止し、セレクトボックスに変更
     row.innerHTML = `
         <div class="cursor-move text-gray-400 hover:text-gray-600 p-1 handle opacity-0 group-hover:opacity-100 transition-opacity">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
@@ -127,9 +122,35 @@ function renderBlockRow(block, container) {
         </div>
 
         <div class="flex-1 flex items-center gap-2 pl-1">
-            <input type="time" step="900" class="tb-start px-3 py-1.5 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.start}">
-            <span class="text-gray-400 text-sm font-bold">～</span>
-            <input type="time" step="900" class="tb-end px-3 py-1.5 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.end}">
+            <!-- 開始時間: 時 + 分 -->
+            <div class="flex items-center gap-0.5">
+                <select class="tb-start-hour px-1 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:border-blue-500 focus:outline-none cursor-pointer">
+                    ${Array.from({length: 24}, (_, i) => {
+                        const h = String(i).padStart(2,'0');
+                        return `<option value="${h}" ${h === startHour ? 'selected' : ''}>${h}</option>`;
+                    }).join('')}
+                </select>
+                <span class="text-gray-400">:</span>
+                <select class="tb-start-min px-1 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:border-blue-500 focus:outline-none cursor-pointer">
+                    ${['00','15','30','45'].map(m => `<option value="${m}" ${startMin === m ? 'selected' : ''}>${m}</option>`).join('')}
+                </select>
+            </div>
+
+            <span class="text-gray-400 text-sm font-bold mx-1">～</span>
+
+            <!-- 終了時間: 時 + 分 -->
+            <div class="flex items-center gap-0.5">
+                <select class="tb-end-hour px-1 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:border-blue-500 focus:outline-none cursor-pointer">
+                    ${Array.from({length: 24}, (_, i) => {
+                        const h = String(i).padStart(2,'0');
+                        return `<option value="${h}" ${h === endHour ? 'selected' : ''}>${h}</option>`;
+                    }).join('')}
+                </select>
+                <span class="text-gray-400">:</span>
+                <select class="tb-end-min px-1 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md focus:border-blue-500 focus:outline-none cursor-pointer">
+                    ${['00','15','30','45'].map(m => `<option value="${m}" ${endMin === m ? 'selected' : ''}>${m}</option>`).join('')}
+                </select>
+            </div>
         </div>
 
         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -145,43 +166,27 @@ function renderBlockRow(block, container) {
     container.appendChild(row);
 
     // イベント設定
-    const startInput = row.querySelector('.tb-start');
-    const endInput = row.querySelector('.tb-end');
     const colorInput = row.querySelector('input[type="color"]');
     const saveBtn = row.querySelector('.tb-save');
     const deleteBtn = row.querySelector('.tb-delete');
 
-    // ★追加: 15分単位に強制補正する関数
-    function snapTo15Minutes(input) {
-        if (!input.value) return;
-        const [hours, minutes] = input.value.split(':').map(Number);
-        const snappedMinutes = Math.round(minutes / 15) * 15;
-        
-        let newMinutes = snappedMinutes;
-        let newHours = hours;
+    // ★追加: セレクトボックスから時間を取得するヘルパー
+    const getStartTime = () => {
+        const hour = row.querySelector('.tb-start-hour').value;
+        const min = row.querySelector('.tb-start-min').value;
+        return `${hour}:${min}`;
+    };
 
-        if (newMinutes >= 60) {
-            newMinutes = 0;
-            newHours = (newHours + 1) % 24; // 繰り上がり処理
-        }
-
-        const formattedHours = String(newHours).padStart(2, '0');
-        const formattedMinutes = String(newMinutes).padStart(2, '0');
-        input.value = `${formattedHours}:${formattedMinutes}`;
-    }
-
-    // 変更時にスナップ処理を実行
-    startInput.addEventListener('change', () => snapTo15Minutes(startInput));
-    endInput.addEventListener('change', () => snapTo15Minutes(endInput));
-
-    // 初期表示時にも念のためスナップ処理を実行して整形
-    snapTo15Minutes(startInput);
-    snapTo15Minutes(endInput);
+    const getEndTime = () => {
+        const hour = row.querySelector('.tb-end-hour').value;
+        const min = row.querySelector('.tb-end-min').value;
+        return `${hour}:${min}`;
+    };
 
     // 保存
     saveBtn.addEventListener('click', async () => {
-        const start = startInput.value;
-        const end = endInput.value;
+        const start = getStartTime();
+        const end = getEndTime();
         const color = colorInput.value;
 
         // 名前は時間帯から自動生成
