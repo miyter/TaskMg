@@ -19,19 +19,14 @@ export function buildProjectModalHTML(project = null) {
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
             <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden transform transition-all scale-100 flex flex-col" role="dialog" aria-modal="true">
                 
-                <!-- ヘッダー（タスクモーダルと統一：入力欄を配置） -->
+                <!-- ヘッダー（タスクモーダルと統一：入力欄を配置、×ボタンは削除） -->
                 <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
                     <input type="text" id="modal-project-name" value="${titleValue}" placeholder="${placeholder}"
                         class="w-full text-lg font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600">
-                    
-                    <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition ml-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
                 </div>
 
                 <!-- ボディ -->
                 <div class="px-6 py-8 flex-1 overflow-y-auto">
-                    <!-- 現状はシンプルな説明のみ。将来的に色選択などをここに追加 -->
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                         ${isEditing ? 'プロジェクト名を変更します。' : '新しいプロジェクトを作成します。'}
                     </p>

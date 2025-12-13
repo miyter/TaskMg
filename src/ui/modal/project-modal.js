@@ -32,25 +32,24 @@ export function showProjectModal(project = null) {
 function setupProjectModalEvents(modalOverlay, project, isNew) {
     const closeModal = () => modalOverlay.remove();
 
-    // 閉じるボタン・キャンセルボタン
-    const closeBtn = modalOverlay.querySelector('#close-project-modal');
-    const cancelBtn = modalOverlay.querySelector('#cancel-project-btn');
-    
-    closeBtn?.addEventListener('click', closeModal);
+    // DOM要素の取得 (IDをDOM定義に合わせて修正)
+    // ×ボタンはDOMから削除されたため取得不要
+    const cancelBtn = modalOverlay.querySelector('#cancel-modal-btn');
+    const saveBtn = modalOverlay.querySelector('#save-project-btn');
+    const nameInput = modalOverlay.querySelector('#modal-project-name');
+    const deleteBtn = modalOverlay.querySelector('#delete-project-btn');
+
+    // キャンセルボタンで閉じる
     cancelBtn?.addEventListener('click', closeModal);
 
-    // フォーム送信（保存）
-    const form = modalOverlay.querySelector('#project-form');
-    const nameInput = modalOverlay.querySelector('#project-name-input');
-    
-    // フォーカス設定
-    setTimeout(() => nameInput?.focus(), 50);
-
-    form?.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    // 保存処理（ボタンクリックで実行）
+    saveBtn?.addEventListener('click', async () => {
         const name = nameInput?.value.trim();
 
-        if (!name) return;
+        if (!name) {
+            showMessageModal('プロジェクト名を入力してください', 'error');
+            return;
+        }
 
         try {
             if (isNew) {
@@ -59,30 +58,37 @@ function setupProjectModalEvents(modalOverlay, project, isNew) {
                 await updateProject(project.id, { name });
             }
             closeModal();
-            // ストアの更新通知によりサイドバー等は自動更新される
+            // ストア更新通知によりサイドバー等は自動更新される
         } catch (error) {
             console.error(error);
             showMessageModal('保存に失敗しました', 'error');
         }
     });
 
-    // 削除ボタン（編集時のみ）
-    const deleteBtn = modalOverlay.querySelector('#delete-project-btn');
-    if (deleteBtn) {
-        if (isNew) {
-            deleteBtn.style.display = 'none'; // 新規時は非表示
-        } else {
-            deleteBtn.addEventListener('click', () => {
-                showMessageModal(`プロジェクト「${project.name}」を削除しますか？\n（関連するタスクの紐付けも解除されます）`, async () => {
-                    try {
-                        await deleteProject(project.id);
-                        closeModal();
-                    } catch (error) {
-                        console.error(error);
-                        showMessageModal('削除に失敗しました', 'error');
-                    }
-                });
-            });
+    // Enterキーで保存
+    nameInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveBtn?.click();
         }
+    });
+
+    // 削除ボタン（編集時のみ存在）
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+            showMessageModal(`プロジェクト「${project.name}」を削除しますか？\n（関連するタスクの紐付けも解除されます）`, async () => {
+                try {
+                    await deleteProject(project.id);
+                    closeModal();
+                    // 必要であればインボックスへ遷移するなどの処理を追加可能
+                } catch (error) {
+                    console.error(error);
+                    showMessageModal('削除に失敗しました', 'error');
+                }
+            });
+        });
     }
+
+    // 入力欄にフォーカス
+    setTimeout(() => nameInput?.focus(), 50);
 }
