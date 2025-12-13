@@ -7,7 +7,7 @@ export function renderLayout() {
     const app = document.getElementById('app');
     if (!app) return;
 
-    initTheme();
+    // initTheme() 呼び出しを削除 (Grokレビュー対応)
 
     // レイアウト: サイドバーとメインコンテンツをFlexboxで配置
     app.innerHTML = `
