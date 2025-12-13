@@ -89,7 +89,8 @@ export function showItemContextMenu(e, type, itemData, allProjects) {
             try {
                 await deleteProject(itemData.id);
                 setCurrentFilter({ type: 'inbox', id: null });
-                showMessageModal(`${itemData.name} を削除しました。`);
+                // ★修正: 削除完了時のメッセージ表示を削除
+                // showMessageModal(`${itemData.name} を削除しました。`);
             } catch (error) {
                 console.error('Delete failed:', error);
                 showMessageModal("削除に失敗しました。", 'error');
