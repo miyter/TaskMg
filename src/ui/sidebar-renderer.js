@@ -163,7 +163,8 @@ export function renderFilters(filters = []) {
  * 全体の描画
  */
 export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels, allFilters = []) {
-    if (!sidebar) return;
+    // ★修正: DOM要素の存在チェックを追加。主要なリストコンテナが存在しない場合は描画をスキップする。
+    if (!sidebar || !document.getElementById('project-list')) return;
     
     renderProjects(allProjects, allTasks);
     renderTimeBlocks(allTasks);
