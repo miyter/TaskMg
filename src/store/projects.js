@@ -31,13 +31,20 @@ function requireAuth() {
 
 /**
  * プロジェクトのリアルタイム購読 (ラッパー)
+ * Grokレビュー対応: unsubscribe関数を正しく返すように修正
+ * これにより、リロード時やページ遷移時の同期解除・再開が正常に機能する
  */
 function subscribeToProjects(onUpdate) {
-    const userId = auth.currentUser?.uid;
-    // 認証前に呼ばれる可能性もあるため、userIdが存在すれば購読
-    if (userId) {
-        subscribeToProjectsRaw(userId, onUpdate);
+    const user = auth.currentUser;
+    
+    // 認証されていない場合は購読せず、ダミーの解除関数を返す
+    if (!user) {
+        console.warn('User not authenticated, skipping projects subscription');
+        return () => {}; 
     }
+
+    // raw関数の戻り値（unsubscribe関数）をそのまま呼び出し元へ返す
+    return subscribeToProjectsRaw(user.uid, onUpdate);
 }
 
 /**
