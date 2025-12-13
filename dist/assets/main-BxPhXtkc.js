@@ -3903,9 +3903,9 @@ This typically indicates that your device does not have a healthy Internet conne
         </div>
 
         <div class="flex-1 flex items-center gap-3 pl-2">
-            <input type="time" class="tb-start px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${i.start}">
+            <input type="time" step="900" class="tb-start px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${i.start}">
             <span class="text-gray-400 font-bold">～</span>
-            <input type="time" class="tb-end px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${i.end}">
+            <input type="time" step="900" class="tb-end px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${i.end}">
         </div>
 
         <div class="flex items-center gap-1">

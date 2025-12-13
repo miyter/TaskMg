@@ -61,7 +61,7 @@ export function showTimeBlockModal() {
     // イベント
     document.getElementById('close-tb-modal').addEventListener('click', () => modalOverlay.remove());
     
-    // ★修正: 完了ボタンクリック時に全行の保存を実行してから閉じる
+    // 完了ボタンクリック時に全行の保存を実行してから閉じる
     document.getElementById('close-tb-footer').addEventListener('click', async () => {
         // 全行の保存ボタンをトリガーして、未保存の変更を反映させる
         const saveButtons = document.querySelectorAll('.tb-save');
@@ -109,6 +109,7 @@ function renderBlockRow(block, container) {
     row.className = 'tb-row flex items-center gap-3 p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm transition-all hover:shadow-md group';
     if (!isNew) row.dataset.id = data.id;
 
+    // ★修正: input type="time" に step="900" (15分) を追加
     row.innerHTML = `
         <div class="cursor-move text-gray-400 hover:text-gray-600 p-1 handle">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
@@ -120,9 +121,9 @@ function renderBlockRow(block, container) {
         </div>
 
         <div class="flex-1 flex items-center gap-3 pl-2">
-            <input type="time" class="tb-start px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.start}">
+            <input type="time" step="900" class="tb-start px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.start}">
             <span class="text-gray-400 font-bold">～</span>
-            <input type="time" class="tb-end px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.end}">
+            <input type="time" step="900" class="tb-end px-3 py-2 text-base text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" value="${data.end}">
         </div>
 
         <div class="flex items-center gap-1">
