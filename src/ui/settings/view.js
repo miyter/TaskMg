@@ -2,6 +2,9 @@
 // 設定モーダルのUIコンポーネント
 
 export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
+    // 現在の背景設定を取得
+    const currentBg = localStorage.getItem('background') || 'none';
+
     return `
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg overflow-hidden ring-1 ring-black/5 flex flex-col max-h-[85vh]">
             
@@ -52,7 +55,7 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
                             </div>
                         </div>
 
-                        <!-- ★追加: 文字サイズ設定 -->
+                        <!-- 文字サイズ設定 -->
                         <div>
                             <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">文字サイズ</label>
                             <div class="grid grid-cols-3 gap-3">
@@ -67,6 +70,25 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
                                 <label class="flex items-center justify-center cursor-pointer p-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                     <input type="radio" name="font-size" value="small" class="form-radio text-blue-600 w-3.5 h-3.5 focus:ring-blue-500">
                                     <span class="ml-2 text-sm text-gray-900 dark:text-white">小</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- ★追加: 背景パターン設定 -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">背景パターン (ダークモードのみ)</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center cursor-pointer p-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <input type="radio" name="bg-pattern" value="none" class="form-radio text-blue-600 w-4 h-4 focus:ring-blue-500" ${currentBg === 'none' ? 'checked' : ''}>
+                                    <div class="ml-2">
+                                        <span class="block text-sm text-gray-900 dark:text-white">無地</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-center cursor-pointer p-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <input type="radio" name="bg-pattern" value="haikei" class="form-radio text-blue-600 w-4 h-4 focus:ring-blue-500" ${currentBg === 'haikei' ? 'checked' : ''}>
+                                    <div class="ml-2 flex items-center">
+                                        <span class="block text-sm text-gray-900 dark:text-white">テクスチャ</span>
+                                    </div>
                                 </label>
                             </div>
                         </div>

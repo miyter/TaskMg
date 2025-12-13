@@ -6,6 +6,8 @@ import { updateUserPassword } from '../auth.js';
 import { signOut } from 'firebase/auth';
 import { createBackupData } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
+// ★追加: 背景適用のための関数をインポート
+import { applyBackground } from '../theme.js';
 
 /**
  * モーダル内の各種イベントリスナーを設定する
@@ -19,7 +21,8 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
     });
 
     setupThemeHandlers();
-    setupFontSizeHandlers(); // ★追加
+    setupFontSizeHandlers();
+    setupBackgroundHandlers(); // ★追加
     setupDensityHandlers();
     setupExportHandler();
     setupPasswordHandler();
@@ -42,11 +45,25 @@ function setupThemeHandlers() {
                 document.documentElement.classList.remove('dark');
                 localStorage.setItem('theme', 'light');
             }
+            // ★追加: テーマ変更に合わせて背景も更新（ライトモードなら画像消去など）
+            applyBackground();
         });
     });
 }
 
-// ★追加: 文字サイズ設定
+// ★追加: 背景パターン設定
+function setupBackgroundHandlers() {
+    const bgRadios = document.querySelectorAll('input[name="bg-pattern"]');
+    bgRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const val = e.target.value;
+            localStorage.setItem('background', val);
+            applyBackground(); // 即時反映
+        });
+    });
+}
+
+// 文字サイズ設定
 function setupFontSizeHandlers() {
     const currentSize = localStorage.getItem('fontSize') || 'medium';
     const radios = document.querySelectorAll('input[name="font-size"]');
@@ -92,7 +109,6 @@ function setupExportHandler() {
     exportBtn.addEventListener('click', async () => {
         const originalHtml = exportBtn.innerHTML;
         exportBtn.disabled = true;
-        // ★修正: SVGパスのエラーを解消するため、安全なHTML構造に置換
         exportBtn.innerHTML = `
             <div class="flex items-center justify-center w-full gap-2">
                 <svg class="animate-spin h-5 w-5 text-gray-500" viewBox="0 0 24 24">
