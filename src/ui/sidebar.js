@@ -10,8 +10,9 @@ import { showFilterModal } from './filter-modal.js';
 import { showTimeBlockModal } from './timeblock-modal.js'; 
 import { showSettingsModal } from './settings.js';
 import { renderSidebarItems, renderProjects } from './sidebar-renderer.js';
-// ★追加: フィルター購読用
+// ★追加: フィルターと時間帯の購読用
 import { subscribeToFilters, getFilters } from '../store/filters.js';
+import { subscribeToTimeBlocks } from '../store/timeblocks.js';
 
 // 外部公開
 export { renderSidebarItems, renderProjects };
@@ -37,41 +38,41 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
     
-    // ★修正: フィルターデータも含めて初期描画
-    // 初期状態ではフィルターは空かもしれないが、subscribeですぐ更新される
+    // 初期描画
     renderSidebarItems(sidebar, allTasks, allProjects, allLabels, []);
     
-    // ★追加: フィルターのリアルタイム購読
-    // Firestoreの変更を検知してサイドバーのフィルターリストを更新
+    // フィルターのリアルタイム購読
     subscribeToFilters((filters) => {
-        // 既存のタスク・プロジェクト情報は保持したままフィルター部分だけ更新したいが、
-        // 簡易的にrenderSidebarItemsを呼ぶ。
-        // ※ 本来はストアから最新のallTasks/allProjectsを取得すべきだが、
-        // ここでは引数の変数がクロージャで古いままの可能性がある。
-        // ただし、renderFiltersは単独で呼べる設計にしたので、
-        // フィルター更新時は renderFilters だけ呼ぶのがベスト。
-        
         const filterList = document.getElementById('filter-list');
         if (filterList) {
-            // sidebar-renderer.js で export した renderFilters を利用して部分更新
-            // ※ renderFilters は default export ではないので、renderSidebarItems 経由か直接 import が必要。
-            // ここでは renderSidebarItems を再利用する形で実装する（引数は最新を渡す必要があるが...）
-            
-            // 暫定対応: DOM要素があれば直接描画関数を動的インポート的に呼ぶか、
-            // initSidebarの引数が古くなる問題を避けるため、カスタムイベント経由で全体の再描画を促すのが理想。
-            // 今回は renderSidebarItems の第5引数に filters を渡して再描画する。
-            // (allTasks等は初期化時のものが使われるため、タスク数カウントが古くなるリスクはあるが、フィルターリスト表示には影響ない)
             renderSidebarItems(sidebar, allTasks, allProjects, allLabels, filters);
         }
     });
 
-    document.addEventListener('timeblocks-updated', () => {
-        renderSidebarItems(document.getElementById('sidebar'), allTasks, allProjects, [], []);
+    // ★追加: 時間帯のリアルタイム購読
+    // Firestoreの変更を検知してサイドバーの時間帯リストを更新
+    subscribeToTimeBlocks((timeBlocks) => {
+        // 時間帯リストのDOM要素が存在する場合のみ更新
+        const tbList = document.getElementById('timeblock-list');
+        if (tbList) {
+            // 現在のフィルターリストを取得 (なければ空)
+            const currentFilters = getFilters();
+            // 全体を再描画 (引数のtimeBlocksはstore内で更新済みなので、
+            // renderSidebarItems内部でgetTimeBlocks()を呼べば最新が取れるはずだが、
+            // storeのキャッシュ更新タイミングと同期させるため、
+            // renderSidebarItemsが内部でgetTimeBlocks()を呼ぶ構造ならこれでOK)
+            renderSidebarItems(sidebar, allTasks, allProjects, allLabels, currentFilters);
+        }
     });
 
-    // ★追加: 手動イベントでのフィルター更新（filter-modalからの通知用）
+    document.addEventListener('timeblocks-updated', () => {
+        // モーダルからの手動通知用 (subscribeがあるため必須ではないが、即時性担保のため残す)
+        const filters = getFilters();
+        renderSidebarItems(document.getElementById('sidebar'), allTasks, allProjects, allLabels, filters);
+    });
+
+    // 手動イベントでのフィルター更新
     document.addEventListener('filters-updated', () => {
-        // subscribeToFilters があるので基本不要だが、即時反映の保険として
         const filters = getFilters();
         renderSidebarItems(sidebar, allTasks, allProjects, allLabels, filters);
     });
