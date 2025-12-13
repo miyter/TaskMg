@@ -17,8 +17,11 @@ export function initTheme() {
     document.body.classList.remove('font-large', 'font-medium', 'font-small');
     document.body.classList.add(`font-${fontSize}`);
 
-    // 3. 背景の適用
-    applyBackground();
+    // 3. 背景の適用 → 遅延実行 (Grokレビュー対応)
+    // レンダリングタイミングをずらすことで確実に適用させる
+    requestAnimationFrame(() => {
+        applyBackground();
+    });
 }
 
 /**
