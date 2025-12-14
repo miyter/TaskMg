@@ -1,9 +1,8 @@
 // @ts-nocheck
 // アプリケーションの初期化ロジック
 
-// 修正: CDN直接インポートを削除し、SDKラッパー経由に変更して二重ロードを防止
+// 修正: SDKラッパー経由
 import { onAuthStateChanged } from '../../core/firebase-sdk.js';
-
 import { auth, initializeFirebase } from '../../core/firebase.js';
 
 // UI初期化関連
@@ -14,6 +13,7 @@ import { initTaskModal } from '../task-modal.js';
 import { initSidebar } from '../sidebar.js';
 import { initSettings } from '../settings.js';
 import { setCurrentFilter, renderLoginState } from '../ui-view-manager.js';
+import { updateWorkspaceDropdownUI } from '../components/WorkspaceDropdown.js'; // 追加
 
 // コアモジュール
 import { startAllSubscriptions, stopDataSync, getWorkspaceUnsubscribe, setWorkspaceUnsubscribe, isSyncing } from './DataSyncManager.js';
@@ -24,7 +24,6 @@ import { subscribeToWorkspaces, getCurrentWorkspaceId } from '../../store/worksp
  * アプリケーションの初期化を実行する
  */
 export function runInitialization() {
-    // Firebase初期化
     try {
         initializeFirebase();
     } catch (e) {
@@ -32,19 +31,12 @@ export function runInitialization() {
         return;
     }
 
-    // UIコンポーネント初期化
     initTheme();
     renderLayout();
     initSettings();
     initTaskModal();
-    
-    // イベントリスナー設定
     setupGlobalEventListeners();
-    
-    // ページ状態の復元
     restorePageState();
-
-    // 認証状態の監視開始
     setupAuthObserver();
 }
 
@@ -58,7 +50,7 @@ function restorePageState() {
             const { page, id } = JSON.parse(saved);
             setCurrentFilter({ type: page, id: id || null });
         } else {
-            setCurrentFilter({ type: 'inbox' }); // デフォルト
+            setCurrentFilter({ type: 'inbox' });
         }
     } catch (e) {
         console.error('Failed to restore page state:', e);
@@ -87,7 +79,6 @@ function setupAuthObserver() {
 }
 
 function handleUserLogin() {
-    // 解決策: auth.currentUserが確実にセットされるまで待機（非同期タイミング対策）
     if (!auth.currentUser) {
         setTimeout(handleUserLogin, 100);
         return;
@@ -100,10 +91,13 @@ function handleUserLogin() {
     let unsubscribeWorkspaces = getWorkspaceUnsubscribe();
     
     if (!unsubscribeWorkspaces) {
+        // ここで認証済みユーザーとして安全に購読開始
         unsubscribeWorkspaces = subscribeToWorkspaces((workspaces) => {
-            // ワークスペース一覧がロードされ、カレントIDが確定したらデータ同期開始
+            // UI更新: WorkspaceDropdownにデータを渡す
+            updateWorkspaceDropdownUI(workspaces);
+
+            // データ同期開始チェック
             const currentWorkspaceId = getCurrentWorkspaceId();
-            
             if (currentWorkspaceId && !isSyncing()) {
                 console.log('Workspace ready, starting data sync:', currentWorkspaceId);
                 startAllSubscriptions();
