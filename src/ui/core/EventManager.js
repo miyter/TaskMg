@@ -18,6 +18,10 @@ export function setupGlobalEventListeners() {
         if (headerTitle) headerTitle.textContent = '読み込み中...';
         
         if (auth && auth.currentUser) {
+            // ★重要: フィルターをデフォルト（inbox）にリセット
+            // これにより、旧ワークスペースのプロジェクトIDが残って画面が空になるのを防ぐ
+            setCurrentFilter({ type: 'inbox', id: null });
+
             stopDataSync(false); // workspaceの購読は維持
             startAllSubscriptions();
             updateUI();
