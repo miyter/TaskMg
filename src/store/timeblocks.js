@@ -18,7 +18,8 @@ const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID)
 
 // メモリキャッシュ
 let timeBlocks = [];
-let unsubscribe = null;
+// 削除: グローバル変数での購読管理を廃止
+// let unsubscribe = null;
 
 // デフォルトの時間帯データ（初回用・未ログイン時用）
 const defaultTimeBlocks = [
@@ -65,7 +66,8 @@ export function clearTimeBlocksCache() {
  * @returns {Function} 購読解除関数
  */
 export function subscribeToTimeBlocks(callback) {
-    if (unsubscribe) unsubscribe();
+    // 削除: モジュールレベルの変数は使用しない
+    // if (unsubscribe) unsubscribe();
 
     const colRef = getCollectionRef();
     
@@ -79,7 +81,8 @@ export function subscribeToTimeBlocks(callback) {
     // orderでソートして取得
     const q = query(colRef, orderBy('order', 'asc'));
 
-    unsubscribe = onSnapshot(q, (snapshot) => {
+    // 変更: onSnapshotの戻り値（解除関数）を直接呼び出し元へ返す
+    return onSnapshot(q, (snapshot) => {
         const newBlocks = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
@@ -91,14 +94,6 @@ export function subscribeToTimeBlocks(callback) {
     }, (error) => {
         console.error("Timeblocks subscription error:", error);
     });
-
-    // 呼び出し元で管理できる解除関数を返す
-    return () => {
-        if (unsubscribe) {
-            unsubscribe();
-            unsubscribe = null;
-        }
-    };
 }
 
 /**
