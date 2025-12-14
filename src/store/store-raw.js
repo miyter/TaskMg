@@ -15,8 +15,9 @@ import {
     Timestamp 
 } from "../core/firebase-sdk.js";
 
-// 相対パスを維持
-import { db } from '../core/firebase.js';
+// 修正: dbの直接インポートを廃止し、getFirebaseヘルパーを使用
+// import { db } from '../core/firebase.js'; 
+import { getFirebase } from '../core/firebase.js';
 
 let unsubscribe = null;
 
@@ -58,6 +59,9 @@ export function subscribeToTasksRaw(userId, onUpdate) {
     const appId = window.GLOBAL_APP_ID || (typeof __app_id !== 'undefined' ? __app_id : 'default-app-id');
     console.log(`[Tasks] Subscribing for User: ${userId}, AppId: ${appId}`);
 
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     const path = `/artifacts/${appId}/users/${userId}/tasks`;
     const q = query(collection(db, path));
 
@@ -88,6 +92,10 @@ export function subscribeToTasksRaw(userId, onUpdate) {
  */
 export async function getTaskByIdRaw(userId, taskId) {
     const appId = window.GLOBAL_APP_ID;
+    
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     const ref = doc(db, `/artifacts/${appId}/users/${userId}/tasks`, taskId);
     const docSnap = await getDoc(ref);
     if (docSnap.exists()) {
@@ -111,6 +119,9 @@ export async function addTaskRaw(userId, taskData) {
         safeTaskData.dueDate = Timestamp.fromDate(safeTaskData.dueDate);
     }
     
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     await addDoc(collection(db, path), {
         ...safeTaskData,
         ownerId: userId,
@@ -128,6 +139,10 @@ export async function addTaskRaw(userId, taskData) {
 export async function updateTaskStatusRaw(userId, taskId, status) {
     const appId = window.GLOBAL_APP_ID;
     const path = `/artifacts/${appId}/users/${userId}/tasks`;
+    
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     await updateDoc(doc(db, path, taskId), { status });
 }
 
@@ -139,6 +154,10 @@ export async function updateTaskStatusRaw(userId, taskId, status) {
  */
 export async function updateTaskRaw(userId, taskId, updates) {
     const appId = window.GLOBAL_APP_ID;
+    
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+    
     const ref = doc(db, `/artifacts/${appId}/users/${userId}/tasks`, taskId);
     
     const safeUpdates = { ...updates };
@@ -171,6 +190,10 @@ export async function updateTaskRaw(userId, taskId, updates) {
  */
 export async function deleteTaskRaw(userId, taskId) {
     const appId = window.GLOBAL_APP_ID;
+    
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     const ref = doc(db, `/artifacts/${appId}/users/${userId}/tasks`, taskId);
     await deleteDoc(ref);
 }
@@ -180,12 +203,20 @@ export async function deleteTaskRaw(userId, taskId) {
  * @param {string} userId - ユーザーID (必須)
  */
 export async function createBackupDataRaw(userId) {
-    if (!db) throw new Error("Firestore not initialized");
+    // 修正: 実行時にインスタンスを取得
+    let dbInstance;
+    try {
+        const firebase = getFirebase();
+        dbInstance = firebase.db;
+    } catch (e) {
+        throw new Error("Firestore not initialized");
+    }
+
     const appId = window.GLOBAL_APP_ID;
     
-    const tasksRef = collection(db, `/artifacts/${appId}/users/${userId}/tasks`);
-    const projectsRef = collection(db, `/artifacts/${appId}/users/${userId}/projects`);
-    const labelsRef = collection(db, `/artifacts/${appId}/users/${userId}/labels`);
+    const tasksRef = collection(dbInstance, `/artifacts/${appId}/users/${userId}/tasks`);
+    const projectsRef = collection(dbInstance, `/artifacts/${appId}/users/${userId}/projects`);
+    const labelsRef = collection(dbInstance, `/artifacts/${appId}/users/${userId}/labels`);
 
     const [tasksSnap, projectsSnap, labelsSnap] = await Promise.all([
         getDocs(tasksRef),

@@ -6,7 +6,10 @@ import {
     collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, orderBy 
 } from "../core/firebase-sdk.js";
 
-import { db } from '../core/firebase.js';
+// 修正: dbの直接インポートを廃止し、getFirebaseヘルパーを使用
+// import { db } from '../core/firebase.js';
+import { getFirebase } from '../core/firebase.js';
+
 import { getCurrentWorkspaceId } from './workspace.js';
 
 // ==========================================================
@@ -49,6 +52,9 @@ export function subscribeToProjectsRaw(userId, onUpdate) {
         return () => {};
     }
 
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     // orderByはインデックスエラー回避のため一旦外しています。
     const q = query(collection(db, path)); 
 
@@ -77,6 +83,9 @@ export async function addProjectRaw(userId, name) {
     const path = getProjectsPath(userId);
     if (!path) throw new Error('Workspace not selected');
 
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     await addDoc(collection(db, path), {
         name,
         ownerId: userId,
@@ -94,6 +103,9 @@ export async function updateProjectRaw(userId, projectId, updates) {
     const path = getProjectsPath(userId);
     if (!path) throw new Error('Workspace not selected');
 
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     const ref = doc(db, path, projectId);
     return updateDoc(ref, updates);
 }
@@ -106,6 +118,9 @@ export async function updateProjectRaw(userId, projectId, updates) {
 export async function deleteProjectRaw(userId, projectId) {
     const path = getProjectsPath(userId);
     if (!path) throw new Error('Workspace not selected');
+
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
 
     await deleteDoc(doc(db, path, projectId));
 }
