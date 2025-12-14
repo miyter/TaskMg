@@ -1,6 +1,7 @@
 // @ts-nocheck
 // @miyter:20251129
 
+// 修正: SDKラッパーからインポートして一元管理
 import { 
     collection, 
     addDoc, 
@@ -10,9 +11,10 @@ import {
     query, 
     onSnapshot, 
     getDoc, 
-    getDocs, // ★修正: getDocsをインポートに追加
+    getDocs,
     Timestamp 
-} from "firebase/firestore";
+} from "../core/firebase-sdk.js";
+
 // 相対パスを維持
 import { db } from '../core/firebase.js';
 
@@ -52,13 +54,29 @@ export function subscribeToTasksRaw(userId, onUpdate) {
         return;
     }
     
-    const appId = window.GLOBAL_APP_ID;
+    // アプリIDの取得と検証
+    const appId = window.GLOBAL_APP_ID || (typeof __app_id !== 'undefined' ? __app_id : 'default-app-id');
+    console.log(`[Tasks] Subscribing for User: ${userId}, AppId: ${appId}`);
+
     const path = `/artifacts/${appId}/users/${userId}/tasks`;
     const q = query(collection(db, path));
 
     unsubscribe = onSnapshot(q, (snapshot) => {
         const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
         onUpdate(tasks);
+    }, (error) => {
+        // エラーハンドリング追加
+        console.error("Task subscription error:", error);
+        
+        if (error.code === 'permission-denied') {
+            console.warn("Permission denied for tasks. This usually happens when:\n1. Firestore rules block access\n2. The userId in path doesn't match auth.currentUser\n3. Data migration is incomplete (old paths)");
+        }
+        
+        // エラー時は空配列を返してUIをブロックしない
+        onUpdate([]);
+        
+        // エラー発生時は購読を明示的に解除
+        unsubscribe = null;
     });
 }
 

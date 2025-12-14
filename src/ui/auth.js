@@ -3,14 +3,14 @@
 // Vite導入に伴い、Firebase SDKのインポートをnpmパッケージ形式に、
 // ローカルモジュールのインポートを絶対パス '@' に修正
 
-// --- 修正1: Firebase SDKをnpmパッケージからインポート ---
+// --- 修正1: Firebase SDKをラッパーからインポートして一元化 ---
 import { 
     signInWithEmailAndPassword,
     signOut,
     signInWithCustomToken,
     onAuthStateChanged,
     updatePassword
-} from "firebase/auth";
+} from "../core/firebase-sdk.js";
 
 // --- 修正2: ローカルモジュールへのインポートパスを相対パスに変更 ---
 import { auth, isFirebaseInitialized } from '../core/firebase.js'; 
@@ -38,7 +38,8 @@ export function initAuthListener(onLogin, onLogout) {
     });
 
     // Canvas環境用の初期トークンログイン
-    const initialToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
+    const initialToken = (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) || (typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null);
+    
     if (initialToken) {
         signInWithCustomToken(auth, initialToken).catch(console.error);
     }
@@ -146,7 +147,3 @@ export function updateAuthUI(user) {
         logoutBtn.hasListener = true; // 重複登録防止フラグ
     }
 }
-
-// 以前の initAuthUI は不要になるため、削除または未実装のままにするが、
-// 以前のファイルに存在するため、残りのロジックを updateAuthUI に統合して簡潔化する。
-// 依存関係がなければ削除するが、今回は updateAuthUI にロジックを統合する形で対応。
