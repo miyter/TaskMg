@@ -5,7 +5,6 @@ import { updateView, setCurrentFilter } from './ui-view-manager.js';
 import { updateSidebarState, setupResizer } from './sidebar-utils.js';
 import { buildSidebarHTML, setupSidebarToggles } from './sidebar-dom.js';
 import { setupDropZone } from './sidebar-drag-drop.js'; 
-// ★修正: 本格モーダルへ切り替え
 import { showProjectModal } from './modal/project-modal.js';
 import { showFilterModal } from './filter-modal.js';
 import { showTimeBlockModal } from './timeblock-modal.js'; 
@@ -38,8 +37,9 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
     
-    // 初期描画
-    renderSidebarItems(sidebar, allTasks, allProjects, allLabels, []);
+    // ★修正: 初期描画で空リストが表示されるのを防ぐため削除
+    // データ同期完了後に自動的に描画されるのを待つ
+    // renderSidebarItems(sidebar, allTasks, allProjects, allLabels, []);
     
     // フィルターのリアルタイム購読
     subscribeToFilters((filters) => {
