@@ -76,6 +76,7 @@ function startDataSync() {
     });
 
     // 2. プロジェクト購読
+    // ★追加: プロジェクトのリアルタイム同期を追加し、リロード後もサイドバーに表示されるように修正
     unsubscribeProjects = subscribeToProjects((projects) => {
         allProjects = projects;
         renderProjects(allProjects, allTasks);
