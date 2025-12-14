@@ -1,9 +1,9 @@
 // @ts-nocheck
 // ワークスペース切り替えドロップダウンのロジック
 
-import { subscribeToWorkspaces, addWorkspace, setCurrentWorkspaceId, getCurrentWorkspaceId } from '../../store/workspace.js';
-import { showMessageModal } from '../components.js';
+import { subscribeToWorkspaces, setCurrentWorkspaceId, getCurrentWorkspaceId } from '../../store/workspace.js';
 import { showSettingsModal } from '../settings.js';
+import { showWorkspaceModal } from '../modal/workspace-modal.js';
 
 /**
  * ワークスペースドロップダウンの機能を初期化する
@@ -59,20 +59,10 @@ export function initWorkspaceDropdown() {
 
     // --- アクションボタン ---
     if (addBtn) {
-        addBtn.onclick = async () => {
+        addBtn.onclick = () => {
             closeMenu();
-            // シンプルなプロンプトで名前入力
-            const name = window.prompt("新しいワークスペース名を入力してください:");
-            if (name && name.trim()) {
-                try {
-                    const newWs = await addWorkspace(name.trim());
-                    // 作成成功したら自動でそのワークスペースに切り替え
-                    setCurrentWorkspaceId(newWs.id);
-                } catch (error) {
-                    console.error("Failed to add workspace:", error);
-                    showMessageModal("ワークスペースの作成に失敗しました");
-                }
-            }
+            // フルモーダルを表示
+            showWorkspaceModal();
         };
     }
 
