@@ -12,6 +12,7 @@ import { showSettingsModal } from './settings.js';
 import { renderSidebarItems, renderProjects } from './sidebar-renderer.js';
 import { subscribeToFilters, getFilters } from '../store/filters.js';
 import { subscribeToTimeBlocks } from '../store/timeblocks.js';
+import { subscribeToProjects } from '../store/projects.js'; // ★追加
 
 // 外部公開
 export { renderSidebarItems, renderProjects };
@@ -37,14 +38,23 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
     
-    // ★修正: 初期描画で空リストが表示されるのを防ぐため削除
-    // データ同期完了後に自動的に描画されるのを待つ
-    // renderSidebarItems(sidebar, allTasks, allProjects, allLabels, []);
+    // ★追加: プロジェクトのリアルタイム購読
+    // これによりFirebaseからデータが来た瞬間にサイドバーが更新される
+    subscribeToProjects((projects) => {
+        if (sidebar) {
+            const currentFilters = typeof getFilters === 'function' ? getFilters() : [];
+            // 最新のprojectsを使って再描画
+            renderSidebarItems(sidebar, allTasks, projects, allLabels, currentFilters);
+        }
+    });
     
     // フィルターのリアルタイム購読
     subscribeToFilters((filters) => {
         const filterList = document.getElementById('filter-list');
         if (filterList) {
+            // ここではprojectsはinit時点のもの(allProjects)が使われるが、
+            // 本質的には各subscribe内で最新の状態を管理するか、State Managerから取得するのが理想。
+            // 今回はプロジェクト表示修正を優先。
             renderSidebarItems(sidebar, allTasks, allProjects, allLabels, filters);
         }
     });
