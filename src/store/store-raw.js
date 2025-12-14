@@ -20,7 +20,8 @@ import {
 import { getFirebase } from '../core/firebase.js';
 import { getCurrentWorkspaceId } from './workspace.js'; // 追加
 
-let unsubscribe = null;
+// 削除: グローバル変数での購読管理を廃止
+// let unsubscribe = null;
 
 /**
  * FirestoreドキュメントデータをJavaScriptオブジェクトに変換するヘルパー
@@ -66,12 +67,15 @@ function getTasksPath(userId) {
  * タスク一覧をリアルタイム監視 (RAW)
  * @param {string} userId - ユーザーID (必須)
  * @param {function} onUpdate - データ更新コールバック
+ * @returns {function} 購読解除関数
  */
 export function subscribeToTasksRaw(userId, onUpdate) {
-    if (unsubscribe) unsubscribe();
+    // 削除: グローバル変数のチェックを廃止
+    // if (unsubscribe) unsubscribe();
+
     if (!userId) {
         onUpdate([]); // ユーザーIDがない場合は空のリストを返す
-        return;
+        return () => {}; // 空の解除関数を返す
     }
     
     // 修正: 実行時にインスタンスを取得
@@ -80,13 +84,14 @@ export function subscribeToTasksRaw(userId, onUpdate) {
     const path = getTasksPath(userId);
     if (!path) {
         onUpdate([]);
-        return;
+        return () => {}; // 空の解除関数を返す
     }
 
     console.log(`[Tasks] Subscribing to: ${path}`);
     const q = query(collection(db, path));
 
-    unsubscribe = onSnapshot(q, (snapshot) => {
+    // 変更: onSnapshotの戻り値（解除関数）を直接呼び出し元へ返す
+    return onSnapshot(q, (snapshot) => {
         const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
         onUpdate(tasks);
     }, (error) => {
@@ -100,8 +105,8 @@ export function subscribeToTasksRaw(userId, onUpdate) {
         // エラー時は空配列を返してUIをブロックしない
         onUpdate([]);
         
-        // エラー発生時は購読を明示的に解除
-        unsubscribe = null;
+        // グローバル変数の操作を削除
+        // unsubscribe = null;
     });
 }
 
