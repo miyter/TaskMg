@@ -1,10 +1,14 @@
 // @ts-nocheck
-// @miyter:20251125
+// @miyter:20251129
 
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot } from "firebase/firestore"; // ★修正: updateDocをインポートに追加
+// 修正: SDKラッパーからインポート
+import { 
+    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot 
+} from "../core/firebase-sdk.js";
 
-// ★修正: ローカルモジュールへのインポートパスを相対パスに変更
-import { db } from '../core/firebase.js';
+// 修正: dbの直接インポートを廃止し、getFirebaseヘルパーを使用
+// import { db } from '../core/firebase.js';
+import { getFirebase } from '../core/firebase.js';
 
 // ==========================================================
 // ★ RAW FUNCTIONS (userId必須) - ラッパー層からのみ呼び出し
@@ -17,8 +21,15 @@ import { db } from '../core/firebase.js';
  * @returns {function} リスナーを解除するための関数
  */
 export function subscribeToLabelsRaw(userId, onUpdate) {
-    const appId = window.GLOBAL_APP_ID;
+    const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
+        ? window.GLOBAL_APP_ID 
+        : 'default-app-id';
+        
     const path = `/artifacts/${appId}/users/${userId}/labels`;
+    
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+    
     const q = query(collection(db, path));
 
     return onSnapshot(q, (snapshot) => {
@@ -34,8 +45,15 @@ export function subscribeToLabelsRaw(userId, onUpdate) {
  * @param {string} color - ラベルの色 (HEXまたはTailwindクラス名)
  */
 export async function addLabelRaw(userId, name, color) {
-    const appId = window.GLOBAL_APP_ID;
+    const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
+        ? window.GLOBAL_APP_ID 
+        : 'default-app-id';
+        
     const path = `/artifacts/${appId}/users/${userId}/labels`;
+    
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     await addDoc(collection(db, path), {
         name,
         color,
@@ -51,8 +69,15 @@ export async function addLabelRaw(userId, name, color) {
  * @param {object} updates - 更新内容
  */
 export async function updateLabelRaw(userId, labelId, updates) {
-    const appId = window.GLOBAL_APP_ID;
+    const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
+        ? window.GLOBAL_APP_ID 
+        : 'default-app-id';
+        
     const path = `/artifacts/${appId}/users/${userId}/labels`;
+    
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     const ref = doc(db, path, labelId);
     return updateDoc(ref, updates);
 }
@@ -63,7 +88,14 @@ export async function updateLabelRaw(userId, labelId, updates) {
  * @param {string} labelId - ラベルID
  */
 export async function deleteLabelRaw(userId, labelId) {
-    const appId = window.GLOBAL_APP_ID;
+    const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
+        ? window.GLOBAL_APP_ID 
+        : 'default-app-id';
+        
     const path = `/artifacts/${appId}/users/${userId}/labels`;
+    
+    // 修正: 実行時にインスタンスを取得
+    const { db } = getFirebase();
+
     await deleteDoc(doc(db, path, labelId));
 }
