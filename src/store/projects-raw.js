@@ -28,15 +28,13 @@ function getProjectsPath(userId) {
         ? window.GLOBAL_APP_ID 
         : 'default-app-id';
         
-    // ワークスペース選択状態は確認するが、パスには含めない
+    // ワークスペース選択状態を確認し、パスに含める
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
 
-    // 修正: ワークスペース階層 (/workspaces/{workspaceId}) を削除し
-    // セキュリティルールと一致するユーザー直下のパスに変更
-    // 旧: /artifacts/${appId}/workspaces/${workspaceId}/users/${userId}/projects
-    // 新: /artifacts/${appId}/users/${userId}/projects
-    return `/artifacts/${appId}/users/${userId}/projects`;
+    // 修正: ワークスペースごとの階層に変更
+    // /artifacts/${appId}/users/${userId}/workspaces/${workspaceId}/projects
+    return `/artifacts/${appId}/users/${userId}/workspaces/${workspaceId}/projects`;
 }
 
 /**
