@@ -13,7 +13,7 @@ import { initTaskModal } from '../task-modal.js';
 import { initSidebar } from '../sidebar.js';
 import { initSettings } from '../settings.js';
 import { setCurrentFilter, renderLoginState } from '../ui-view-manager.js';
-import { updateWorkspaceDropdownUI } from '../components/WorkspaceDropdown.js'; // 追加
+import { updateWorkspaceDropdownUI } from '../components/WorkspaceDropdown.js';
 
 // コアモジュール
 import { startAllSubscriptions, stopDataSync, getWorkspaceUnsubscribe, setWorkspaceUnsubscribe, isSyncing } from './DataSyncManager.js';
@@ -96,12 +96,13 @@ function handleUserLogin() {
             // UI更新: WorkspaceDropdownにデータを渡す
             updateWorkspaceDropdownUI(workspaces);
 
-            // データ同期開始チェック
-            const currentWorkspaceId = getCurrentWorkspaceId();
-            if (currentWorkspaceId && !isSyncing()) {
-                console.log('Workspace ready, starting data sync:', currentWorkspaceId);
-                startAllSubscriptions();
-            }
+            // ★修正: データ同期開始は EventManager.js の workspace-changed イベントに一元化
+            // 以前のコード（削除済み）:
+            // const currentWorkspaceId = getCurrentWorkspaceId();
+            // if (currentWorkspaceId && !isSyncing()) {
+            //     console.log('Workspace ready, starting data sync:', currentWorkspaceId);
+            //     startAllSubscriptions();
+            // }
         });
         setWorkspaceUnsubscribe(unsubscribeWorkspaces);
     }
