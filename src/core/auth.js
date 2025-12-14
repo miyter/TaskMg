@@ -1,19 +1,17 @@
 // @ts-nocheck
-// @miyter:20251125
-// Vite導入に伴い、Firebase SDKのインポートをnpmパッケージ形式に、
-// ローカルモジュールのインポートを絶対パス '@' に修正
+// @miyter:20251129
 
-// --- 修正1: Firebase SDKをnpmパッケージからインポート ---
+// 修正: SDKラッパーからインポートして一元管理 (二重ロード防止)
 import { 
     signInWithEmailAndPassword,
     signOut,
     signInWithCustomToken,
     onAuthStateChanged,
     updatePassword
-} from "firebase/auth";
+} from "./firebase-sdk.js";
 
-// --- 修正2: ローカルモジュールへのインポートパスを相対パスに変更 ---
-import { auth, isFirebaseInitialized } from '../core/firebase.js'; 
+// 相対パスを維持
+import { auth, isFirebaseInitialized } from './firebase.js'; 
 // UI層のヘルパー関数（updatePasswordが依存するため）
 import { showMessageModal } from '../ui/components.js'; 
 
@@ -36,7 +34,9 @@ export function initAuthListener(onLogin, onLogout) {
     });
 
     // Canvas環境用の初期トークンログイン
-    const initialToken = window.GLOBAL_INITIAL_AUTH_TOKEN;
+    // 修正: window.GLOBAL... または __initial_auth_token を安全に取得
+    const initialToken = (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) || (typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null);
+    
     if (initialToken) {
         signInWithCustomToken(auth, initialToken).catch(console.error);
     }
