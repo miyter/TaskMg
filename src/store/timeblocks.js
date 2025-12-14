@@ -36,16 +36,20 @@ function getUserId() {
 
 /**
  * 時間帯ブロックのコレクションパスを取得
- * ワークスペースIDを含むパスを返す
+ * 変更: ワークスペース依存を排除し、ユーザー直下の階層に統一 (/users/{userId}/timeblocks)
+ * これによりFirestoreセキュリティルールとの整合性を確保する
  */
 function getCollectionRef() {
     const userId = getUserId();
+    // ワークスペース選択状態はアプリのUI制御として引き続きチェックするが、パス生成には使用しない
     const workspaceId = getCurrentWorkspaceId();
     
     // ユーザーまたはワークスペースが特定できない場合はnull
     if (!userId || !workspaceId) return null;
     
-    return collection(db, 'artifacts', appId, 'workspaces', workspaceId, 'users', userId, 'timeblocks');
+    // 以前のパス: .../workspaces/{workspaceId}/users/{userId}/timeblocks
+    // 新しいパス: .../users/{userId}/timeblocks
+    return collection(db, 'artifacts', appId, 'users', userId, 'timeblocks');
 }
 
 /**
