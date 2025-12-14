@@ -7,6 +7,7 @@ import {
     onSnapshot, 
     addDoc, 
     updateDoc, 
+    deleteDoc, // 追加
     doc, 
     serverTimestamp,
     getDocs,
@@ -196,4 +197,17 @@ export async function updateWorkspaceName(id, newName) {
     await updateDoc(docRef, {
         name: newName
     });
+}
+
+/**
+ * ワークスペースを削除
+ * @param {string} id 
+ */
+export async function deleteWorkspace(id) {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const docRef = doc(db, 'artifacts', appId, 'users', user.uid, COLLECTION_NAME, id);
+    
+    await deleteDoc(docRef);
 }

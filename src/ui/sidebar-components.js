@@ -3,10 +3,12 @@
 
 import { deleteProject } from '../store/projects.js';
 import { deleteFilter } from '../store/filters.js';
+import { deleteWorkspace } from '../store/workspace.js'; // 追加
 import { showFilterModal } from './filter-modal.js';
 import { showMessageModal } from './components.js';
 // ★修正: 本格モーダルへ切り替え
 import { showProjectModal } from './modal/project-modal.js';
+import { showWorkspaceModal } from './modal/workspace-modal.js'; // 追加
 import { setCurrentFilter } from './ui-view-manager.js';
 
 /**
@@ -53,10 +55,11 @@ export function createSidebarItem(name, type, id, color, count) {
 }
 
 /**
- * 右クリックメニューを表示する（プロジェクト & フィルター対応）
+ * 右クリックメニューを表示する（プロジェクト & フィルター & ワークスペース対応）
  */
 export function showItemContextMenu(e, type, itemData, extraData = {}) {
-    if (!['project', 'filter'].includes(type)) return;
+    // workspaceを追加
+    if (!['project', 'filter', 'workspace'].includes(type)) return;
 
     document.getElementById('sidebar-context-menu')?.remove();
 
@@ -67,6 +70,8 @@ export function showItemContextMenu(e, type, itemData, extraData = {}) {
     menu.style.top = `${e.clientY}px`;
 
     let menuItems = '';
+    
+    // 編集ボタンの出しわけ
     if (type === 'project') {
         menuItems = `
             <button id="context-edit-btn" class="flex w-full items-center px-3 py-2 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
@@ -81,8 +86,16 @@ export function showItemContextMenu(e, type, itemData, extraData = {}) {
                 編集 / 名前変更
             </button>
         `;
+    } else if (type === 'workspace') {
+        menuItems = `
+            <button id="context-edit-btn" class="flex w-full items-center px-3 py-2 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                名前変更
+            </button>
+        `;
     }
 
+    // 共通: 削除ボタン
     menuItems += `
         <button id="context-delete-btn" class="flex w-full items-center px-3 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50 transition">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -100,15 +113,23 @@ export function showItemContextMenu(e, type, itemData, extraData = {}) {
             showProjectModal(itemData);
         } else if (type === 'filter') {
             showFilterModal(itemData);
+        } else if (type === 'workspace') {
+            showWorkspaceModal(itemData);
         }
     });
 
     // 削除ボタン
     document.getElementById('context-delete-btn').addEventListener('click', () => {
         menu.remove();
-        const confirmMsg = type === 'project' 
-            ? `${itemData.name} を削除しますか？\n（関連するタスクのプロジェクト情報も削除されます）`
-            : `フィルター「${itemData.name}」を削除しますか？`;
+        let confirmMsg = '';
+
+        if (type === 'project') {
+            confirmMsg = `${itemData.name} を削除しますか？\n（関連するタスクのプロジェクト情報も削除されます）`;
+        } else if (type === 'filter') {
+            confirmMsg = `フィルター「${itemData.name}」を削除しますか？`;
+        } else if (type === 'workspace') {
+            confirmMsg = `ワークスペース「${itemData.name}」を削除しますか？`;
+        }
 
         showMessageModal(confirmMsg, async () => {
             try {
@@ -118,6 +139,9 @@ export function showItemContextMenu(e, type, itemData, extraData = {}) {
                 } else if (type === 'filter') {
                     await deleteFilter(itemData.id);
                     document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'inbox' } }));
+                } else if (type === 'workspace') {
+                    await deleteWorkspace(itemData.id);
+                    // ワークスペース削除後のリダイレクト等は store/workspace.js 内でハンドリングされる
                 }
             } catch (error) {
                 console.error('Delete failed:', error);

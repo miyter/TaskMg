@@ -4,6 +4,8 @@
 import { setCurrentWorkspaceId, getCurrentWorkspaceId } from '../../store/workspace.js';
 import { showSettingsModal } from '../settings.js';
 import { showWorkspaceModal } from '../modal/workspace-modal.js';
+// 右クリックメニュー用関数をインポート
+import { showItemContextMenu } from '../sidebar-components.js';
 
 // モジュールスコープでDOM要素や状態を保持
 let menuEl = null;
@@ -65,7 +67,8 @@ export function initWorkspaceDropdown() {
     if (addBtn) {
         addBtn.onclick = () => {
             closeMenu();
-            showWorkspaceModal();
+            // 新規作成モードで呼び出し
+            showWorkspaceModal(null);
         };
     }
 
@@ -110,15 +113,22 @@ function renderWorkspaceMenu(workspaces, container) {
         }`;
         
         btn.innerHTML = `
-            <span class="truncate">${ws.name}</span>
-            ${isCurrent ? '<svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : ''}
+            <span class="truncate pointer-events-none">${ws.name}</span>
+            ${isCurrent ? '<svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : ''}
         `;
         
+        // 左クリック: ワークスペース切り替え
         btn.addEventListener('click', () => {
             if (!isCurrent) {
                 setCurrentWorkspaceId(ws.id);
             }
             closeMenu();
+        });
+
+        // 右クリック: コンテキストメニュー表示 (編集・削除)
+        btn.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showItemContextMenu(e, 'workspace', ws);
         });
         
         container.appendChild(btn);
