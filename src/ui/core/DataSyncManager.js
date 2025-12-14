@@ -51,6 +51,14 @@ export function startAllSubscriptions() {
         return;
     }
 
+    // ★追加: 購読開始前に、すべての解除関数を null にリセット
+    // これにより、購読開始失敗時などに古い解除関数が残るのを防ぐ
+    unsubscribeTasks = null;
+    unsubscribeProjects = null;
+    unsubscribeLabels = null;
+    unsubscribeTimeBlocks = null;
+    unsubscribeFilters = null;
+
     isDataSyncing = true;
     console.log('Starting subscriptions for workspace:', workspaceId);
 
