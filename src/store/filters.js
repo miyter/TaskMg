@@ -2,7 +2,12 @@
 // フィルターデータの管理
 
 import { db, auth } from '../core/firebase.js';
-import { collection, addDoc, deleteDoc, doc, query, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// 修正: SDKラッパーからインポート
+import { 
+    collection, addDoc, deleteDoc, doc, query, onSnapshot 
+} from "../core/firebase-sdk.js";
+
 import { showMessageModal } from '../ui/components.js';
 import { getCurrentWorkspaceId } from './workspace.js';
 

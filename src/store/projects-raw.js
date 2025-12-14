@@ -1,9 +1,10 @@
 // @ts-nocheck
 // @miyter:20251129
 
+// 修正: SDKラッパーからインポート
 import { 
     collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, orderBy 
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+} from "../core/firebase-sdk.js";
 
 import { db } from '../core/firebase.js';
 import { getCurrentWorkspaceId } from './workspace.js';

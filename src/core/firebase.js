@@ -1,10 +1,10 @@
 // @ts-nocheck
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// Firebase初期化・インスタンス管理
+// SDKのインポートはすべて core/firebase-sdk.js 経由で行う
+
+import { initializeApp, getAuth, getFirestore } from './firebase-sdk.js';
 
 // エクスポートする変数を定義 (初期化されるまではundefined)
-// これにより、他のファイルは import { db } from ... のまま記述可能（ただし使用は初期化後に行う）
 export let app;
 export let auth;
 export let db;

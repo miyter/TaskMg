@@ -1,17 +1,15 @@
 // @ts-nocheck
 // 時間帯ブロックデータ管理 (Firestore対応版)
 
+// 修正: SDKラッパーからインポート
 import { 
     collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+} from "../core/firebase-sdk.js";
 
-// 修正: db も core/firebase.js からインポートに変更
+// 初期化済みインスタンスをインポート
 import { auth, db } from "../core/firebase.js";
 import { getCurrentWorkspaceId } from './workspace.js';
 import { showMessageModal } from '../ui/components.js';
-
-// 修正: トップレベルでの getFirestore() 実行を削除
-// const db = getFirestore();
 
 // GLOBAL_APP_ID に統一
 const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
