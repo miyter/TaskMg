@@ -34,12 +34,13 @@ export function clearFiltersCache() {
 
 /**
  * フィルターコレクションへのパスを取得する内部ヘルパー
+ * 変更: ワークスペース依存を排除し、ユーザー直下の階層に統一 (/users/{userId}/filters)
+ * これによりFirestoreセキュリティルールとの整合性を確保する
  */
 function getFiltersPath(userId) {
-    const workspaceId = getCurrentWorkspaceId();
-    if (!workspaceId) return null;
-
-    return `/artifacts/${appId}/workspaces/${workspaceId}/users/${userId}/filters`;
+    // 以前のパス構造: `/artifacts/${appId}/workspaces/${workspaceId}/users/${userId}/filters`
+    // 新しいパス構造: `/artifacts/${appId}/users/${userId}/filters`
+    return `/artifacts/${appId}/users/${userId}/filters`;
 }
 
 /**
@@ -47,9 +48,11 @@ function getFiltersPath(userId) {
  */
 export function subscribeToFilters(onUpdate) {
     const userId = auth.currentUser?.uid;
+    // ワークスペース選択状態はアプリのUI制御として引き続きチェックするが、
+    // パス生成には使用しない
     const workspaceId = getCurrentWorkspaceId();
 
-    // ユーザー未認証またはワークスペース未選択時は空データを返す
+    // ユーザー未認証またはワークスペース未選択時は空データを返す（アプリ仕様）
     if (!userId || !workspaceId) {
         _cachedFilters = [];
         if(onUpdate) onUpdate([]);
@@ -88,11 +91,14 @@ export async function addFilter(filterData) {
         throw new Error("Authentication required");
     }
 
-    const path = getFiltersPath(userId);
-    if (!path) {
+    // アプリ仕様としてワークスペース選択は必須とする
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) {
         showMessageModal("ワークスペースを選択してください");
         throw new Error("Workspace selection required");
     }
+
+    const path = getFiltersPath(userId);
     
     // UIで生成された仮IDは除外し、FirestoreにID生成を委ねる
     const { id, ...data } = filterData;
@@ -112,8 +118,10 @@ export async function deleteFilter(filterId) {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
 
-    const path = getFiltersPath(userId);
-    if (!path) return; // ワークスペース未選択なら何もしない
+    // ワークスペース未選択チェック（念のため）
+    if (!getCurrentWorkspaceId()) return;
 
+    const path = getFiltersPath(userId);
+    
     await deleteDoc(doc(db, path, filterId));
 }
