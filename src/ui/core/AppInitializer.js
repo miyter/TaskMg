@@ -1,7 +1,9 @@
 // @ts-nocheck
 // アプリケーションの初期化ロジック
 
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+// 修正: CDN直接インポートを削除し、SDKラッパー経由に変更して二重ロードを防止
+import { onAuthStateChanged } from '../../core/firebase-sdk.js';
+
 import { auth, initializeFirebase } from '../../core/firebase.js';
 
 // UI初期化関連
