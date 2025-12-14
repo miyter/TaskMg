@@ -1,6 +1,6 @@
-// @miyter:20251129
-
+// @ts-nocheck
 import Chart from 'chart.js/auto';
+import { buildDashboardViewHTML } from './ui-dom-utils.js';
 
 // チャートインスタンス保持用
 let dailyChartInstance = null;
@@ -8,80 +8,24 @@ let weeklyChartInstance = null;
 let monthlyChartInstance = null;
 
 /**
- * ダッシュボードのHTMLテンプレートを生成
- * Grokレビュー対応: グリッド化、重複タイトル削除、サマリー追加、コンパクト化
- */
-export function getDashboardTemplate() {
-    return `
-        <div class="space-y-4 animate-fade-in p-1"> <!-- 余白削減: gap-6->4, p-4->1 -->
-            
-            <!-- 1. サマリーカード (新規追加: 上部配置) -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                ${createSummaryCard('today-count', '今日の完了', 'text-blue-600', 'bg-blue-50 dark:bg-blue-900/20')}
-                ${createSummaryCard('weekly-count', '今週の完了', 'text-green-600', 'bg-green-50 dark:bg-green-900/20')}
-                ${createSummaryCard('monthly-count', '今月の完了', 'text-purple-600', 'bg-purple-50 dark:bg-purple-900/20')}
-                ${createSummaryCard('total-count', '全期間', 'text-gray-600', 'bg-gray-50 dark:bg-gray-800')}
-            </div>
-
-            <!-- 2. グラフエリア (Grid & 高さ統一 h-64) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- 日次 -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-100 dark:border-gray-700/50 h-64 flex flex-col">
-                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> 日次推移 (直近4日)
-                    </h3>
-                    <div class="relative flex-1 min-h-0">
-                        <canvas id="dailyChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- 週次 -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-100 dark:border-gray-700/50 h-64 flex flex-col">
-                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> 週次推移
-                    </h3>
-                    <div class="relative flex-1 min-h-0">
-                        <canvas id="weeklyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. 月次 (下部配置) -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-100 dark:border-gray-700/50 h-64 flex flex-col">
-                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                     <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> 月次推移
-                </h3>
-                <div class="relative flex-1 min-h-0">
-                    <canvas id="monthlyChart"></canvas>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function createSummaryCard(id, label, textColorClass, bgColorClass) {
-    return `
-        <div class="${bgColorClass} rounded-lg p-3 flex flex-col items-center justify-center shadow-sm border border-transparent dark:border-white/5 transition-transform hover:scale-[1.02]">
-            <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">${label}</span>
-            <span id="${id}" class="text-2xl font-bold ${textColorClass} dark:text-white font-mono tracking-tight">-</span>
-        </div>
-    `;
-}
-
-/**
  * ダッシュボード描画実行
- * サマリー計算とグラフ描画を行う
+ * 共通DOM生成関数を利用してGlassmorphism化
  */
 export function renderDashboard(tasks, projects) {
-    if (!tasks || !Chart) return;
+    const dashboardView = document.getElementById('dashboard-view');
+    if (!tasks || !Chart || !dashboardView) return;
 
+    // 1. HTML構造を注入 (Glassmorphism適用済み)
+    dashboardView.innerHTML = buildDashboardViewHTML();
+
+    // 2. データ集計
     // 完了済みかつ日時があるもの
     const completedTasks = tasks.filter(t => t.status === 'completed' && t.completedAt);
 
-    // 1. サマリー数値更新
+    // 3. サマリー数値更新
     updateSummaryStats(completedTasks);
 
-    // 2. グラフ描画
+    // 4. グラフ描画
     renderDailyChart(completedTasks);
     renderWeeklyChart(completedTasks);
     renderMonthlyChart(completedTasks);
@@ -127,7 +71,7 @@ function updateSummaryStats(tasks) {
     setVal('total-count', counts.total);
 }
 
-// --- グラフ描画関数群 (オプションをスマートに変更) ---
+// --- グラフ描画関数群 ---
 
 function getChartOptions() {
     return {
@@ -207,7 +151,7 @@ function renderDailyChart(tasks) {
                 data,
                 backgroundColor: '#3B82F6',
                 borderRadius: 4,
-                barThickness: 20 // 細くスタイリッシュに
+                barThickness: 20
             }]
         },
         options: getChartOptions()

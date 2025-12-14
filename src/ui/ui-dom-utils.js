@@ -4,61 +4,65 @@ import { createGlassCard } from './components/glass-card.js';
 
 /**
  * ダッシュボード画面のHTML構造全体を生成する。
+ * Glassmorphism化されたサマリーカードとグラフカードを含む
  */
 export function buildDashboardViewHTML() {
-    // 各カードの中身を定義して createGlassCard でラップする
-    
-    // 1. 直近4日間の完了数
+    // 0. サマリーカードのHTML生成ヘルパー
+    const createSummaryItem = (id, label, textColorClass) => `
+        <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">${label}</span>
+        <span id="${id}" class="text-2xl font-bold ${textColorClass} dark:text-white font-mono tracking-tight">-</span>
+    `;
+
+    // 1. 直近4日間の完了数 (日次)
     const dailyChartHTML = `
-        <h3 class="text-md font-bold text-gray-700 dark:text-gray-200 mb-4 flex items-center">
-            <span class="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-1.5 rounded-lg mr-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            </span>
-            日次完了数 (直近4日)
+        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> 日次推移 (直近4日)
         </h3>
-        <div class="h-64 relative w-full">
+        <div class="relative flex-1 min-h-0 w-full">
             <canvas id="dailyChart"></canvas>
         </div>
     `;
 
-    // 2. 直近4週間の完了数
+    // 2. 直近4週間の完了数 (週次)
     const weeklyChartHTML = `
-        <h3 class="text-md font-bold text-gray-700 dark:text-gray-200 mb-4 flex items-center">
-            <span class="bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 p-1.5 rounded-lg mr-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            </span>
-            週間完了数 (直近4週 / 日曜起算)
+        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> 週次推移
         </h3>
-        <div class="h-64 relative w-full">
+        <div class="relative flex-1 min-h-0 w-full">
             <canvas id="weeklyChart"></canvas>
         </div>
     `;
 
-    // 3. 直近4ヶ月の完了数
+    // 3. 直近4ヶ月の完了数 (月次)
     const monthlyChartHTML = `
-        <h3 class="text-md font-bold text-gray-700 dark:text-gray-200 mb-4 flex items-center">
-            <span class="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 p-1.5 rounded-lg mr-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
-            </span>
-            月次完了数 (直近4ヶ月)
+        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> 月次推移
         </h3>
-        <div class="h-64 relative w-full">
+        <div class="relative flex-1 min-h-0 w-full">
             <canvas id="monthlyChart"></canvas>
         </div>
     `;
 
     return `
-        <div class="space-y-6">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white px-1">ダッシュボード</h2>
+        <div class="space-y-4 animate-fade-in p-1">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white px-1 mb-2">ダッシュボード</h2>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- 共通GlassCardを使用 -->
-                ${createGlassCard(dailyChartHTML, 'p-5')}
-                ${createGlassCard(weeklyChartHTML, 'p-5')}
-                <div class="lg:col-span-2">
-                    ${createGlassCard(monthlyChartHTML, 'p-5')}
-                </div>
+            <!-- 1. サマリーカードエリア -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                ${createGlassCard(createSummaryItem('today-count', '今日の完了', 'text-blue-600'), 'p-3 flex flex-col items-center justify-center hover:scale-[1.02] transition-transform')}
+                ${createGlassCard(createSummaryItem('weekly-count', '今週の完了', 'text-green-600'), 'p-3 flex flex-col items-center justify-center hover:scale-[1.02] transition-transform')}
+                ${createGlassCard(createSummaryItem('monthly-count', '今月の完了', 'text-purple-600'), 'p-3 flex flex-col items-center justify-center hover:scale-[1.02] transition-transform')}
+                ${createGlassCard(createSummaryItem('total-count', '全期間', 'text-gray-600'), 'p-3 flex flex-col items-center justify-center hover:scale-[1.02] transition-transform')}
             </div>
+
+            <!-- 2. グラフエリア (Grid & 高さ統一) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${createGlassCard(dailyChartHTML, 'p-3 h-64 flex flex-col')}
+                ${createGlassCard(weeklyChartHTML, 'p-3 h-64 flex flex-col')}
+            </div>
+            
+            <!-- 3. 月次 (下部配置) -->
+            ${createGlassCard(monthlyChartHTML, 'p-3 h-64 flex flex-col')}
         </div>
     `;
 }
