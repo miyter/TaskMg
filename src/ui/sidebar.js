@@ -13,7 +13,9 @@ import { renderSidebarItems, renderProjects } from './sidebar-renderer.js';
 import { subscribeToFilters, getFilters } from '../store/filters.js';
 import { subscribeToTimeBlocks } from '../store/timeblocks.js';
 import { subscribeToProjects } from '../store/projects.js';
-// ワークスペース関連のインポートはlayout/componentへ移動したため削除
+
+// ★追加: コンポーネント化されたプロジェクトセクション
+import { initSidebarProjects, updateSidebarProjects } from './components/SidebarProjects.js';
 
 // 外部公開
 export { renderSidebarItems, renderProjects };
@@ -27,6 +29,7 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     const container = document.getElementById('sidebar-content');
     if (!container) return;
     
+    // 基本構造をビルド
     container.innerHTML = buildSidebarHTML();
 
     const sidebar = document.getElementById('sidebar');
@@ -39,13 +42,15 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
 
-    // ★削除: ワークスペースドロップダウンのセットアップは layout.js -> WorkspaceDropdown.js へ移動
+    // ★追加: プロジェクトセクションコンポーネントの初期化
+    initSidebarProjects(container);
 
     // プロジェクトのリアルタイム購読
     subscribeToProjects((projects) => {
         if (sidebar) {
-            const currentFilters = typeof getFilters === 'function' ? getFilters() : [];
-            renderSidebarItems(sidebar, allTasks, projects, allLabels, currentFilters);
+            // ★変更: コンポーネント経由で更新
+            updateSidebarProjects(projects, allTasks);
+            // 他のアイテムの更新（フィルターなど）が必要な場合もあるので、既存処理も維持しつつプロジェクト部分は委譲
         }
     });
     
@@ -142,9 +147,8 @@ function setupSidebarEvents() {
         showSettingsModal();
     });
     
-    document.getElementById('add-project-btn')?.addEventListener('click', () => {
-        showProjectModal(); // 新規作成
-    });
+    // ★変更: add-project-btn のイベントリスナーは SidebarProjects.js に移動したため削除
+    // document.getElementById('add-project-btn')?.addEventListener... 
     
     document.getElementById('add-filter-btn')?.addEventListener('click', () => {
         showFilterModal();
