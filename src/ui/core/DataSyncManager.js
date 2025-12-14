@@ -1,6 +1,9 @@
 // @ts-nocheck
 // データ同期、キャッシュ管理、UI更新の一元管理
 
+// 追加: 認証チェック用
+import { auth } from '../../core/firebase.js';
+
 // Store関連
 import { subscribeToTasks } from '../../store/store.js';
 import { subscribeToProjects } from '../../store/projects.js';
@@ -32,6 +35,12 @@ let isDataSyncing = false;
  * ワークスペース内の全データのリアルタイム購読を開始する
  */
 export function startAllSubscriptions() {
+    // 🚨 認証チェックを追加: 認証されていない場合は購読を開始しない
+    if (!auth || !auth.currentUser) {
+        console.warn('Cannot start sync: User not authenticated. Aborting subscriptions.');
+        return;
+    }
+
     // 念のため一度停止してクリーンにする
     stopDataSync(false); // false = workspaceの購読は止めない
     
