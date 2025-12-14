@@ -1,5 +1,5 @@
+// @ts-nocheck
 import { 
-    getFirestore, 
     collection, 
     query, 
     orderBy, 
@@ -11,15 +11,18 @@ import {
     getDocs,
     limit
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+// 修正: トップレベルでの getFirestore/getAuth 実行を避け、初期化済みのインスタンスをインポート
+import { db, auth } from "../core/firebase.js";
 
 // グローバル変数からアプリID取得 (修正: GLOBAL_APP_IDを優先)
 const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
     ? window.GLOBAL_APP_ID 
     : (typeof __app_id !== 'undefined' ? __app_id : 'default-app-id');
 
-const db = getFirestore();
-const auth = getAuth();
+// トップレベルでの初期化削除
+// const db = getFirestore();
+// const auth = getAuth();
 
 const STORAGE_KEY = 'currentWorkspaceId';
 const CHANGE_EVENT = 'workspace-changed';

@@ -2,17 +2,21 @@
 // 時間帯ブロックデータ管理 (Firestore対応版)
 
 import { 
-    getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp 
+    collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { auth } from "../core/firebase.js";
-import { getCurrentWorkspaceId } from './workspace.js';
-import { showMessageModal } from '../ui/components.js'; // 追加
 
-const db = getFirestore();
-// 修正: GLOBAL_APP_ID に統一
+// 修正: db も core/firebase.js からインポートに変更
+import { auth, db } from "../core/firebase.js";
+import { getCurrentWorkspaceId } from './workspace.js';
+import { showMessageModal } from '../ui/components.js';
+
+// 修正: トップレベルでの getFirestore() 実行を削除
+// const db = getFirestore();
+
+// GLOBAL_APP_ID に統一
 const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
     ? window.GLOBAL_APP_ID 
-    : 'default-app-id';
+    : (typeof __app_id !== 'undefined' ? __app_id : 'default-app-id');
 
 // メモリキャッシュ
 let timeBlocks = [];
