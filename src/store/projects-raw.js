@@ -7,7 +7,6 @@ import {
 } from "../core/firebase-sdk.js";
 
 // 修正: dbの直接インポートを廃止し、getFirebaseヘルパーを使用
-// import { db } from '../core/firebase.js';
 import { getFirebase } from '../core/firebase.js';
 
 import { getCurrentWorkspaceId } from './workspace.js';
@@ -29,10 +28,15 @@ function getProjectsPath(userId) {
         ? window.GLOBAL_APP_ID 
         : 'default-app-id';
         
+    // ワークスペース選択状態は確認するが、パスには含めない
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) return null;
 
-    return `/artifacts/${appId}/workspaces/${workspaceId}/users/${userId}/projects`;
+    // 修正: ワークスペース階層 (/workspaces/{workspaceId}) を削除し
+    // セキュリティルールと一致するユーザー直下のパスに変更
+    // 旧: /artifacts/${appId}/workspaces/${workspaceId}/users/${userId}/projects
+    // 新: /artifacts/${appId}/users/${userId}/projects
+    return `/artifacts/${appId}/users/${userId}/projects`;
 }
 
 /**
