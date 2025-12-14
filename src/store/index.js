@@ -4,6 +4,7 @@
 import { auth } from '../core/firebase.js';
 import { showMessageModal } from '../ui/components.js';
 import { getNextRecurrenceDate } from '../utils/date.js'; // ★追加: 繰り返し日付計算用のヘルパー
+import { getCurrentWorkspaceId } from './workspace.js'; // ★ID取得用
 
 import { 
     subscribeToTasksRaw,
@@ -22,16 +23,27 @@ import {
 function requireAuth() {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-        // ★修正: alertの代わりにshowMessageModalを使用
         showMessageModal("操作にはログインが必要です。", null); 
-        // 呼び出し元で処理を中止させるためにスロー
         throw new Error('Authentication required.'); 
     }
     return userId;
 }
 
+/**
+ * ワークスペースガード。未選択ならエラーモーダルを表示し例外をスローする。
+ * @returns {string} ワークスペースID
+ */
+function requireWorkspace() {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) {
+        showMessageModal("ワークスペースが選択されていません。", null);
+        throw new Error('Workspace required.');
+    }
+    return workspaceId;
+}
+
 // ==========================================================
-// ★ 繰り返しタスクの処理ロジック (暫定フロントエンド実装)
+// ★ 繰り返しタスクの処理ロジック
 // ==========================================================
 
 /**
@@ -50,7 +62,7 @@ async function handleRecurringTask(completedTask) {
         return;
     }
 
-    // 次の期限日を計算 (utils/date.jsに依存)
+    // 次の期限日を計算
     const nextDueDate = getNextRecurrenceDate(dueDate, recurrence);
 
     if (nextDueDate) {
@@ -67,11 +79,14 @@ async function handleRecurringTask(completedTask) {
 
         try {
             // 新しいタスクとしてFirestoreに追加
-            await addTask(newTaskData);
-            console.log(`Generated next recurring task for: ${completedTask.title}, next due: ${nextDueDate}`);
+            const userId = auth.currentUser?.uid;
+            const workspaceId = getCurrentWorkspaceId();
+            if (userId && workspaceId) {
+                await addTaskRaw(userId, workspaceId, newTaskData);
+                console.log(`Generated next recurring task for: ${completedTask.title}, next due: ${nextDueDate}`);
+            }
         } catch (e) {
             console.error('Failed to generate next recurring task:', e);
-            // ユーザーへの通知は省略
         }
     }
 }
@@ -82,16 +97,19 @@ async function handleRecurringTask(completedTask) {
 
 /**
  * タスク一覧をリアルタイム購読する。
- * (これは認証前に呼ばれる可能性があるので、ラッパー内では認証チェックしない)
+ * @param {Function} onUpdate - データ更新時のコールバック
  */
 export function subscribeToTasks(onUpdate) {
-    // onAuthStateChangedでuserIdが得られた後に、App.jsから呼ばれる
     const userId = auth.currentUser?.uid;
-    if (userId) {
-        subscribeToTasksRaw(userId, onUpdate);
+    const workspaceId = getCurrentWorkspaceId(); // ★最新のIDを取得
+
+    if (userId && workspaceId) {
+        // ★workspaceIdをRaw関数に渡す
+        return subscribeToTasksRaw(userId, workspaceId, onUpdate); 
     } else {
-        // ログアウト状態でも呼べるよう、onUpdateに空配列を渡すなどの処理が必要な場合はここで実装可能
-        subscribeToTasksRaw(null, onUpdate); 
+        // 未認証/未選択時は空データを返す
+        onUpdate([]);
+        return () => {};
     }
 }
 
@@ -101,7 +119,8 @@ export function subscribeToTasks(onUpdate) {
  */
 export async function addTask(taskData) {
     const userId = requireAuth();
-    return addTaskRaw(userId, taskData);
+    const workspaceId = requireWorkspace();
+    return addTaskRaw(userId, workspaceId, taskData);
 }
 
 /**
@@ -111,17 +130,17 @@ export async function addTask(taskData) {
  */
 export async function updateTaskStatus(taskId, status) {
     const userId = requireAuth();
+    const workspaceId = requireWorkspace();
     
     // 1. ステータスを更新する
-    const result = await updateTaskStatusRaw(userId, taskId, status);
+    const result = await updateTaskStatusRaw(userId, workspaceId, taskId, status);
     
     // 2. 完了ステータスに変更した場合、繰り返しタスクをチェック
     if (status === 'completed') {
         // 完了したタスクのデータを取得
-        const task = await getTaskByIdRaw(userId, taskId);
+        const task = await getTaskByIdRaw(userId, workspaceId, taskId);
         if (task) {
-            // ★追加: 繰り返しタスクの処理を実行
-            // この処理は非同期で実行するが、UIのブロックは避けるためawaitしない
+            // 非同期で実行
             handleRecurringTask(task).catch(e => console.error('Recurring task handler failed:', e));
         }
     }
@@ -136,7 +155,8 @@ export async function updateTaskStatus(taskId, status) {
  */
 export async function updateTask(taskId, updates) {
     const userId = requireAuth();
-    return updateTaskRaw(userId, taskId, updates);
+    const workspaceId = requireWorkspace();
+    return updateTaskRaw(userId, workspaceId, taskId, updates);
 }
 
 /**
@@ -145,45 +165,48 @@ export async function updateTask(taskId, updates) {
  */
 export async function deleteTask(taskId) {
     const userId = requireAuth();
-    return deleteTaskRaw(userId, taskId);
+    const workspaceId = requireWorkspace();
+    return deleteTaskRaw(userId, workspaceId, taskId);
+}
+
+/**
+ * タスクをIDで取得する
+ * @param {string} taskId 
+ */
+export async function getTaskById(taskId) {
+    const userId = auth.currentUser?.uid;
+    const workspaceId = getCurrentWorkspaceId();
+    
+    if (!userId || !workspaceId) return null;
+
+    return getTaskByIdRaw(userId, workspaceId, taskId);
 }
 
 /**
  * バックアップデータを作成する。
- * (userIdはラッパー内で取得)
  */
 export async function createBackupData() {
     const userId = requireAuth();
-    return createBackupDataRaw(userId);
+    const workspaceId = requireWorkspace();
+    return createBackupDataRaw(userId, workspaceId);
 }
 
-// ==========================================================
-// ★ 既存コードの修正対応
-// ==========================================================
-
-// ★修正: addTaskCompatibility の引数を taskData オブジェクトとして受け取る形式に変更
-// task-input.js からの呼び出しに合わせるため
 /**
  * UI層からの taskData オブジェクトを受け取る互換性ラッパー。
- * 最終的には addTask(taskData) に統一することが望ましい。
- * @param {object} data - タスクデータオブジェクト (title, description, projectId, labelIdsなどを含む)
+ * @param {object} data - タスクデータオブジェクト
  */
 export async function addTaskCompatibility(data) {
     const userId = requireAuth();
+    const workspaceId = requireWorkspace();
     
-    // descriptionがundefinedでないこと、labelIdsが配列であることを保証
     const finalTaskData = {
         title: data.title,
-        description: data.description || '', // undefinedの場合に空文字列にフォールバック
+        description: data.description || '', 
         dueDate: data.dueDate || null,
         projectId: data.projectId || null,
-        // labelIdsが配列であることを保証
         labelIds: Array.isArray(data.labelIds) ? data.labelIds : [], 
-        recurrence: data.recurrence || null, // ★追加: recurrenceもここで拾っておく
+        recurrence: data.recurrence || null, 
     };
 
-    return addTaskRaw(userId, finalTaskData);
+    return addTaskRaw(userId, workspaceId, finalTaskData);
 }
-
-// ★既存の store.js からの export をすべて削除し、index.js に移譲するため、
-// 他のファイルは store.js からではなく index.js からインポートするようにパスを修正する必要があります。

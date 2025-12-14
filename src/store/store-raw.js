@@ -16,12 +16,10 @@ import {
 } from "../core/firebase-sdk.js";
 
 // 修正: dbの直接インポートを廃止し、getFirebaseヘルパーを使用
-// import { db } from '../core/firebase.js'; 
 import { getFirebase } from '../core/firebase.js';
-import { getCurrentWorkspaceId } from './workspace.js'; // 追加
 
-// 削除: グローバル変数での購読管理を廃止
-// let unsubscribe = null;
+// 削除: 内部での workspace 依存を削除
+// import { getCurrentWorkspaceId } from './workspace.js';
 
 /**
  * FirestoreドキュメントデータをJavaScriptオブジェクトに変換するヘルパー
@@ -43,15 +41,15 @@ function deserializeTask(id, data) {
 /**
  * タスクコレクションへのパスを取得する内部ヘルパー
  * @param {string} userId 
- * @returns {string|null} パスまたはnull（ワークスペース未選択時）
+ * @param {string} workspaceId - ★引数で受け取るように変更
+ * @returns {string|null} パス
  */
-function getTasksPath(userId) {
+function getTasksPath(userId, workspaceId) {
     const appId = window.GLOBAL_APP_ID || (typeof __app_id !== 'undefined' ? __app_id : 'default-app-id');
     
-    // ワークスペースIDを取得してパスに含める
-    const workspaceId = getCurrentWorkspaceId();
-    if (!workspaceId) {
-        console.warn('getTasksPath: Workspace ID not found');
+    // 引数でチェック
+    if (!workspaceId || !userId) {
+        // console.warn('getTasksPath: Workspace ID or User ID not provided');
         return null;
     }
 
@@ -60,67 +58,49 @@ function getTasksPath(userId) {
 
 
 // ==========================================================
-// ★ RAW FUNCTIONS (userId必須) - UI層からは直接呼び出さない
+// ★ RAW FUNCTIONS (userId, workspaceId 必須)
 // ==========================================================
 
 /**
  * タスク一覧をリアルタイム監視 (RAW)
  * @param {string} userId - ユーザーID (必須)
+ * @param {string} workspaceId - ワークスペースID (必須) ★追加
  * @param {function} onUpdate - データ更新コールバック
  * @returns {function} 購読解除関数
  */
-export function subscribeToTasksRaw(userId, onUpdate) {
-    // 削除: グローバル変数のチェックを廃止
-    // if (unsubscribe) unsubscribe();
-
-    if (!userId) {
-        onUpdate([]); // ユーザーIDがない場合は空のリストを返す
-        return () => {}; // 空の解除関数を返す
+export function subscribeToTasksRaw(userId, workspaceId, onUpdate) {
+    if (!userId || !workspaceId) {
+        onUpdate([]); 
+        return () => {}; 
     }
     
-    // 修正: 実行時にインスタンスを取得
     const { db } = getFirebase();
 
-    const path = getTasksPath(userId);
+    const path = getTasksPath(userId, workspaceId);
     if (!path) {
         onUpdate([]);
-        return () => {}; // 空の解除関数を返す
+        return () => {};
     }
 
     console.log(`[Tasks] Subscribing to: ${path}`);
     const q = query(collection(db, path));
 
-    // 変更: onSnapshotの戻り値（解除関数）を直接呼び出し元へ返す
     return onSnapshot(q, (snapshot) => {
         const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
         onUpdate(tasks);
     }, (error) => {
-        // エラーハンドリング追加
         console.error("Task subscription error:", error);
-        
-        if (error.code === 'permission-denied') {
-            console.warn("Permission denied for tasks. This usually happens when:\n1. Firestore rules block access\n2. The userId in path doesn't match auth.currentUser\n3. Data migration is incomplete (old paths)");
-        }
-        
-        // エラー時は空配列を返してUIをブロックしない
         onUpdate([]);
-        
-        // グローバル変数の操作を削除
-        // unsubscribe = null;
     });
 }
 
 /**
  * タスクをIDで取得 (RAW)
- * @param {string} userId - ユーザーID (必須)
- * @param {string} taskId - タスクID
- * @returns {object|null} タスクオブジェクト
  */
-export async function getTaskByIdRaw(userId, taskId) {
-    // 修正: 実行時にインスタンスを取得
+export async function getTaskByIdRaw(userId, workspaceId, taskId) {
     const { db } = getFirebase();
 
-    const path = getTasksPath(userId);
+    const path = getTasksPath(userId, workspaceId);
     if (!path) return null;
 
     const ref = doc(db, path, taskId);
@@ -133,20 +113,16 @@ export async function getTaskByIdRaw(userId, taskId) {
 
 /**
  * タスクを追加 (RAW)
- * @param {string} userId - ユーザーID (必須)
- * @param {object} taskData - タスクデータ
  */
-export async function addTaskRaw(userId, taskData) {
-    const path = getTasksPath(userId);
-    if (!path) throw new Error('Workspace not selected');
+export async function addTaskRaw(userId, workspaceId, taskData) {
+    const path = getTasksPath(userId, workspaceId);
+    if (!path) throw new Error('Workspace or User not identified');
     
-    // dueDateがDateオブジェクトの場合はTimestampに変換
     const safeTaskData = { ...taskData };
     if (safeTaskData.dueDate instanceof Date) {
         safeTaskData.dueDate = Timestamp.fromDate(safeTaskData.dueDate);
     }
     
-    // 修正: 実行時にインスタンスを取得
     const { db } = getFirebase();
 
     await addDoc(collection(db, path), {
@@ -159,15 +135,11 @@ export async function addTaskRaw(userId, taskData) {
 
 /**
  * タスクのステータスを更新 (RAW)
- * @param {string} userId - ユーザーID (必須)
- * @param {string} taskId - タスクID
- * @param {string} status - 新しいステータス
  */
-export async function updateTaskStatusRaw(userId, taskId, status) {
-    const path = getTasksPath(userId);
-    if (!path) throw new Error('Workspace not selected');
+export async function updateTaskStatusRaw(userId, workspaceId, taskId, status) {
+    const path = getTasksPath(userId, workspaceId);
+    if (!path) throw new Error('Workspace or User not identified');
     
-    // 修正: 実行時にインスタンスを取得
     const { db } = getFirebase();
 
     await updateDoc(doc(db, path, taskId), { status });
@@ -175,22 +147,17 @@ export async function updateTaskStatusRaw(userId, taskId, status) {
 
 /**
  * タスクの情報を更新（汎用, RAW）
- * @param {string} userId - ユーザーID (必須)
- * @param {string} taskId - タスクID
- * @param {object} updates - 更新内容
  */
-export async function updateTaskRaw(userId, taskId, updates) {
-    const path = getTasksPath(userId);
-    if (!path) throw new Error('Workspace not selected');
+export async function updateTaskRaw(userId, workspaceId, taskId, updates) {
+    const path = getTasksPath(userId, workspaceId);
+    if (!path) throw new Error('Workspace or User not identified');
     
-    // 修正: 実行時にインスタンスを取得
     const { db } = getFirebase();
     
     const ref = doc(db, path, taskId);
     
     const safeUpdates = { ...updates };
 
-    // 日付オブジェクトの変換
     if (safeUpdates.dueDate && !(safeUpdates.dueDate instanceof Timestamp)) {
         if (safeUpdates.dueDate instanceof Date) {
             safeUpdates.dueDate = Timestamp.fromDate(safeUpdates.dueDate);
@@ -201,7 +168,6 @@ export async function updateTaskRaw(userId, taskId, updates) {
         }
     }
     
-    // recurrence: null または object をそのまま渡す
     if (safeUpdates.recurrence === undefined) {
         delete safeUpdates.recurrence;
     } else if (safeUpdates.recurrence === null) {
@@ -213,14 +179,11 @@ export async function updateTaskRaw(userId, taskId, updates) {
 
 /**
  * タスクを削除 (RAW)
- * @param {string} userId - ユーザーID (必須)
- * @param {string} taskId - タスクID
  */
-export async function deleteTaskRaw(userId, taskId) {
-    const path = getTasksPath(userId);
-    if (!path) throw new Error('Workspace not selected');
+export async function deleteTaskRaw(userId, workspaceId, taskId) {
+    const path = getTasksPath(userId, workspaceId);
+    if (!path) throw new Error('Workspace or User not identified');
     
-    // 修正: 実行時にインスタンスを取得
     const { db } = getFirebase();
 
     const ref = doc(db, path, taskId);
@@ -229,10 +192,9 @@ export async function deleteTaskRaw(userId, taskId) {
 
 /**
  * バックアップデータ作成機能 (RAW)
- * @param {string} userId - ユーザーID (必須)
+ * 引数に workspaceId を追加して明示的に受け取る
  */
-export async function createBackupDataRaw(userId) {
-    // 修正: 実行時にインスタンスを取得
+export async function createBackupDataRaw(userId, workspaceId) {
     let dbInstance;
     try {
         const firebase = getFirebase();
@@ -243,15 +205,11 @@ export async function createBackupDataRaw(userId) {
 
     const appId = window.GLOBAL_APP_ID;
     
-    // 注: バックアップも現在のワークスペースのみを対象とする
-    // もし全ワークスペースのバックアップが必要な場合は、構造を再考する必要がある
-    const workspaceId = getCurrentWorkspaceId();
-    if (!workspaceId) throw new Error("Workspace not selected for backup");
+    if (!userId || !workspaceId) throw new Error("User or Workspace not identified for backup");
 
     const tasksPath = `/artifacts/${appId}/users/${userId}/workspaces/${workspaceId}/tasks`;
     const projectsPath = `/artifacts/${appId}/users/${userId}/workspaces/${workspaceId}/projects`;
-    // ラベルはワークスペース共有か個別か未定だが、一旦ユーザー直下のままにするか、あるいはワークスペース下にするか。
-    // ここでは安全のため既存パス(ユーザー直下)を維持しておくが、必要に応じて変更する。
+    // ラベルはユーザー共通とするかワークスペース毎とするかによるが、現状はユーザー直下
     const labelsPath = `/artifacts/${appId}/users/${userId}/labels`;
 
     const tasksRef = collection(dbInstance, tasksPath);
