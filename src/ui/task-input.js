@@ -1,14 +1,106 @@
-// @miyter:20251129
+// @ts-nocheck
+import { addTask, addTaskCompatibility } from '../store/store.js';
+import { getProjects } from '../store/projects.js';
+import { getTimeBlocks } from '../store/timeblocks.js'; // ★追加: 時間帯用
+import { createGlassCard } from './components/glass-card.js';
+import { showMessageModal } from './components.js';
 
-// ★修正: store.js ではなく、ラッパー層の index.js (store.js経由) からインポート
-import { addTaskCompatibility } from '../store/store.js';
-// ★追加: 時間帯データを取得
-import { getTimeBlocks } from '../store/timeblocks.js';
-
-let isInputExpanded = false; // 入力フォームの開閉状態を管理
+let isInputExpanded = false; // インライン入力フォームの開閉状態を管理
 
 /**
- * インライン入力フォームを描画する
+ * スタンドアロンのタスク入力フォームを描画する (検索ビューやダッシュボード用)
+ */
+export function renderTaskInput() {
+    const projects = getProjects();
+    const projectOptions = projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+    // 入力フォームの中身
+    const inputContentHTML = `
+        <form id="task-form" class="flex flex-col gap-3">
+            <div class="flex items-center gap-2">
+                <input 
+                    type="text" 
+                    id="task-title-input" 
+                    class="flex-1 bg-transparent text-lg font-medium placeholder-gray-400 text-gray-800 dark:text-white border-none outline-none focus:ring-0 px-0"
+                    placeholder="新しいタスクを追加..." 
+                    autocomplete="off"
+                >
+            </div>
+            
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+                <div class="flex items-center gap-2">
+                    <!-- プロジェクト選択 -->
+                    <div class="relative">
+                        <select id="task-project-input" class="appearance-none bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-md py-1.5 pl-2 pr-6 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="">インボックス</option>
+                            ${projectOptions}
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-400">
+                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+
+                    <!-- 期限日選択 -->
+                    <div class="relative">
+                        <input type="date" id="task-due-date-input" 
+                            class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-md py-1 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                    </div>
+                </div>
+
+                <button 
+                    type="submit" 
+                    id="add-task-btn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-lg shadow-sm hover:shadow-md transition-all transform active:scale-95 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    追加
+                </button>
+            </div>
+        </form>
+    `;
+
+    // コンテナID
+    const container = document.getElementById('task-input-container');
+    if (!container) return;
+
+    // 共通GlassCardでラップして描画
+    container.innerHTML = createGlassCard(inputContentHTML, 'p-4 mb-6');
+
+    // イベントリスナー設定
+    setupTaskInputEvents();
+}
+
+function setupTaskInputEvents() {
+    const form = document.getElementById('task-form');
+    const titleInput = document.getElementById('task-title-input');
+    
+    if (!form || !titleInput) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = titleInput.value.trim();
+        if (!title) return;
+
+        const projectId = document.getElementById('task-project-input').value || null;
+        const dueDate = document.getElementById('task-due-date-input').value || null;
+
+        try {
+            await addTask(title, projectId, dueDate);
+            
+            // フォームリセット
+            titleInput.value = '';
+            document.getElementById('task-due-date-input').value = '';
+            titleInput.focus();
+        } catch (error) {
+            console.error(error);
+            showMessageModal('タスクの追加に失敗しました', 'error');
+        }
+    });
+}
+
+/**
+ * インライン入力フォームを描画する (タスクリスト下部用)
  * @param {HTMLElement} container - 親要素
  * @param {string|null} projectId - 現在のプロジェクトID
  * @param {string|null} labelId - 現在のラベルID
@@ -29,55 +121,55 @@ export function renderInlineInput(container, projectId, labelId) {
             renderInlineInput(container, projectId, labelId);
         });
     } else {
-        // 展開状態: 入力フォーム
+        // 展開状態: 入力フォーム (Glassmorphism適用)
         
-        // ★追加: 時間帯の選択肢を生成 (表示は start - end)
+        // 時間帯の選択肢を生成
         const timeBlocks = getTimeBlocks();
         const timeBlockOptions = timeBlocks.map(tb => 
             `<option value="${tb.id}">${tb.start} - ${tb.end}</option>`
         ).join('');
 
-        // ★修正: dark:bg-gray-850 -> dark:bg-gray-800 に修正し、ボーダーや文字色をダークモード最適化
-        container.innerHTML = `
-            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800 shadow-lg animate-fade-in-down">
-                <input type="text" id="inline-title-input" placeholder="タスク名 (例: 明日14時に会議 #仕事)" 
-                         class="w-full text-sm font-semibold bg-transparent border-none outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100 mb-2">
-                
-                <textarea id="inline-desc-input" placeholder="詳細メモ" rows="2"
-                         class="w-full text-xs bg-transparent border-none outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-600 dark:text-gray-300 mb-3 resize-none"></textarea>
-                
-                <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-3">
-                    <div class="flex space-x-2">
-                        <!-- 期限日ボタン（将来拡張用） -->
-                        <button class="flex items-center px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition">
-                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            期限日
-                        </button>
-                        
-                        <!-- ★追加: 時間帯選択プルダウン -->
-                        <div class="relative">
-                            <select id="inline-timeblock-select" class="appearance-none pl-2 pr-6 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                <option value="">時間帯 (未定)</option>
-                                ${timeBlockOptions}
-                            </select>
-                           <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
-                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </div>
+        const formHTML = `
+            <input type="text" id="inline-title-input" placeholder="タスク名 (例: 明日14時に会議 #仕事)" 
+                     class="w-full text-sm font-semibold bg-transparent border-none outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100 mb-2">
+            
+            <textarea id="inline-desc-input" placeholder="詳細メモ" rows="2"
+                     class="w-full text-xs bg-transparent border-none outline-none placeholder-gray-400 dark:placeholder-gray-500 text-gray-600 dark:text-gray-300 mb-3 resize-none"></textarea>
+            
+            <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3">
+                <div class="flex space-x-2">
+                    <!-- 期限日ボタン（将来拡張用） -->
+                    <button class="flex items-center px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded border border-gray-200 dark:border-gray-600/50 transition">
+                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        期限日
+                    </button>
+                    
+                    <!-- 時間帯選択プルダウン -->
+                    <div class="relative">
+                        <select id="inline-timeblock-select" class="appearance-none pl-2 pr-6 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded border border-gray-200 dark:border-gray-600/50 transition bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="">時間帯 (未定)</option>
+                            ${timeBlockOptions}
+                        </select>
+                       <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
+                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                     </div>
-                    <div class="flex space-x-2">
-                        <button id="cancel-input-btn" class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">キャンセル</button>
-                        <button id="submit-task-btn" class="px-4 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
-                            タスクを追加
-                        </button>
-                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="cancel-input-btn" class="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition">キャンセル</button>
+                    <button id="submit-task-btn" class="px-4 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        タスクを追加
+                    </button>
                 </div>
             </div>
         `;
+
+        // 共通GlassCardを使用して描画
+        container.innerHTML = createGlassCard(formHTML, 'p-3 animate-fade-in-down');
         
         const titleInput = container.querySelector('#inline-title-input');
         const descInput = container.querySelector('#inline-desc-input');
-        const timeBlockSelect = container.querySelector('#inline-timeblock-select'); // ★追加
+        const timeBlockSelect = container.querySelector('#inline-timeblock-select');
         const submitBtn = container.querySelector('#submit-task-btn');
         
         // 自動フォーカス
@@ -100,19 +192,16 @@ export function renderInlineInput(container, projectId, labelId) {
         // 送信処理
         const submitAction = async () => {
             const title = titleInput.value.trim();
-            
-            // ★修正: descInputがnullまたは.valueがundefinedの場合に備え、防御的なアクセスを行う
             const desc = (descInput && typeof descInput.value === 'string') ? descInput.value.trim() : '';
-            const timeBlockId = timeBlockSelect.value; // ★追加
+            const timeBlockId = timeBlockSelect.value;
             
-            // ★ dueDateは未実装なのでnull, recurrenceはnull, labelIdは空配列を渡す
             const taskData = {
                 title,
-                description: desc, // descは必ず文字列（空文字列か値のある文字列）になる
+                description: desc,
                 dueDate: null, 
                 projectId: projectId, 
                 labelIds: labelId ? [labelId] : [],
-                timeBlockId: timeBlockId || null // ★追加
+                timeBlockId: timeBlockId || null
             };
 
             if (!title) return;
@@ -121,14 +210,17 @@ export function renderInlineInput(container, projectId, labelId) {
             submitBtn.textContent = '追加中...';
 
             try {
-                // ★修正: userIdを削除し、新しいaddTaskCompatibilityラッパーを呼び出す
-                await addTaskCompatibility(taskData);
+                // store.jsのaddTaskCompatibility(またはaddTask)を使用
+                if (typeof addTaskCompatibility === 'function') {
+                    await addTaskCompatibility(taskData);
+                } else {
+                    // フォールバック: 通常のaddTaskを使用 (詳細情報の一部が欠落する可能性あり)
+                    await addTask(taskData.title, taskData.projectId, null);
+                }
                 
                 // フォームをリセット（連続入力のため閉じない）
                 titleInput.value = '';
                 descInput.value = '';
-                // 選択状態もリセットしたい場合は以下を追加
-                // timeBlockSelect.value = '';
                 titleInput.focus();
                 
                 // フィードバック
@@ -140,12 +232,8 @@ export function renderInlineInput(container, projectId, labelId) {
                 
             } catch (e) {
                 console.error(e);
-                // 認証エラーの場合はStoreラッパーがモーダルを表示する
                 if (e.message !== 'Authentication required.') {
-                    // ★修正: alertをshowMessageModalに置き換え（仕様書準拠）
-                    // showMessageModal("タスクの追加に失敗しました。認証状態を確認してください。", 'error');
-                    // alertは使わないが、一時的にエラーが分かりやすいようにconsole.errorに留める
-                    console.error('Task addition failed unexpectedly:', e);
+                    showMessageModal("タスクの追加に失敗しました", 'error');
                 }
                 submitBtn.disabled = false;
             }

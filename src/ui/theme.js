@@ -17,15 +17,14 @@ export function initTheme() {
     document.body.classList.remove('font-large', 'font-medium', 'font-small');
     document.body.classList.add(`font-${fontSize}`);
 
-    // 3. 背景の適用 → 遅延実行
-    // レンダリングタイミングをずらすことで確実に適用させる
+    // 3. 背景の適用
     requestAnimationFrame(() => {
         applyBackground();
     });
 }
 
 /**
- * テーマ切り替え（必要に応じて外部から呼び出し可能）
+ * テーマ切り替え
  */
 export function toggleTheme() {
     if (document.documentElement.classList.contains('dark')) {
@@ -35,24 +34,19 @@ export function toggleTheme() {
         document.documentElement.classList.add('dark');
         localStorage.setItem('theme', 'dark');
     }
-    // テーマ変更に合わせて背景も再評価
     applyBackground();
 }
 
 /**
  * 背景設定を適用する
- * @param {string|null} forceType - 強制的に適用する背景タイプ (プレビュー用など)
+ * @param {string|null} forceType
  */
 export function applyBackground(forceType = null) {
     const mainContent = document.getElementById('main-content');
     if (!mainContent) return;
 
-    // 設定値の取得 (引数優先 -> localStorage -> デフォルト'none')
     const bgType = forceType || localStorage.getItem('background') || 'none';
     const isDark = document.documentElement.classList.contains('dark');
-
-    // コンテンツラッパー（オーバーレイ適用対象）
-    const contentWrapper = mainContent.querySelector('.max-w-4xl');
 
     // --- リセット処理 ---
     mainContent.style.backgroundImage = '';
@@ -61,20 +55,13 @@ export function applyBackground(forceType = null) {
     mainContent.style.backgroundAttachment = '';
     mainContent.style.backgroundRepeat = '';
     
-    // オーバーレイ用クラスを一旦削除
-    // ※古い設定(90/blur-sm)と新しい設定(70/60/blur-md)の両方を削除対象にする
-    if (contentWrapper) {
-        contentWrapper.classList.remove(
-            'bg-white/90', 'dark:bg-gray-900/90', 'backdrop-blur-sm',
-            'bg-white/70', 'dark:bg-gray-900/60', 'backdrop-blur-md',
-            'p-4', 'sm:p-6', 'rounded-xl', 'shadow-sm'
-        );
-    }
+    // ★重要変更: 
+    // コンテンツラッパー(.max-w-4xl)へのオーバーレイクラス強制適用を廃止。
+    // 各UIコンポーネント(GlassCard)が個別に背景スタイルを持つ形に移行したため、
+    // ここで全体を上書きするとデザインが崩れる原因となる。
+    // 背景画像の適用のみを責務とする。
 
     // --- 適用処理 ---
-    
-    // ライトモード時は背景画像を適用しない（要件により）
-    // また、設定が 'none' の場合も何もしない（無地＝デフォルトCSS依存）
     if (!isDark || bgType === 'none') {
         return;
     }
@@ -86,14 +73,5 @@ export function applyBackground(forceType = null) {
         mainContent.style.backgroundPosition = 'center';
         mainContent.style.backgroundAttachment = 'fixed';
         mainContent.style.backgroundRepeat = 'no-repeat';
-
-        // 可読性確保のためのオーバーレイ追加
-        // ★修正: 透過度を上げ(90->70/60)、ブラーを強化(sm->md)してGlassmorphism化
-        if (contentWrapper) {
-            contentWrapper.classList.add(
-                'bg-white/70', 'dark:bg-gray-900/60', 
-                'backdrop-blur-md', 'p-4', 'sm:p-6', 'rounded-xl', 'shadow-sm'
-            );
-        }
     }
 }
