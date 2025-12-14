@@ -9,7 +9,7 @@ import {
     onAuthStateChanged,
     signOut,
     signInWithEmailAndPassword,
-    updatePassword
+    updatePassword // 👈 追加: ビルドエラー修正
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // Firestore
@@ -48,7 +48,7 @@ export {
     onAuthStateChanged,
     signOut,
     signInWithEmailAndPassword,
-    updatePassword,
+    updatePassword, // 👈 追加: エクスポート漏れ修正
 
     // Firestore
     getFirestore,

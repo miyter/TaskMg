@@ -36,6 +36,7 @@ let isDataSyncing = false;
  */
 export function startAllSubscriptions() {
     // 🚨 認証チェックを追加: 認証されていない場合は購読を開始しない
+    // これにより、起動時の User not authenticated エラーや permission-denied を防ぐ
     if (!auth || !auth.currentUser) {
         console.warn('Cannot start sync: User not authenticated. Aborting subscriptions.');
         return;
