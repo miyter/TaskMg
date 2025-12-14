@@ -87,6 +87,12 @@ function setupAuthObserver() {
 }
 
 function handleUserLogin() {
+    // 解決策: auth.currentUserが確実にセットされるまで待機（非同期タイミング対策）
+    if (!auth.currentUser) {
+        setTimeout(handleUserLogin, 100);
+        return;
+    }
+
     // ログイン直後にサイドバーの基盤（DOM）を初期化
     initSidebar();
 
