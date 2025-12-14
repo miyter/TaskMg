@@ -3,9 +3,10 @@
 
 import { 
     collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, orderBy 
-} from "firebase/firestore";
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 import { db } from '../core/firebase.js';
+import { getCurrentWorkspaceId } from './workspace.js';
 
 // ==========================================================
 // ★ RAW FUNCTIONS (userId必須) - ラッパー層からのみ呼び出し
@@ -15,14 +16,38 @@ import { db } from '../core/firebase.js';
 let _cachedProjects = [];
 
 /**
- * プロジェクトデータのリアルタイムリスナーを開始する (RAW)。
+ * プロジェクトコレクションへのパスを取得する内部ヘルパー
+ * @param {string} userId 
+ * @returns {string|null} パスまたはnull（ワークスペース未選択時）
+ */
+function getProjectsPath(userId) {
+    const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
+        ? window.GLOBAL_APP_ID 
+        : 'default-app-id';
+        
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+
+    return `/artifacts/${appId}/workspaces/${workspaceId}/users/${userId}/projects`;
+}
+
+/**
+ * プロジェクト数据的リアルタイムリスナーを開始する (RAW)。
  * @param {string} userId - ユーザーID (必須)
  * @param {function} onUpdate - データ更新時に呼び出されるコールバック関数
  * @returns {function} リスナーを解除するための関数
  */
 export function subscribeToProjectsRaw(userId, onUpdate) {
-    const appId = window.GLOBAL_APP_ID;
-    const path = `/artifacts/${appId}/users/${userId}/projects`;
+    const path = getProjectsPath(userId);
+
+    // ワークスペースが選択されていない、またはパス生成不可の場合は空で返す
+    if (!path) {
+        console.warn('subscribeToProjectsRaw: No workspace selected or path invalid');
+        _cachedProjects = [];
+        onUpdate([]);
+        return () => {};
+    }
+
     // orderByはインデックスエラー回避のため一旦外しています。
     const q = query(collection(db, path)); 
 
@@ -48,8 +73,9 @@ export function getProjects() {
  * @param {string} name - プロジェクト名
  */
 export async function addProjectRaw(userId, name) {
-    const appId = window.GLOBAL_APP_ID;
-    const path = `/artifacts/${appId}/users/${userId}/projects`;
+    const path = getProjectsPath(userId);
+    if (!path) throw new Error('Workspace not selected');
+
     await addDoc(collection(db, path), {
         name,
         ownerId: userId,
@@ -64,8 +90,9 @@ export async function addProjectRaw(userId, name) {
  * @param {object} updates - 更新内容
  */
 export async function updateProjectRaw(userId, projectId, updates) {
-    const appId = window.GLOBAL_APP_ID;
-    const path = `/artifacts/${appId}/users/${userId}/projects`;
+    const path = getProjectsPath(userId);
+    if (!path) throw new Error('Workspace not selected');
+
     const ref = doc(db, path, projectId);
     return updateDoc(ref, updates);
 }
@@ -76,7 +103,8 @@ export async function updateProjectRaw(userId, projectId, updates) {
  * @param {string} projectId - プロジェクトID
  */
 export async function deleteProjectRaw(userId, projectId) {
-    const appId = window.GLOBAL_APP_ID;
-    const path = `/artifacts/${appId}/users/${userId}/projects`;
+    const path = getProjectsPath(userId);
+    if (!path) throw new Error('Workspace not selected');
+
     await deleteDoc(doc(db, path, projectId));
 }

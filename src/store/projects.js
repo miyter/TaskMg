@@ -3,25 +3,34 @@
 
 import { auth } from '../core/firebase.js';
 import { showMessageModal } from '../ui/components.js';
+import { getCurrentWorkspaceId } from './workspace.js'; // 追加
 
 import { 
     subscribeToProjectsRaw,
     addProjectRaw,
     updateProjectRaw, 
     deleteProjectRaw,
-    getProjects // ★追加: 同期的にプロジェクトリストを取得する関数をインポート
+    getProjects // 同期的にプロジェクトリストを取得する関数
 } from './projects-raw.js';
 
 /**
- * 認証ガード。未認証ならエラーモーダルを表示し例外をスローする。
+ * 認証とワークスペース選択のガード。
+ * 未認証またはワークスペース未選択ならエラーモーダルを表示し例外をスローする。
  * @returns {string} 認証済みのユーザーID
  */
-function requireAuth() {
+function requireAuthAndWorkspace() {
     const userId = auth.currentUser?.uid;
     if (!userId) {
         showMessageModal("操作にはログインが必要です。", null); 
         throw new Error('Authentication required.'); 
     }
+    
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) {
+        showMessageModal("ワークスペースが選択されていません。", null);
+        throw new Error('Workspace selection required.');
+    }
+
     return userId;
 }
 
@@ -31,19 +40,21 @@ function requireAuth() {
 
 /**
  * プロジェクトのリアルタイム購読 (ラッパー)
- * Grokレビュー対応: unsubscribe関数を正しく返すように修正
- * これにより、リロード時やページ遷移時の同期解除・再開が正常に機能する
+ * ワークスペースが選択されていない場合は空リストを返し、購読をスキップする
  */
 function subscribeToProjects(onUpdate) {
     const user = auth.currentUser;
+    const workspaceId = getCurrentWorkspaceId();
     
-    // 認証されていない場合は購読せず、ダミーの解除関数を返す
-    if (!user) {
-        console.warn('User not authenticated, skipping projects subscription');
+    // 認証されていない、またはワークスペース未選択の場合は購読せず、ダミーの解除関数を返す
+    if (!user || !workspaceId) {
+        console.warn('User not authenticated or Workspace not selected, skipping projects subscription');
+        if (onUpdate) onUpdate([]);
         return () => {}; 
     }
 
     // raw関数の戻り値（unsubscribe関数）をそのまま呼び出し元へ返す
+    // raw側でも workspaceId を取得してパスを構築している
     return subscribeToProjectsRaw(user.uid, onUpdate);
 }
 
@@ -52,7 +63,8 @@ function subscribeToProjects(onUpdate) {
  * @param {string} name - プロジェクト名
  */
 async function addProject(name) {
-    const userId = requireAuth();
+    const userId = requireAuthAndWorkspace();
+    // raw側で workspaceId を取得して使用する
     return addProjectRaw(userId, name);
 }
 
@@ -62,7 +74,7 @@ async function addProject(name) {
  * @param {object} updates - 更新内容
  */
 async function updateProject(projectId, updates) {
-    const userId = requireAuth();
+    const userId = requireAuthAndWorkspace();
     return updateProjectRaw(userId, projectId, updates);
 }
 
@@ -71,9 +83,8 @@ async function updateProject(projectId, updates) {
  * @param {string} projectId - プロジェクトID
  */
 async function deleteProject(projectId) {
-    const userId = requireAuth();
+    const userId = requireAuthAndWorkspace();
     return deleteProjectRaw(userId, projectId);
 }
 
-// ★修正: getProjects もエクスポートに追加
 export { subscribeToProjects, addProject, updateProject, deleteProject, getProjects };

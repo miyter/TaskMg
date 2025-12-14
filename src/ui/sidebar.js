@@ -12,7 +12,10 @@ import { showSettingsModal } from './settings.js';
 import { renderSidebarItems, renderProjects } from './sidebar-renderer.js';
 import { subscribeToFilters, getFilters } from '../store/filters.js';
 import { subscribeToTimeBlocks } from '../store/timeblocks.js';
-import { subscribeToProjects } from '../store/projects.js'; // ★追加
+import { subscribeToProjects } from '../store/projects.js';
+// ★追加: ワークスペース関連のインポート
+import { subscribeToWorkspaces, addWorkspace, setCurrentWorkspaceId, getCurrentWorkspaceId } from '../store/workspace.js';
+import { showMessageModal } from './components.js';
 
 // 外部公開
 export { renderSidebarItems, renderProjects };
@@ -37,13 +40,14 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     setupSidebarToggles();
     
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
-    
-    // ★追加: プロジェクトのリアルタイム購読
-    // これによりFirebaseからデータが来た瞬間にサイドバーが更新される
+
+    // ★追加: ワークスペースのUIセットアップと購読
+    setupWorkspaceDropdown();
+
+    // プロジェクトのリアルタイム購読
     subscribeToProjects((projects) => {
         if (sidebar) {
             const currentFilters = typeof getFilters === 'function' ? getFilters() : [];
-            // 最新のprojectsを使って再描画
             renderSidebarItems(sidebar, allTasks, projects, allLabels, currentFilters);
         }
     });
@@ -52,9 +56,6 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     subscribeToFilters((filters) => {
         const filterList = document.getElementById('filter-list');
         if (filterList) {
-            // ここではprojectsはinit時点のもの(allProjects)が使われるが、
-            // 本質的には各subscribe内で最新の状態を管理するか、State Managerから取得するのが理想。
-            // 今回はプロジェクト表示修正を優先。
             renderSidebarItems(sidebar, allTasks, allProjects, allLabels, filters);
         }
     });
@@ -94,6 +95,118 @@ export function initSidebar(allTasks = [], allProjects = [], allLabels = []) {
     updateSidebarVisibility();
     window.addEventListener('resize', updateSidebarVisibility);
 }
+
+/**
+ * ワークスペースドロップダウンのロジック設定
+ */
+function setupWorkspaceDropdown() {
+    const trigger = document.getElementById('workspace-trigger');
+    const menu = document.getElementById('workspace-menu');
+    const label = document.getElementById('workspace-label');
+    const listContainer = document.getElementById('workspace-list');
+    const addBtn = document.getElementById('add-workspace-btn');
+    const settingsBtn = document.getElementById('settings-workspace-btn');
+
+    if (!trigger || !menu) return;
+
+    // 開閉ロジック
+    const closeMenu = (e) => {
+        if (e && (menu.contains(e.target) || trigger.contains(e.target))) return;
+        menu.classList.replace('opacity-100', 'opacity-0');
+        menu.classList.replace('visible', 'invisible');
+        menu.classList.replace('scale-100', 'scale-95');
+        menu.classList.replace('pointer-events-auto', 'pointer-events-none');
+        document.removeEventListener('click', closeMenu);
+    };
+
+    const toggleMenu = () => {
+        const isOpen = menu.classList.contains('opacity-100');
+        if (isOpen) {
+            closeMenu();
+        } else {
+            menu.classList.replace('opacity-0', 'opacity-100');
+            menu.classList.replace('invisible', 'visible');
+            menu.classList.replace('scale-95', 'scale-100');
+            menu.classList.replace('pointer-events-none', 'pointer-events-auto');
+            document.addEventListener('click', closeMenu);
+        }
+    };
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMenu();
+    });
+
+    // 追加ボタン
+    if (addBtn) {
+        addBtn.addEventListener('click', async () => {
+            closeMenu();
+            const name = window.prompt("新しいワークスペース名を入力してください:");
+            if (name && name.trim()) {
+                try {
+                    const newWorkspace = await addWorkspace(name.trim());
+                    setCurrentWorkspaceId(newWorkspace.id); // 作成後に切り替え
+                } catch (err) {
+                    console.error("Failed to add workspace:", err);
+                    showMessageModal("ワークスペースの作成に失敗しました");
+                }
+            }
+        });
+    }
+
+    // 設定ボタン
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            closeMenu();
+            showSettingsModal(); // 設定モーダルで名前変更などを想定
+        });
+    }
+
+    // データ購読してUI更新
+    subscribeToWorkspaces((workspaces) => {
+        if (!listContainer || !label) return;
+        
+        const currentId = getCurrentWorkspaceId();
+        const currentWs = workspaces.find(w => w.id === currentId);
+        
+        // ラベル更新
+        if (currentWs) {
+            label.textContent = currentWs.name;
+            label.classList.remove('text-gray-400');
+        } else {
+            label.textContent = "ワークスペースを選択";
+            label.classList.add('text-gray-400');
+        }
+
+        // リスト更新
+        listContainer.innerHTML = '';
+        workspaces.forEach(ws => {
+            const btn = document.createElement('button');
+            const isActive = ws.id === currentId;
+            btn.className = `w-full text-left px-4 py-2 text-sm flex items-center justify-between group transition-colors ${
+                isActive 
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium' 
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`;
+            
+            btn.innerHTML = `
+                <span class="truncate">${ws.name}</span>
+                ${isActive ? '<svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : ''}
+            `;
+            
+            btn.addEventListener('click', () => {
+                if (!isActive) {
+                    setCurrentWorkspaceId(ws.id);
+                    // UI更新はイベントリスナー経由で行われるためここでは何もしない
+                }
+                closeMenu();
+            });
+            
+            listContainer.appendChild(btn);
+        });
+    });
+}
+
 
 /**
  * サイドバーの開閉状態に応じて、ヘッダーの開閉ボタンの表示を制御する

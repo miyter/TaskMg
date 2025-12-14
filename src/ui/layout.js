@@ -1,27 +1,26 @@
 // @ts-nocheck
 import { toggleTheme, initTheme } from './theme.js';
 // sidebar-utilsからリサイズ機能をインポート
-import { setupResizer } from './sidebar-utils.js'; 
+import { setupResizer } from './sidebar-utils.js';
+// ★追加: ワークスペース関連
+import { subscribeToWorkspaces, addWorkspace, setCurrentWorkspaceId, getCurrentWorkspaceId } from '../store/workspace.js';
+import { showMessageModal } from './components.js';
+import { showSettingsModal } from './settings.js';
 
 export function renderLayout() {
     const app = document.getElementById('app');
     if (!app) return;
 
-    // initTheme() 呼び出しを削除 (Grokレビュー対応)
-
     // レイアウト: サイドバーとメインコンテンツをFlexboxで配置
     app.innerHTML = `
         <div class="flex h-screen w-full overflow-hidden bg-white dark:bg-gray-900 transition-colors duration-200">
             <!-- サイドバー -->
-            <!-- ★修正: 開閉制御用にカスタムクラス 'sidebar-closed' を追加/削除する -->
-            <!-- デフォルトで開いている状態のクラスを設定 -->
             <aside id="sidebar" class="flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 group z-20 fixed md:relative h-full md:translate-x-0 -translate-x-full shadow-xl md:shadow-none" style="width: 280px;">
                 <!-- ロゴエリア -->
                 <div class="h-12 flex items-center px-4 flex-shrink-0 justify-between">
                     <!-- ロゴ画像＋テキスト -->
                     <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition select-none">
                         <img src="/images/web-app-manifest-512x512.png" alt="TaskMg" class="h-9 w-9 rounded-lg shadow-sm">
-                        <!-- ★修正: Mg部分を青色に変更 -->
                         <span class="text-lg font-bold text-gray-800 dark:text-white tracking-tight">
                             Task<span class="text-blue-600 dark:text-blue-400">Mg</span>
                         </span>
@@ -45,29 +44,55 @@ export function renderLayout() {
                 <header class="h-12 flex items-center justify-between px-4 border-b border-white/20 dark:border-gray-800/50 flex-shrink-0 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md z-10">
                     <div class="flex items-center min-w-0 flex-1 mr-4">
                         <!-- サイドバーを開くボタン -->
-                        <button id="sidebar-open-btn" class="mr-3 text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" title="サイドバーを開く">
+                        <button id="sidebar-open-btn" class="mr-2 text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800" title="サイドバーを開く">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                         </button>
+
+                        <!-- ワークスペース切り替えドロップダウン (★追加) -->
+                        <div id="workspace-dropdown" class="relative inline-block text-left mr-3 z-20">
+                            <button id="workspace-trigger" class="flex items-center space-x-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md px-2 py-1 transition-colors focus:outline-none group">
+                                <span id="workspace-label" class="text-sm font-bold text-gray-800 dark:text-gray-200 max-w-[140px] truncate">読み込み中...</span>
+                                <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <!-- ドロップダウンメニュー -->
+                            <div id="workspace-menu" class="absolute left-0 mt-2 w-60 origin-top-left rounded-lg shadow-xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 opacity-0 invisible scale-95 transition-all duration-150 transform pointer-events-none border border-gray-100 dark:border-gray-700">
+                                <div class="py-1 max-h-[300px] overflow-y-auto custom-scrollbar" id="workspace-list">
+                                    <!-- JSでここにリストを注入 -->
+                                </div>
+                                <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                                <div class="py-1">
+                                    <button id="add-workspace-btn" class="flex items-center w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                        ワークスペースを追加
+                                    </button>
+                                    <button id="settings-workspace-btn" class="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                        設定
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         
-                        <h2 id="header-title" class="text-base font-bold truncate text-gray-800 dark:text-gray-100">インボックス</h2>
+                        <!-- 現在のビュータイトル -->
+                        <h2 id="header-title" class="text-base font-medium truncate text-gray-600 dark:text-gray-300 border-l border-gray-300 dark:border-gray-700 pl-3">インボックス</h2>
                         <span id="header-count" class="ml-2 text-xs text-gray-500 font-normal hidden sm:inline-block"></span>
                     </div>
 
                     <div class="flex items-center space-x-1 sm:space-x-2">
-                        <!-- ソート (カスタムドロップダウンに置き換え) -->
+                        <!-- ソート (カスタムドロップダウン) -->
                         <div id="custom-sort-dropdown" class="relative inline-block text-left z-10">
-                            <!-- トリガー（ボタン） -->
+                            <!-- トリガー -->
                             <button 
                                 id="sort-trigger"
                                 type="button"
-                                class="appearance-none bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 text-xs py-1.5 pl-2 pr-6 rounded cursor-pointer focus:outline-none flex items-center">
+                                class="appearance-none bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 text-xs py-1.5 pl-2 pr-6 rounded cursor-pointer focus:outline-none flex items-center transition-colors">
                                 <span id="sort-label">作成日(新しい順)</span>
                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
                                     <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
                             </button>
 
-                            <!-- ドロップダウンメニュー（初期は非表示） -->
+                            <!-- ドロップダウンメニュー -->
                             <div 
                                 id="sort-menu"
                                 class="absolute right-0 mt-2 w-[180px] origin-top-right rounded-lg shadow-lg 
@@ -124,10 +149,140 @@ export function renderLayout() {
         setupResizer(sidebar, mainContent, resizer);
     }
     
+    // ワークスペースドロップダウンのセットアップ (★追加)
+    setupWorkspaceDropdown();
+
     document.addEventListener('keydown', (e) => {
         if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
             e.preventDefault();
             document.getElementById('page-search-input')?.focus();
         }
     });
+}
+
+/**
+ * ワークスペースドロップダウンの機能セットアップ
+ */
+function setupWorkspaceDropdown() {
+    const trigger = document.getElementById('workspace-trigger');
+    const menu = document.getElementById('workspace-menu');
+    const label = document.getElementById('workspace-label');
+    const listContainer = document.getElementById('workspace-list');
+    const addBtn = document.getElementById('add-workspace-btn');
+    const settingsBtn = document.getElementById('settings-workspace-btn');
+
+    if (!trigger || !menu) return;
+
+    // 開閉ロジック
+    const closeMenu = (e) => {
+        // メニュー内クリック、トリガークリックの場合は無視（ただし項目クリックは別途閉じる）
+        if (e && (menu.contains(e.target) || trigger.contains(e.target)) && !e.target.closest('button.workspace-option')) {
+            return;
+        }
+        menu.classList.replace('opacity-100', 'opacity-0');
+        menu.classList.replace('visible', 'invisible');
+        menu.classList.replace('scale-100', 'scale-95');
+        menu.classList.replace('pointer-events-auto', 'pointer-events-none');
+        document.removeEventListener('click', closeMenu);
+    };
+
+    const toggleMenu = () => {
+        const isOpen = menu.classList.contains('opacity-100');
+        if (isOpen) {
+            closeMenu();
+        } else {
+            menu.classList.replace('opacity-0', 'opacity-100');
+            menu.classList.replace('invisible', 'visible');
+            menu.classList.replace('scale-95', 'scale-100');
+            menu.classList.replace('pointer-events-none', 'pointer-events-auto');
+            document.addEventListener('click', closeMenu);
+        }
+    };
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMenu();
+    });
+
+    // ワークスペースデータの購読
+    subscribeToWorkspaces((workspaces) => {
+        renderWorkspaceMenu(workspaces, listContainer);
+        updateCurrentLabel(workspaces, label);
+    });
+
+    // 「ワークスペースを追加」ボタン
+    if (addBtn) {
+        addBtn.addEventListener('click', async () => {
+            closeMenu();
+            // シンプルなプロンプトで名前入力
+            const name = window.prompt("新しいワークスペース名を入力してください:");
+            if (name && name.trim()) {
+                try {
+                    const newWs = await addWorkspace(name.trim());
+                    // 作成成功したら自動でそのワークスペースに切り替え
+                    setCurrentWorkspaceId(newWs.id);
+                } catch (error) {
+                    console.error("Failed to add workspace:", error);
+                    showMessageModal("ワークスペースの作成に失敗しました");
+                }
+            }
+        });
+    }
+
+    // 「設定」ボタン
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            closeMenu();
+            showSettingsModal();
+        });
+    }
+
+    // 内部関数: メニュー項目のレンダリング
+    function renderWorkspaceMenu(workspaces, container) {
+        if (!container) return;
+        container.innerHTML = '';
+
+        const currentId = getCurrentWorkspaceId();
+
+        workspaces.forEach(ws => {
+            const isCurrent = ws.id === currentId;
+            const btn = document.createElement('button');
+            
+            // スタイル適用 (現在選択中は強調)
+            btn.className = `workspace-option w-full text-left px-4 py-2 text-sm flex items-center justify-between transition-colors ${
+                isCurrent 
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium' 
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`;
+            
+            btn.innerHTML = `
+                <span class="truncate">${ws.name}</span>
+                ${isCurrent ? '<svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : ''}
+            `;
+            
+            // クリックで切り替え
+            btn.addEventListener('click', () => {
+                if (!isCurrent) {
+                    setCurrentWorkspaceId(ws.id);
+                }
+                closeMenu();
+            });
+            
+            container.appendChild(btn);
+        });
+    }
+
+    // 内部関数: ラベルの更新
+    function updateCurrentLabel(workspaces, labelEl) {
+        if (!labelEl) return;
+        
+        const currentId = getCurrentWorkspaceId();
+        const currentWs = workspaces.find(w => w.id === currentId);
+        
+        if (currentWs) {
+            labelEl.textContent = currentWs.name;
+        } else {
+            labelEl.textContent = "ワークスペース";
+        }
+    }
 }
