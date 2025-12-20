@@ -1,94 +1,80 @@
 // @ts-nocheck
-// プロジェクト作成・編集モーダル制御
+// @miyter:20251221
+// プロジェクト作成・編集モーダルの制御
 
 import { addProject, updateProject, deleteProject } from '../../store/projects.js';
 import { showMessageModal } from '../components.js';
 import { buildProjectModalHTML } from './project-modal-dom.js';
 
 /**
- * プロジェクト編集/新規作成モーダルを表示
- * @param {Object|null} project - 編集対象のプロジェクト (nullの場合は新規)
+ * プロジェクトモーダルを表示
  */
 export function showProjectModal(project = null) {
     const modalId = 'project-modal';
     document.getElementById(modalId)?.remove();
 
-    const isNew = !project;
+    const overlay = document.createElement('div');
+    overlay.id = modalId;
+    overlay.innerHTML = buildProjectModalHTML(project);
+    document.body.appendChild(overlay);
 
-    // オーバーレイ作成
-    const modalOverlay = document.createElement('div');
-    modalOverlay.id = modalId;
-    modalOverlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4';
-
-    // HTMLコンテンツ生成 (DOMジェネレーターを利用)
-    modalOverlay.innerHTML = buildProjectModalHTML(project);
-
-    document.body.appendChild(modalOverlay);
-
-    // イベント設定
-    setupProjectModalEvents(modalOverlay, project, isNew);
+    setupEvents(overlay, project);
 }
 
-function setupProjectModalEvents(modalOverlay, project, isNew) {
-    const closeModal = () => modalOverlay.remove();
+/**
+ * イベントリスナーのセットアップ
+ */
+function setupEvents(overlay, project) {
+    const close = () => overlay.remove();
+    const nameInput = overlay.querySelector('#modal-project-name');
+    const saveBtn = overlay.querySelector('#save-project-btn');
+    const deleteBtn = overlay.querySelector('#delete-project-btn');
 
-    // DOM要素の取得 (IDをDOM定義に合わせて修正)
-    // ×ボタンはDOMから削除されたため取得不要
-    const cancelBtn = modalOverlay.querySelector('#cancel-modal-btn');
-    const saveBtn = modalOverlay.querySelector('#save-project-btn');
-    const nameInput = modalOverlay.querySelector('#modal-project-name');
-    const deleteBtn = modalOverlay.querySelector('#delete-project-btn');
+    // 閉じる操作
+    overlay.querySelector('#cancel-modal-btn')?.onclick = close;
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
 
-    // キャンセルボタンで閉じる
-    cancelBtn?.addEventListener('click', closeModal);
-
-    // 保存処理（ボタンクリックで実行）
-    saveBtn?.addEventListener('click', async () => {
+    // 保存処理
+    const handleSave = async () => {
         const name = nameInput?.value.trim();
-
-        if (!name) {
-            showMessageModal('プロジェクト名を入力してください', 'error');
-            return;
-        }
+        if (!name) return showMessageModal('プロジェクト名を入力してください', 'error');
 
         try {
-            if (isNew) {
-                await addProject(name);
-            } else {
+            if (project) {
                 await updateProject(project.id, { name });
+                showMessageModal('変更を保存しました');
+            } else {
+                await addProject(name);
+                showMessageModal('プロジェクトを作成しました');
             }
-            closeModal();
-            // ストア更新通知によりサイドバー等は自動更新される
-        } catch (error) {
-            console.error(error);
+            close();
+        } catch (err) {
             showMessageModal('保存に失敗しました', 'error');
         }
-    });
+    };
 
-    // Enterキーで保存
-    nameInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            saveBtn?.click();
-        }
-    });
+    saveBtn.onclick = handleSave;
+    nameInput.onkeydown = (e) => { if (e.key === 'Enter') handleSave(); };
 
-    // 削除ボタン（編集時のみ存在）
+    // 削除処理
     if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => {
-            showMessageModal(`プロジェクト「${project.name}」を削除しますか？\n（関連するタスクの紐付けも解除されます）`, async () => {
+        deleteBtn.onclick = () => {
+            showMessageModal(`プロジェクト「${project.name}」を削除しますか？`, async () => {
                 try {
                     await deleteProject(project.id);
-                    closeModal();
-                    // 必要であればインボックスへ遷移するなどの処理を追加可能
-                } catch (error) {
-                    console.error(error);
+                    close();
+                } catch (err) {
                     showMessageModal('削除に失敗しました', 'error');
                 }
             });
-        });
+        };
     }
 
-    // 入力欄にフォーカス
-    setTimeout(() => nameInput?.focus(), 50);
+    // 初期フォーカス
+    requestAnimationFrame(() => {
+        if (nameInput) {
+            nameInput.focus();
+            if (project) nameInput.select();
+        }
+    });
 }

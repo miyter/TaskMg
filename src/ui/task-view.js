@@ -77,4 +77,39 @@ function updateHeaderInfo(count, projectId, labelId) {
     if (headerCount) {
         headerCount.textContent = `${count}件`;
     }
+}// @ts-nocheck
+// @miyter:20251221
+// タスクビューのレイアウト構成（リスト + 入力欄）
+
+import { renderTaskList } from './task-list.js';
+import { renderInlineInput } from './task-input.js';
+
+/**
+ * タスクビュー全体を描画
+ * @param {Array} tasks - フィルタ・ソート済みのタスク配列
+ * @param {Array} allProjects - プロジェクト一覧（コンテキスト用）
+ * @param {string|null} projectId - 選択中のプロジェクトID
+ * @param {string|null} labelId - 選択中のラベルID
+ */
+export function renderTaskView(tasks, allProjects, projectId = null, labelId = null) {
+    const container = document.getElementById('task-view');
+    if (!container) return;
+
+    // コンテナを初期化
+    container.innerHTML = '';
+
+    // 1. タスクリスト表示エリア
+    const listContainer = document.createElement('div');
+    listContainer.id = 'task-list-container';
+    container.appendChild(listContainer);
+    
+    renderTaskList(listContainer, tasks, allProjects);
+
+    // 2. インライン入力フォームエリア
+    const inputContainer = document.createElement('div');
+    inputContainer.id = 'inline-input-container';
+    inputContainer.className = 'mt-2 pb-10';
+    container.appendChild(inputContainer);
+
+    renderInlineInput(inputContainer, projectId, labelId);
 }

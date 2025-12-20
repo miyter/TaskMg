@@ -1,21 +1,20 @@
 // @ts-nocheck
+// @miyter:20251221
 // プロジェクト一覧セクションのコンポーネント
 
 import { showProjectModal } from '../modal/project-modal.js';
-// 既存のレンダラーロジックを再利用（リストアイテムの生成など複雑な処理はここにあるため）
-import { renderProjects } from '../sidebar-renderer.js';
+import { createSidebarItem, showItemContextMenu } from '../sidebar-components.js';
+import { setupDropZone } from '../sidebar-drag-drop.js';
 
 /**
  * プロジェクトセクションを初期化・DOM生成する
  * @param {HTMLElement} container - サイドバーのコンテンツコンテナ
  */
 export function initSidebarProjects(container) {
-    // コンポーネントのラッパー作成
     const wrapper = document.createElement('div');
     wrapper.id = 'sidebar-projects-section';
-    wrapper.className = 'mt-2 mb-2'; // マージン調整
+    wrapper.className = 'mt-2 mb-2';
 
-    // HTML構造
     wrapper.innerHTML = `
         <div class="flex items-center justify-between px-4 py-1.5 group hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors rounded-lg mx-2 mb-1 cursor-pointer" id="projects-header-trigger">
             <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex-1 select-none">
@@ -25,15 +24,11 @@ export function initSidebarProjects(container) {
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             </button>
         </div>
-        
-        <!-- プロジェクトリストコンテナ (renderProjectsがここを操作する) -->
-        <div id="project-list" class="space-y-0.5 pb-2">
-            <!-- ローディング中や空の状態はレンダラーが処理 -->
-        </div>
+        <ul id="project-list" class="space-y-0.5 pb-2 px-1">
+            <!-- 実際のプロジェクト行はupdateSidebarProjectsで挿入される -->
+        </ul>
     `;
 
-    // マウントポイントを探して置換、なければ末尾に追加
-    // (sidebar-dom.js で <div id="projects-mount-point"></div> を用意する想定)
     const mountPoint = container.querySelector('#projects-mount-point');
     if (mountPoint) {
         mountPoint.replaceWith(wrapper);
@@ -41,32 +36,53 @@ export function initSidebarProjects(container) {
         container.appendChild(wrapper);
     }
 
-    // イベント設定: プロジェクト追加
-    const addBtn = wrapper.querySelector('#add-project-btn');
-    if (addBtn) {
-        addBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // ヘッダーのクリックイベント等を防ぐ
-            showProjectModal();
-        });
-    }
-
-    // ヘッダー全体のクリックイベント（例: 開閉トグルや追加など、将来的な拡張用）
-    const header = wrapper.querySelector('#projects-header-trigger');
-    if (header) {
-        header.addEventListener('click', (e) => {
-            // 現状は追加ボタン以外クリックしても何もしないが、
-            // 将来的にアコーディオン開閉を入れるならここ
-        });
-    }
+    // イベント: 新規作成
+    wrapper.querySelector('#add-project-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showProjectModal();
+    });
 }
 
 /**
- * プロジェクトリストを更新する
- * @param {Array} projects 
- * @param {Array} allTasks 
+ * プロジェクトリストの中身を最新データで更新する
+ * @param {Array} projects - 表示するプロジェクト一覧
+ * @param {Array} allTasks - カウント計算用の全タスク
  */
-export function updateSidebarProjects(projects, allTasks) {
-    // 既存のレンダラー関数に委譲
-    // renderProjectsは内部で document.getElementById('project-list') を探して更新する仕様
-    renderProjects(projects, allTasks);
+export function updateSidebarProjects(projects, allTasks = []) {
+    const list = document.getElementById('project-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (projects.length === 0) {
+        list.innerHTML = `<li class="px-6 py-2 text-xs text-gray-400 italic">プロジェクトなし</li>`;
+        return;
+    }
+
+    projects.forEach(project => {
+        // 未完了タスク数をカウント
+        const count = allTasks.filter(t => t.projectId === project.id && t.status !== 'completed').length;
+        
+        // 汎用アイテムコンポーネントを使用
+        const item = createSidebarItem(project.name, 'project', project.id, project.color, count);
+        
+        // ナビゲーションイベント
+        item.onclick = () => {
+            document.dispatchEvent(new CustomEvent('route-change', { 
+                detail: { page: 'project', id: project.id } 
+            }));
+        };
+
+        // 右クリックメニュー
+        item.oncontextmenu = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showItemContextMenu(e, 'project', project);
+        };
+
+        // ドラッグ＆ドロップターゲット設定
+        setupDropZone(item, 'project', project.id);
+
+        list.appendChild(item);
+    });
 }

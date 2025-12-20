@@ -1,74 +1,67 @@
 // @ts-nocheck
+// @miyter:20251221
+// タスク配列のソートロジック
+
 /**
- * タスクのソートロジック
+ * 指定された基準でタスクをソート
  * @param {Array} tasks - タスク配列
- * @param {string} criteria - ソート基準
- * @returns {Array} ソート済みの新しい配列
+ * @param {string} criteria - ソートキー
  */
-export function sortTasks(tasks, criteria) {
-    // 元の配列を変更しないようコピーを作成
-    const copied = [...tasks];
+export function sortTasks(tasks, criteria = 'createdAt_desc') {
+    if (!Array.isArray(tasks)) return [];
     
-    return copied.sort((a, b) => {
-        // Firestore Timestamp と Date オブジェクトの両方に対応
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-
-        // 文字列やnull/undefinedの比較ヘルパー
-        const compareStrings = (valA, valB, direction = 'asc') => {
-            const strA = (valA || '').toString().toLowerCase();
-            const strB = (valB || '').toString().toLowerCase();
-            let result = 0;
-
-            if (strA < strB) {
-                result = -1;
-            } else if (strA > strB) {
-                result = 1;
-            }
-            
-            return direction === 'asc' ? result : -result;
-        };
-        
-        // null/undefinedをソート対象の最後に配置するヘルパー
-        const compareNullable = (valA, valB, comparator) => {
-            if (valA == null) return 1;
-            if (valB == null) return -1;
-            return comparator(valA, valB);
-        };
-        
+    return [...tasks].sort((a, b) => {
         switch (criteria) {
-            case 'timeBlockId_asc':
-                // null/undefined (時間帯未定) を最後に配置し、それ以外をIDで比較
-                return compareNullable(a.timeBlockId, b.timeBlockId, (idA, idB) => {
-                    // IDは文字列なので、文字列比較を行う
-                    return compareStrings(idA, idB, 'asc');
-                });
-                
-            case 'projectId_asc':
-                // null/undefined (プロジェクト未定) を最後に配置し、それ以外をIDで比較
-                return compareNullable(a.projectId, b.projectId, (idA, idB) => {
-                    return compareStrings(idA, idB, 'asc');
-                });
-                
-            case 'title_asc':
-                // タスク名を昇順（A→Z）で比較
-                return compareStrings(a.title, b.title, 'asc');
-
             case 'createdAt_asc':
-                return dateA - dateB;
-                
-            case 'dueDate_asc':
-                // 期限なしは最後に配置
-                if (!a.dueDate) return 1;
-                if (!b.dueDate) return -1;
-                
-                const dueA = a.dueDate.toDate ? a.dueDate.toDate() : new Date(a.dueDate);
-                const dueB = b.dueDate.toDate ? b.dueDate.toDate() : new Date(b.dueDate);
-                return dueA - dueB;
-                
+                return compareDates(a.createdAt, b.createdAt);
+            
             case 'createdAt_desc':
+                return compareDates(b.createdAt, a.createdAt);
+
+            case 'dueDate_asc':
+                // 期限なし(null)は最後に配置
+                return compareNullable(a.dueDate, b.dueDate, (d1, d2) => compareDates(d1, d2));
+
+            case 'timeBlockId_asc':
+                // 未定を最後に
+                return compareNullable(a.timeBlockId, b.timeBlockId, (v1, v2) => String(v1).localeCompare(String(v2)));
+
+            case 'projectId_asc':
+                return compareNullable(a.projectId, b.projectId, (v1, v2) => String(v1).localeCompare(String(v2)));
+
+            case 'duration_asc':
+                // ★追加: 所要時間順 (短い順)
+                return compareNullable(a.duration, b.duration, (v1, v2) => Number(v1) - Number(v2));
+
+            case 'title_asc':
+                return (a.title || '').localeCompare(b.title || '', 'ja');
+
             default:
-                return dateB - dateA;
+                return 0;
         }
     });
+}
+
+/**
+ * 内部ヘルパー: 日付/Timestampの比較
+ */
+function compareDates(valA, valB) {
+    const getTime = (v) => {
+        if (!v) return 0;
+        if (v.toDate) return v.toDate().getTime();
+        if (v instanceof Date) return v.getTime();
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? 0 : d.getTime();
+    };
+    return getTime(valA) - getTime(valB);
+}
+
+/**
+ * 内部ヘルパー: null値を考慮した比較（nullを常に後ろに持っていく）
+ */
+function compareNullable(a, b, comparator) {
+    if (a === b) return 0;
+    if (a == null || a === 'null') return 1;
+    if (b == null || b === 'null') return -1;
+    return comparator(a, b);
 }

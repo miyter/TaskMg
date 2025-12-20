@@ -1,4 +1,5 @@
 // @ts-nocheck
+// @miyter:20251221
 // ワークスペース作成・編集モーダル制御
 
 import { addWorkspace, updateWorkspaceName, setCurrentWorkspaceId } from '../../store/workspace.js';
@@ -6,82 +7,62 @@ import { showMessageModal } from '../components.js';
 import { buildWorkspaceModalHTML } from './workspace-modal-dom.js';
 
 /**
- * ワークスペースモーダルを表示（新規作成または編集）
- * @param {Object|null} workspaceData - 編集対象のワークスペースデータ。nullなら新規作成
+ * ワークスペースモーダルを表示
  */
 export function showWorkspaceModal(workspaceData = null) {
     const modalId = 'workspace-modal';
     document.getElementById(modalId)?.remove();
 
-    // オーバーレイ作成
-    const modalOverlay = document.createElement('div');
-    modalOverlay.id = modalId;
-    modalOverlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4';
+    const overlay = document.createElement('div');
+    overlay.id = modalId;
+    overlay.innerHTML = buildWorkspaceModalHTML(workspaceData);
+    document.body.appendChild(overlay);
 
-    // HTMLコンテンツ生成 (編集データを渡す)
-    modalOverlay.innerHTML = buildWorkspaceModalHTML(workspaceData);
-
-    document.body.appendChild(modalOverlay);
-
-    // イベント設定
-    setupWorkspaceModalEvents(modalOverlay, workspaceData);
+    setupEvents(overlay, workspaceData);
 }
 
-function setupWorkspaceModalEvents(modalOverlay, workspaceData) {
-    const closeModal = () => modalOverlay.remove();
+/**
+ * イベントリスナーの設定
+ */
+function setupEvents(overlay, workspaceData) {
+    const close = () => overlay.remove();
+    const nameInput = overlay.querySelector('#modal-workspace-name');
+    const saveBtn = overlay.querySelector('#save-workspace-btn');
 
-    const cancelBtn = modalOverlay.querySelector('#cancel-modal-btn');
-    const saveBtn = modalOverlay.querySelector('#save-workspace-btn');
-    const nameInput = modalOverlay.querySelector('#modal-workspace-name');
-
-    // キャンセルボタン
-    cancelBtn?.addEventListener('click', closeModal);
+    // 閉じる操作
+    overlay.querySelector('#cancel-modal-btn')?.addEventListener('click', close);
+    overlay.onclick = (e) => { if (e.target === overlay.firstElementChild) close(); };
 
     // 保存処理
-    saveBtn?.addEventListener('click', async () => {
+    const handleSave = async () => {
         const name = nameInput?.value.trim();
-
-        if (!name) {
-            showMessageModal('ワークスペース名を入力してください', 'error');
-            return;
-        }
+        if (!name) return showMessageModal('名前を入力してください', 'error');
 
         try {
             if (workspaceData) {
-                // 編集モード
                 await updateWorkspaceName(workspaceData.id, name);
-                showMessageModal(`ワークスペース名を「${name}」に変更しました`);
+                showMessageModal(`変更しました`);
             } else {
-                // 新規作成モード
                 const newWs = await addWorkspace(name);
-                // 作成成功したら自動でそのワークスペースに切り替え
                 setCurrentWorkspaceId(newWs.id);
-                showMessageModal(`ワークスペース「${name}」を作成しました`);
+                showMessageModal(`作成しました`);
             }
-            
-            closeModal();
+            close();
         } catch (error) {
-            console.error(error);
-            const action = workspaceData ? '更新' : '作成';
-            showMessageModal(`ワークスペースの${action}に失敗しました`, 'error');
+            showMessageModal(`失敗しました`, 'error');
         }
-    });
+    };
 
-    // Enterキーで保存
+    saveBtn?.addEventListener('click', handleSave);
     nameInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            saveBtn?.click();
-        }
+        if (e.key === 'Enter') handleSave();
     });
 
-    // 入力欄にフォーカス
-    setTimeout(() => {
+    // 初期フォーカス
+    requestAnimationFrame(() => {
         if (nameInput) {
             nameInput.focus();
-            if (workspaceData) {
-                nameInput.select(); // 編集時は全選択
-            }
+            if (workspaceData) nameInput.select();
         }
-    }, 50);
+    });
 }

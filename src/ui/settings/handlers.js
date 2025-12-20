@@ -1,4 +1,5 @@
 // @ts-nocheck
+// @miyter:20251221
 // 設定モーダルのイベントハンドラー
 
 import { auth } from '../../core/firebase.js';
@@ -6,191 +7,130 @@ import { updateUserPassword } from '../auth.js';
 import { signOut } from 'firebase/auth';
 import { createBackupData } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
-// ★追加: 背景適用のための関数をインポート
 import { applyBackground } from '../theme.js';
 
 /**
- * モーダル内の各種イベントリスナーを設定する
+ * モーダル内のイベントリスナーを一括設定
  */
 export function setupSettingsEvents(modalOverlay, closeModal) {
-    // 閉じるボタン
-    document.getElementById('close-settings-modal')?.addEventListener('click', closeModal);
-    document.getElementById('close-settings-footer')?.addEventListener('click', closeModal);
+    // 閉じるボタン系
+    const closers = ['close-settings-modal', 'close-settings-footer'];
+    closers.forEach(id => document.getElementById(id)?.addEventListener('click', closeModal));
+    
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) closeModal();
     });
 
-    setupThemeHandlers();
-    setupFontSizeHandlers();
-    setupBackgroundHandlers(); // ★追加
-    setupDensityHandlers();
+    // 表示設定（ラジオボタングループ）
+    setupRadioGroupHandler('app-theme', 'theme', (val) => {
+        document.documentElement.classList.toggle('dark', val === 'dark');
+        applyBackground();
+    });
+
+    setupRadioGroupHandler('font-size', 'fontSize', (val) => {
+        document.body.classList.remove('font-large', 'font-medium', 'font-small');
+        document.body.classList.add(`font-${val}`);
+    });
+
+    setupRadioGroupHandler('bg-pattern', 'background', () => applyBackground());
+
+    setupRadioGroupHandler('sidebar-density', 'sidebar_compact', (val) => {
+        const isCompact = val === 'compact';
+        window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { compact: isCompact } }));
+    });
+
+    // 機能系
     setupExportHandler();
     setupPasswordHandler();
     setupLogoutHandler(closeModal);
 }
 
-// 0. テーマ切り替え
-function setupThemeHandlers() {
-    const currentTheme = localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-    const themeRadios = document.querySelectorAll('input[name="app-theme"]');
-    themeRadios.forEach(radio => {
-        if (radio.value === currentTheme) radio.checked = true;
-        
-        radio.addEventListener('change', (e) => {
-            const val = e.target.value;
-            if (val === 'dark') {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            }
-            // ★追加: テーマ変更に合わせて背景も更新（ライトモードなら画像消去など）
-            applyBackground();
-        });
-    });
-}
-
-// ★追加: 背景パターン設定
-function setupBackgroundHandlers() {
-    const bgRadios = document.querySelectorAll('input[name="bg-pattern"]');
-    bgRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            const val = e.target.value;
-            localStorage.setItem('background', val);
-            applyBackground(); // 即時反映
-        });
-    });
-}
-
-// 文字サイズ設定
-function setupFontSizeHandlers() {
-    const currentSize = localStorage.getItem('fontSize') || 'medium';
-    const radios = document.querySelectorAll('input[name="font-size"]');
-    
+/**
+ * ラジオボタン・グループの共通ハンドラー生成
+ */
+function setupRadioGroupHandler(name, storageKey, onUpdate) {
+    const radios = document.querySelectorAll(`input[name="${name}"]`);
     radios.forEach(radio => {
-        if (radio.value === currentSize) radio.checked = true;
-        
         radio.addEventListener('change', (e) => {
             const val = e.target.value;
-            localStorage.setItem('fontSize', val);
-            
-            // クラスの入れ替え
-            document.body.classList.remove('font-large', 'font-medium', 'font-small');
-            document.body.classList.add(`font-${val}`);
+            // 数値や真偽値の保存が必要な場合はここで変換
+            localStorage.setItem(storageKey, val);
+            onUpdate(val);
         });
     });
 }
 
-// 1. サイドバー表示設定の変更
-function setupDensityHandlers() {
-    const densityRadios = document.querySelectorAll('input[name="sidebar-density"]');
-    densityRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            const val = e.target.value;
-            const isCompact = val === 'compact';
-            
-            // 設定を保存
-            localStorage.setItem('sidebar_compact', isCompact);
-            
-            // イベント発火して即座に反映
-            window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { 
-                detail: { compact: isCompact } 
-            }));
-        });
-    });
-}
-
-// 2. データエクスポート
+/**
+ * データエクスポート
+ */
 function setupExportHandler() {
-    const exportBtn = document.getElementById('export-data-btn-new');
-    if (!exportBtn) return;
+    const btn = document.getElementById('export-data-btn-new');
+    if (!btn) return;
 
-    exportBtn.addEventListener('click', async () => {
-        const originalHtml = exportBtn.innerHTML;
-        exportBtn.disabled = true;
-        exportBtn.innerHTML = `
-            <div class="flex items-center justify-center w-full gap-2">
-                <svg class="animate-spin h-5 w-5 text-gray-500" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" class="opacity-25"/>
-                    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" class="opacity-75"/>
-                </svg>
-                作成中...
-            </div>
-        `;
+    btn.onclick = async () => {
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="flex items-center gap-2">作成中...</span>`;
         
         try {
             const data = await createBackupData();
-            downloadJSON(data, `task_manager_backup_${getTimestamp()}.json`);
-            showMessageModal("バックアップデータをダウンロードしました");
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            downloadJSON(data, `backup_${timestamp}.json`);
+            showMessageModal("バックアップをダウンロードしました");
         } catch (e) {
-            console.error("Export Error:", e);
-            showMessageModal("データのエクスポートに失敗しました", 'error');
+            showMessageModal("エクスポートに失敗しました", 'error');
         } finally {
-            exportBtn.disabled = false;
-            exportBtn.innerHTML = originalHtml;
+            btn.disabled = false;
+            btn.innerHTML = original;
         }
-    });
+    };
 }
 
-// 3. パスワード変更
+/**
+ * パスワード変更
+ */
 function setupPasswordHandler() {
-    const passBtn = document.getElementById('update-password-btn-new');
-    const passInput = document.getElementById('new-password-input-new');
-    if (!passBtn || !passInput) return;
+    const btn = document.getElementById('update-password-btn-new');
+    const input = document.getElementById('new-password-input-new');
+    if (!btn || !input) return;
 
-    passBtn.addEventListener('click', async () => {
-        const newPass = passInput.value;
-        if (!newPass || newPass.length < 6) {
-            showMessageModal("パスワードは6文字以上で入力してください", 'error');
-            return;
-        }
+    btn.onclick = async () => {
+        const pass = input.value.trim();
+        if (pass.length < 6) return showMessageModal("6文字以上必要です", 'error');
+        
         try {
-            await updateUserPassword(newPass);
+            await updateUserPassword(pass);
             showMessageModal("パスワードを変更しました");
-            passInput.value = '';
-        } catch (error) {
-            console.error(error);
-            if (error.code === 'auth/requires-recent-login') {
-                showMessageModal("セキュリティのため、再ログインが必要です。一度ログアウトしてから再度お試しください。", 'error');
-            } else {
-                showMessageModal("変更に失敗しました: " + error.message, 'error');
-            }
+            input.value = '';
+        } catch (err) {
+            const msg = err.code === 'auth/requires-recent-login' 
+                ? "再ログインが必要です" 
+                : "失敗しました: " + err.message;
+            showMessageModal(msg, 'error');
         }
-    });
+    };
 }
 
-// ログアウト処理
+/**
+ * ログアウト
+ */
 function setupLogoutHandler(closeModal) {
-    const logoutBtn = document.getElementById('logout-btn-settings');
-    if (!logoutBtn) return;
-
-    logoutBtn.addEventListener('click', async () => {
+    document.getElementById('logout-btn-settings')?.addEventListener('click', async () => {
         try {
             await signOut(auth);
             closeModal();
-        } catch (error) {
-            console.error(error);
-            showMessageModal("ログアウトに失敗しました", 'error');
+        } catch (err) {
+            showMessageModal("エラーが発生しました", 'error');
         }
     });
 }
 
-// 内部ヘルパー
 function downloadJSON(data, filename) {
-    const jsonStr = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonStr], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-}
-
-function getTimestamp() {
-    const now = new Date();
-    return now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
 }

@@ -1,7 +1,7 @@
 // @ts-nocheck
+// @miyter:20251221
 // データ同期、キャッシュ管理、UI更新の一元管理
 
-// 追加: 認証チェック用
 import { auth } from '../../core/firebase.js';
 
 // Store関連
@@ -10,154 +10,133 @@ import { subscribeToProjects } from '../../store/projects.js';
 import { subscribeToLabels } from '../../store/labels.js';
 import { subscribeToTimeBlocks, clearTimeBlocksCache } from '../../store/timeblocks.js';
 import { subscribeToFilters, clearFiltersCache } from '../../store/filters.js';
-import { subscribeToWorkspaces, getCurrentWorkspaceId } from '../../store/workspace.js';
+import { getCurrentWorkspaceId } from '../../store/workspace.js';
 
 // UI描画関連
 import { renderProjects, renderLabels, updateInboxCount } from '../sidebar.js';
 import { renderTimeBlocks, renderDurations } from '../sidebar-renderer.js';
 import { updateView } from '../ui-view-manager.js';
-import { initSidebar } from '../sidebar.js';
 
 // データキャッシュ
-let allTasks = [];
-let allProjects = [];
-let allLabels = [];
-let allTimeBlocks = [];
-let allFilters = [];
+let state = {
+    tasks: [],
+    projects: [],
+    labels: [],
+    timeBlocks: [],
+    filters: []
+};
 
 // 購読解除関数
-let unsubscribeTasks, unsubscribeProjects, unsubscribeLabels, unsubscribeTimeBlocks, unsubscribeFilters, unsubscribeWorkspaces;
+let subscriptions = {
+    tasks: null,
+    projects: null,
+    labels: null,
+    timeBlocks: null,
+    filters: null,
+    workspaces: null
+};
 
-// アプリの同期状態フラグ
 let isDataSyncing = false;
+let updateTimer = null;
 
 /**
- * ワークスペース内の全データのリアルタイム購読を開始する
+ * UI全体を更新する（デバウンス処理付き）
+ */
+export function updateUI() {
+    if (updateTimer) return;
+    
+    // 同一フレーム内での過剰な再描画を防止
+    updateTimer = requestAnimationFrame(() => {
+        const { tasks, projects, labels } = state;
+        
+        updateInboxCount(tasks);
+        renderProjects(projects, tasks);
+        renderLabels(labels, tasks);
+        renderTimeBlocks(tasks);
+        renderDurations(tasks);
+        
+        // メインビューの更新
+        updateView(tasks, projects, labels);
+        
+        updateTimer = null;
+    });
+}
+
+/**
+ * 同期開始
  */
 export function startAllSubscriptions() {
-    // 🚨 認証チェックを追加: 認証されていない場合は購読を開始しない
-    // これにより、起動時の User not authenticated エラーや permission-denied を防ぐ
-    if (!auth || !auth.currentUser) {
-        console.warn('Cannot start sync: User not authenticated. Aborting subscriptions.');
+    if (!auth?.currentUser) {
+        console.warn('Cannot start sync: User not authenticated.');
         return;
     }
 
-    // 念のため一度停止してクリーンにする
-    stopDataSync(false); // false = workspaceの購読は止めない
+    stopDataSync(false);
     
     const workspaceId = getCurrentWorkspaceId();
-    if (!workspaceId) {
-        console.error('Cannot start sync: No workspace selected');
-        return;
-    }
-
-    // ★追加: 購読開始前に、すべての解除関数を null にリセット
-    // これにより、購読開始失敗時などに古い解除関数が残るのを防ぐ
-    unsubscribeTasks = null;
-    unsubscribeProjects = null;
-    unsubscribeLabels = null;
-    unsubscribeTimeBlocks = null;
-    unsubscribeFilters = null;
+    if (!workspaceId) return;
 
     isDataSyncing = true;
-    console.log('Starting subscriptions for workspace:', workspaceId);
+    console.log('Syncing workspace:', workspaceId);
 
-    // 1. タスク購読
-    unsubscribeTasks = subscribeToTasks((snap) => {
-        allTasks = snap.map(doc => ({ id: doc.id, ...doc }));
-        updateUI(); 
+    // 各データソースの購読
+    subscriptions.tasks = subscribeToTasks((data) => {
+        state.tasks = data;
+        updateUI();
     });
 
-    // 2. プロジェクト購読
-    unsubscribeProjects = subscribeToProjects((projects) => {
-        allProjects = projects;
-        renderProjects(allProjects, allTasks);
-        updateUI(); 
+    subscriptions.projects = subscribeToProjects((data) => {
+        state.projects = data;
+        updateUI();
     });
 
-    // 3. ラベル購読
-    unsubscribeLabels = subscribeToLabels((labels) => {
-        allLabels = labels;
-        renderLabels(allLabels, allTasks);
+    subscriptions.labels = subscribeToLabels((data) => {
+        state.labels = data;
         updateUI();
     });
     
-    // 4. 時間帯ブロック購読
-    unsubscribeTimeBlocks = subscribeToTimeBlocks((timeBlocks) => {
-        allTimeBlocks = timeBlocks;
-        renderTimeBlocks(allTasks); 
+    subscriptions.timeBlocks = subscribeToTimeBlocks((data) => {
+        state.timeBlocks = data;
         updateUI();
     });
 
-    // 5. フィルター購読
-    unsubscribeFilters = subscribeToFilters((filters) => {
-        allFilters = filters;
+    subscriptions.filters = subscribeToFilters((data) => {
+        state.filters = data;
         updateUI();
     });
 }
 
 /**
- * データ同期を停止し、キャッシュをクリアする
- * @param {boolean} stopWorkspaceSync - ワークスペース自体の購読も止めるかどうか
+ * 同期停止
  */
 export function stopDataSync(stopWorkspaceSync = false) {
-    if (unsubscribeTasks) unsubscribeTasks();
-    if (unsubscribeProjects) unsubscribeProjects();
-    if (unsubscribeLabels) unsubscribeLabels();
-    if (unsubscribeTimeBlocks) unsubscribeTimeBlocks();
-    if (unsubscribeFilters) unsubscribeFilters();
+    Object.keys(subscriptions).forEach(key => {
+        if (key === 'workspaces' && !stopWorkspaceSync) return;
+        if (subscriptions[key]) {
+            subscriptions[key]();
+            subscriptions[key] = null;
+        }
+    });
     
-    if (stopWorkspaceSync && unsubscribeWorkspaces) {
-        unsubscribeWorkspaces();
-        unsubscribeWorkspaces = null;
-    }
-    
-    // ストア側のキャッシュもクリア
     clearTimeBlocksCache();
     clearFiltersCache();
     
-    // ローカルキャッシュクリア
-    allTasks = []; 
-    allProjects = []; 
-    allLabels = [];
-    allTimeBlocks = [];
-    allFilters = [];
-    
+    state = { tasks: [], projects: [], labels: [], timeBlocks: [], filters: [] };
     isDataSyncing = false;
     
-    // UIを更新 (空の状態にする)
     updateUI();
 }
 
-/**
- * UI全体を最新のデータとフィルターに基づいて更新するメイン関数
- */
-export function updateUI() {
-    updateInboxCount(allTasks);
-    
-    if (allProjects.length || allTasks.length) {
-        renderProjects(allProjects, allTasks);
-    }
-    
-    if (allLabels.length || allTasks.length) {
-        renderLabels(allLabels, allTasks);
-    }
-    
-    renderTimeBlocks(allTasks);
-    renderDurations(allTasks);
-    
-    updateView(allTasks, allProjects, allLabels);
-}
+// --- Getters ---
+export const getData = {
+    tasks: () => state.tasks,
+    projects: () => state.projects,
+    labels: () => state.labels,
+    timeBlocks: () => state.timeBlocks,
+    filters: () => state.filters,
+    workspaceId: () => getCurrentWorkspaceId()
+};
 
-// ワークスペース購読管理用のゲッター/セッター（必要に応じて）
-export function getWorkspaceUnsubscribe() {
-    return unsubscribeWorkspaces;
-}
-
-export function setWorkspaceUnsubscribe(unsub) {
-    unsubscribeWorkspaces = unsub;
-}
-
-export function isSyncing() {
-    return isDataSyncing;
-}
+export function getWorkspaceUnsubscribe() { return subscriptions.workspaces; }
+export function setWorkspaceUnsubscribe(unsub) { subscriptions.workspaces = unsub; }
+export function isSyncing() { return isDataSyncing; }

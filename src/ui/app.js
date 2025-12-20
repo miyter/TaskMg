@@ -1,11 +1,13 @@
 // @ts-nocheck
-// @miyter:20251129
-// アプリケーションのエントリーポイント (リファクタリング版)
+// @miyter:20251221
+// アプリケーションのエントリーポイント (デリゲーター)
 
-// 初期化ロジックをコアモジュールに委譲
 import { runInitialization } from './core/AppInitializer.js';
 
+/**
+ * アプリケーションの初期化プロセスを開始する
+ * ロジックの実体は AppInitializer に委譲し、ここはインターフェースに徹する
+ */
 export function initializeApp() {
-    // アプリケーションの初期化プロセスを開始
     runInitialization();
 }

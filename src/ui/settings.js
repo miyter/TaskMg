@@ -1,17 +1,18 @@
 // @ts-nocheck
-// 設定モーダル (表示設定、データ管理、アカウント) - エントリーポイント
+// @miyter:20251221
+// 設定モーダルの表示制御
 
 import { auth } from '../core/firebase.js';
 import { getSettingsModalHTML } from './settings/view.js';
 import { setupSettingsEvents } from './settings/handlers.js';
 
-// エントリーポイント
+/**
+ * 設定画面の初期化（サイドバーのボタン監視等）
+ */
 export function initSettings() {
-    // 修正: サイドバーのボタンID 'nav-settings' を監視するように変更
-    // (以前は 'settings-btn' だった)
+    // nav-settings へのクリックイベントを一元管理（重複防止のため document 委譲）
     document.addEventListener('click', (e) => {
-        const btn = e.target.closest('#nav-settings');
-        if (btn) {
+        if (e.target.closest('#nav-settings')) {
             e.preventDefault();
             showSettingsModal();
         }
@@ -19,27 +20,25 @@ export function initSettings() {
 }
 
 /**
- * 設定モーダルを表示する
+ * 設定モーダルの表示実行
  */
 export function showSettingsModal() {
     const modalId = 'settings-modal-dynamic';
     document.getElementById(modalId)?.remove();
 
-    // 現在の設定を取得
     const isCompact = localStorage.getItem('sidebar_compact') === 'true';
-    const userEmail = auth.currentUser?.email || '匿名ユーザー';
-    const userInitial = userEmail[0].toUpperCase();
+    const user = auth.currentUser;
+    const email = user?.email || '匿名ユーザー';
+    const initial = email[0].toUpperCase();
 
-    // モーダル要素作成
-    const modalOverlay = document.createElement('div');
-    modalOverlay.id = modalId;
-    modalOverlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4';
+    const overlay = document.createElement('div');
+    overlay.id = modalId;
+    overlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in';
     
-    // HTML生成 (Viewへ委譲)
-    modalOverlay.innerHTML = getSettingsModalHTML(userInitial, userEmail, isCompact);
-    
-    document.body.appendChild(modalOverlay);
+    // HTML構造の生成（view.js へ委譲）
+    overlay.innerHTML = getSettingsModalHTML(initial, email, isCompact);
+    document.body.appendChild(overlay);
 
-    // イベント設定 (Handlerへ委譲)
-    setupSettingsEvents(modalOverlay, () => modalOverlay.remove());
+    // イベントの紐付け（handlers.js へ委譲）
+    setupSettingsEvents(overlay, () => overlay.remove());
 }

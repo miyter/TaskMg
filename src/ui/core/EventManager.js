@@ -1,45 +1,40 @@
 // @ts-nocheck
+// @miyter:20251221
 // グローバルイベントリスナーの管理
 
 import { auth } from '../../core/firebase.js';
 import { setCurrentFilter } from '../ui-view-manager.js';
 import { startAllSubscriptions, stopDataSync, updateUI } from './DataSyncManager.js';
+import { setupCustomSortDropdown } from '../components/SortDropdown.js';
 
 /**
- * グローバルイベントリスナーを設定する
+ * アプリケーション全体のイベントリスナーを設定
  */
 export function setupGlobalEventListeners() {
-    // ワークスペース切り替えイベント
+    // 1. ワークスペース切り替え
     document.addEventListener('workspace-changed', (e) => {
-        const newWorkspaceId = e.detail.workspaceId;
-        console.log('Workspace changed to:', newWorkspaceId);
-        
         const headerTitle = document.getElementById('header-title');
         if (headerTitle) headerTitle.textContent = '読み込み中...';
         
-        if (auth && auth.currentUser) {
-            // ★重要: フィルターをデフォルト（inbox）にリセット
-            // これにより、旧ワークスペースのプロジェクトIDが残って画面が空になるのを防ぐ
+        if (auth?.currentUser) {
+            // フィルタをインボックスにリセットして同期開始
             setCurrentFilter({ type: 'inbox', id: null });
-
-            stopDataSync(false); // workspaceの購読は維持
+            stopDataSync(false); 
             startAllSubscriptions();
             updateUI();
         }
     });
 
-    // サイドバーからのルーティング変更イベント
+    // 2. ルーティング（サイドバー等）
     document.addEventListener('route-change', (e) => {
-        setCurrentFilter({ type: e.detail.page, id: e.detail.id });
+        const { page, id } = e.detail;
+        setCurrentFilter({ type: page, id: id || null });
         
-        localStorage.setItem('lastPage', JSON.stringify({ 
-            page: e.detail.page, 
-            id: e.detail.id || null 
-        }));
-
+        localStorage.setItem('lastPage', JSON.stringify({ page, id: id || null }));
         updateUI();
     });
     
+    // 3. 検索・フィルタUI
     document.getElementById('search-input')?.addEventListener('input', updateUI);
     
     document.getElementById('toggle-completed-btn')?.addEventListener('click', (e) => {
@@ -47,62 +42,6 @@ export function setupGlobalEventListeners() {
         updateUI();
     });
     
+    // 4. コンポーネント固有のイベント
     setupCustomSortDropdown();
-}
-
-/**
- * カスタムソートドロップダウンのイベントロジックを設定する
- */
-function setupCustomSortDropdown() {
-    const trigger = document.getElementById('sort-trigger');
-    const menu = document.getElementById('sort-menu');
-    const label = document.getElementById('sort-label');
-    const options = document.querySelectorAll('.sort-option');
-
-    if (!trigger || !menu || !label) return;
-    
-    const closeMenu = (e) => {
-        if (e && (menu.contains(e.target) || trigger.contains(e.target))) {
-            return;
-        }
-        toggleMenu(false);
-    };
-    
-    const toggleMenu = (open) => {
-        if (open) {
-            menu.classList.replace('opacity-0', 'opacity-100');
-            menu.classList.replace('invisible', 'visible');
-            menu.classList.replace('scale-95', 'scale-100');
-            menu.classList.replace('pointer-events-none', 'pointer-events-auto');
-            document.addEventListener('click', closeMenu); 
-        } else {
-            menu.classList.replace('opacity-100', 'opacity-0');
-            menu.classList.replace('visible', 'invisible');
-            menu.classList.replace('scale-100', 'scale-95');
-            menu.classList.replace('pointer-events-auto', 'pointer-events-none');
-            document.removeEventListener('click', closeMenu);
-        }
-    };
-
-    trigger.addEventListener('click', (e) => {
-        e.stopPropagation(); 
-        const isOpen = menu.classList.contains('opacity-100');
-        toggleMenu(!isOpen);
-    });
-    
-    options.forEach(option => {
-        option.addEventListener('click', (e) => {
-            const value = option.dataset.value;
-            const text = option.textContent;
-            label.textContent = text;
-            trigger.dataset.value = value;
-            updateUI(); 
-            toggleMenu(false);
-        });
-    });
-
-    if (!trigger.dataset.value) {
-        trigger.dataset.value = 'createdAt_desc';
-        label.textContent = "作成日(新しい順)";
-    }
 }

@@ -1,107 +1,79 @@
 // @ts-nocheck
-/**
- * カスタムフィルターパーサー
- * フィルターモーダルで生成された構造化クエリ文字列を解析し、
- * タスクが条件に合致するか判定する関数を返します。
- * * 対応フォーマット:
- * - project:id1,id2  (プロジェクトIDがいずれかに一致)
- * - timeblock:id1,null (時間帯IDがいずれかに一致、nullは未定)
- * - duration:30,60   (所要時間がいずれかに一致)
- * - 上記以外の文字列   (タイトルや説明文へのキーワード検索)
- * * 各カテゴリ間は AND 条件、カテゴリ内のカンマ区切りは OR 条件として扱います。
- */
+// @miyter:20251221
+// カスタムフィルターのクエリ文字列解析ロジック
 
 /**
- * クエリ文字列からフィルタリング関数を生成する
- * @param {string} queryString - "project:A,B timeblock:C keyword"
- * @returns {Function} (task) => boolean
+ * クエリ文字列からフィルタリング関数を生成
+ * 形式: "project:A,B timeblock:C,null keyword"
+ * カテゴリ間: AND, カテゴリ内(カンマ区切り): OR
  */
 export function createFilter(queryString) {
-    if (!queryString || !queryString.trim()) {
-        return () => true;
-    }
+    if (!queryString?.trim()) return () => true;
 
-    // 1. クエリの解析
-    const conditions = {
-        projectIds: null, // Set<string> | null
-        timeBlockIds: null, // Set<string> | null
-        durations: null, // Set<number> | null
-        keywords: [] // string[]
-    };
+    const conditions = parseQuery(queryString);
 
-    // 空白で分割して各パートを解析
-    const parts = queryString.trim().split(/\s+/);
-
-    parts.forEach(part => {
-        if (part.startsWith('project:')) {
-            const val = part.substring(8); // 'project:'.length
-            if (val) {
-                // 既存の条件があればマージする（あるいは上書き）
-                const ids = val.split(',').filter(s => s);
-                if (!conditions.projectIds) conditions.projectIds = new Set();
-                ids.forEach(id => conditions.projectIds.add(id));
-            }
-        } else if (part.startsWith('timeblock:')) {
-            const val = part.substring(10); // 'timeblock:'.length
-            if (val) {
-                const ids = val.split(',').filter(s => s);
-                if (!conditions.timeBlockIds) conditions.timeBlockIds = new Set();
-                ids.forEach(id => conditions.timeBlockIds.add(id));
-            }
-        } else if (part.startsWith('duration:')) {
-            const val = part.substring(9); // 'duration:'.length
-            if (val) {
-                const mins = val.split(',').map(v => parseInt(v, 10)).filter(n => !isNaN(n));
-                if (!conditions.durations) conditions.durations = new Set();
-                mins.forEach(m => conditions.durations.add(m));
-            }
-        } else {
-            // キーワード検索（除外キーワード '-' は未対応だが拡張可能）
-            conditions.keywords.push(part.toLowerCase());
-        }
-    });
-
-    // 2. 評価関数の返却
     return (task) => {
-        // プロジェクト判定 (OR条件)
-        if (conditions.projectIds) {
-            // タスクのプロジェクトIDが条件セットに含まれているか
-            // プロジェクト未設定のタスク(null)は、条件に'null'文字列が含まれていればヒットとする運用も可能だが、
-            // 現状のUIではプロジェクトIDのみ扱う
-            if (!task.projectId || !conditions.projectIds.has(task.projectId)) {
-                return false;
-            }
-        }
+        // 1. プロジェクト判定 (OR)
+        if (conditions.projectIds && !conditions.projectIds.has(task.projectId)) return false;
 
-        // 時間帯判定 (OR条件)
+        // 2. 時間帯判定 (OR)
         if (conditions.timeBlockIds) {
-            // タスクの時間帯ID (未設定は null)
-            // モーダル側で "null" という文字列を未定として扱っているため、文字列比較を行う
-            const taskTbId = task.timeBlockId === null ? 'null' : task.timeBlockId;
-            if (!conditions.timeBlockIds.has(taskTbId)) {
-                return false;
-            }
+            const taskTbId = (task.timeBlockId === null || task.timeBlockId === 'null') ? 'null' : String(task.timeBlockId);
+            if (!conditions.timeBlockIds.has(taskTbId)) return false;
         }
 
-        // 所要時間判定 (OR条件)
+        // 3. 所要時間判定 (OR)
         if (conditions.durations) {
-            const taskDuration = task.duration || 0; // 未設定は0扱い、またはヒットしないようにするか
-            // task.duration が undefined/null の場合の扱い
-            if (!task.duration || !conditions.durations.has(task.duration)) {
-                return false;
-            }
+            const taskDuration = task.duration ? Number(task.duration) : 0;
+            if (!conditions.durations.has(taskDuration)) return false;
         }
 
-        // キーワード判定 (AND条件)
+        // 4. キーワード判定 (AND)
         if (conditions.keywords.length > 0) {
-            const text = `${task.title} ${task.description || ''}`.toLowerCase();
-            // すべてのキーワードが含まれていること
-            const isMatch = conditions.keywords.every(kw => text.includes(kw));
-            if (!isMatch) {
-                return false;
-            }
+            const searchTarget = `${task.title} ${task.description || ''}`.toLowerCase();
+            if (!conditions.keywords.every(kw => searchTarget.includes(kw))) return false;
         }
 
         return true;
     };
+}
+
+/**
+ * 文字列を解析して内部的な条件オブジェクトに変換
+ */
+function parseQuery(queryString) {
+    const conditions = {
+        projectIds: null,
+        timeBlockIds: null,
+        durations: null,
+        keywords: []
+    };
+
+    queryString.trim().split(/\s+/).forEach(part => {
+        if (part.includes(':')) {
+            const [key, rawValue] = part.split(':');
+            const values = rawValue.split(',').filter(Boolean);
+            
+            if (values.length === 0) return;
+
+            switch (key) {
+                case 'project':
+                    conditions.projectIds = new Set(values);
+                    break;
+                case 'timeblock':
+                    conditions.timeBlockIds = new Set(values.map(v => String(v)));
+                    break;
+                case 'duration':
+                    conditions.durations = new Set(values.map(v => parseInt(v, 10)).filter(n => !isNaN(n)));
+                    break;
+                default:
+                    // 未知のタグはキーワードとして扱う
+                    conditions.keywords.push(part.toLowerCase());
+            }
+        } else {
+            conditions.keywords.push(part.toLowerCase());
+        }
+    });
+
+    return conditions;
 }

@@ -1,33 +1,29 @@
 // @ts-nocheck
-// アプリケーションの初期化ロジック
+// @miyter:20251221
+// アプリケーション初期化のコアロジック
 
-// 修正: SDKラッパー経由
 import { onAuthStateChanged } from '../../core/firebase-sdk.js';
 import { auth, initializeFirebase } from '../../core/firebase.js';
-
-// UI初期化関連
-import { updateAuthUI } from '../auth.js';
+import { updateAuthUI, setupAuthHandlers } from '../auth.js'; // ★修正: setupAuthHandlers を追加
 import { renderLayout } from '../layout.js';
 import { initTheme } from '../theme.js';
 import { initTaskModal } from '../task-modal.js';
 import { initSidebar } from '../sidebar.js';
 import { initSettings } from '../settings.js';
 import { setCurrentFilter, renderLoginState } from '../ui-view-manager.js';
-import { updateWorkspaceDropdownUI } from '../components/WorkspaceDropdown.js';
-
-// コアモジュール
-import { startAllSubscriptions, stopDataSync, getWorkspaceUnsubscribe, setWorkspaceUnsubscribe, isSyncing } from './DataSyncManager.js';
+import { initWorkspaceDropdown, updateWorkspaceDropdownUI } from '../components/WorkspaceDropdown.js';
+import { stopDataSync, getWorkspaceUnsubscribe, setWorkspaceUnsubscribe } from './DataSyncManager.js';
 import { setupGlobalEventListeners } from './EventManager.js';
-import { subscribeToWorkspaces, getCurrentWorkspaceId } from '../../store/workspace.js';
+import { subscribeToWorkspaces } from '../../store/workspace.js';
 
 /**
- * アプリケーションの初期化を実行する
+ * 起動シーケンス
  */
 export function runInitialization() {
     try {
         initializeFirebase();
     } catch (e) {
-        console.error("Critical Error: Failed to initialize Firebase.", e);
+        console.error("Firebase Initialization Failed", e);
         return;
     }
 
@@ -35,88 +31,65 @@ export function runInitialization() {
     renderLayout();
     initSettings();
     initTaskModal();
+    initWorkspaceDropdown();
+    setupAuthHandlers(); // ★追加: ログインボタン等のイベントを登録
     setupGlobalEventListeners();
     restorePageState();
     setupAuthObserver();
 }
 
 /**
- * ページ状態（フィルター等）をLocalStorageから復元
+ * LocalStorageからのページ状態復元
  */
 function restorePageState() {
     try {
-        const saved = localStorage.getItem('lastPage');
-        if (saved) {
-            const { page, id } = JSON.parse(saved);
-            setCurrentFilter({ type: page, id: id || null });
-        } else {
-            setCurrentFilter({ type: 'inbox' });
-        }
+        const saved = JSON.parse(localStorage.getItem('lastPage'));
+        setCurrentFilter(saved ? { type: saved.page, id: saved.id || null } : { type: 'inbox' });
     } catch (e) {
-        console.error('Failed to restore page state:', e);
         setCurrentFilter({ type: 'inbox' });
     }
 }
 
 /**
- * 認証状態の監視とデータ同期の制御
+ * 認証状態の監視
  */
 function setupAuthObserver() {
-    if (!auth) {
-        console.error("Auth object is not available.");
-        return;
-    }
+    if (!auth) return;
 
     onAuthStateChanged(auth, (user) => {
         updateAuthUI(user);
-        
         if (user) {
-            handleUserLogin();
+            handleUserLogin(user);
         } else {
             handleUserLogout();
         }
     });
 }
 
-function handleUserLogin() {
-    if (!auth.currentUser) {
-        setTimeout(handleUserLogin, 100);
-        return;
-    }
-
-    // ログイン直後にサイドバーの基盤（DOM）を初期化
+/**
+ * ログイン時の処理
+ */
+function handleUserLogin(user) {
     initSidebar();
 
-    // ワークスペース購読開始（未購読の場合）
-    let unsubscribeWorkspaces = getWorkspaceUnsubscribe();
-    
-    if (!unsubscribeWorkspaces) {
-        // ここで認証済みユーザーとして安全に購読開始
-        unsubscribeWorkspaces = subscribeToWorkspaces((workspaces) => {
-            // UI更新: WorkspaceDropdownにデータを渡す
+    if (!getWorkspaceUnsubscribe()) {
+        const unsubscribe = subscribeToWorkspaces((workspaces) => {
             updateWorkspaceDropdownUI(workspaces);
-
-            // ★修正: データ同期開始は EventManager.js の workspace-changed イベントに一元化
-            // 以前のコード（削除済み）:
-            // const currentWorkspaceId = getCurrentWorkspaceId();
-            // if (currentWorkspaceId && !isSyncing()) {
-            //     console.log('Workspace ready, starting data sync:', currentWorkspaceId);
-            //     startAllSubscriptions();
-            // }
         });
-        setWorkspaceUnsubscribe(unsubscribeWorkspaces);
+        setWorkspaceUnsubscribe(unsubscribe);
     }
 }
 
+/**
+ * ログアウト時の処理
+ */
 function handleUserLogout() {
-    // ワークスペース購読解除
-    let unsubscribeWorkspaces = getWorkspaceUnsubscribe();
-    if (unsubscribeWorkspaces) {
-        unsubscribeWorkspaces();
+    const unsubWorkspaces = getWorkspaceUnsubscribe();
+    if (unsubWorkspaces) {
+        unsubWorkspaces();
         setWorkspaceUnsubscribe(null);
     }
     
-    // データ同期停止 & UIリセット
-    stopDataSync();
+    stopDataSync(true); 
     renderLoginState();
 }

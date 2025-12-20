@@ -1,15 +1,18 @@
 // @ts-nocheck
+// @miyter:20251221
+// Glassmorphismデザインの共通カードコンポーネント
+
 /**
- * GlassmorphismデザインのカードHTMLを生成する共通コンポーネント
- * * @param {string} contentHTML - カード内部のHTML
- * @param {string} extraClasses - 追加のクラス (paddingやmarginなど)
+ * すりガラス効果を持つカードHTMLを生成する
+ * @param {string} contentHTML - カード内部に挿入するHTML
+ * @param {string} extraClasses - 追加のTailwindクラス
  * @returns {string} HTML文字列
  */
 export function createGlassCard(contentHTML, extraClasses = '') {
-    // 共通のデザイン定義
-    // bg-white/70 dark:bg-gray-900/60 : 背景色と透過度
-    // backdrop-blur-md : すりガラス効果
-    // border-white/20 : 境界線の光沢
+    // 共通スタイル:
+    // - 背景色と透過度: bg-white/70 dark:bg-gray-900/60
+    // - ぼかし効果: backdrop-blur-md
+    // - 境界線の光沢: border-white/20
     return `
         <div class="bg-white/70 dark:bg-gray-900/60 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-800/30 ${extraClasses}">
             ${contentHTML}

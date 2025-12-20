@@ -1,24 +1,28 @@
+// @miyter:20251221
+// Webアプリケーションの物理的な開始点
+
 import '../index.css';
-// アプリケーションのエントリーポイント
 import { initializeApp } from './app.js';
 
-// DOMの読み込み完了を待ってアプリを開始
+/**
+ * ブラウザ環境固有のセットアップ（ファビコン等）
+ */
+function setupBrowserEnvironment() {
+    let link = document.querySelector("link[rel*='icon']");
+    if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+    }
+    link.type = 'image/png';
+    link.href = '/images/favicon-96x96.png';
+}
+
+// DOMの読み込み完了を待機してアプリを起動
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Main: DOMContentLoaded');
+    // 1. ブラウザ環境の調整
+    setupBrowserEnvironment();
 
-    // ファビコンを動的に設定
-    const setFavicon = () => {
-        let link = document.querySelector("link[rel*='icon']");
-        if (!link) {
-            link = document.createElement('link');
-            link.rel = 'icon';
-            document.head.appendChild(link);
-        }
-        link.type = 'image/png';
-        // パス修正: public/images -> /images
-        link.href = '/images/favicon-96x96.png';
-    };
-    setFavicon();
-
+    // 2. アプリケーションロジックの開始
     initializeApp();
 });

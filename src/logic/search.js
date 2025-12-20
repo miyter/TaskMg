@@ -1,22 +1,51 @@
-// @miyter:20251125
-// --- 検索・ソート・フィルタロジック ---
+// @ts-nocheck
+// @miyter:20251221
+// 検索・フィルタリング・ソートロジックの集約
 
+/**
+ * タスクをフィルタリング・ソートするメイン関数
+ */
+export function getProcessedTasks(tasks, config) {
+    let filtered = filterTasks(tasks, config);
+    return sortTasks(filtered, config.sortCriteria);
+}
+
+/**
+ * フィルタリングロジック
+ */
 export function filterTasks(tasks, criteria) {
-    const { keyword, projectId, labelId, showCompleted } = criteria;
+    const { 
+        keyword, 
+        projectId, 
+        labelId, 
+        showCompleted, 
+        timeBlockId, 
+        duration 
+    } = criteria;
     
     return tasks.filter(task => {
-        // 完了状態フィルタ
+        // 1. 完了状態
         if (!showCompleted && task.status === 'completed') return false;
 
-        // プロジェクトフィルタ
-        // projectIdが設定されていて、タスクのprojectIdが一致しない場合
+        // 2. プロジェクト
         if (projectId && task.projectId !== projectId) return false;
 
-        // ラベルフィルタ
-        // labelIdが設定されていて、タスクにそのラベルIDが含まれていない場合
+        // 3. ラベル
         if (labelId && (!task.labelIds || !task.labelIds.includes(labelId))) return false;
 
-        // キーワード検索
+        // 4. 時間ブロック (ui-view-managerから移動)
+        if (timeBlockId) {
+            if (timeBlockId === 'unassigned') {
+                if (task.timeBlockId && task.timeBlockId !== 'null') return false;
+            } else if (String(task.timeBlockId) !== String(timeBlockId)) {
+                return false;
+            }
+        }
+
+        // 5. 所要時間 (ui-view-managerから移動)
+        if (duration && Number(task.duration) !== Number(duration)) return false;
+
+        // 6. キーワード検索
         if (keyword) {
             const lowerKeyword = keyword.toLowerCase();
             const matchTitle = task.title.toLowerCase().includes(lowerKeyword);
@@ -28,23 +57,21 @@ export function filterTasks(tasks, criteria) {
     });
 }
 
-export function sortTasks(tasks, sortType) {
-    // 元の配列を変更しないようにコピー
+/**
+ * ソートロジック
+ */
+export function sortTasks(tasks, sortType = 'createdAt_desc') {
     return [...tasks].sort((a, b) => {
         switch (sortType) {
-            case 'created_desc':
-                // 作成日：降順 (新しいものが上)
-                return b.createdAt - a.createdAt;
-            case 'created_asc':
-                // 作成日：昇順 (古いものが上)
-                return a.createdAt - b.createdAt;
-            case 'due_asc':
-                // 期限日：昇順 (期限なしは最後に)
+            case 'createdAt_desc':
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            case 'createdAt_asc':
+                return (a.createdAt || 0) - (b.createdAt || 0);
+            case 'dueDate_asc':
                 if (!a.dueDate) return 1;
                 if (!b.dueDate) return -1;
                 return a.dueDate - b.dueDate;
             case 'project_asc':
-                // プロジェクト名：昇順 (文字列比較)
                 return (a.projectId || "").localeCompare(b.projectId || "");
             default:
                 return 0;

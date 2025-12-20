@@ -1,42 +1,66 @@
 /* @ts-nocheck */
-/* @miyter:20251125 */
-/* Tailwind CSSのインポートディレクティブ */
+/* @miyter:20251221 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* その他のカスタムスタイルがあればここに追記 */
-body {
-    font-family: 'M PLUS 2', sans-serif;
-    transition: background-color 0.3s ease;
+@layer base {
+    :root {
+        --app-bg-light: #ffffff;
+        --app-bg-dark: #111827; /* gray-900 */
+    }
+
+    body {
+        @apply font-sans antialiased text-gray-800 dark:text-gray-100 transition-colors duration-300;
+        font-family: 'M PLUS 2', 'Inter', sans-serif;
+    }
+
+    /* 文字サイズ設定クラス（!importantを避け、カスケードで制御） */
+    body.font-large { font-size: 1.125rem; } /* 18px */
+    body.font-medium { font-size: 1rem; }     /* 16px */
+    body.font-small { font-size: 0.875rem; }  /* 14px */
 }
 
-/* ★追加: 文字サイズ設定クラス */
-body.font-large { font-size: 14px !important; }
-body.font-medium { font-size: 12px !important; }
-body.font-small { font-size: 10px !important; }
+@layer components {
+    /* 共通のすりガラス効果 */
+    .glass-effect {
+        @apply bg-white/70 dark:bg-gray-900/60 backdrop-blur-md border border-white/20 dark:border-gray-800/30;
+    }
 
-/* Custom scrollbar styles */
-.custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    /* カスタムスクロールバー */
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: theme('colors.gray.300') transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        @apply w-1.5 h-1.5;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        @apply bg-gray-300 dark:bg-gray-700 rounded-full;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        @apply bg-transparent;
+    }
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1; /* gray-300 */
-    border-radius: 3px;
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #374151; /* gray-700 */
-}
-
-/* Custom fade-in animation for views */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+/* アニメーション */
+@keyframes viewFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: viewFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Markdown出力用の装飾 */
+.markdown-output ul {
+    @apply list-disc list-inside space-y-1 mb-2;
+}
+
+.markdown-output p {
+    @apply mb-2 leading-relaxed;
 }

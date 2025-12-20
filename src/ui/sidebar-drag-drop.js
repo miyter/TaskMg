@@ -1,57 +1,66 @@
 // @ts-nocheck
+// @miyter:20251221
 // サイドバーのドラッグ＆ドロップ機能管理
 
 import { updateTask } from '../store/store.js';
-import { showMessageModal } from './components.js';
+
+const DRAG_OVER_CLASSES = ['bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400'];
 
 /**
- * 指定された要素にドロップゾーンのイベントを設定する
- * @param {HTMLElement} element - ドロップゾーンとなる要素
- * @param {string} type - ドロップゾーンのタイプ ('inbox', 'project', 'timeblock', 'duration')
- * @param {string|number|null} value - ドロップ時の更新値 (プロジェクトID, 時間帯ID, 分数など)
+ * 指定された要素にドロップゾーンを設定
  */
 export function setupDropZone(element, type, value = null) {
     if (!element) return;
 
     element.addEventListener('dragover', (e) => {
         e.preventDefault();
-        element.classList.add('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+        element.classList.add(...DRAG_OVER_CLASSES);
     });
 
     element.addEventListener('dragleave', () => {
-        element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+        element.classList.remove(...DRAG_OVER_CLASSES);
     });
 
     element.addEventListener('drop', async (e) => {
         e.preventDefault();
-        element.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400');
+        element.classList.remove(...DRAG_OVER_CLASSES);
+        
         const taskId = e.dataTransfer.getData('text/plain');
+        if (!taskId) return;
 
-        if (taskId) {
-            try {
-                if (type === 'inbox') {
-                    await updateTask(taskId, { projectId: null });
-                    // showMessageModal("タスクをインボックスに戻しました"); // ★削除
-                } else if (type === 'project' && value) {
-                    await updateTask(taskId, { projectId: value });
-                    // showMessageModal("プロジェクトへ移動しました"); // ★削除
-                } 
-                // 時間帯へのドロップ
-                else if (type === 'timeblock') {
-                    // value が null (文字列の'null'や'unassigned') なら未定、それ以外はID
-                    const timeBlockId = (value === 'unassigned' || value === null) ? null : value;
-                    await updateTask(taskId, { timeBlockId: timeBlockId });
-                    // ポップアップ削除 (元々コメントで「ポップアップ削除」と書かれていたため、何もしない)
-                }
-                // 所要時間へのドロップ
-                else if (type === 'duration' && value) {
-                    const minutes = parseInt(value, 10);
-                    await updateTask(taskId, { duration: minutes });
-                    // ポップアップ削除 (元々コメントで「ポップアップ削除」と書かれていたため、何もしない)
-                }
-            } catch (error) {
-                console.error("Drop Error:", error);
-            }
-        }
+        await handleTaskDrop(taskId, type, value);
     });
+}
+
+/**
+ * ドロップ時のタスク更新処理
+ */
+async function handleTaskDrop(taskId, type, value) {
+    const updates = {};
+
+    switch (type) {
+        case 'inbox':
+            updates.projectId = null;
+            break;
+        case 'project':
+            if (value) updates.projectId = value;
+            break;
+        case 'timeblock':
+            // 'unassigned' または null の場合は未定(null)として扱う
+            updates.timeBlockId = (value === 'unassigned' || value === null) ? null : value;
+            break;
+        case 'duration':
+            if (value) updates.duration = parseInt(value, 10);
+            break;
+        default:
+            return;
+    }
+
+    try {
+        if (Object.keys(updates).length > 0) {
+            await updateTask(taskId, updates);
+        }
+    } catch (error) {
+        console.error(`[Drop Error] Type: ${type}, Task: ${taskId}`, error);
+    }
 }

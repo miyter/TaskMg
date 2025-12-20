@@ -1,31 +1,46 @@
 // @ts-nocheck
+// @miyter:20251221
 // ワークスペース切り替えドロップダウンのロジック
 
 import { setCurrentWorkspaceId, getCurrentWorkspaceId } from '../../store/workspace.js';
 import { showSettingsModal } from '../settings.js';
 import { showWorkspaceModal } from '../modal/workspace-modal.js';
-// 右クリックメニュー用関数をインポート
 import { showItemContextMenu } from '../sidebar-components.js';
 
-// モジュールスコープでDOM要素や状態を保持
+// UI状態管理用の定数
+const CLASSES = {
+    MENU_VISIBLE: ['opacity-100', 'visible', 'scale-100', 'pointer-events-auto'],
+    MENU_INVISIBLE: ['opacity-0', 'invisible', 'scale-95', 'pointer-events-none']
+};
+
 let menuEl = null;
 let triggerEl = null;
 
 /**
- * ドロップダウンメニューを閉じる
+ * メニューの表示・非表示を切り替える
  */
-function closeMenu() {
+function setMenuVisible(visible) {
     if (!menuEl) return;
-    menuEl.classList.replace('opacity-100', 'opacity-0');
-    menuEl.classList.replace('visible', 'invisible');
-    menuEl.classList.replace('scale-100', 'scale-95');
-    menuEl.classList.replace('pointer-events-auto', 'pointer-events-none');
-    // リスナー解除は document 側で行うためここではクラス操作のみ
+    
+    if (visible) {
+        menuEl.classList.remove(...CLASSES.MENU_INVISIBLE);
+        menuEl.classList.add(...CLASSES.MENU_VISIBLE);
+        document.addEventListener('click', handleOutsideClick);
+    } else {
+        menuEl.classList.remove(...CLASSES.MENU_VISIBLE);
+        menuEl.classList.add(...CLASSES.MENU_INVISIBLE);
+        document.removeEventListener('click', handleOutsideClick);
+    }
 }
 
+const handleOutsideClick = (e) => {
+    if (menuEl && !menuEl.contains(e.target) && !triggerEl.contains(e.target)) {
+        setMenuVisible(false);
+    }
+};
+
 /**
- * ワークスペースドロップダウンの機能を初期化する
- * 注: データ購読は行わず、イベント設定のみ行う
+ * ドロップダウンの初期化
  */
 export function initWorkspaceDropdown() {
     triggerEl = document.getElementById('workspace-trigger');
@@ -35,72 +50,48 @@ export function initWorkspaceDropdown() {
 
     if (!triggerEl || !menuEl) return;
 
-    // --- 開閉ロジック ---
-    const handleOutsideClick = (e) => {
-        if (e && (menuEl.contains(e.target) || triggerEl.contains(e.target)) && !e.target.closest('button.workspace-option')) {
-            return;
-        }
-        closeMenu();
-        document.removeEventListener('click', handleOutsideClick);
-    };
-
-    const toggleMenu = () => {
-        const isOpen = menuEl.classList.contains('opacity-100');
-        if (isOpen) {
-            closeMenu();
-            document.removeEventListener('click', handleOutsideClick);
-        } else {
-            menuEl.classList.replace('opacity-0', 'opacity-100');
-            menuEl.classList.replace('invisible', 'visible');
-            menuEl.classList.replace('scale-95', 'scale-100');
-            menuEl.classList.replace('pointer-events-none', 'pointer-events-auto');
-            document.addEventListener('click', handleOutsideClick);
-        }
-    };
-
     triggerEl.onclick = (e) => {
         e.stopPropagation();
-        toggleMenu();
+        const isOpen = menuEl.classList.contains('opacity-100');
+        setMenuVisible(!isOpen);
     };
 
-    // --- アクションボタン ---
     if (addBtn) {
         addBtn.onclick = () => {
-            closeMenu();
-            // 新規作成モードで呼び出し
+            setMenuVisible(false);
             showWorkspaceModal(null);
         };
     }
 
     if (settingsBtn) {
         settingsBtn.onclick = () => {
-            closeMenu();
+            setMenuVisible(false);
             showSettingsModal();
         };
     }
 }
 
 /**
- * 外部からデータを渡してドロップダウンUIを更新する
- * (AppInitializerなどで認証完了後に呼び出す)
- * @param {Array} workspaces 
+ * 外部からデータを渡してUIを更新
  */
 export function updateWorkspaceDropdownUI(workspaces) {
     const listContainer = document.getElementById('workspace-list');
     const label = document.getElementById('workspace-label');
+    const currentId = getCurrentWorkspaceId();
 
     if (listContainer) {
-        renderWorkspaceMenu(workspaces, listContainer);
+        renderWorkspaceMenu(workspaces, listContainer, currentId);
     }
+    
     if (label) {
-        updateCurrentLabel(workspaces, label);
+        const currentWs = workspaces.find(w => w.id === currentId);
+        label.textContent = currentWs ? currentWs.name : "ワークスペース";
+        label.classList.toggle('text-gray-400', !currentWs);
     }
 }
 
-// 内部関数: メニュー項目のレンダリング
-function renderWorkspaceMenu(workspaces, container) {
+function renderWorkspaceMenu(workspaces, container, currentId) {
     container.innerHTML = '';
-    const currentId = getCurrentWorkspaceId();
 
     workspaces.forEach(ws => {
         const isCurrent = ws.id === currentId;
@@ -117,34 +108,16 @@ function renderWorkspaceMenu(workspaces, container) {
             ${isCurrent ? '<svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : ''}
         `;
         
-        // 左クリック: ワークスペース切り替え
-        btn.addEventListener('click', () => {
-            if (!isCurrent) {
-                setCurrentWorkspaceId(ws.id);
-            }
-            closeMenu();
-        });
+        btn.onclick = () => {
+            if (!isCurrent) setCurrentWorkspaceId(ws.id);
+            setMenuVisible(false);
+        };
 
-        // 右クリック: コンテキストメニュー表示 (編集・削除)
-        btn.addEventListener('contextmenu', (e) => {
+        btn.oncontextmenu = (e) => {
             e.preventDefault();
             showItemContextMenu(e, 'workspace', ws);
-        });
+        };
         
         container.appendChild(btn);
     });
-}
-
-// 内部関数: ラベルの更新
-function updateCurrentLabel(workspaces, labelEl) {
-    const currentId = getCurrentWorkspaceId();
-    const currentWs = workspaces.find(w => w.id === currentId);
-    
-    if (currentWs) {
-        labelEl.textContent = currentWs.name;
-        labelEl.classList.remove('text-gray-400');
-    } else {
-        labelEl.textContent = "ワークスペース";
-        labelEl.classList.add('text-gray-400');
-    }
 }
