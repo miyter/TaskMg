@@ -1,6 +1,6 @@
 /**
  * 更新日: 2025-12-21
- * 内容: イベント委譲の導入、DOMキャッシュ、定数連携、アクセシビリティ対応
+ * 内容: 同期取得関数の依存排除（キャッシュ方式へ移行）、ビルドエラー解消
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { setupResizer, isDesktop, getStoredBool } from './sidebar-utils.js';
@@ -10,9 +10,30 @@ import { showFilterModal } from './filter-modal.js';
 import { showTimeBlockModal } from './timeblock-modal.js';
 import { showSettingsModal } from './settings.js';
 import { initSidebarProjects, updateSidebarProjects } from './components/SidebarProjects.js';
-import { updateInboxCount } from './sidebar-renderer.js';
+import { renderSidebarItems, updateInboxCount } from './sidebar-renderer.js';
+
+// 存在する同期取得関数のみインポート（ビルドエラー防止のため最小限に）
+import { getProjects } from '../store/projects.js';
+import { getFilters } from '../store/filters.js';
 
 export { updateSidebarProjects as renderProjects, updateInboxCount };
+
+// --- データのキャッシュ用変数 ---
+let cachedTasks = [];
+let cachedLabels = [];
+let cachedProjects = [];
+let cachedFilters = [];
+
+/**
+ * 外部（DataSyncManager等）からサイドバー用のキャッシュを更新する
+ * @param {Object} data - 更新データ { tasks, labels, projects, filters }
+ */
+export function updateSidebarCache({ tasks, labels, projects, filters }) {
+    if (tasks !== undefined) cachedTasks = tasks;
+    if (labels !== undefined) cachedLabels = labels;
+    if (projects !== undefined) cachedProjects = projects;
+    if (filters !== undefined) cachedFilters = filters;
+}
 
 // DOM要素のキャッシュ
 let UI = {};
@@ -28,6 +49,9 @@ function cacheElements() {
     };
 }
 
+/**
+ * サイドバーの初期化
+ */
 export function initSidebar() {
     cacheElements();
     if (!UI.container) return;
@@ -40,6 +64,7 @@ export function initSidebar() {
     setupResizer(UI.sidebar, UI.resizer);
     setupSidebarEvents();
     setupSidebarToggles();
+    setupDataEventListeners();
     
     if (UI.inbox) setupDropZone(UI.inbox, 'inbox');
 
@@ -51,6 +76,41 @@ export function initSidebar() {
     const isCompact = getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
     applyCompactMode(isCompact);
     setupCompactModeListener();
+}
+
+/**
+ * 各種データ更新イベントの監視設定
+ */
+function setupDataEventListeners() {
+    /**
+     * キャッシュされたデータを使用してサイドバーを再描画
+     */
+    const refreshSidebar = () => {
+        // キャッシュがない場合のフォールバックとして、存在するインポート関数を利用
+        const projects = cachedProjects.length > 0 ? cachedProjects : getProjects();
+        const filters = cachedFilters.length > 0 ? cachedFilters : getFilters();
+
+        renderSidebarItems(
+            UI.sidebar, 
+            cachedTasks, 
+            projects, 
+            cachedLabels, 
+            filters
+        );
+    };
+
+    // 各種更新イベントで再描画を実行
+    const updateEvents = [
+        'timeblocks-updated',
+        'projects-updated',
+        'labels-updated',
+        'filters-updated',
+        'tasks-updated'
+    ];
+
+    updateEvents.forEach(event => {
+        window.addEventListener(event, refreshSidebar);
+    });
 }
 
 function setupSidebarEvents() {

@@ -1,7 +1,6 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: Store層からのUI依存（showMessageModal）を排除、エラーハンドリングの責務分離
+ * 内容: 同期取得用 getTasks の追加、タスク購読データのキャッシュ
  */
 
 import { auth } from '../core/firebase.js';
@@ -17,6 +16,9 @@ import {
     createBackupDataRaw,
     getTaskByIdRaw
 } from './store-raw.js';
+
+// タスクの同期取得用キャッシュ
+let cachedTasks = [];
 
 /**
  * 認証ガード
@@ -70,27 +72,40 @@ async function handleRecurringTask(completedTask) {
         }
     } catch (e) {
         console.error('[Recurring] Generation failed:', e);
-        // UI通知は行わずログのみ
     }
 }
 
+/**
+ * タスク一覧を購読する (キャッシュを更新)
+ */
 export function subscribeToTasks(onUpdate) {
     const userId = auth.currentUser?.uid;
     const workspaceId = getCurrentWorkspaceId();
 
     if (userId && workspaceId) {
-        return subscribeToTasksRaw(userId, workspaceId, onUpdate); 
+        return subscribeToTasksRaw(userId, workspaceId, (tasks) => {
+            cachedTasks = tasks; // キャッシュを更新
+            onUpdate(tasks);
+        }); 
     } else {
+        cachedTasks = [];
         onUpdate([]);
         return () => {};
     }
+}
+
+/**
+ * キャッシュされたタスク一覧を同期的に取得する
+ * (ビルドエラー解消用)
+ */
+export function getTasks() {
+    return cachedTasks;
 }
 
 export async function addTask(taskData) {
     const userId = requireAuth();
     const workspaceId = requireWorkspace();
     
-    // 日付のバリデーション/正規化
     const data = { ...taskData };
     if (data.dueDate && !(data.dueDate instanceof Date)) {
         data.dueDate = new Date(data.dueDate);
