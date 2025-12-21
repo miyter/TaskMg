@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: Config取得ロジックの優先順位修正（Global -> Env -> Legacy）
+ * 内容: Config取得ロジックの強化（注入されたGlobal変数を最優先かつログ出力強化）
  */
 
 import { initializeApp, getAuth, getFirestore } from './firebase-sdk.js';
@@ -42,12 +42,12 @@ export function initializeFirebase() {
  */
 function getConfiguration() {
     // 1. index.html等で注入されたグローバル設定を最優先
-    if (typeof window !== 'undefined' && window.GLOBAL_FIREBASE_CONFIG) {
+    if (typeof window !== 'undefined' && window.GLOBAL_FIREBASE_CONFIG && window.GLOBAL_FIREBASE_CONFIG.apiKey) {
+        console.log("[Firebase] Using injected GLOBAL_FIREBASE_CONFIG");
         return window.GLOBAL_FIREBASE_CONFIG;
     }
 
     // 2. Vite環境変数 (import.meta.env)
-    // 注意: 環境によっては import.meta が使用できない場合があるため try-catch
     try {
         // @ts-ignore
         if (import.meta && import.meta.env) {
@@ -63,6 +63,7 @@ function getConfiguration() {
                 measurementId: env.VITE_FIREBASE_MEASUREMENT_ID,
             };
             if (envConfig.apiKey) {
+                console.log("[Firebase] Using Vite environment variables");
                 return envConfig;
             }
         }
@@ -81,6 +82,7 @@ function getConfiguration() {
         }
     }
     
+    console.error("[Firebase] All config sources failed. Check index.html injection.");
     return null;
 }
 
