@@ -1,6 +1,6 @@
 /**
  * 更新日: 2025-12-21
- * 内容: 同期取得関数の依存排除（キャッシュ方式へ移行）、ビルドエラー解消
+ * 内容: イベントリスナーの重複登録防止（TypeError: n is not a function 対策）
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { setupResizer, isDesktop, getStoredBool } from './sidebar-utils.js';
@@ -12,7 +12,7 @@ import { showSettingsModal } from './settings.js';
 import { initSidebarProjects, updateSidebarProjects } from './components/SidebarProjects.js';
 import { renderSidebarItems, updateInboxCount } from './sidebar-renderer.js';
 
-// 存在する同期取得関数のみインポート（ビルドエラー防止のため最小限に）
+// 存在する同期取得関数のみインポート
 import { getProjects } from '../store/projects.js';
 import { getFilters } from '../store/filters.js';
 
@@ -24,9 +24,11 @@ let cachedLabels = [];
 let cachedProjects = [];
 let cachedFilters = [];
 
+// 重複登録防止用のハンドラ保持
+let refreshSidebarHandler = null;
+
 /**
- * 外部（DataSyncManager等）からサイドバー用のキャッシュを更新する
- * @param {Object} data - 更新データ { tasks, labels, projects, filters }
+ * 外部からサイドバー用のキャッシュを更新する
  */
 export function updateSidebarCache({ tasks, labels, projects, filters }) {
     if (tasks !== undefined) cachedTasks = tasks;
@@ -58,13 +60,12 @@ export function initSidebar() {
 
     UI.container.innerHTML = buildSidebarHTML();
     
-    // リフレッシュ後の要素もキャッシュ
     cacheElements();
 
     setupResizer(UI.sidebar, UI.resizer);
     setupSidebarEvents();
     setupSidebarToggles();
-    setupDataEventListeners();
+    setupDataEventListeners(); // リスナーの再設定
     
     if (UI.inbox) setupDropZone(UI.inbox, 'inbox');
 
@@ -79,14 +80,26 @@ export function initSidebar() {
 }
 
 /**
- * 各種データ更新イベントの監視設定
+ * 各種データ更新イベントの監視設定（クリーンアップ付き）
  */
 function setupDataEventListeners() {
-    /**
-     * キャッシュされたデータを使用してサイドバーを再描画
-     */
-    const refreshSidebar = () => {
-        // キャッシュがない場合のフォールバックとして、存在するインポート関数を利用
+    const updateEvents = [
+        'timeblocks-updated',
+        'projects-updated',
+        'labels-updated',
+        'filters-updated',
+        'tasks-updated'
+    ];
+
+    // 1. 既存のハンドラがあれば解除（重複防止）
+    if (refreshSidebarHandler) {
+        updateEvents.forEach(event => {
+            window.removeEventListener(event, refreshSidebarHandler);
+        });
+    }
+
+    // 2. 新しいハンドラを定義
+    refreshSidebarHandler = () => {
         const projects = cachedProjects.length > 0 ? cachedProjects : getProjects();
         const filters = cachedFilters.length > 0 ? cachedFilters : getFilters();
 
@@ -99,17 +112,9 @@ function setupDataEventListeners() {
         );
     };
 
-    // 各種更新イベントで再描画を実行
-    const updateEvents = [
-        'timeblocks-updated',
-        'projects-updated',
-        'labels-updated',
-        'filters-updated',
-        'tasks-updated'
-    ];
-
+    // 3. イベントを登録
     updateEvents.forEach(event => {
-        window.addEventListener(event, refreshSidebar);
+        window.addEventListener(event, refreshSidebarHandler);
     });
 }
 
