@@ -1,7 +1,15 @@
 /**
- * 更新日: 2025-12-21
- * 内容: ビューID、スタイルクラス、属性の定数化
+ * UI関連の定数管理
  */
+
+export const ASSETS = {
+    FAVICON: '/images/favicon-96x96.png'
+};
+
+export const DOM_IDS = {
+    CRITICAL_ERROR_OVERLAY: 'critical-error-overlay'
+};
+
 export const UI_VIEW_CONFIG = {
     VIEW_IDS: {
         TASK: 'task-view',
