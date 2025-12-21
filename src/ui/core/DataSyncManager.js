@@ -1,6 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// データ同期、キャッシュ管理、UI更新の一元管理
+/**
+ * 更新日: 2025-12-21
+ * 内容: ワークスペースIDによるデータフィルタリングの追加と同期ロジックの堅牢化
+ */
 
 import { auth } from '../../core/firebase.js';
 
@@ -17,7 +19,7 @@ import { renderProjects, renderLabels, updateInboxCount } from '../sidebar.js';
 import { renderTimeBlocks, renderDurations } from '../sidebar-renderer.js';
 import { updateView } from '../ui-view-manager.js';
 
-// データキャッシュ
+// データキャッシュ（Firestoreから取得した生データ）
 let state = {
     tasks: [],
     projects: [],
@@ -40,23 +42,33 @@ let isDataSyncing = false;
 let updateTimer = null;
 
 /**
- * UI全体を更新する（デバウンス処理付き）
+ * UI全体を更新する（ワークスペースによるフィルタリングを実施）
  */
 export function updateUI() {
     if (updateTimer) return;
     
-    // 同一フレーム内での過剰な再描画を防止
     updateTimer = requestAnimationFrame(() => {
-        const { tasks, projects, labels } = state;
+        const workspaceId = getCurrentWorkspaceId();
+        if (!workspaceId) {
+            updateTimer = null;
+            return;
+        }
+
+        // 現在のワークスペースに属するデータのみを抽出
+        // ※Firestore側でフィルタリングされていても、メモリ上での最終チェックとして実施
+        const filteredTasks = state.tasks.filter(t => t.workspaceId === workspaceId);
+        const filteredProjects = state.projects.filter(p => p.workspaceId === workspaceId);
+        const filteredLabels = state.labels.filter(l => l.workspaceId === workspaceId);
         
-        updateInboxCount(tasks);
-        renderProjects(projects, tasks);
-        renderLabels(labels, tasks);
-        renderTimeBlocks(tasks);
-        renderDurations(tasks);
+        // 描画系にフィルタリング済みのデータを渡す
+        updateInboxCount(filteredTasks);
+        renderProjects(filteredProjects, filteredTasks);
+        renderLabels(filteredLabels, filteredTasks);
+        renderTimeBlocks(filteredTasks);
+        renderDurations(filteredTasks);
         
         // メインビューの更新
-        updateView(tasks, projects, labels);
+        updateView(filteredTasks, filteredProjects, filteredLabels);
         
         updateTimer = null;
     });
@@ -77,33 +89,35 @@ export function startAllSubscriptions() {
     if (!workspaceId) return;
 
     isDataSyncing = true;
-    console.log('Syncing workspace:', workspaceId);
+    console.log('[DataSync] Start syncing workspace:', workspaceId);
 
     // 各データソースの購読
+    // Store側の subscribe 関数が第2引数に workspaceId を受け取り、
+    // クエリレベルでフィルタリングを行うことを期待する設計
     subscriptions.tasks = subscribeToTasks((data) => {
         state.tasks = data;
         updateUI();
-    });
+    }, workspaceId);
 
     subscriptions.projects = subscribeToProjects((data) => {
         state.projects = data;
         updateUI();
-    });
+    }, workspaceId);
 
     subscriptions.labels = subscribeToLabels((data) => {
         state.labels = data;
         updateUI();
-    });
+    }, workspaceId);
     
     subscriptions.timeBlocks = subscribeToTimeBlocks((data) => {
         state.timeBlocks = data;
         updateUI();
-    });
+    }, workspaceId);
 
     subscriptions.filters = subscribeToFilters((data) => {
         state.filters = data;
         updateUI();
-    });
+    }, workspaceId);
 }
 
 /**
@@ -129,9 +143,18 @@ export function stopDataSync(stopWorkspaceSync = false) {
 
 // --- Getters ---
 export const getData = {
-    tasks: () => state.tasks,
-    projects: () => state.projects,
-    labels: () => state.labels,
+    tasks: () => {
+        const wsId = getCurrentWorkspaceId();
+        return state.tasks.filter(t => t.workspaceId === wsId);
+    },
+    projects: () => {
+        const wsId = getCurrentWorkspaceId();
+        return state.projects.filter(p => p.workspaceId === wsId);
+    },
+    labels: () => {
+        const wsId = getCurrentWorkspaceId();
+        return state.labels.filter(l => l.workspaceId === wsId);
+    },
     timeBlocks: () => state.timeBlocks,
     filters: () => state.filters,
     workspaceId: () => getCurrentWorkspaceId()

@@ -1,13 +1,14 @@
 // @ts-nocheck
-// @miyter:20251221
-// ワークスペース切り替えドロップダウンのロジック
+/**
+ * 更新日: 2025-12-21
+ * 内容: workspace-changedイベントを監視し、自身のUIを即座に更新するよう修正
+ */
 
-import { setCurrentWorkspaceId, getCurrentWorkspaceId } from '../../store/workspace.js';
+import { setCurrentWorkspaceId, getCurrentWorkspaceId, getWorkspaces } from '../../store/workspace.js';
 import { showSettingsModal } from '../settings.js';
 import { showWorkspaceModal } from '../modal/workspace-modal.js';
 import { showItemContextMenu } from '../sidebar-components.js';
 
-// UI状態管理用の定数
 const CLASSES = {
     MENU_VISIBLE: ['opacity-100', 'visible', 'scale-100', 'pointer-events-auto'],
     MENU_INVISIBLE: ['opacity-0', 'invisible', 'scale-95', 'pointer-events-none']
@@ -16,9 +17,6 @@ const CLASSES = {
 let menuEl = null;
 let triggerEl = null;
 
-/**
- * メニューの表示・非表示を切り替える
- */
 function setMenuVisible(visible) {
     if (!menuEl) return;
     
@@ -56,23 +54,18 @@ export function initWorkspaceDropdown() {
         setMenuVisible(!isOpen);
     };
 
-    if (addBtn) {
-        addBtn.onclick = () => {
-            setMenuVisible(false);
-            showWorkspaceModal(null);
-        };
-    }
+    if (addBtn) addBtn.onclick = () => { setMenuVisible(false); showWorkspaceModal(null); };
+    if (settingsBtn) settingsBtn.onclick = () => { setMenuVisible(false); showSettingsModal(); };
 
-    if (settingsBtn) {
-        settingsBtn.onclick = () => {
-            setMenuVisible(false);
-            showSettingsModal();
-        };
-    }
+    // 追加: ワークスペースが変更されたら、Storeのキャッシュを使ってUIを再描画する
+    document.addEventListener('workspace-changed', () => {
+        const workspaces = getWorkspaces();
+        updateWorkspaceDropdownUI(workspaces);
+    });
 }
 
 /**
- * 外部からデータを渡してUIを更新
+ * UIの更新
  */
 export function updateWorkspaceDropdownUI(workspaces) {
     const listContainer = document.getElementById('workspace-list');
