@@ -1,6 +1,6 @@
 /**
  * 更新日: 2025-12-21
- * 内容: サイドバーキャッシュ連携の追加、イベント発火によるUI同期の自動化
+ * 内容: startAllSubscriptions の引数不整合を修正、Store購読時への workspaceId 伝搬を追加
  */
 
 import { auth } from '../../core/firebase.js';
@@ -68,15 +68,16 @@ function notifyUpdate(eventType) {
 
 /**
  * 同期開始
+ * @param {string} userId - 呼び出し元から渡されるUID（必要に応じて使用）
  */
-export function startAllSubscriptions() {
+export function startAllSubscriptions(userId) {
     if (!auth?.currentUser) return;
 
     stopDataSync(false);
 
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) {
-        console.warn('[DataSync] No workspace selected.');
+        console.warn('[DataSync] No workspace selected. Waiting for workspace selection...');
         return;
     }
 
@@ -84,27 +85,30 @@ export function startAllSubscriptions() {
     console.log('[DataSync] Start syncing workspace:', workspaceId);
 
     // --- 各データソースの購読 ---
-    subscriptions.tasks = subscribeToTasks((data) => {
+    // Store側の各 subscribe 関数が (workspaceId, callback) を期待している場合、
+    // ここで workspaceId を渡さないと callback が第1引数扱いになり、内部の onSnapshot で callback が undefined になる。
+    
+    subscriptions.tasks = subscribeToTasks(workspaceId, (data) => {
         state.tasks = data;
         notifyUpdate('tasks-updated');
     });
 
-    subscriptions.projects = subscribeToProjects((data) => {
+    subscriptions.projects = subscribeToProjects(workspaceId, (data) => {
         state.projects = data;
         notifyUpdate('projects-updated');
     });
 
-    subscriptions.labels = subscribeToLabels((data) => {
+    subscriptions.labels = subscribeToLabels(workspaceId, (data) => {
         state.labels = data;
         notifyUpdate('labels-updated');
     });
 
-    subscriptions.timeBlocks = subscribeToTimeBlocks((data) => {
+    subscriptions.timeBlocks = subscribeToTimeBlocks(workspaceId, (data) => {
         state.timeBlocks = data;
         notifyUpdate('timeblocks-updated');
     });
 
-    subscriptions.filters = subscribeToFilters((data) => {
+    subscriptions.filters = subscribeToFilters(workspaceId, (data) => {
         state.filters = data;
         notifyUpdate('filters-updated');
     });
@@ -116,7 +120,7 @@ export function startAllSubscriptions() {
 export function stopDataSync(stopWorkspaceSync = false) {
     Object.keys(subscriptions).forEach(key => {
         if (key === 'workspaces' && !stopWorkspaceSync) return;
-        if (subscriptions[key]) {
+        if (typeof subscriptions[key] === 'function') {
             subscriptions[key]();
             subscriptions[key] = null;
         }

@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: WriteBatchの導入、order計算の堅牢化、冗長なソートの削除
+ * 内容: 引数シグネチャの修正 (workspaceId, callback)
  */
 
 import {
@@ -20,12 +20,17 @@ const defaultTimeBlocks = [
     { id: 'tb_night', name: '20:00 - 22:00', start: '20:00', end: '22:00', color: '#8B5CF6', order: 2 }
 ];
 
-export function subscribeToTimeBlocks(callback) {
+/**
+ * タイムブロックの購読
+ * @param {string} workspaceId - DataSyncManagerから渡されるID
+ * @param {function} callback 
+ */
+export function subscribeToTimeBlocks(workspaceId, callback) {
     const userId = auth.currentUser?.uid;
 
     if (!userId) {
         timeBlocks = [...defaultTimeBlocks];
-        if (callback) callback(timeBlocks);
+        if (typeof callback === 'function') callback(timeBlocks);
         return () => { };
     }
 
@@ -37,14 +42,13 @@ export function subscribeToTimeBlocks(callback) {
             id: doc.id,
             ...doc.data()
         }));
-        if (callback) callback(timeBlocks);
+        if (typeof callback === 'function') callback(timeBlocks);
     }, (error) => {
         console.error("[TimeBlocks] Subscription error:", error);
     });
 }
 
 export function getTimeBlocks() {
-    // Firestore側でソート済みのためそのまま返す
     return [...timeBlocks];
 }
 
@@ -66,8 +70,6 @@ export async function saveTimeBlock(block) {
     try {
         const path = paths.timeblocks(userId);
         const id = block.id || crypto.randomUUID();
-
-        // 安全なorder計算: 既存の最大値 + 1
         const nextOrder = block.order !== undefined
             ? block.order
             : Math.max(...timeBlocks.map(b => b.order), -1) + 1;
@@ -92,7 +94,6 @@ export async function saveTimeBlock(block) {
 export async function deleteTimeBlock(id) {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
-
     try {
         const path = paths.timeblocks(userId);
         await deleteDoc(doc(db, path, id));
@@ -105,16 +106,13 @@ export async function deleteTimeBlock(id) {
 export async function updateTimeBlockOrder(orderedIds) {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
-
     try {
         const path = paths.timeblocks(userId);
         const batch = writeBatch(db);
-
         orderedIds.forEach((id, index) => {
             const ref = doc(db, path, id);
             batch.update(ref, { order: index });
         });
-
         await batch.commit();
     } catch (e) {
         console.error("[TimeBlocks] Order update error:", e);

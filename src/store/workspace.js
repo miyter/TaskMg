@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: レースコンディション対策、エラーハンドリング追加、デフォルト作成ロジックの改善
+ * 内容: 引数シグネチャの修正 (userId, onUpdate)
  */
 
 import {
@@ -24,17 +24,18 @@ export function getWorkspaces() {
 
 /**
  * ワークスペース一覧をリアルタイム購読
+ * @param {string} userId
+ * @param {function} onUpdate
  */
-export function subscribeToWorkspaces(onUpdate) {
-    const user = auth.currentUser;
-    if (!user) {
-        onUpdate([]);
+export function subscribeToWorkspaces(userId, onUpdate) {
+    if (!userId) {
+        if (typeof onUpdate === 'function') onUpdate([]);
         return () => { };
     }
 
     if (unsubscribe) unsubscribe();
 
-    const path = paths.workspaces(user.uid);
+    const path = paths.workspaces(userId);
     const q = query(collection(db, path), orderBy('createdAt', 'asc'));
 
     unsubscribe = onSnapshot(q, async (snapshot) => {
@@ -43,22 +44,18 @@ export function subscribeToWorkspaces(onUpdate) {
             ...doc.data()
         }));
 
-        // キャッシュを先に更新してレースコンディションを防止
         _workspaces = items;
 
         if (items.length === 0 && !snapshot.metadata.hasPendingWrites) {
-            // 作成後にonSnapshotが再発火するため、ここでは作成のみ行う
             await ensureDefaultWorkspace();
         } else {
             const currentId = validateCurrentWorkspace(items);
-            onUpdate(items);
-
-            // UI側に最新の状態を通知
+            if (typeof onUpdate === 'function') onUpdate(items);
             dispatchWorkspaceEvent(currentId, items);
         }
     }, (error) => {
         console.error("[Workspace] Subscription error:", error);
-        onUpdate([]);
+        if (typeof onUpdate === 'function') onUpdate([]);
     });
 
     return unsubscribe;
@@ -68,10 +65,8 @@ async function ensureDefaultWorkspace() {
     try {
         const user = auth.currentUser;
         if (!user) return;
-
         const path = paths.workspaces(user.uid);
         const snapshot = await getDocs(query(collection(db, path), limit(1)));
-
         if (snapshot.empty) {
             await addWorkspace('メイン');
         }
@@ -82,10 +77,8 @@ async function ensureDefaultWorkspace() {
 
 function validateCurrentWorkspace(items) {
     if (items.length === 0) return null;
-
     let currentId = getCurrentWorkspaceId();
     const exists = items.some(w => w.id === currentId);
-
     if (!currentId || !exists) {
         currentId = items[0].id;
         localStorage.setItem(STORAGE_KEY, currentId);
@@ -99,10 +92,8 @@ export function getCurrentWorkspaceId() {
 
 export function setCurrentWorkspaceId(id) {
     if (!id) return;
-
     const oldId = localStorage.getItem(STORAGE_KEY);
     if (oldId === id) return;
-
     localStorage.setItem(STORAGE_KEY, id);
     dispatchWorkspaceEvent(id, _workspaces);
 }
@@ -118,14 +109,11 @@ export async function addWorkspace(name) {
     try {
         const user = auth.currentUser;
         if (!user) throw new Error('Authentication required');
-
         const path = paths.workspaces(user.uid);
-        const newDocData = {
+        const docRef = await addDoc(collection(db, path), {
             name: name,
             createdAt: serverTimestamp()
-        };
-
-        const docRef = await addDoc(collection(db, path), newDocData);
+        });
         return { id: docRef.id, name: name };
     } catch (e) {
         console.error("[Workspace] Add error:", e);
@@ -137,11 +125,9 @@ export async function addWorkspace(name) {
 export async function isWorkspaceNameDuplicate(name, excludeId = null) {
     const user = auth.currentUser;
     if (!user) return false;
-
     const path = paths.workspaces(user.uid);
     const q = query(collection(db, path), where('name', '==', name), limit(5));
     const snapshot = await getDocs(q);
-
     return snapshot.docs.some(doc => doc.id !== excludeId);
 }
 
@@ -149,7 +135,6 @@ export async function updateWorkspaceName(id, newName) {
     try {
         const user = auth.currentUser;
         if (!user) throw new Error('Authentication required');
-
         const path = paths.workspaces(user.uid);
         await updateDoc(doc(db, path, id), { name: newName });
     } catch (e) {
@@ -162,7 +147,6 @@ export async function deleteWorkspace(id) {
     try {
         const user = auth.currentUser;
         if (!user) throw new Error('Authentication required');
-
         const path = paths.workspaces(user.uid);
         await deleteDoc(doc(db, path, id));
     } catch (e) {
