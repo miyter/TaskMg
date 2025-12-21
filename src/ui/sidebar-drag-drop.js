@@ -1,14 +1,10 @@
 /**
- * 更新日: 2025-12-21
- * 内容: 定数連携、バリデーション強化、エラー通知の標準化
+ * サイドバーへのドラッグ&ドロップ制御
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { updateTask } from '../store/store.js';
 import { showMessageModal } from './components.js';
 
-/**
- * 指定された要素にドロップゾーンを設定
- */
 export function setupDropZone(element, type, value = null) {
     if (!element) return;
 
@@ -61,21 +57,24 @@ async function handleTaskDrop(taskId, type, value) {
             if (value) updates.projectId = value;
             break;
         case 'timeblock':
-            updates.timeBlockId = (value === 'unassigned' || value === null) ? null : value;
+            updates.timeBlockId = (value === 'unassigned' || !value) ? null : value;
             break;
         case 'duration': {
             const dur = parseInt(value, 10);
             if (!isNaN(dur) && dur >= DURATION_LIMITS.MIN && dur <= DURATION_LIMITS.MAX) {
                 updates.duration = dur;
             } else {
-                showMessageModal({ message: `所要時間は ${DURATION_LIMITS.MIN}〜${DURATION_LIMITS.MAX} 分の範囲で設定してください。`, type: "error" });
+                showMessageModal({ 
+                    message: `所要時間は ${DURATION_LIMITS.MIN}〜${DURATION_LIMITS.MAX} 分の範囲で設定してくれ。`, 
+                    type: "error" 
+                });
                 return;
             }
             break;
         }
         default:
             console.error(`[Drop] Unknown drop type: ${type}`);
-            showMessageModal({ message: "不正な操作です。", type: "error" });
+            showMessageModal({ message: "不正な操作だ。", type: "error" });
             return;
     }
 
@@ -85,6 +84,9 @@ async function handleTaskDrop(taskId, type, value) {
         }
     } catch (error) {
         console.error(`[Drop Error] Type: ${type}, Task: ${taskId}`, error);
-        showMessageModal({ message: "タスクの更新に失敗しました。通信環境を確認してください。", type: 'error' });
+        showMessageModal({ 
+            message: "タスクの更新に失敗したぞ。通信環境を確認してくれ。", 
+            type: 'error' 
+        });
     }
 }

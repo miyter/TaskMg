@@ -1,10 +1,17 @@
 /**
- * 更新日: 2025-12-21
- * 内容: 時間計算、重複チェック、ボタン状態管理のユーティリティ
+ * 時間計算、重複チェック、ボタン状態管理のユーティリティ
  */
 import { getTimeBlocks } from '../store/timeblocks.js';
 
 export const MAX_BLOCKS = 5;
+
+export const ICONS = {
+    ADD: `
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span>新しい時間帯を追加 (最大${MAX_BLOCKS}個)</span>
+    `,
+    LIMIT: `<span class="text-gray-400">これ以上追加できません (最大${MAX_BLOCKS}個)</span>`
+};
 
 /**
  * 時間を分に変換
@@ -39,13 +46,5 @@ export function updateAddButtonUI(btn, count) {
     if (!btn) return;
     const disabled = count >= MAX_BLOCKS;
     btn.disabled = disabled;
-    
-    if (disabled) {
-        btn.innerHTML = `<span class="text-gray-400">これ以上追加できません (最大${MAX_BLOCKS}個)</span>`;
-    } else {
-        btn.innerHTML = `
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            <span>新しい時間帯を追加 (最大${MAX_BLOCKS}個)</span>
-        `;
-    }
+    btn.innerHTML = disabled ? ICONS.LIMIT : ICONS.ADD;
 }

@@ -1,8 +1,8 @@
 /**
- * 更新日: 2025-12-21
- * 内容: テンプレート分割、MutationObserver廃止、z-index定数化、ショートカットガード
+ * レイアウト構造の構築と基本操作
  */
 import { LAYOUT_CONFIG } from './layout-constants.js';
+import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { setupResizer } from './sidebar-utils.js';
 import { initWorkspaceDropdown } from './components/WorkspaceDropdown.js';
 
@@ -10,7 +10,7 @@ const { Z_INDEX } = LAYOUT_CONFIG;
 
 const createSidebarHTML = () => `
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-[${Z_INDEX.OVERLAY}] hidden md:hidden transition-opacity duration-300"></div>
-    <aside id="sidebar" class="flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 group z-[${Z_INDEX.SIDEBAR}] fixed md:relative h-full md:translate-x-0 -translate-x-full shadow-xl md:shadow-none" style="width: ${LAYOUT_CONFIG.SIDEBAR_WIDTH};">
+    <aside id="sidebar" class="flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 group z-[${Z_INDEX.SIDEBAR}] fixed md:relative h-full md:translate-x-0 -translate-x-full shadow-xl md:shadow-none" style="width: ${SIDEBAR_CONFIG.DEFAULT_WIDTH}px;">
         ${renderSidebarHeader()}
         <div id="sidebar-content" class="flex-1 overflow-y-auto py-2 custom-scrollbar"></div>
         <div id="sidebar-resizer" class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500 transition-colors z-[${Z_INDEX.MODAL}] opacity-0 group-hover:opacity-100 hidden md:block"></div>
@@ -79,7 +79,8 @@ export function renderLayout() {
     `;
 
     requestAnimationFrame(() => {
-        setupResizer(document.getElementById('sidebar'), document.querySelector('main'), document.getElementById('sidebar-resizer'));
+        // 未使用の main 引数を削除
+        setupResizer(document.getElementById('sidebar'), document.getElementById('sidebar-resizer'));
         initWorkspaceDropdown();
         setupGlobalShortcuts();
         setupSidebarToggles();
@@ -93,8 +94,11 @@ function setupSidebarToggles() {
     const openBtn = document.getElementById('sidebar-open-btn');
 
     const toggle = (force) => {
-        const isClosed = sidebar.classList.toggle('-translate-x-full', force);
-        overlay?.classList.toggle('hidden', isClosed);
+        const isCurrentlyClosed = sidebar.classList.contains('-translate-x-full');
+        const willBeClosed = force ?? !isCurrentlyClosed;
+        
+        sidebar.classList.toggle('-translate-x-full', willBeClosed);
+        overlay?.classList.toggle('hidden', willBeClosed);
     };
 
     closeBtn?.addEventListener('click', () => toggle(true));
@@ -108,8 +112,11 @@ function setupGlobalShortcuts() {
         const hasModal = document.querySelector('[role="dialog"]');
         
         if (e.key === '/' && !isInput && !hasModal) {
-            e.preventDefault();
-            document.getElementById('page-search-input')?.focus();
+            const searchInput = document.getElementById('page-search-input');
+            if (searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+            }
         }
     });
 }

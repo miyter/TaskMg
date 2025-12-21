@@ -1,9 +1,6 @@
-// @ts-nocheck
 /**
- * 更新日: 2025-12-21
- * 内容: 設定反映の確実性向上、UX改善、保守性対応（Grok指摘対応）
+ * 設定画面のイベントハンドリング
  */
-
 import { auth } from '../../core/firebase.js';
 import { updateUserPassword } from '../auth.js';
 import { signOut } from 'firebase/auth';
@@ -11,11 +8,8 @@ import { createBackupData } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { applyBackground } from '../theme.js';
 
-/**
- * モーダル内のイベントリスナーを一括設定
- */
 export function setupSettingsEvents(modalOverlay, closeModal) {
-    // 閉じるボタン系
+    // 閉じる処理の統合
     const closers = ['close-settings-modal', 'close-settings-footer'];
     closers.forEach(id => document.getElementById(id)?.addEventListener('click', closeModal));
     
@@ -23,35 +17,33 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
         if (e.target === modalOverlay) closeModal();
     });
 
-    // 表示設定（ラジオボタングループ）
-    // 初期化時に現在の値を適用することで、localStorageとUIの同期を保証する
+    // テーマ設定
     setupRadioGroupHandler('app-theme', 'theme', (val) => {
         document.documentElement.classList.toggle('dark', val === 'dark');
         applyBackground();
     });
 
+    // 文字サイズ設定 (Tailwind configの app-sm/md/lg に対応)
     setupRadioGroupHandler('font-size', 'fontSize', (val) => {
-        document.body.classList.remove('font-large', 'font-medium', 'font-small');
-        document.body.classList.add(`font-${val}`);
+        const sizeClasses = ['font-app-sm', 'font-app-md', 'font-app-lg'];
+        document.body.classList.remove(...sizeClasses);
+        document.body.classList.add(`font-app-${val}`);
     });
 
+    // 背景パターン
     setupRadioGroupHandler('bg-pattern', 'background', () => applyBackground());
 
+    // サイドバー密度
     setupRadioGroupHandler('sidebar-density', 'sidebar_compact', (val) => {
         const isCompact = val === 'compact';
         window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { compact: isCompact } }));
     });
 
-    // 機能系
     setupExportHandler();
     setupPasswordHandler();
     setupLogoutHandler(closeModal);
 }
 
-/**
- * ラジオボタン・グループの共通ハンドラー生成
- * 初期化時に現在の値でonUpdateを実行する
- */
 function setupRadioGroupHandler(name, storageKey, onUpdate) {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
     const savedValue = localStorage.getItem(storageKey);
@@ -64,53 +56,51 @@ function setupRadioGroupHandler(name, storageKey, onUpdate) {
         });
     });
 
-    // モーダルが開かれた時点で、保存されている設定（またはデフォルト）を確実に適用する
+    // モーダル表示時に保存値を強制適用
     if (savedValue) {
         onUpdate(savedValue);
     } else {
-        const defaultRadio = document.querySelector(`input[name="${name}"]:checked`);
-        if (defaultRadio) {
-            onUpdate(defaultRadio.value);
-        }
+        const checked = Array.from(radios).find(r => r.checked);
+        if (checked) onUpdate(checked.value);
     }
 }
 
-/**
- * データエクスポート
- */
 function setupExportHandler() {
     const btn = document.getElementById('export-data-btn-new');
     if (!btn) return;
 
     btn.onclick = async () => {
-        const originalText = btn.querySelector('div.font-medium').textContent;
-        const subText = btn.querySelector('div.text-xs');
+        const label = btn.querySelector('div.font-medium');
+        const originalText = label.textContent;
         
-        // UI更新: ローディング状態
         btn.disabled = true;
         btn.classList.add('opacity-70', 'cursor-wait');
-        btn.querySelector('div.font-medium').textContent = "バックアップ作成中...";
+        label.textContent = "バックアップ作成中...";
         
         try {
             const data = await createBackupData();
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-            downloadJSON(data, `backup_${timestamp}.json`);
-            showMessageModal("バックアップをダウンロードしました");
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_${timestamp}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showMessageModal({ message: "バックアップをダウンロードしたぞ", type: 'success' });
         } catch (e) {
             console.error(e);
-            showMessageModal("エクスポートに失敗しました", 'error');
+            showMessageModal({ message: "エクスポートに失敗した", type: 'error' });
         } finally {
-            // UI復元
             btn.disabled = false;
             btn.classList.remove('opacity-70', 'cursor-wait');
-            btn.querySelector('div.font-medium').textContent = originalText;
+            label.textContent = originalText;
         }
     };
 }
 
-/**
- * パスワード変更
- */
 function setupPasswordHandler() {
     const btn = document.getElementById('update-password-btn-new');
     const input = document.getElementById('new-password-input-new');
@@ -118,45 +108,24 @@ function setupPasswordHandler() {
 
     btn.onclick = async () => {
         const pass = input.value.trim();
-        if (pass.length < 6) return showMessageModal("6文字以上必要です", 'error');
+        if (pass.length < 6) return showMessageModal({ message: "6文字以上入力してくれ", type: 'error' });
         
         try {
             await updateUserPassword(pass);
-            showMessageModal("パスワードを変更しました");
             input.value = '';
         } catch (err) {
-            let msg = "失敗しました: " + err.message;
-            if (err.code === 'auth/requires-recent-login') {
-                msg = "セキュリティのため、再ログインが必要です。ログアウトして再度お試しください。";
-            }
-            showMessageModal(msg, 'error');
+            // エラー表示は auth.js 側で行われるが、ここでも追加制御が必要なら行う
         }
     };
 }
 
-/**
- * ログアウト
- */
 function setupLogoutHandler(closeModal) {
     document.getElementById('logout-btn-settings')?.addEventListener('click', async () => {
         try {
             await signOut(auth);
             closeModal();
         } catch (err) {
-            showMessageModal("エラーが発生しました", 'error');
+            showMessageModal({ message: "エラーが発生した", type: 'error' });
         }
     });
-}
-
-/**
- * JSONファイルダウンロード（モジュールローカル関数）
- */
-function downloadJSON(data, filename) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
 }

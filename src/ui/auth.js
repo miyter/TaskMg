@@ -1,9 +1,6 @@
-// @ts-nocheck
 /**
- * 更新日: 2025-12-21
- * 内容: コード構造の整理、不要な変数の排除
+ * 認証関連のUI・ロジック制御
  */
-
 import { 
     signInWithEmailAndPassword,
     signOut,
@@ -12,7 +9,6 @@ import {
 import { auth, isFirebaseInitialized } from '../core/firebase.js'; 
 import { showMessageModal } from './components.js'; 
 
-// 外部からの直接変更を防ぐため、変数は非公開にしGetterのみ公開
 let currentUserId = null;
 
 export function getCurrentUserId() {
@@ -23,19 +19,19 @@ export function getCurrentUserId() {
  * ログイン実行
  */
 export async function loginWithEmail(email, password) {
-    if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
+    if (!isFirebaseInitialized) throw new Error("Firebaseが初期化されていないぞ。");
+    
     try {
         return await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
-        // エラーコードを日本語メッセージに変換して再スロー
-        let msg = "ログインに失敗しました。";
+        let msg = "ログインに失敗した。";
         switch (error.code) {
-            case 'auth/invalid-email': msg = "メールアドレスの形式が正しくありません。"; break;
-            case 'auth/user-disabled': msg = "このアカウントは無効化されています。"; break;
-            case 'auth/user-not-found': msg = "アカウントが見つかりません。"; break;
-            case 'auth/wrong-password': msg = "パスワードが間違っています。"; break;
-            case 'auth/too-many-requests': msg = "試行回数が多すぎます。しばらく待ってからお試しください。"; break;
-            case 'auth/network-request-failed': msg = "ネットワークエラーが発生しました。通信環境を確認してください。"; break;
+            case 'auth/invalid-email': msg = "メールアドレスの形式が正しくない。"; break;
+            case 'auth/user-disabled': msg = "このアカウントは無効化されているぞ。"; break;
+            case 'auth/user-not-found': msg = "アカウントが見つからない。"; break;
+            case 'auth/wrong-password': msg = "パスワードが間違っている。"; break;
+            case 'auth/too-many-requests': msg = "試行回数が多すぎる。少し時間を置いてくれ。"; break;
+            case 'auth/network-request-failed': msg = "ネットワークエラーだ。通信環境を確認してくれ。"; break;
         }
         throw new Error(msg);
     }
@@ -54,57 +50,55 @@ export async function logout() {
  */
 export async function updateUserPassword(newPassword) {
     const user = auth.currentUser;
-    if (!user) throw new Error("認証されていません。");
+    if (!user) throw new Error("認証されていないぞ。");
     
     try {
         await updatePassword(user, newPassword);
-        showMessageModal("パスワードを変更しました");
+        showMessageModal({ message: "パスワードを変更したぞ", type: 'success' });
     } catch (error) {
-        let message = "変更に失敗しました: " + error.message;
+        let message = "変更に失敗した: " + error.message;
         if (error.code === 'auth/requires-recent-login') {
-            message = "セキュリティのため、再ログインが必要です。一度ログアウトしてから再度お試しください。";
+            message = "セキュリティのため、再ログインが必要だ。一度ログアウトしてから試してくれ。";
         }
-        showMessageModal(message, "error");
+        showMessageModal({ message, type: 'error' });
         throw error;
     }
 }
 
 /**
- * ヘッダーの認証ボタンにイベントリスナーを登録する
+ * イベントリスナー登録
  */
 export function setupAuthHandlers() {
     const loginBtn = document.getElementById('email-login-btn');
     const emailInput = document.getElementById('email-input');
     const passInput = document.getElementById('password-input');
 
-    if (loginBtn && emailInput && passInput) {
-        const handleLogin = async () => {
-            const email = emailInput.value.trim();
-            const pass = passInput.value.trim();
-            
-            if (!email || !pass) {
-                return showMessageModal("メールアドレスとパスワードを入力してください。", "error");
-            }
-            
-            try {
-                await loginWithEmail(email, pass);
-            } catch (e) {
-                // UI層でのエラー表示は必須
-                showMessageModal(e.message, "error");
-            }
-        };
+    if (!loginBtn || !emailInput || !passInput) return;
 
-        loginBtn.onclick = handleLogin;
+    const handleLogin = async () => {
+        const email = emailInput.value.trim();
+        const pass = passInput.value.trim();
+        
+        if (!email || !pass) {
+            return showMessageModal({ message: "メールアドレスとパスワードを入力してくれ。", type: 'error' });
+        }
+        
+        try {
+            await loginWithEmail(email, pass);
+        } catch (e) {
+            showMessageModal({ message: e.message, type: 'error' });
+        }
+    };
 
-        // Enterキーでログイン実行
-        passInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
-    }
+    loginBtn.onclick = handleLogin;
+
+    passInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.isComposing) handleLogin();
+    });
 }
 
 /**
- * 認証状態に応じてUI（表示/非表示）を切り替える
+ * 認証状態のUI同期
  */
 export function updateAuthUI(user) {
     const elements = {

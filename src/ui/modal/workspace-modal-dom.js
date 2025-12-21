@@ -1,9 +1,3 @@
-// @ts-nocheck
-/**
- * 更新日: 2025-12-21
- * 内容: placeholderの整理とレイアウトの微調整
- */
-
 /**
  * ワークスペースモーダルのテンプレート
  */
@@ -12,7 +6,8 @@ export function buildWorkspaceModalHTML(workspaceData = null) {
     const config = {
         title: isEdit ? 'ワークスペース名の変更' : '新規ワークスペース',
         btnText: isEdit ? '保存' : '作成',
-        placeholder: isEdit ? '' : 'ワークスペース名を入力...',
+        // 編集時もプレースホルダーを表示してUXを維持
+        placeholder: 'ワークスペース名を入力...',
         description: isEdit 
             ? 'ワークスペースの名前を変更します。' 
             : '新しいワークスペースを作成します。プロジェクトやタスクを個別に管理できるようになります。'

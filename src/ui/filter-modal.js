@@ -1,20 +1,18 @@
-/**
- * 更新日: 2025-12-21
- * 内容: 正規表現パース、定数化、DOMベースのラベル生成、イベントクリーンアップ
- */
 import { getProjects } from '../store/projects.js';
 import { getTimeBlocks } from '../store/timeblocks.js';
-import { addFilter, updateFilter } from '../store/store.js'; 
+import { addFilter, updateFilter } from '../store/store.js';
 import { showMessageModal } from './components.js';
 
 const UNASSIGNED_ID = 'none';
-
 const MESSAGES = {
-    NAME_REQUIRED: 'フィルター名を入力してください',
-    CONDITION_REQUIRED: '少なくとも1つの条件を選択してください',
-    SAVE_ERROR: '保存に失敗しました: '
+    NAME_REQUIRED: 'フィルター名を入力してくれ',
+    CONDITION_REQUIRED: '少なくとも1つの条件を選択してくれ',
+    SAVE_ERROR: '保存に失敗したぞ: '
 };
 
+/**
+ * フィルター作成・編集モーダルを表示
+ */
 export function showFilterModal(filterToEdit = null) {
     const isEditMode = !!filterToEdit;
     const projects = getProjects();
@@ -22,23 +20,23 @@ export function showFilterModal(filterToEdit = null) {
     const durations = [30, 45, 60, 75, 90];
 
     const state = parseFilterQuery(filterToEdit?.query || '');
-
     const modal = document.createElement('div');
     modal.id = 'filter-creation-modal';
     modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fade-in';
-
+    
     modal.innerHTML = `
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]" role="dialog" aria-modal="true">
             <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                 <h3 class="text-base font-bold text-gray-800 dark:text-white">${isEditMode ? 'フィルター編集' : 'フィルター作成'}</h3>
-                <button id="close-filter-modal" class="text-gray-500 hover:text-gray-700">
+                <button id="close-filter-modal" class="text-gray-400 hover:text-gray-700 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="p-4 overflow-y-auto flex-1 space-y-6">
+            <div class="p-4 overflow-y-auto flex-1 space-y-6 custom-scrollbar">
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">フィルター名</label>
-                    <input type="text" id="filter-name" value="${filterToEdit?.name || ''}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">フィルター名</label>
+                    <input type="text" id="filter-name" value="${filterToEdit?.name || ''}" 
+                           class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     ${createSelectionBox('プロジェクト', projects, state.project, 'filter-project-checkbox')}
@@ -46,9 +44,11 @@ export function showFilterModal(filterToEdit = null) {
                     ${createSelectionBox('所要時間', durations, state.duration, 'filter-duration-checkbox', d => `${d} min`)}
                 </div>
             </div>
-            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900 flex justify-end gap-3 border-t">
-                <button id="cancel-filter-btn" class="text-sm font-medium text-gray-500">キャンセル</button>
-                <button id="save-filter-btn" class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg">${isEditMode ? '変更を保存' : '作成'}</button>
+            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700">
+                <button id="cancel-filter-btn" class="text-sm font-medium text-gray-500 hover:text-gray-800 transition">キャンセル</button>
+                <button id="save-filter-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-md transition-all active:scale-95">
+                    ${isEditMode ? '変更を保存' : '作成'}
+                </button>
             </div>
         </div>
     `;
@@ -64,7 +64,8 @@ function parseFilterQuery(query) {
     while ((match = regex.exec(query)) !== null) {
         const [_, key, val] = match;
         if (result[key]) {
-            result[key] = val.split(',').map(v => (key === 'timeblock' && v === 'null') ? UNASSIGNED_ID : v);
+            // null文字列を内部定数 none に統一してパース
+            result[key] = val.split(',').map(v => (key === 'timeblock' && (v === 'null' || v === 'none')) ? UNASSIGNED_ID : v);
         }
     }
     return result;
@@ -72,15 +73,15 @@ function parseFilterQuery(query) {
 
 function createSelectionBox(title, items, initials, className, labelFn = (i) => i.name || i) {
     return `
-        <div class="flex flex-col h-64 border rounded-lg overflow-hidden bg-white dark:bg-gray-900">
-            <div class="px-3 py-2 bg-gray-50 border-b text-xs font-bold text-gray-500">${title}</div>
-            <div class="p-2 overflow-y-auto space-y-1">
+        <div class="flex flex-col h-64 border border-gray-100 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
+            <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700 text-xs font-bold text-gray-500">${title}</div>
+            <div class="p-2 overflow-y-auto space-y-1 custom-scrollbar">
                 ${items.map(item => {
                     const id = String(item.id || item);
                     return `
-                        <label class="flex items-center px-2 py-1.5 hover:bg-gray-100 rounded cursor-pointer">
-                            <input type="checkbox" value="${id}" ${initials.includes(id) ? 'checked' : ''} class="${className} h-4 w-4 text-blue-600">
-                            <span class="ml-2 text-sm">${labelFn(item)}</span>
+                        <label class="flex items-center px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer transition">
+                            <input type="checkbox" value="${id}" ${initials.includes(id) ? 'checked' : ''} class="${className} h-4 w-4 text-blue-600 rounded">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate">${labelFn(item)}</span>
                         </label>
                     `;
                 }).join('')}
@@ -90,8 +91,10 @@ function createSelectionBox(title, items, initials, className, labelFn = (i) => 
 }
 
 function createTimeBlockBox(blocks, initials) {
-    const items = [{ id: UNASSIGNED_ID, name: '未定', color: '#9CA3AF' }, ...blocks];
-    return createSelectionBox('時間帯', items, initials, 'filter-timeblock-checkbox', b => b.id === UNASSIGNED_ID ? b.name : `${b.start}-${b.end}`);
+    const items = [{ id: UNASSIGNED_ID, name: '未定' }, ...blocks];
+    return createSelectionBox('時間帯', items, initials, 'filter-timeblock-checkbox', b => 
+        b.id === UNASSIGNED_ID ? b.name : `${b.start}-${b.end}`
+    );
 }
 
 function setupEvents(modal, filterToEdit) {
@@ -99,6 +102,7 @@ function setupEvents(modal, filterToEdit) {
         document.removeEventListener('keydown', onEsc);
         modal.remove();
     };
+    
     const onEsc = (e) => e.key === 'Escape' && cleanup();
     document.addEventListener('keydown', onEsc);
 
@@ -111,10 +115,20 @@ function setupEvents(modal, filterToEdit) {
         if (!name) return showMessageModal({ message: MESSAGES.NAME_REQUIRED, type: 'error' });
 
         const getVals = (cls) => Array.from(modal.querySelectorAll(`.${cls}:checked`)).map(cb => cb.value);
+        
+        // 保存時は none を null 文字列に戻してクエリ化（既存検索ロジックとの互換性）
         const timeblocks = getVals('filter-timeblock-checkbox').map(v => v === UNASSIGNED_ID ? 'null' : v);
+        
+        const queryMap = {
+            project: getVals('filter-project-checkbox'),
+            timeblock: timeblocks,
+            duration: getVals('filter-duration-checkbox')
+        };
 
-        const queryMap = { project: getVals('filter-project-checkbox'), timeblock: timeblocks, duration: getVals('filter-duration-checkbox') };
-        const queryStr = Object.entries(queryMap).filter(([_, v]) => v.length > 0).map(([k, v]) => `${k}:${v.join(',')}`).join(' ');
+        const queryStr = Object.entries(queryMap)
+            .filter(([_, v]) => v.length > 0)
+            .map(([k, v]) => `${k}:${v.join(',')}`)
+            .join(' ');
 
         if (!queryStr) return showMessageModal({ message: MESSAGES.CONDITION_REQUIRED, type: 'error' });
 

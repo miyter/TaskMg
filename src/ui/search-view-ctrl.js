@@ -1,6 +1,5 @@
 /**
- * 更新日: 2025-12-21
- * 内容: DOMキャッシュ、テンプレート分離、ハイライト制御の改善
+ * 検索ビューのコントローラー
  */
 import { buildSearchViewHTML, buildSearchEmptyStateHTML, buildSearchNoResultsHTML } from './ui-dom-utils.js';
 import { filterTasks } from '../logic/search.js';
@@ -8,6 +7,17 @@ import { renderTaskList } from './task-list.js';
 import { clearSidebarHighlight, updateHeaderTitleByFilter, showView } from './ui-view-utils.js';
 
 let UI = {};
+
+/**
+ * デバウンス関数
+ */
+function debounce(fn, delay) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn(...args), delay);
+    };
+}
 
 function cacheSearchElements(container) {
     UI = {
@@ -27,15 +37,15 @@ export function renderSearchPage(searchView, viewsToHide, allTasks, allProjects,
     cacheSearchElements(searchView);
     if (!UI.input || !UI.results) return;
 
-    const onSearch = () => executeSearch(allTasks);
+    // 検索実行にデバウンスを適用
+    const onSearch = debounce(() => executeSearch(allTasks), 300);
 
     UI.input.addEventListener('input', onSearch);
-    UI.select?.addEventListener('change', onSearch);
+    UI.select?.addEventListener('change', () => executeSearch(allTasks)); // セレクトボックスは即時
 
     updateHeaderTitleByFilter({ type: 'search' });
     clearSidebarHighlight();
 
-    // フォーカス（タイミング依存を避ける）
     requestAnimationFrame(() => UI.input.focus());
 }
 
@@ -51,7 +61,7 @@ function executeSearch(allTasks) {
     const filtered = filterTasks(allTasks, {
         keyword,
         projectId,
-        showCompleted: true // 将来的に設定ストアから取得可能にする
+        showCompleted: true
     });
 
     if (filtered.length === 0) {

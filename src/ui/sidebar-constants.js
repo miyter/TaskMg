@@ -1,6 +1,5 @@
 /**
- * 更新日: 2025-12-21
- * 内容: SIDEBAR_CONFIG の定義と明確な export
+ * サイドバー用定数定義
  */
 export const SIDEBAR_CONFIG = {
     MIN_WIDTH: 150,

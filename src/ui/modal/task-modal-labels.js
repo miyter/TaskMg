@@ -1,9 +1,12 @@
-// @ts-nocheck
-// @miyter:20251221
-// タスクモーダル内のラベル（タグ）UI制御
-
+/**
+ * タスクモーダル内のラベル（タグ）UI制御
+ */
 import { getLabelDetails } from '../sidebar-utils.js';
-import { getData } from '../core/DataSyncManager.js'; // ★修正: DOMではなくデータソースから取得
+import { getData } from '../core/DataSyncManager.js';
+
+const STYLE_CONFIG = {
+    BADGE_MAX_WIDTH: 'max-w-[100px]'
+};
 
 /**
  * モーダル内のラベルバッジを描画する
@@ -17,6 +20,8 @@ export function renderModalLabels(container, labelIds, onRemove) {
         return;
     }
 
+    const fragment = document.createDocumentFragment();
+
     labelIds.forEach(lid => {
         const label = getLabelDetails(lid);
         if (!label) return;
@@ -26,7 +31,7 @@ export function renderModalLabels(container, labelIds, onRemove) {
         
         badge.innerHTML = `
             <span class="w-2 h-2 rounded-full" style="background-color: ${label.color}"></span>
-            <span class="truncate max-w-[100px]">${label.name}</span>
+            <span class="truncate ${STYLE_CONFIG.BADGE_MAX_WIDTH}">${label.name}</span>
             <button class="text-gray-400 hover:text-red-500 transition-colors rounded-full p-0.5" title="削除">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
@@ -34,11 +39,13 @@ export function renderModalLabels(container, labelIds, onRemove) {
         
         badge.querySelector('button').onclick = (e) => {
             e.stopPropagation();
-            onRemove(lid, label.name);
+            onRemove(lid); // 名前は不要なのでIDのみ渡す
         };
         
-        container.appendChild(badge);
+        fragment.appendChild(badge);
     });
+
+    container.appendChild(fragment);
 }
 
 /**
@@ -47,7 +54,6 @@ export function renderModalLabels(container, labelIds, onRemove) {
 export function setupLabelSelectOptions(selectElement) {
     if (!selectElement) return;
 
-    // ★修正: サイドバーのDOM (#label-list) ではなく DataSyncManager のキャッシュを利用
     const allLabels = getData.labels() || [];
     
     selectElement.innerHTML = '<option value="">＋ ラベルを追加...</option>';

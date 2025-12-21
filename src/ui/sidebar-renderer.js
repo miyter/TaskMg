@@ -1,6 +1,5 @@
 /**
- * 更新日: 2025-12-21
- * 内容: 定数化、タスク集計ロジックの共通化、エラーハンドリング強化
+ * サイドバーの各項目レンダリング制御
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { countActiveTasks } from './sidebar-utils.js';
@@ -30,6 +29,7 @@ export function renderLabels(labels = [], tasks = []) {
     if (!list) return;
     list.innerHTML = '';
 
+    const fragment = document.createDocumentFragment();
     labels.forEach(label => {
         const count = countActiveTasks(tasks, t => t.labelIds?.includes(label.id));
         const item = createSidebarItem(label.name, 'label', label.id, { color: label.color }, count);
@@ -39,8 +39,9 @@ export function renderLabels(labels = [], tasks = []) {
             e.preventDefault();
             showItemContextMenu(e, 'label', label);
         };
-        list.appendChild(item);
+        fragment.appendChild(item);
     });
+    list.appendChild(fragment);
 }
 
 export function renderTimeBlocks(tasks = []) {
@@ -48,7 +49,9 @@ export function renderTimeBlocks(tasks = []) {
     if (!list) return;
     list.innerHTML = '';
 
+    const fragment = document.createDocumentFragment();
     const blocks = getTimeBlocks();
+    
     blocks.forEach(block => {
         const count = countActiveTasks(tasks, t => String(t.timeBlockId) === String(block.id));
         const displayName = `${block.start} - ${block.end}`;
@@ -61,14 +64,16 @@ export function renderTimeBlocks(tasks = []) {
         };
 
         setupDropZone(item, 'timeblock', block.id);
-        list.appendChild(item);
+        fragment.appendChild(item);
     });
 
-    const unassignedCount = countActiveTasks(tasks, t => t.timeBlockId === null || t.timeBlockId === 'null');
+    const unassignedCount = countActiveTasks(tasks, t => !t.timeBlockId || t.timeBlockId === 'null');
     const unassignedItem = createSidebarItem('未定', 'timeblock', 'unassigned', { color: '#a0aec0' }, unassignedCount);
     unassignedItem.onclick = () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: 'unassigned' } }));
     setupDropZone(unassignedItem, 'timeblock', 'unassigned');
-    list.appendChild(unassignedItem);
+    fragment.appendChild(unassignedItem);
+    
+    list.appendChild(fragment);
 }
 
 export function renderDurations(tasks = []) {
@@ -76,6 +81,7 @@ export function renderDurations(tasks = []) {
     if (!list) return;
     list.innerHTML = '';
 
+    const fragment = document.createDocumentFragment();
     const iconHtml = '<span class="mr-3 text-sm">⏱️</span>';
     SIDEBAR_CONFIG.DURATIONS.forEach(mins => {
         const count = countActiveTasks(tasks, t => Number(t.duration) === mins);
@@ -83,8 +89,9 @@ export function renderDurations(tasks = []) {
 
         item.onclick = () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'duration', id: mins.toString() } }));
         setupDropZone(item, 'duration', mins.toString());
-        list.appendChild(item);
+        fragment.appendChild(item);
     });
+    list.appendChild(fragment);
 }
 
 export function renderFilters(filters = [], tasks = []) {
@@ -92,6 +99,7 @@ export function renderFilters(filters = [], tasks = []) {
     if (!list) return;
     list.innerHTML = '';
 
+    const fragment = document.createDocumentFragment();
     const iconHtml = `<svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>`;
 
     filters.forEach(filter => {
@@ -111,8 +119,9 @@ export function renderFilters(filters = [], tasks = []) {
             e.preventDefault();
             showItemContextMenu(e, 'filter', filter);
         };
-        list.appendChild(item);
+        fragment.appendChild(item);
     });
+    list.appendChild(fragment);
 }
 
 export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels, allFilters = []) {

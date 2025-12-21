@@ -1,35 +1,28 @@
-/**
- * 更新日: 2025-12-21
- * 内容: weakMapによるインスタンス管理、update()による差分更新、日付ヘルパー外部化
- */
 import Chart from 'chart.js/auto';
 import { buildDashboardViewHTML } from './ui-dom-utils.js';
+import { DASHBOARD_CONFIG } from './dashboard-constants.js';
 import * as DateUtils from '../utils/date.js';
 
+// チャートインスタンスの管理（メモリリーク防止）
 const chartInstances = new WeakMap();
 
-const CHART_CONFIG = {
-    COLORS: { daily: '#3B82F6', weekly: '#10B981', monthly: '#8B5CF6' },
-    DEFAULTS: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } }
-    }
-};
-
+/**
+ * ダッシュボードの描画実行
+ */
 export function renderDashboard(tasks) {
     const view = document.getElementById('dashboard-view');
     if (!tasks || !view) return;
 
+    // 基本構造の構築
     view.innerHTML = buildDashboardViewHTML();
+
     const completed = tasks.filter(t => t.status === 'completed' && t.completedAt);
-    
     updateSummaryStats(completed);
-    
+
     const configs = [
-        { id: 'daily', color: CHART_CONFIG.COLORS.daily, count: 7, unit: 'day' },
-        { id: 'weekly', color: CHART_CONFIG.COLORS.weekly, count: 4, unit: 'week' },
-        { id: 'monthly', color: CHART_CONFIG.COLORS.monthly, count: 6, unit: 'month' }
+        { id: 'daily', color: DASHBOARD_CONFIG.COLORS.daily, count: 7, unit: 'day' },
+        { id: 'weekly', color: DASHBOARD_CONFIG.COLORS.weekly, count: 4, unit: 'week' },
+        { id: 'monthly', color: DASHBOARD_CONFIG.COLORS.monthly, count: 6, unit: 'month' }
     ];
 
     configs.forEach(cfg => {
@@ -47,10 +40,12 @@ function updateSummaryStats(tasks) {
     const stats = tasks.reduce((acc, t) => {
         const d = DateUtils.toDate(t.completedAt);
         if (!d) return acc;
+        
         const time = d.getTime();
         if (time >= today) acc.today++;
         if (time >= week) acc.weekly++;
         if (time >= month) acc.monthly++;
+        
         return acc;
     }, { today: 0, weekly: 0, monthly: 0, total: tasks.length });
 
@@ -68,7 +63,7 @@ function processChartData(tasks, count, unit) {
     for (let i = 0; i < count; i++) {
         let start, end, label;
         const target = new Date(now);
-        
+
         if (unit === 'day') {
             target.setDate(now.getDate() - (count - 1 - i));
             start = DateUtils.getStartOfDay(target);
@@ -81,19 +76,21 @@ function processChartData(tasks, count, unit) {
             end.setDate(start.getDate() + 6);
             label = `${start.getMonth() + 1}/${start.getDate()}`;
         } else {
+            // Monthly
             start = new Date(now.getFullYear(), now.getMonth() - (count - 1 - i), 1);
             end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
             label = `${start.getFullYear()}/${start.getMonth() + 1}`;
         }
 
-        const bucket = tasks.filter(t => {
+        const bucketCount = tasks.filter(t => {
             const d = DateUtils.toDate(t.completedAt);
             return d && d >= start && d <= end;
         }).length;
 
         labels.push(label);
-        data.push(bucket);
+        data.push(bucketCount);
     }
+
     return { labels, data };
 }
 
@@ -104,17 +101,23 @@ function syncChart(id, labels, data, color) {
     let chart = chartInstances.get(canvas);
 
     if (chart) {
+        // 差分更新
         chart.data.labels = labels;
         chart.data.datasets[0].data = data;
         chart.update();
     } else {
+        // 新規生成
         chart = new Chart(canvas.getContext('2d'), {
             type: 'bar',
             data: {
                 labels,
-                datasets: [{ data, backgroundColor: color, borderRadius: 4 }]
+                datasets: [{
+                    data,
+                    backgroundColor: color,
+                    borderRadius: 4
+                }]
             },
-            options: CHART_CONFIG.DEFAULTS
+            options: DASHBOARD_CONFIG.CHART_DEFAULTS
         });
         chartInstances.set(canvas, chart);
     }

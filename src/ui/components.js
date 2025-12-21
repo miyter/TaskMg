@@ -1,21 +1,17 @@
-// @ts-nocheck
 /**
- * 更新日: 2025-12-21
- * 内容: HTML生成ロジックの分離、引数処理の整理、コメント補強
+ * 共通UIコンポーネント
  */
 
 /**
- * モダールのHTMLを生成するヘルパー
+ * モーダルのHTML骨格を生成
  */
-function buildModalHTML(config, okBtnClass, showCancel) {
+function buildModalSkeleton(config, okBtnClass, showCancel) {
     return `
         <div id="message-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4" role="dialog" aria-modal="true">
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-sm w-full transform transition-all scale-100 border border-gray-100 dark:border-gray-700">
                 <div class="mb-5">
-                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center gap-2">
-                        ${config.title}
-                    </h3>
-                    <p class="text-gray-600 dark:text-gray-300 text-sm whitespace-pre-wrap leading-relaxed">${config.message}</p>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center gap-2" id="msg-modal-title"></h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm whitespace-pre-wrap leading-relaxed" id="msg-modal-body"></p>
                 </div>
                 <div class="flex justify-end space-x-3">
                     ${showCancel ? `
@@ -32,40 +28,12 @@ function buildModalHTML(config, okBtnClass, showCancel) {
 }
 
 /**
- * 汎用メッセージモーダルを表示
- * @param {string|object} messageOrOptions - メッセージ文字列 または 設定オブジェクト
- * @param {Function|string} [arg2] - コールバック関数(confirm時) または タイプ文字列(互換用)
+ * 内部レンダリング処理
  */
-export function showMessageModal(messageOrOptions, arg2 = null) {
-    // 既存のモーダルがあれば削除
+function _renderMessageModal(config) {
     document.getElementById('message-modal')?.remove();
 
-    // 設定の正規化
-    let config = {
-        title: '',
-        message: '',
-        type: 'info', // info, success, error, confirm
-        onConfirm: null,
-        cancelText: 'キャンセル',
-        okText: 'OK'
-    };
-
-    if (typeof messageOrOptions === 'object' && messageOrOptions !== null) {
-        config = { ...config, ...messageOrOptions };
-    } else {
-        config.message = String(messageOrOptions);
-        // 第2引数の型で挙動を分岐（後方互換性）
-        if (typeof arg2 === 'function') {
-            config.type = 'confirm';
-            config.onConfirm = arg2;
-        } else if (typeof arg2 === 'string') {
-            config.type = arg2;
-        }
-    }
-
-    // タイトルとボタン色の自動設定
     let okBtnClass = 'bg-blue-600 hover:bg-blue-700';
-    
     if (!config.title) {
         switch (config.type) {
             case 'error': 
@@ -78,7 +46,7 @@ export function showMessageModal(messageOrOptions, arg2 = null) {
                 break;
             case 'confirm': 
                 config.title = '確認'; 
-                okBtnClass = 'bg-red-600 hover:bg-red-700'; // 破壊的操作を想定
+                okBtnClass = 'bg-red-600 hover:bg-red-700';
                 break;
             default: 
                 config.title = '通知';
@@ -86,18 +54,21 @@ export function showMessageModal(messageOrOptions, arg2 = null) {
         }
     }
 
-    // キャンセルボタンが必要か
     const showCancel = config.type === 'confirm';
-    if (!showCancel) config.okText = '閉じる';
+    if (!showCancel && config.okText === 'OK') config.okText = '閉じる';
 
-    // HTML注入
-    document.body.insertAdjacentHTML('beforeend', buildModalHTML(config, okBtnClass, showCancel));
+    document.body.insertAdjacentHTML('beforeend', buildModalSkeleton(config, okBtnClass, showCancel));
 
     const modal = document.getElementById('message-modal');
+    const titleEl = document.getElementById('msg-modal-title');
+    const bodyEl = document.getElementById('msg-modal-body');
     const okBtn = document.getElementById('msg-modal-ok');
     const cancelBtn = document.getElementById('msg-modal-cancel');
 
-    // クリーンアップ付きの閉じる処理
+    // 安全なテキスト挿入（XSS対策）
+    titleEl.textContent = config.title;
+    bodyEl.textContent = config.message;
+
     const close = () => {
         document.removeEventListener('keydown', handleKeydown);
         modal.classList.add('opacity-0');
@@ -106,7 +77,7 @@ export function showMessageModal(messageOrOptions, arg2 = null) {
 
     const handleKeydown = (e) => {
         if (e.key === 'Escape') close();
-        if (e.key === 'Enter' && !showCancel) close(); // 情報モーダルはEnterで閉じる
+        if (e.key === 'Enter' && !showCancel) close();
     };
 
     document.addEventListener('keydown', handleKeydown);
@@ -118,14 +89,38 @@ export function showMessageModal(messageOrOptions, arg2 = null) {
 
     if (cancelBtn) cancelBtn.onclick = close;
     
-    // 背景クリック処理
     modal.onclick = (e) => { 
-        if (e.target === modal) {
-            // confirmタイプの場合は誤操作防止のため背景クリックで閉じない
-            if (!showCancel) close();
-        }
+        if (e.target === modal && !showCancel) close();
     };
     
-    // フォーカス管理
     okBtn.focus();
+}
+
+/**
+ * 汎用メッセージモーダルを表示
+ * インターフェースを正規化し、後方互換性を維持
+ */
+export function showMessageModal(messageOrOptions, arg2 = null) {
+    let config = {
+        title: '',
+        message: '',
+        type: 'info',
+        onConfirm: null,
+        cancelText: 'キャンセル',
+        okText: 'OK'
+    };
+
+    if (typeof messageOrOptions === 'object' && messageOrOptions !== null) {
+        config = { ...config, ...messageOrOptions };
+    } else {
+        config.message = String(messageOrOptions);
+        if (typeof arg2 === 'function') {
+            config.type = 'confirm';
+            config.onConfirm = arg2;
+        } else if (typeof arg2 === 'string') {
+            config.type = arg2;
+        }
+    }
+
+    return _renderMessageModal(config);
 }

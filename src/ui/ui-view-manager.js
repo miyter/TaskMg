@@ -1,8 +1,4 @@
-/**
- * 更新日: 2025-12-21
- * 内容: DOMキャッシュ化、副作用の統合、定数連携、フリッカー抑制の簡略化
- */
-import { UI_VIEW_CONFIG } from './ui-view-constants.js';
+import { UI_CONFIG } from './ui-view-constants.js';
 import { renderDashboard } from './dashboard.js';
 import { renderTaskView } from './task-view.js';
 import { getProcessedTasks } from '../logic/search.js';
@@ -12,10 +8,20 @@ import { renderSearchPage } from './search-view-ctrl.js';
 import { showSettingsModal } from './settings.js';
 
 let currentFilter = { type: 'inbox', id: null };
-let UI = {};
+let UI = null;
 
-function cacheViews() {
-    const { VIEW_IDS } = UI_VIEW_CONFIG;
+// 特定のコントロールIDの定数化（本来は UI_CONFIG にあるべきだが、現状に合わせる）
+const CONTROL_IDS = {
+    SORT: 'sort-trigger',
+    COMPLETED_TOGGLE: 'toggle-completed-btn'
+};
+
+/**
+ * ビュー要素のキャッシュ（初回のみ実行）
+ */
+function ensureUICache() {
+    if (UI) return;
+    const { VIEW_IDS } = UI_CONFIG;
     UI = {
         task: document.getElementById(VIEW_IDS.TASK),
         dashboard: document.getElementById(VIEW_IDS.DASHBOARD),
@@ -24,18 +30,13 @@ function cacheViews() {
     };
 }
 
-/**
- * フィルター更新 + UI同期
- */
 export function setCurrentFilter(filter, allProjects = [], allLabels = []) {
-    currentFilter = filter;
-    
-    // 設定遷移のインターセプト
     if (filter.type === 'settings') {
-        currentFilter = { type: 'inbox', id: null };
         showSettingsModal();
+        return;
     }
 
+    currentFilter = filter;
     highlightSidebarItem(currentFilter);
     updateHeaderTitleByFilter(currentFilter, allProjects, allLabels);
 }
@@ -45,16 +46,16 @@ export function getCurrentFilter() {
 }
 
 export function updateView(allTasks, allProjects, allLabels) {
-    if (Object.keys(UI).length === 0) cacheViews();
+    ensureUICache();
     if (!UI.task || !UI.dashboard || !UI.search) return;
 
-    const sortTrigger = document.getElementById('sort-trigger');
+    const sortTrigger = document.getElementById(CONTROL_IDS.SORT);
     const sortCriteria = sortTrigger?.dataset.value || 'createdAt_desc';
-    const otherViews = [UI.task, UI.dashboard, UI.search, UI.settings].filter(v => !!v);
+    const allViewElements = [UI.task, UI.dashboard, UI.search, UI.settings];
 
     // 1. ダッシュボード
     if (currentFilter.type === 'dashboard') {
-        showView(UI.dashboard, otherViews.filter(v => v !== UI.dashboard));
+        showView(UI.dashboard, allViewElements.filter(v => v !== UI.dashboard));
         UI.dashboard.innerHTML = buildDashboardViewHTML();
         renderDashboard(allTasks, allProjects);
         return;
@@ -62,14 +63,15 @@ export function updateView(allTasks, allProjects, allLabels) {
     
     // 2. 検索
     if (currentFilter.type === 'search') {
-        renderSearchPage(UI.search, otherViews.filter(v => v !== UI.search), allTasks, allProjects, currentFilter);
+        showView(UI.search, allViewElements.filter(v => v !== UI.search));
+        renderSearchPage(UI.search, allTasks, allProjects, currentFilter);
         return;
     }
 
     // 3. タスクリスト
-    showView(UI.task, otherViews.filter(v => v !== UI.task));
-    const showCompleted = document.getElementById('toggle-completed-btn')?.classList.contains('text-blue-500') || false;
-
+    showView(UI.task, allViewElements.filter(v => v !== UI.task));
+    
+    const showCompleted = document.getElementById(CONTROL_IDS.COMPLETED_TOGGLE)?.classList.contains('text-blue-500') || false;
     const config = {
         keyword: '', 
         showCompleted,
@@ -81,9 +83,5 @@ export function updateView(allTasks, allProjects, allLabels) {
     };
 
     const processedTasks = getProcessedTasks(allTasks, config);
-
-    // 描画
-    UI.task.style.opacity = '0.5'; 
     renderTaskView(processedTasks, allProjects, allLabels, config.projectId, config.labelId);
-    UI.task.style.opacity = '1';
 }

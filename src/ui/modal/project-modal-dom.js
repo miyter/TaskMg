@@ -1,16 +1,13 @@
-// @ts-nocheck
-// @miyter:20251221
-// プロジェクト作成・編集モーダルのHTML構造生成
-
 /**
- * プロジェクトモーダルのテンプレートを生成
+ * プロジェクト作成・編集モーダルのHTML構造生成
  */
+
 export function buildProjectModalHTML(project = null) {
     const isEdit = !!project;
     const config = {
         title: project?.name || '',
         placeholder: isEdit ? "プロジェクト名" : "新しいプロジェクト名",
-        description: isEdit ? 'プロジェクト名を変更します。' : '新しいプロジェクトを作成します。',
+        description: isEdit ? 'プロジェクト名を変更するぞ。' : '新しいプロジェクトを作成する。',
         btnText: isEdit ? '保存' : '作成'
     };
 

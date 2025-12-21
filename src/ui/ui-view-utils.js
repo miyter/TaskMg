@@ -1,11 +1,7 @@
-/**
- * 更新日: 2025-12-21
- * 内容: clearSidebarHighlight のエクスポート追加、定数連携の強化
- */
-import { UI_VIEW_CONFIG } from './ui-view-constants.js';
+import { UI_CONFIG, SIDEBAR_TYPE } from './ui-view-constants.js';
 import { getTimeBlockById } from '../store/timeblocks.js';
 
-const { CLASSES, HEADER_IDS, DATA_ATTRS } = UI_VIEW_CONFIG;
+const { CLASSES, HEADER_IDS, DATA_ATTRS } = UI_CONFIG;
 
 /**
  * 指定した要素を表示し、残りを非表示にする
@@ -29,9 +25,14 @@ export function clearSidebarHighlight() {
         
         const icon = el.querySelector('svg, span:not(.truncate)');
         if (icon) {
-            icon.classList.remove('text-white');
-            const defaultColor = el.getAttribute(DATA_ATTRS.DEFAULT_COLOR) || 'text-gray-400';
-            icon.classList.add(defaultColor);
+            // text-で始まるクラス（色指定）をすべて削除してデフォルトに戻す
+            const textClasses = Array.from(icon.classList).filter(c => c.startsWith('text-'));
+            icon.classList.remove(...textClasses);
+            
+            const defaultColor = el.getAttribute(DATA_ATTRS.DEFAULT_COLOR);
+            if (defaultColor) {
+                icon.classList.add(defaultColor);
+            }
         }
     });
 }
@@ -49,8 +50,8 @@ export function highlightSidebarItem(filter) {
         
         const icon = target.querySelector('svg, span:not(.truncate)');
         if (icon) {
-            // グレー系のクラスを確実に除去してから白を適用
-            icon.classList.remove('text-gray-400', 'text-gray-500');
+            const textClasses = Array.from(icon.classList).filter(c => c.startsWith('text-'));
+            icon.classList.remove(...textClasses);
             icon.classList.add('text-white');
         }
     }
@@ -63,13 +64,13 @@ function getSidebarTarget(filter) {
     if (!filter) return null;
     const { type, id } = filter;
     
-    if (['inbox', 'dashboard', 'search', 'settings'].includes(type)) {
+    const navTypes = ['inbox', 'dashboard', 'search', 'settings'];
+    if (navTypes.includes(type)) {
         return document.getElementById(`nav-${type}`);
     }
-    if (type === 'custom') {
-        return document.querySelector(`.sidebar-item-row[data-type="filter"][data-id="${id}"]`);
-    }
-    return document.querySelector(`.sidebar-item-row[data-type="${type}"][data-id="${id}"]`);
+
+    const typeAttr = type === 'custom' ? SIDEBAR_TYPE.FILTER : type;
+    return document.querySelector(`.sidebar-item-row[data-type="${typeAttr}"][data-id="${id}"]`);
 }
 
 /**
@@ -81,38 +82,41 @@ export function updateHeaderTitleByFilter(filter, allProjects = [], allLabels = 
     if (!elTitle) return;
 
     let title = 'インボックス';
-    const { type, id } = filter;
+    const { type, id, name } = filter;
 
-    switch (type) {
-        case 'project':
-            const p = allProjects.find(x => x.id === id);
-            title = p ? p.name : 'プロジェクト';
-            break;
-        case 'label':
-            const l = allLabels.find(x => x.id === id);
-            title = l ? `ラベル: ${l.name}` : 'ラベル';
-            break;
-        case 'timeblock':
-            if (id === 'unassigned') {
-                title = '時間帯: 未定';
-            } else {
-                const b = getTimeBlockById(id);
-                title = b ? `時間帯: ${b.start} - ${b.end}` : '時間帯';
-            }
-            break;
-        case 'duration':
-            title = `所要時間: ${id}分`;
-            break;
-        case 'search':
-            title = 'タスク検索';
-            break;
-        case 'dashboard':
-            title = 'ダッシュボード';
-            break;
+    // filterオブジェクトにnameがあれば優先使用（最適化）
+    if (name) {
+        title = name;
+    } else {
+        switch (type) {
+            case SIDEBAR_TYPE.PROJECT:
+                title = allProjects.find(x => x.id === id)?.name || 'プロジェクト';
+                break;
+            case SIDEBAR_TYPE.LABEL:
+                const l = allLabels.find(x => x.id === id);
+                title = l ? `ラベル: ${l.name}` : 'ラベル';
+                break;
+            case SIDEBAR_TYPE.TIMEBLOCK:
+                if (id === 'unassigned') {
+                    title = '時間帯: 未定';
+                } else {
+                    const b = getTimeBlockById(id);
+                    title = b ? `時間帯: ${b.start} - ${b.end}` : '時間帯';
+                }
+                break;
+            case SIDEBAR_TYPE.DURATION:
+                title = `所要時間: ${id}分`;
+                break;
+            case 'search':
+                title = 'タスク検索';
+                break;
+            case 'dashboard':
+                title = 'ダッシュボード';
+                break;
+        }
     }
 
     elTitle.textContent = title;
-    // 特定のビューではカウント表示をクリア
     if (elCount && ['dashboard', 'search'].includes(type)) {
         elCount.textContent = '';
     }
@@ -122,12 +126,19 @@ export function updateHeaderTitleByFilter(filter, allProjects = [], allLabels = 
  * 未ログイン時の表示状態をレンダリング
  */
 export function renderLoginState() {
-    const { VIEW_IDS } = UI_VIEW_CONFIG;
+    const { VIEW_IDS } = UI_CONFIG;
     Object.values(VIEW_IDS).forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.innerHTML = id === VIEW_IDS.TASK 
-            ? `<div class="p-20 text-center text-gray-400 font-medium">ログインしてください</div>` 
-            : '';
+        
+        if (id === VIEW_IDS.TASK) {
+            el.innerHTML = '';
+            const msg = document.createElement('div');
+            msg.className = 'p-20 text-center text-gray-400 font-medium';
+            msg.textContent = 'ログインしてください';
+            el.appendChild(msg);
+        } else {
+            el.classList.add(CLASSES.HIDDEN);
+        }
     });
 }

@@ -1,6 +1,5 @@
 /**
- * 更新日: 2025-12-21
- * 内容: 定数化、重複イベント登録の防止、モーダル削除責務の集約
+ * 設定画面の制御
  */
 import { auth } from '../core/firebase.js';
 import { getSettingsModalHTML } from './settings/view.js';

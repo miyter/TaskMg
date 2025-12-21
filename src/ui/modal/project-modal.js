@@ -1,9 +1,6 @@
-// @ts-nocheck
 /**
- * 更新日: 2025-12-21
- * 内容: プロジェクト作成時に workspaceId を付与し、成功ポップアップを削除
+ * プロジェクト作成・編集モーダル
  */
-
 import { addProject, updateProject, deleteProject } from '../../store/projects.js';
 import { getCurrentWorkspaceId } from '../../store/workspace.js';
 import { showMessageModal } from '../components.js';
@@ -39,38 +36,43 @@ function setupEvents(overlay, project) {
 
     const handleSave = async () => {
         const name = nameInput?.value.trim();
-        if (!name) return showMessageModal('プロジェクト名を入力してください', 'error');
+        if (!name) return showMessageModal({ message: 'プロジェクト名を入力してくれ', type: 'error' });
 
         try {
             if (project) {
                 await updateProject(project.id, { name });
             } else {
-                // 現在のワークスペースIDを取得してプロジェクトを作成
                 const workspaceId = getCurrentWorkspaceId();
-                if (!workspaceId) throw new Error("ワークスペースが選択されていません");
+                if (!workspaceId) throw new Error("ワークスペースが選択されていないぞ");
                 
                 await addProject(name, workspaceId);
-                // 「プロジェクトを作成しました」のポップアップは削除
+                // 成功ポップアップはUX向上のため削除
             }
             close();
         } catch (err) {
-            showMessageModal('保存に失敗しました: ' + err.message, 'error');
+            showMessageModal({ message: '保存に失敗した: ' + err.message, type: 'error' });
         }
     };
 
     if (saveBtn) saveBtn.onclick = handleSave;
     if (nameInput) {
-        nameInput.onkeydown = (e) => { if (e.key === 'Enter') handleSave(); };
+        nameInput.onkeydown = (e) => { 
+            if (e.key === 'Enter' && !e.isComposing) handleSave(); 
+        };
     }
 
     if (deleteBtn && project) {
         deleteBtn.onclick = () => {
-            showMessageModal(`プロジェクト「${project.name}」を削除しますか？`, async () => {
-                try {
-                    await deleteProject(project.id);
-                    close();
-                } catch (err) {
-                    showMessageModal('削除に失敗しました', 'error');
+            showMessageModal({
+                message: `プロジェクト「${project.name}」を削除するか？`,
+                type: 'confirm',
+                onConfirm: async () => {
+                    try {
+                        await deleteProject(project.id);
+                        close();
+                    } catch (err) {
+                        showMessageModal({ message: '削除に失敗した', type: 'error' });
+                    }
                 }
             });
         };

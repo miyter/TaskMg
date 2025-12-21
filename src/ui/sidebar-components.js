@@ -1,7 +1,7 @@
 /**
- * 更新日: 2025-12-21
- * 内容: 削除後の遷移処理を route-change イベントに統一、JSDocの整備
+ * サイドバーの共有コンポーネント
  */
+import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { deleteProject } from '../store/projects.js';
 import { deleteFilter } from '../store/filters.js';
 import { deleteWorkspace, getWorkspaces, setCurrentWorkspaceId } from '../store/workspace.js';
@@ -9,28 +9,23 @@ import { showFilterModal } from './filter-modal.js';
 import { showMessageModal } from './components.js';
 import { showProjectModal } from './modal/project-modal.js';
 import { showWorkspaceModal } from './modal/workspace-modal.js';
-import { isSidebarCompact } from './sidebar-utils.js';
 
 /**
  * リストアイテム要素を作成
- * @param {string} name - 表示名
- * @param {string} type - アイテムタイプ (project, label, timeblock, duration, filter)
- * @param {string} id - 一意識別子
- * @param {Object} [meta={}] - 追加情報 (color: string, iconHtml: string)
- * @param {number} [count=0] - 件数バッジの数値
+ * 毎回 localStorage を見ないよう isCompact を引数で受け取る
  */
-export function createSidebarItem(name, type, id, meta = {}, count = 0) {
+export function createSidebarItem(name, type, id, meta = {}, count = 0, isCompact = false) {
     const item = document.createElement('li');
-    const isCompact = isSidebarCompact();
+    const { CLASSES, COLORS } = SIDEBAR_CONFIG;
     
     item.dataset.type = type;
     item.dataset.id = id;
-    item.className = `group flex items-center justify-between px-3 ${isCompact ? 'py-0.5' : 'py-1.5'} font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors sidebar-item-row select-none`;
+    item.className = `group flex items-center justify-between px-3 ${isCompact ? CLASSES.COMPACT_PY : CLASSES.NORMAL_PY} font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors sidebar-item-row select-none`;
 
     const iconMap = {
         project: `<svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`,
-        label: `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="background-color: ${meta.color || '#a0aec0'}"></span>`,
-        timeblock: `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="background-color: ${meta.color || '#a0aec0'}"></span>`,
+        label: `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="background-color: ${meta.color || COLORS.DEFAULT}"></span>`,
+        timeblock: `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="background-color: ${meta.color || COLORS.DEFAULT}"></span>`,
         duration: meta.iconHtml || `<span class="mr-3 text-sm">⏱️</span>`,
         filter: meta.iconHtml || `<span class="mr-3 text-sm">🔍</span>`
     };
@@ -49,9 +44,6 @@ export function createSidebarItem(name, type, id, meta = {}, count = 0) {
     return item;
 }
 
-/**
- * 右クリックメニュー（コンテキストメニュー）を表示
- */
 export function showItemContextMenu(e, type, itemData) {
     const config = getMenuConfig(type, itemData);
     if (!config) return;
@@ -65,16 +57,10 @@ export function showItemContextMenu(e, type, itemData) {
     setupMenuEvents(menu, config);
 }
 
-/**
- * ページ遷移（ルート変更）イベントをディスパッチ
- */
 function dispatchRoute(page, id = null) {
     document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
 }
 
-/**
- * 各タイプごとのメニュー設定を取得
- */
 function getMenuConfig(type, itemData) {
     const configs = {
         project: {
@@ -84,7 +70,7 @@ function getMenuConfig(type, itemData) {
                 await deleteProject(itemData.id);
                 dispatchRoute('inbox');
             },
-            deleteMsg: `${itemData.name} を削除しますか？\n（関連タスクのプロジェクト情報も削除されます）`
+            deleteMsg: `${itemData.name} を削除するか？\n（関連タスクのプロジェクト情報も削除される）`
         },
         filter: {
             editLabel: '編集 / 名前変更',
@@ -93,14 +79,14 @@ function getMenuConfig(type, itemData) {
                 await deleteFilter(itemData.id);
                 dispatchRoute('inbox');
             },
-            deleteMsg: `フィルター「${itemData.name}」を削除しますか？`
+            deleteMsg: `フィルター「${itemData.name}」を削除するか？`
         },
         workspace: {
             editLabel: '名前変更',
             onEdit: () => showWorkspaceModal(itemData),
             onDelete: async () => {
                 const workspaces = getWorkspaces();
-                if (workspaces.length <= 1) throw new Error("最後のワークスペースは削除できません。");
+                if (workspaces.length <= 1) throw new Error("最後のワークスペースは削除できない。");
                 
                 await deleteWorkspace(itemData.id);
                 
@@ -110,15 +96,12 @@ function getMenuConfig(type, itemData) {
                     dispatchRoute('dashboard');
                 }
             },
-            deleteMsg: `ワークスペース「${itemData.name}」を本当に削除しますか？\n関連データもすべて削除されます。`
+            deleteMsg: `ワークスペース「${itemData.name}」を本当に削除するか？\n関連データもすべて削除される。`
         }
     };
     return configs[type];
 }
 
-/**
- * メニューのHTML構造を構築
- */
 function buildMenuHTML(config) {
     const menu = document.createElement('div');
     menu.id = 'sidebar-context-menu';
@@ -136,9 +119,6 @@ function buildMenuHTML(config) {
     return menu;
 }
 
-/**
- * メニューの表示位置を画面内に収まるよう調整
- */
 function adjustMenuPosition(menu, e) {
     const padding = 8;
     const { clientX: x, clientY: y } = e;
@@ -159,9 +139,6 @@ function adjustMenuPosition(menu, e) {
     menu.style.visibility = 'visible';
 }
 
-/**
- * メニュー内のイベント（クリック・閉じる動作）をセットアップ
- */
 function setupMenuEvents(menu, config) {
     const cleanup = () => {
         menu.remove();
@@ -191,7 +168,7 @@ function setupMenuEvents(menu, config) {
                 try {
                     await config.onDelete();
                 } catch (err) {
-                    showMessageModal({ message: "削除に失敗しました: " + err.message, type: 'error' });
+                    showMessageModal({ message: "削除に失敗した: " + err.message, type: 'error' });
                 }
             }
         });

@@ -1,12 +1,20 @@
-// @ts-nocheck
 /**
- * 更新日: 2025-12-21
- * 内容: 設定モーダルのUIコンポーネント（UX改善）
+ * 設定モーダルのUIコンポーネント
  */
 
-/**
- * ラジオボタンの選択肢を生成
- */
+// 背景パターンの定数管理
+export const BACKGROUND_PATTERNS = {
+    NONE: 'none',
+    TEXTURE: 'haikei'
+};
+
+// フォントサイズの定数管理 (Tailwindの定義と同期)
+export const FONT_SIZES = {
+    SMALL: 'sm',
+    MEDIUM: 'md',
+    LARGE: 'lg'
+};
+
 function createRadioOption(name, value, label, isChecked, icon = '') {
     return `
         <label class="flex items-center cursor-pointer p-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
@@ -19,9 +27,6 @@ function createRadioOption(name, value, label, isChecked, icon = '') {
     `;
 }
 
-/**
- * 設定セクション（アコーディオン）を生成
- */
 function createSettingsSection(title, content, isOpen = false) {
     return `
         <details class="group border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 overflow-hidden transition-all" ${isOpen ? 'open' : ''}>
@@ -38,19 +43,13 @@ function createSettingsSection(title, content, isOpen = false) {
     `;
 }
 
-/**
- * 設定モーダルのメインHTML生成
- */
 export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
-    // 現在の状態を同期的に取得（HTML生成時に checked を確定させる）
     const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    const currentFontSize = localStorage.getItem('fontSize') || 'medium';
-    const currentBg = localStorage.getItem('background') || 'none';
+    const currentFontSize = localStorage.getItem('fontSize') || FONT_SIZES.MEDIUM;
+    const currentBg = localStorage.getItem('background') || BACKGROUND_PATTERNS.NONE;
     
-    // 安全策: userInitialが未定義の場合はデフォルト表示
     const safeInitial = userInitial || '?';
 
-    // 1. 表示設定コンテンツ
     const displayContent = `
         <div>
             <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">テーマ</label>
@@ -62,16 +61,16 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
         <div>
             <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">文字サイズ</label>
             <div class="grid grid-cols-3 gap-3">
-                ${createRadioOption('font-size', 'large', '大', currentFontSize === 'large')}
-                ${createRadioOption('font-size', 'medium', '中', currentFontSize === 'medium')}
-                ${createRadioOption('font-size', 'small', '小', currentFontSize === 'small')}
+                ${createRadioOption('font-size', FONT_SIZES.LARGE, '大', currentFontSize === FONT_SIZES.LARGE)}
+                ${createRadioOption('font-size', FONT_SIZES.MEDIUM, '中', currentFontSize === FONT_SIZES.MEDIUM)}
+                ${createRadioOption('font-size', FONT_SIZES.SMALL, '小', currentFontSize === FONT_SIZES.SMALL)}
             </div>
         </div>
         <div>
             <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">背景パターン (ダークのみ)</label>
             <div class="grid grid-cols-2 gap-3">
-                ${createRadioOption('bg-pattern', 'none', '無地', currentBg === 'none')}
-                ${createRadioOption('bg-pattern', 'haikei', 'テクスチャ', currentBg === 'haikei')}
+                ${createRadioOption('bg-pattern', BACKGROUND_PATTERNS.NONE, '無地', currentBg === BACKGROUND_PATTERNS.NONE)}
+                ${createRadioOption('bg-pattern', BACKGROUND_PATTERNS.TEXTURE, 'テクスチャ', currentBg === BACKGROUND_PATTERNS.TEXTURE)}
             </div>
         </div>
         <div>
@@ -83,7 +82,6 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
         </div>
     `;
 
-    // 2. データ管理コンテンツ
     const dataContent = `
         <button id="export-data-btn-new" class="w-full text-left px-3 py-2.5 bg-gray-50 dark:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors flex justify-between items-center group border border-gray-100 dark:border-gray-700">
             <div>
@@ -94,7 +92,6 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
         </button>
     `;
 
-    // 3. アカウントコンテンツ
     const accountContent = `
         <div class="flex items-center gap-3 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
             <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-200 font-bold text-lg shadow-sm">
@@ -124,7 +121,7 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
             <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
                 <h3 class="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">設定</h3>
-                <button id="close-settings-modal" class="text-gray-500 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <button id="close-settings-modal" class="text-gray-400 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
 
             <div class="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-3">

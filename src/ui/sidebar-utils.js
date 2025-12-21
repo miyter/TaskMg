@@ -1,6 +1,5 @@
 /**
- * 更新日: 2025-12-21
- * 内容: SIDEBAR_CONFIG のインポートパス確認とヘルパー強化
+ * サイドバー関連のユーティリティ
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { getProjects } from '../store/projects.js';
@@ -15,16 +14,13 @@ export const getStoredBool = (key, defaultValue = true) => {
 
 export const isSidebarCompact = () => getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
 
-/**
- * 条件に一致する未完了タスクの数をカウント
- */
 export const countActiveTasks = (tasks, predicate) => {
     if (!Array.isArray(tasks)) return 0;
     return tasks.filter(t => t.status !== 'completed' && predicate(t)).length;
 };
 
 /**
- * サイドバーのリサイズ機能をセットアップ
+ * リサイズ機能のセットアップ（堅牢化）
  */
 export function setupResizer(sidebar, resizer) {
     if (!resizer || !sidebar) return;
@@ -38,22 +34,10 @@ export function setupResizer(sidebar, resizer) {
 
     let isResizing = false;
 
-    const startResize = (e) => {
-        if (sidebar.classList.contains(SIDEBAR_CONFIG.CLASSES.CLOSED)) return;
-        isResizing = true;
-        document.body.style.cursor = 'col-resize';
-        document.body.classList.add('select-none');
-        document.addEventListener('mousemove', resize);
-        document.addEventListener('mouseup', stopResize);
-        e.preventDefault();
-    };
-
     const resize = (e) => {
         if (!isResizing) return;
-        let newWidth = e.clientX;
         const { MIN_WIDTH, MAX_WIDTH } = SIDEBAR_CONFIG;
-
-        newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, newWidth));
+        const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, e.clientX));
         sidebar.style.width = `${newWidth}px`;
     };
 
@@ -66,10 +50,23 @@ export function setupResizer(sidebar, resizer) {
         document.removeEventListener('mouseup', stopResize);
         
         const finalWidth = parseInt(sidebar.style.width, 10);
-        localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.WIDTH, finalWidth);
+        if (!isNaN(finalWidth)) {
+            localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.WIDTH, finalWidth);
+        }
     };
 
-    resizer.addEventListener('mousedown', startResize);
+    const startResize = (e) => {
+        if (sidebar.classList.contains(SIDEBAR_CONFIG.CLASSES.CLOSED)) return;
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.classList.add('select-none');
+        document.addEventListener('mousemove', resize);
+        document.addEventListener('mouseup', stopResize);
+        e.preventDefault();
+    };
+
+    // 既存のリスナーを一度クリアしたいが、無名関数ではないので上書きに頼る
+    resizer.onmousedown = startResize;
 }
 
 export function getRandomColor() {

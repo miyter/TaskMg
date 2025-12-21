@@ -1,7 +1,6 @@
-// @ts-nocheck
-// @miyter:20251221
-// モーダル内の繰り返し設定UI制御
-
+/**
+ * モーダル内の繰り返し設定UI制御
+ */
 import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
 
 /**
@@ -14,9 +13,21 @@ export function setupRecurrenceControls() {
 
     if (!select || !daysContainer || !dateInput) return;
 
+    // 要素内キャッシュ
+    const daysCheckboxes = daysContainer.querySelectorAll('input[type="checkbox"]');
+
     const updateDate = (type, days = []) => {
+        // 曜日が空の週次の場合は日付更新をスキップ（クリアはせず現在の値を維持）
+        if (type === 'weekly' && days.length === 0) return;
+
         const newDate = getInitialDueDateFromRecurrence({ type, days });
         dateInput.value = newDate.toISOString().substring(0, 10);
+    };
+
+    const getCheckedDays = () => {
+        return Array.from(daysCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => parseInt(cb.dataset.dayIndex ?? '0', 10));
     };
 
     select.addEventListener('change', (e) => {
@@ -32,16 +43,10 @@ export function setupRecurrenceControls() {
     });
 
     // 曜日チェックボックスのイベント
-    daysContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    daysCheckboxes.forEach(cb => {
         cb.addEventListener('change', () => {
             const days = getCheckedDays();
-            if (days.length > 0) updateDate('weekly', days);
+            updateDate('weekly', days);
         });
     });
-}
-
-function getCheckedDays() {
-    const container = document.getElementById('recurrence-days-container');
-    return Array.from(container.querySelectorAll('input:checked'))
-        .map(cb => parseInt(cb.dataset.dayIndex, 10));
 }
