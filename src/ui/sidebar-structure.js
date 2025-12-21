@@ -1,13 +1,15 @@
 // @ts-nocheck
-// @miyter:20251221
-// サイドバーのHTML構造生成とセクション開閉ロジック
+/**
+ * 更新日: 2025-12-21
+ * 内容: 全セクションのヘッダー構造と余白を完全に統一
+ */
 
 /**
  * セクションヘッダーの共通テンプレート
  */
 function createSectionHeader(title, targetId, hasAddButton = false, buttonId = '') {
     const addButton = hasAddButton ? `
-        <button id="${buttonId}" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
+        <button id="${buttonId}" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center" title="${title}を追加">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         </button>
     ` : '';
@@ -15,8 +17,8 @@ function createSectionHeader(title, targetId, hasAddButton = false, buttonId = '
     return `
         <div class="flex items-center justify-between px-3 py-2 group cursor-pointer sidebar-section-header" data-target="${targetId}">
             <div class="flex items-center min-w-0">
-                <svg class="w-3 h-3 text-gray-400 mr-2 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">${title}</h3>
+                <svg class="w-3 h-3 text-gray-400 mr-2 transition-transform duration-200 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate select-none">${title}</h3>
             </div>
             ${addButton}
         </div>
@@ -59,8 +61,9 @@ export function buildSidebarHTML() {
                 </li>
             </ul>
 
-            <!-- 2. プロジェクト (マウントポイント) -->
-            <div id="projects-mount-point"></div>
+            <!-- 2. プロジェクト -->
+            ${createSectionHeader('プロジェクト', 'project-list', true, 'add-project-btn')}
+            <ul id="project-list" class="space-y-0.5 mb-4 pl-1"></ul>
 
             <!-- 3. 時間帯 -->
             ${createSectionHeader('時間帯', 'timeblock-list', true, 'edit-timeblocks-btn')}
@@ -87,19 +90,18 @@ export function setupSidebarToggles() {
         const icon = header.querySelector('svg');
         if (!list || !icon) return;
 
-        // 状態の復元
         const savedState = localStorage.getItem(`sidebar:${targetId}-open`);
         const isOpen = savedState === null ? true : savedState === 'true';
 
         const updateState = (open) => {
             list.classList.toggle('hidden', !open);
-            icon.style.transform = open ? 'rotate(0deg)' : 'rotate(-90deg)';
+            if (icon) icon.style.transform = open ? 'rotate(0deg)' : 'rotate(-90deg)';
         };
 
         updateState(isOpen);
 
         header.addEventListener('click', (e) => {
-            if (e.target.closest('button')) return; // ボタンクリック時は無視
+            if (e.target.closest('button')) return;
             const newState = list.classList.contains('hidden');
             updateState(newState);
             localStorage.setItem(`sidebar:${targetId}-open`, newState);
