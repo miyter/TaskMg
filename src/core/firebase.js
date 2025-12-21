@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 設定パースエラー時のログ出力強化
+ * 内容: Config取得ロジックの優先順位修正（Global -> Env -> Legacy）
  */
 
 import { initializeApp, getAuth, getFirestore } from './firebase-sdk.js';
@@ -41,21 +41,46 @@ export function initializeFirebase() {
  * 環境に応じたFirebase Configの取得
  */
 function getConfiguration() {
+    // 1. index.html等で注入されたグローバル設定を最優先
     if (typeof window !== 'undefined' && window.GLOBAL_FIREBASE_CONFIG) {
         return window.GLOBAL_FIREBASE_CONFIG;
     }
-    
+
+    // 2. Vite環境変数 (import.meta.env)
+    // 注意: 環境によっては import.meta が使用できない場合があるため try-catch
+    try {
+        // @ts-ignore
+        if (import.meta && import.meta.env) {
+            // @ts-ignore
+            const env = import.meta.env;
+            const envConfig = {
+                apiKey: env.VITE_FIREBASE_API_KEY,
+                authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+                projectId: env.VITE_FIREBASE_PROJECT_ID,
+                storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+                messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+                appId: env.VITE_FIREBASE_APP_ID,
+                measurementId: env.VITE_FIREBASE_MEASUREMENT_ID,
+            };
+            if (envConfig.apiKey) {
+                return envConfig;
+            }
+        }
+    } catch (e) {
+        // 無視して次へ
+    }
+
+    // 3. レガシー注入変数 (__firebase_config)
     if (typeof __firebase_config !== 'undefined') {
         try {
-            // 文字列以外が渡された場合のガード
             if (typeof __firebase_config === 'object') return __firebase_config;
             return JSON.parse(__firebase_config);
         } catch (e) {
-            console.error("[Firebase] Config parse failed. Check raw config:", __firebase_config);
-            console.error("Parse error details:", e);
+            console.error("[Firebase] Config parse failed (legacy):", e);
             return null;
         }
     }
+    
     return null;
 }
 
