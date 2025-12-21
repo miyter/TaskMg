@@ -1,219 +1,121 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 日付処理のヘルパー化、ロジック整理、Chart設定の定数化
+ * 内容: weakMapによるインスタンス管理、update()による差分更新、日付ヘルパー外部化
  */
-
 import Chart from 'chart.js/auto';
 import { buildDashboardViewHTML } from './ui-dom-utils.js';
+import * as DateUtils from '../utils/date.js';
 
-// チャート設定定数
-const CHART_COLORS = {
-    daily: '#3B82F6',
-    weekly: '#10B981',
-    monthly: '#8B5CF6'
+const chartInstances = new WeakMap();
+
+const CHART_CONFIG = {
+    COLORS: { daily: '#3B82F6', weekly: '#10B981', monthly: '#8B5CF6' },
+    DEFAULTS: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+    }
 };
 
-const instances = { daily: null, weekly: null, monthly: null };
-
-/**
- * ダッシュボード全体の描画
- */
 export function renderDashboard(tasks) {
     const view = document.getElementById('dashboard-view');
     if (!tasks || !view) return;
 
-    cleanupCharts();
-
     view.innerHTML = buildDashboardViewHTML();
-
-    // 完了日時が存在する完了タスクのみ抽出
     const completed = tasks.filter(t => t.status === 'completed' && t.completedAt);
     
     updateSummaryStats(completed);
     
-    const chartConfigs = [
-        { id: 'daily', color: CHART_COLORS.daily, label: '日次', count: 7, unit: 'day' },
-        { id: 'weekly', color: CHART_COLORS.weekly, label: '週次', count: 4, unit: 'week' },
-        { id: 'monthly', color: CHART_COLORS.monthly, label: '月次', count: 6, unit: 'month' }
+    const configs = [
+        { id: 'daily', color: CHART_CONFIG.COLORS.daily, count: 7, unit: 'day' },
+        { id: 'weekly', color: CHART_CONFIG.COLORS.weekly, count: 4, unit: 'week' },
+        { id: 'monthly', color: CHART_CONFIG.COLORS.monthly, count: 6, unit: 'month' }
     ];
 
-    chartConfigs.forEach(cfg => {
+    configs.forEach(cfg => {
         const { labels, data } = processChartData(completed, cfg.count, cfg.unit);
-        renderGenericChart(cfg.id, labels, data, cfg.color);
+        syncChart(cfg.id, labels, data, cfg.color);
     });
 }
 
-/**
- * チャートのリソース解放
- */
-function cleanupCharts() {
-    Object.keys(instances).forEach(key => {
-        if (instances[key]) {
-            instances[key].destroy();
-            instances[key] = null;
-        }
-    });
-}
-
-// ==========================================
-// Date Helpers (Internal)
-// ==========================================
-
-function toDate(val) {
-    if (!val) return null;
-    if (val.toDate && typeof val.toDate === 'function') return val.toDate();
-    if (val instanceof Date) return val;
-    const d = new Date(val);
-    return isNaN(d.getTime()) ? null : d;
-}
-
-function getStartOfDay(date) {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d;
-}
-
-function getEndOfDay(date) {
-    const d = new Date(date);
-    d.setHours(23, 59, 59, 999);
-    return d;
-}
-
-function getStartOfWeek(date) {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // 月曜始まり
-    const start = new Date(d.setDate(diff));
-    return getStartOfDay(start);
-}
-
-function getStartOfMonth(date) {
-    return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-// ==========================================
-// Stats & Data Processing
-// ==========================================
-
-/**
- * サマリー数値の更新
- */
 function updateSummaryStats(tasks) {
     const now = new Date();
-    const todayStart = getStartOfDay(now).getTime();
-    const weekStart = getStartOfWeek(now).getTime();
-    const monthStart = getStartOfMonth(now).getTime();
+    const today = DateUtils.getStartOfDay(now).getTime();
+    const week = DateUtils.getStartOfWeek(now).getTime();
+    const month = DateUtils.getStartOfMonth(now).getTime();
 
     const stats = tasks.reduce((acc, t) => {
-        const dateObj = toDate(t.completedAt);
-        if (!dateObj) return acc;
-
-        const time = dateObj.getTime();
-        
-        if (time >= todayStart) acc.today++;
-        if (time >= weekStart) acc.weekly++;
-        if (time >= monthStart) acc.monthly++;
+        const d = DateUtils.toDate(t.completedAt);
+        if (!d) return acc;
+        const time = d.getTime();
+        if (time >= today) acc.today++;
+        if (time >= week) acc.weekly++;
+        if (time >= month) acc.monthly++;
         return acc;
     }, { today: 0, weekly: 0, monthly: 0, total: tasks.length });
 
-    Object.entries(stats).forEach(([key, val]) => {
-        const el = document.getElementById(`${key}-count`);
-        if (el) el.textContent = val;
+    Object.entries(stats).forEach(([k, v]) => {
+        const el = document.getElementById(`${k}-count`);
+        if (el) el.textContent = v;
     });
 }
 
-/**
- * 期間ごとの集計ロジック（過去 -> 未来の順序で生成）
- */
 function processChartData(tasks, count, unit) {
     const labels = [];
     const data = [];
     const now = new Date();
 
-    // 過去から現在へループ
-    for (let i = count - 1; i >= 0; i--) {
+    for (let i = 0; i < count; i++) {
         let start, end, label;
-        const targetDate = new Date(now);
+        const target = new Date(now);
         
         if (unit === 'day') {
-            targetDate.setDate(now.getDate() - i);
-            start = getStartOfDay(targetDate);
-            end = getEndOfDay(targetDate);
+            target.setDate(now.getDate() - (count - 1 - i));
+            start = DateUtils.getStartOfDay(target);
+            end = DateUtils.getEndOfDay(target);
             label = `${start.getMonth() + 1}/${start.getDate()}`;
         } else if (unit === 'week') {
-            // 基準日から i週間前 にずらす
-            targetDate.setDate(now.getDate() - (i * 7));
-            start = getStartOfWeek(targetDate);
+            target.setDate(now.getDate() - ((count - 1 - i) * 7));
+            start = DateUtils.getStartOfWeek(target);
             end = new Date(start);
             end.setDate(start.getDate() + 6);
-            end.setHours(23, 59, 59, 999);
             label = `${start.getMonth() + 1}/${start.getDate()}`;
         } else {
-            // 月次
-            start = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            end = new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59, 999);
+            start = new Date(now.getFullYear(), now.getMonth() - (count - 1 - i), 1);
+            end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
             label = `${start.getFullYear()}/${start.getMonth() + 1}`;
         }
 
-        const bucketCount = tasks.filter(t => {
-            const d = toDate(t.completedAt);
+        const bucket = tasks.filter(t => {
+            const d = DateUtils.toDate(t.completedAt);
             return d && d >= start && d <= end;
         }).length;
 
         labels.push(label);
-        data.push(bucketCount);
+        data.push(bucket);
     }
     return { labels, data };
 }
 
-/**
- * Chart.js インスタンス生成
- */
-function renderGenericChart(id, labels, data, color) {
+function syncChart(id, labels, data, color) {
     const canvas = document.getElementById(`${id}Chart`);
     if (!canvas) return;
 
-    if (instances[id]) {
-        instances[id].destroy();
-        instances[id] = null;
-    }
+    let chart = chartInstances.get(canvas);
 
-    instances[id] = new Chart(canvas.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [{
-                data,
-                backgroundColor: color,
-                borderRadius: 4,
-                barThickness: 'flex',
-                maxBarThickness: 30
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { 
-                    beginAtZero: true, 
-                    ticks: { precision: 0 },
-                    grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false } 
-                },
-                x: { 
-                    grid: { display: false }, 
-                    ticks: { font: { size: 10 }, color: '#9CA3AF' } 
-                }
+    if (chart) {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = data;
+        chart.update();
+    } else {
+        chart = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{ data, backgroundColor: color, borderRadius: 4 }]
             },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#111827',
-                    padding: 8,
-                    displayColors: false,
-                    callbacks: { label: (item) => `${item.raw} 件` }
-                }
-            }
-        }
-    });
+            options: CHART_CONFIG.DEFAULTS
+        });
+        chartInstances.set(canvas, chart);
+    }
 }

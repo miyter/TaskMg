@@ -1,134 +1,132 @@
-// @ts-nocheck
-// @miyter:20251221
-// ビューの表示状態操作（表示切り替え、ハイライト、タイトル更新）
-
+/**
+ * 更新日: 2025-12-21
+ * 内容: clearSidebarHighlight のエクスポート追加、定数連携の強化
+ */
+import { UI_VIEW_CONFIG } from './ui-view-constants.js';
 import { getTimeBlockById } from '../store/timeblocks.js';
 
-const HIGHLIGHT_CLASSES = ['bg-blue-600', 'dark:bg-blue-600', 'text-white', 'dark:text-white'];
-const NORMAL_CLASSES = ['text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-800'];
+const { CLASSES, HEADER_IDS, DATA_ATTRS } = UI_VIEW_CONFIG;
 
 /**
  * 指定した要素を表示し、残りを非表示にする
  */
 export function showView(activeView, otherViews) {
     otherViews.forEach(v => {
-        v.classList.add('hidden');
-        v.classList.remove('animate-fade-in');
+        v.classList.add(CLASSES.HIDDEN);
+        v.classList.remove(CLASSES.FADE_IN);
     });
-    activeView.classList.remove('hidden');
-    activeView.classList.add('animate-fade-in');
+    activeView.classList.remove(CLASSES.HIDDEN);
+    activeView.classList.add(CLASSES.FADE_IN);
+}
+
+/**
+ * サイドバーの全ハイライトを解除
+ */
+export function clearSidebarHighlight() {
+    document.querySelectorAll('.sidebar-item-row').forEach(el => {
+        el.classList.remove(...CLASSES.HIGHLIGHT);
+        el.classList.add(...CLASSES.NORMAL);
+        
+        const icon = el.querySelector('svg, span:not(.truncate)');
+        if (icon) {
+            icon.classList.remove('text-white');
+            const defaultColor = el.getAttribute(DATA_ATTRS.DEFAULT_COLOR) || 'text-gray-400';
+            icon.classList.add(defaultColor);
+        }
+    });
 }
 
 /**
  * サイドバーのハイライトを更新
  */
 export function highlightSidebarItem(filter) {
-    // 1. 全てのリセット
-    document.querySelectorAll('.sidebar-item-row').forEach(el => {
-        el.classList.remove(...HIGHLIGHT_CLASSES);
-        el.classList.add(...NORMAL_CLASSES);
-        
-        const icon = el.querySelector('svg, span:not(.truncate)');
-        if (icon) {
-            icon.classList.remove('text-white');
-            // デフォルトのアイコン色（グレー）を復元
-            if (el.id?.startsWith('nav-') || el.dataset.type === 'project') {
-                icon.classList.add('text-gray-400');
-            }
-        }
-    });
+    clearSidebarHighlight();
 
-    // 2. ターゲットの特定と適用
     const target = getSidebarTarget(filter);
     if (target) {
-        target.classList.remove(...NORMAL_CLASSES);
-        target.classList.add(...HIGHLIGHT_CLASSES);
+        target.classList.remove(...CLASSES.NORMAL);
+        target.classList.add(...CLASSES.HIGHLIGHT);
         
         const icon = target.querySelector('svg, span:not(.truncate)');
         if (icon) {
-            icon.classList.remove('text-gray-400');
+            // グレー系のクラスを確実に除去してから白を適用
+            icon.classList.remove('text-gray-400', 'text-gray-500');
             icon.classList.add('text-white');
         }
     }
 }
 
 /**
- * フィルター情報からサイドバーの要素を取得する内部ヘルパー
+ * フィルター情報からサイドバーのターゲット要素を取得
  */
-function getSidebarTarget({ type, id }) {
+function getSidebarTarget(filter) {
+    if (!filter) return null;
+    const { type, id } = filter;
+    
     if (['inbox', 'dashboard', 'search', 'settings'].includes(type)) {
         return document.getElementById(`nav-${type}`);
     }
-    // カスタムフィルター
     if (type === 'custom') {
         return document.querySelector(`.sidebar-item-row[data-type="filter"][data-id="${id}"]`);
     }
-    // プロジェクト、ラベル、時間帯、所要時間
     return document.querySelector(`.sidebar-item-row[data-type="${type}"][data-id="${id}"]`);
 }
 
 /**
- * ヘッダータイトルを更新
+ * フィルターに応じたヘッダータイトルの更新
  */
-export function updateHeaderTitle(text) {
-    const el = document.getElementById('header-title');
-    if (el) el.textContent = text;
-}
+export function updateHeaderTitleByFilter(filter, allProjects = [], allLabels = []) {
+    const elTitle = document.getElementById(HEADER_IDS.TITLE);
+    const elCount = document.getElementById(HEADER_IDS.COUNT);
+    if (!elTitle) return;
 
-/**
- * フィルターに応じた動的なタイトル更新
- * @param {Object} filter - 現在のフィルター
- * @param {Array} allProjects - 全プロジェクト
- * @param {Array} allLabels - 全ラベル ★追加
- */
-export function updateHeaderTitleByFilter(filter, allProjects, allLabels = []) {
+    let title = 'インボックス';
     const { type, id } = filter;
 
     switch (type) {
         case 'project':
             const p = allProjects.find(x => x.id === id);
-            updateHeaderTitle(p ? p.name : 'プロジェクト');
+            title = p ? p.name : 'プロジェクト';
             break;
-        case 'label': // ★追加: ラベルフィルタ時のタイトル対応
+        case 'label':
             const l = allLabels.find(x => x.id === id);
-            updateHeaderTitle(l ? `ラベル: ${l.name}` : 'ラベル');
+            title = l ? `ラベル: ${l.name}` : 'ラベル';
             break;
         case 'timeblock':
             if (id === 'unassigned') {
-                updateHeaderTitle('時間帯: 未定');
+                title = '時間帯: 未定';
             } else {
                 const b = getTimeBlockById(id);
-                updateHeaderTitle(b ? `時間帯: ${b.start} - ${b.end}` : '時間帯');
+                title = b ? `時間帯: ${b.start} - ${b.end}` : '時間帯';
             }
             break;
         case 'duration':
-            updateHeaderTitle(`所要時間: ${id}分`);
+            title = `所要時間: ${id}分`;
             break;
         case 'search':
-            updateHeaderTitle('タスク検索');
+            title = 'タスク検索';
             break;
         case 'dashboard':
-            updateHeaderTitle('ダッシュボード');
+            title = 'ダッシュボード';
             break;
-        case 'settings':
-            updateHeaderTitle('設定');
-            break;
-        case 'inbox':
-        default:
-            updateHeaderTitle('インボックス');
-            break;
+    }
+
+    elTitle.textContent = title;
+    // 特定のビューではカウント表示をクリア
+    if (elCount && ['dashboard', 'search'].includes(type)) {
+        elCount.textContent = '';
     }
 }
 
 /**
- * 未ログイン時の表示
+ * 未ログイン時の表示状態をレンダリング
  */
 export function renderLoginState() {
-    const viewIds = ['task-view', 'dashboard-view', 'settings-view', 'search-view'];
-    viewIds.forEach(id => {
+    const { VIEW_IDS } = UI_VIEW_CONFIG;
+    Object.values(VIEW_IDS).forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.innerHTML = id === 'task-view' 
+        el.innerHTML = id === VIEW_IDS.TASK 
             ? `<div class="p-20 text-center text-gray-400 font-medium">ログインしてください</div>` 
             : '';
     });

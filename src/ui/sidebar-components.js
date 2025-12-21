@@ -1,9 +1,7 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: createSidebarItemの拡張（アイコン注入対応）、コンテキストメニューの整理
+ * 内容: 削除後の遷移処理を route-change イベントに統一、JSDocの整備
  */
-
 import { deleteProject } from '../store/projects.js';
 import { deleteFilter } from '../store/filters.js';
 import { deleteWorkspace, getWorkspaces, setCurrentWorkspaceId } from '../store/workspace.js';
@@ -11,46 +9,34 @@ import { showFilterModal } from './filter-modal.js';
 import { showMessageModal } from './components.js';
 import { showProjectModal } from './modal/project-modal.js';
 import { showWorkspaceModal } from './modal/workspace-modal.js';
-import { setCurrentFilter } from './ui-view-manager.js';
+import { isSidebarCompact } from './sidebar-utils.js';
 
 /**
  * リストアイテム要素を作成
- * @param {string} name 表示名
- * @param {string} type アイテムタイプ (project, label, timeblock, duration, filter)
- * @param {string} id ID
- * @param {string|null} meta カラーコード または アイコンHTML文字列
- * @param {number} count 件数
+ * @param {string} name - 表示名
+ * @param {string} type - アイテムタイプ (project, label, timeblock, duration, filter)
+ * @param {string} id - 一意識別子
+ * @param {Object} [meta={}] - 追加情報 (color: string, iconHtml: string)
+ * @param {number} [count=0] - 件数バッジの数値
  */
-export function createSidebarItem(name, type, id, meta, count) {
+export function createSidebarItem(name, type, id, meta = {}, count = 0) {
     const item = document.createElement('li');
-    // 設定値の統一
-    const isCompact = localStorage.getItem('sidebar_compact') === 'true';
+    const isCompact = isSidebarCompact();
     
     item.dataset.type = type;
     item.dataset.id = id;
     item.className = `group flex items-center justify-between px-3 ${isCompact ? 'py-0.5' : 'py-1.5'} font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors sidebar-item-row select-none`;
 
-    let iconHtml = '';
+    const iconMap = {
+        project: `<svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`,
+        label: `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="background-color: ${meta.color || '#a0aec0'}"></span>`,
+        timeblock: `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="background-color: ${meta.color || '#a0aec0'}"></span>`,
+        duration: meta.iconHtml || `<span class="mr-3 text-sm">⏱️</span>`,
+        filter: meta.iconHtml || `<span class="mr-3 text-sm">🔍</span>`
+    };
 
-    // アイコン生成ロジックの分岐
-    if (type === 'project') {
-        iconHtml = `<svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`;
-    } else if (type === 'label' || type === 'timeblock') {
-        // meta は colorCode として扱う
-        const color = meta || '#a0aec0';
-        iconHtml = `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="background-color: ${color}"></span>`;
-    } else if (type === 'duration' || type === 'filter') {
-        // meta は iconHTML として扱う（渡されていれば使用、なければデフォルト）
-        if (meta && typeof meta === 'string' && meta.includes('<')) {
-            iconHtml = meta;
-        } else {
-            // フォールバック
-            iconHtml = `<span class="mr-3 text-sm">🔹</span>`;
-        }
-    }
-
-    const safeCount = typeof count === 'number' ? count : 0;
-    const countHtml = safeCount > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${safeCount}</span>` : '';
+    const iconHtml = iconMap[type] || `<span class="mr-3 text-sm">🔹</span>`;
+    const countHtml = count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : '';
 
     item.innerHTML = `
         <div class="flex items-center flex-1 min-w-0 pointer-events-none">
@@ -64,28 +50,30 @@ export function createSidebarItem(name, type, id, meta, count) {
 }
 
 /**
- * 右クリックメニューを表示（メイン処理）
+ * 右クリックメニュー（コンテキストメニュー）を表示
  */
 export function showItemContextMenu(e, type, itemData) {
     const config = getMenuConfig(type, itemData);
     if (!config) return;
 
-    // 既存メニュー削除
     document.getElementById('sidebar-context-menu')?.remove();
 
-    // 1. HTML生成
     const menu = buildMenuHTML(config);
     document.body.appendChild(menu);
 
-    // 2. 位置調整
     adjustMenuPosition(menu, e);
-
-    // 3. イベントバインド
     setupMenuEvents(menu, config);
 }
 
 /**
- * メニュー設定の取得
+ * ページ遷移（ルート変更）イベントをディスパッチ
+ */
+function dispatchRoute(page, id = null) {
+    document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
+}
+
+/**
+ * 各タイプごとのメニュー設定を取得
  */
 function getMenuConfig(type, itemData) {
     const configs = {
@@ -94,7 +82,7 @@ function getMenuConfig(type, itemData) {
             onEdit: () => showProjectModal(itemData),
             onDelete: async () => {
                 await deleteProject(itemData.id);
-                setCurrentFilter({ type: 'inbox', id: null });
+                dispatchRoute('inbox');
             },
             deleteMsg: `${itemData.name} を削除しますか？\n（関連タスクのプロジェクト情報も削除されます）`
         },
@@ -103,7 +91,7 @@ function getMenuConfig(type, itemData) {
             onEdit: () => showFilterModal(itemData),
             onDelete: async () => {
                 await deleteFilter(itemData.id);
-                document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'inbox' } }));
+                dispatchRoute('inbox');
             },
             deleteMsg: `フィルター「${itemData.name}」を削除しますか？`
         },
@@ -112,32 +100,29 @@ function getMenuConfig(type, itemData) {
             onEdit: () => showWorkspaceModal(itemData),
             onDelete: async () => {
                 const workspaces = getWorkspaces();
-                if (workspaces.length <= 1) {
-                    throw new Error("最後のワークスペースは削除できません。");
-                }
+                if (workspaces.length <= 1) throw new Error("最後のワークスペースは削除できません。");
                 
                 await deleteWorkspace(itemData.id);
                 
-                // 削除後の遷移処理
                 const remaining = getWorkspaces().filter(ws => ws.id !== itemData.id);
                 if (remaining.length > 0) {
                     setCurrentWorkspaceId(remaining[0].id);
+                    dispatchRoute('dashboard');
                 }
             },
-            deleteMsg: `ワークスペース「${itemData.name}」を本当に削除しますか？\n\nこの操作は取り消せません。関連する全データ（プロジェクト・タスクなど）が削除されます。`
+            deleteMsg: `ワークスペース「${itemData.name}」を本当に削除しますか？\n関連データもすべて削除されます。`
         }
     };
     return configs[type];
 }
 
 /**
- * メニューHTMLの生成
+ * メニューのHTML構造を構築
  */
 function buildMenuHTML(config) {
     const menu = document.createElement('div');
     menu.id = 'sidebar-context-menu';
     menu.className = 'fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 z-[100] animate-fade-in text-sm min-w-[160px]';
-    
     menu.innerHTML = `
         <button id="ctx-edit-btn" class="flex w-full items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-200">
             <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -152,67 +137,61 @@ function buildMenuHTML(config) {
 }
 
 /**
- * メニュー位置の調整
+ * メニューの表示位置を画面内に収まるよう調整
  */
 function adjustMenuPosition(menu, e) {
-    menu.style.left = `${e.clientX}px`;
-    menu.style.top = `${e.clientY}px`;
+    const padding = 8;
+    const { clientX: x, clientY: y } = e;
+    const winW = window.innerWidth;
+    const winH = window.innerHeight;
 
-    const rect = menu.getBoundingClientRect();
-    const winWidth = window.innerWidth;
-    const winHeight = window.innerHeight;
+    menu.style.visibility = 'hidden'; 
+    const { width: mW, height: mH } = menu.getBoundingClientRect();
+    
+    let left = x;
+    let top = y;
 
-    if (rect.right > winWidth) {
-        menu.style.left = `${winWidth - rect.width - 8}px`;
-    }
-    if (rect.bottom > winHeight) {
-        menu.style.top = `${winHeight - rect.height - 8}px`;
-    }
+    if (x + mW > winW) left = x - mW;
+    if (y + mH > winH) top = y - mH;
+
+    menu.style.left = `${Math.max(padding, left)}px`;
+    menu.style.top = `${Math.max(padding, top)}px`;
+    menu.style.visibility = 'visible';
 }
 
 /**
- * イベントハンドラの設定
+ * メニュー内のイベント（クリック・閉じる動作）をセットアップ
  */
 function setupMenuEvents(menu, config) {
-    const close = () => { 
-        menu.remove(); 
-        document.removeEventListener('click', closeListener);
-        document.removeEventListener('keydown', escListener);
+    const cleanup = () => {
+        menu.remove();
+        document.removeEventListener('click', cleanup);
+        document.removeEventListener('keydown', escKey);
     };
-
-    // クリックで閉じる
-    const closeListener = (ev) => { 
-        if (!menu.contains(ev.target)) close(); 
-    };
-
-    // Escキーで閉じる
-    const escListener = (ev) => {
-        if (ev.key === 'Escape') close();
-    };
-
-    // イベント登録（即座に閉じないよう遅延）
+    const escKey = (ev) => ev.key === 'Escape' && cleanup();
+    
     setTimeout(() => {
-        document.addEventListener('click', closeListener);
-        document.addEventListener('keydown', escListener);
+        document.addEventListener('click', cleanup);
+        document.addEventListener('keydown', escKey);
     }, 0);
 
-    menu.querySelector('#ctx-edit-btn').onclick = () => { 
-        close(); 
-        config.onEdit(); 
+    menu.querySelector('#ctx-edit-btn').onclick = (ev) => {
+        ev.stopPropagation();
+        cleanup();
+        config.onEdit();
     };
 
-    menu.querySelector('#ctx-delete-btn').onclick = () => {
-        close();
+    menu.querySelector('#ctx-delete-btn').onclick = (ev) => {
+        ev.stopPropagation();
+        cleanup();
         showMessageModal({
             message: config.deleteMsg,
             type: 'confirm',
             onConfirm: async () => {
-                try { 
+                try {
                     await config.onDelete();
-                    if (config.onSuccess) showMessageModal(config.onSuccess, "success");
-                } catch (err) { 
-                    // エラーはここで一元管理
-                    showMessageModal({ message: "処理に失敗しました: " + err.message, type: 'error' });
+                } catch (err) {
+                    showMessageModal({ message: "削除に失敗しました: " + err.message, type: 'error' });
                 }
             }
         });

@@ -1,13 +1,10 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: エラー通知の追加、ログ強化、バリデーション改善
+ * 内容: 定数連携、バリデーション強化、エラー通知の標準化
  */
-
+import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { updateTask } from '../store/store.js';
 import { showMessageModal } from './components.js';
-
-const DRAG_OVER_CLASSES = ['bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400'];
 
 /**
  * 指定された要素にドロップゾーンを設定
@@ -15,20 +12,19 @@ const DRAG_OVER_CLASSES = ['bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-bl
 export function setupDropZone(element, type, value = null) {
     if (!element) return;
 
-    // 子要素を跨いだ時のちらつき防止用カウンター
     let enterCount = 0;
+    const classes = SIDEBAR_CONFIG.CLASSES.DRAG_OVER;
 
     element.addEventListener('dragenter', (e) => {
         e.preventDefault();
         enterCount++;
-        element.classList.add(...DRAG_OVER_CLASSES);
+        element.classList.add(...classes);
     });
 
     element.addEventListener('dragover', (e) => {
         e.preventDefault();
-        // dragoverでもクラスを維持（念のため）
         if (!element.classList.contains('ring-2')) {
-            element.classList.add(...DRAG_OVER_CLASSES);
+            element.classList.add(...classes);
         }
     });
 
@@ -36,15 +32,15 @@ export function setupDropZone(element, type, value = null) {
         e.preventDefault();
         enterCount--;
         if (enterCount <= 0) {
-            element.classList.remove(...DRAG_OVER_CLASSES);
-            enterCount = 0; // カウンターリセット
+            element.classList.remove(...classes);
+            enterCount = 0;
         }
     });
 
     element.addEventListener('drop', async (e) => {
         e.preventDefault();
         enterCount = 0;
-        element.classList.remove(...DRAG_OVER_CLASSES);
+        element.classList.remove(...classes);
         
         const taskId = e.dataTransfer.getData('text/plain');
         if (!taskId) return;
@@ -53,11 +49,9 @@ export function setupDropZone(element, type, value = null) {
     });
 }
 
-/**
- * ドロップ時のタスク更新処理
- */
 async function handleTaskDrop(taskId, type, value) {
     const updates = {};
+    const { DURATION_LIMITS } = SIDEBAR_CONFIG;
 
     switch (type) {
         case 'inbox':
@@ -67,23 +61,21 @@ async function handleTaskDrop(taskId, type, value) {
             if (value) updates.projectId = value;
             break;
         case 'timeblock':
-            // 'unassigned' または null の場合は未定(null)として扱う
             updates.timeBlockId = (value === 'unassigned' || value === null) ? null : value;
             break;
-        case 'duration':
-            // 数値変換とバリデーション
+        case 'duration': {
             const dur = parseInt(value, 10);
-            if (!isNaN(dur) && dur > 0) {
+            if (!isNaN(dur) && dur >= DURATION_LIMITS.MIN && dur <= DURATION_LIMITS.MAX) {
                 updates.duration = dur;
             } else {
-                console.warn("[Drop] Invalid duration value:", value);
-                // エラー通知を追加
-                showMessageModal({ message: "無効な所要時間です。", type: "error" });
+                showMessageModal({ message: `所要時間は ${DURATION_LIMITS.MIN}〜${DURATION_LIMITS.MAX} 分の範囲で設定してください。`, type: "error" });
                 return;
             }
             break;
+        }
         default:
-            console.warn(`[Drop] Unknown drop type: ${type}`);
+            console.error(`[Drop] Unknown drop type: ${type}`);
+            showMessageModal({ message: "不正な操作です。", type: "error" });
             return;
     }
 
@@ -93,6 +85,6 @@ async function handleTaskDrop(taskId, type, value) {
         }
     } catch (error) {
         console.error(`[Drop Error] Type: ${type}, Task: ${taskId}`, error);
-        showMessageModal({ message: "タスクの更新に失敗しました", type: 'error' });
+        showMessageModal({ message: "タスクの更新に失敗しました。通信環境を確認してください。", type: 'error' });
     }
 }

@@ -1,7 +1,6 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: ログイン時のデータ同期開始漏れとページ状態復元タイミングの修正（Grok指摘対応）
+ * 内容: renderLoginState のインポート元修正、認証監視ロジックの堅牢化
  */
 
 import { onAuthStateChanged } from '../../core/firebase-sdk.js';
@@ -12,9 +11,15 @@ import { initTheme } from '../theme.js';
 import { initTaskModal } from '../task-modal.js';
 import { initSidebar } from '../sidebar.js';
 import { initSettings } from '../settings.js';
-import { setCurrentFilter, renderLoginState } from '../ui-view-manager.js';
+import { setCurrentFilter } from '../ui-view-manager.js';
+import { renderLoginState } from '../ui-view-utils.js'; 
 import { initWorkspaceDropdown, updateWorkspaceDropdownUI } from '../components/WorkspaceDropdown.js';
-import { startAllSubscriptions, stopDataSync, getWorkspaceUnsubscribe, setWorkspaceUnsubscribe } from './DataSyncManager.js';
+import { 
+    startAllSubscriptions, 
+    stopDataSync, 
+    getWorkspaceUnsubscribe, 
+    setWorkspaceUnsubscribe 
+} from './DataSyncManager.js';
 import { setupGlobalEventListeners } from './EventManager.js';
 import { subscribeToWorkspaces } from '../../store/workspace.js';
 
@@ -37,7 +42,6 @@ export function runInitialization() {
     setupAuthHandlers();
     setupGlobalEventListeners();
     
-    // ページ状態の復元はここではなく、ログイン後に実施する
     setupAuthObserver();
 }
 
@@ -75,17 +79,17 @@ function setupAuthObserver() {
 function handleUserLogin(user) {
     initSidebar();
 
-    // ワークスペース購読 (再ログイン時も確実に再開)
+    // ワークスペース購読
     const prevUnsub = getWorkspaceUnsubscribe();
     if (prevUnsub) prevUnsub();
 
-    const unsubscribeWs = subscribeToWorkspaces((workspaces) => {
+    const unsubscribeWs = subscribeToWorkspaces(user.uid, (workspaces) => {
         updateWorkspaceDropdownUI(workspaces);
     });
     setWorkspaceUnsubscribe(unsubscribeWs);
 
-    // データ同期開始（これが抜けていた）
-    startAllSubscriptions();
+    // データ同期開始
+    startAllSubscriptions(user.uid);
     
     // ページ状態を復元
     restorePageState();
@@ -101,7 +105,6 @@ function handleUserLogout() {
         setWorkspaceUnsubscribe(null);
     }
     
-    // 全データ同期停止（ワークスペース含む強制停止）
     stopDataSync(true); 
     renderLoginState();
 }

@@ -1,10 +1,9 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: イベントハンドラ追加、設定値判定の厳格化
+ * 内容: イベント委譲の導入、DOMキャッシュ、定数連携、アクセシビリティ対応
  */
-
-import { setupResizer } from './sidebar-utils.js';
+import { SIDEBAR_CONFIG } from './sidebar-constants.js';
+import { setupResizer, isDesktop, getStoredBool } from './sidebar-utils.js';
 import { buildSidebarHTML, setupSidebarToggles } from './sidebar-structure.js';
 import { setupDropZone } from './sidebar-drag-drop.js';
 import { showFilterModal } from './filter-modal.js';
@@ -15,125 +14,130 @@ import { updateInboxCount } from './sidebar-renderer.js';
 
 export { updateSidebarProjects as renderProjects, updateInboxCount };
 
+// DOM要素のキャッシュ
+let UI = {};
+
+function cacheElements() {
+    UI = {
+        container: document.getElementById('sidebar-content'),
+        sidebar: document.getElementById('sidebar'),
+        resizer: document.getElementById('sidebar-resizer'),
+        openBtn: document.getElementById('sidebar-open-btn'),
+        closeBtn: document.getElementById('sidebar-close-btn'),
+        inbox: document.getElementById('nav-inbox')
+    };
+}
+
 export function initSidebar() {
-    const container = document.getElementById('sidebar-content');
-    if (!container) return;
+    cacheElements();
+    if (!UI.container) return;
 
-    container.innerHTML = buildSidebarHTML();
+    UI.container.innerHTML = buildSidebarHTML();
+    
+    // リフレッシュ後の要素もキャッシュ
+    cacheElements();
 
-    const sidebar = document.getElementById('sidebar');
-    const resizer = document.getElementById('sidebar-resizer');
-
-    setupResizer(sidebar, document.querySelector('main'), resizer);
+    setupResizer(UI.sidebar, UI.resizer);
     setupSidebarEvents();
     setupSidebarToggles();
-    setupDropZone(document.getElementById('nav-inbox'), 'inbox');
+    
+    if (UI.inbox) setupDropZone(UI.inbox, 'inbox');
 
-    // コンポーネント初期化
-    initSidebarProjects(container);
+    initSidebarProjects(UI.container);
 
     updateSidebarVisibility();
     window.addEventListener('resize', updateSidebarVisibility);
 
-    applyInitialSettings();
-    setupCompactModeListener();
-}
-
-/**
- * 初期の表示設定（コンパクトモードなど）を適用
- */
-function applyInitialSettings() {
-    // 修正: 'true' で完全統一
-    const isCompact = localStorage.getItem('sidebar_compact') === 'true';
+    const isCompact = getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
     applyCompactMode(isCompact);
-}
-
-/**
- * コンパクトモードのスタイル適用
- */
-function applyCompactMode(isCompact) {
-    document.querySelectorAll('.sidebar-item-row').forEach(item => {
-        if (isCompact) {
-            item.classList.add('py-0.5');
-            item.classList.remove('py-1.5');
-        } else {
-            item.classList.add('py-1.5');
-            item.classList.remove('py-0.5');
-        }
-    });
+    setupCompactModeListener();
 }
 
 function setupSidebarEvents() {
     const dispatch = (page, id = null) => document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
 
-    // ナビゲーション
-    document.getElementById('nav-dashboard')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('dashboard'); });
-    document.getElementById('nav-inbox')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('inbox'); });
-    document.getElementById('nav-search')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('search'); });
-    document.getElementById('nav-settings')?.addEventListener('click', (e) => { e.preventDefault(); showSettingsModal(); });
+    // ナビゲーション（イベント委譲）
+    UI.container.addEventListener('click', (e) => {
+        const item = e.target.closest('a');
+        if (!item) return;
 
-    // 追加ボタン
-    document.getElementById('add-filter-btn')?.addEventListener('click', () => showFilterModal());
-    document.getElementById('edit-timeblocks-btn')?.addEventListener('click', () => showTimeBlockModal());
+        e.preventDefault();
+        const id = item.id;
 
-    // サイドバー開閉ボタン
-    document.getElementById('sidebar-open-btn')?.addEventListener('click', () => toggleSidebar(true));
-    document.getElementById('sidebar-close-btn')?.addEventListener('click', () => toggleSidebar(false));
+        switch (id) {
+            case 'nav-dashboard': dispatch('dashboard'); break;
+            case 'nav-inbox':     dispatch('inbox');     break;
+            case 'nav-search':    dispatch('search');    break;
+            case 'nav-settings':  showSettingsModal();   break;
+        }
+    });
+
+    // 追加系ボタンの委譲
+    UI.container.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+
+        const id = btn.id;
+        if (id === 'add-filter-btn') showFilterModal();
+        if (id === 'edit-timeblocks-btn') showTimeBlockModal();
+    });
+
+    // サイドバー開閉
+    UI.openBtn?.addEventListener('click', () => toggleSidebar(true));
+    UI.closeBtn?.addEventListener('click', () => toggleSidebar(false));
 }
 
-/**
- * サイドバーの開閉切替
- */
+function applyCompactMode(isCompact) {
+    const items = document.querySelectorAll('.sidebar-item-row');
+    const { COMPACT_PY, NORMAL_PY } = SIDEBAR_CONFIG.CLASSES;
+    
+    items.forEach(item => {
+        item.classList.toggle(COMPACT_PY, isCompact);
+        item.classList.toggle(NORMAL_PY, !isCompact);
+    });
+}
+
 function toggleSidebar(open) {
-    const sidebar = document.getElementById('sidebar');
-    const resizer = document.getElementById('sidebar-resizer');
+    const { sidebar, resizer } = UI;
+    const { CLOSED, HIDDEN } = SIDEBAR_CONFIG.CLASSES;
 
-    if (sidebar) {
-        sidebar.classList.toggle('sidebar-closed', !open);
-        sidebar.classList.toggle('hidden', !open);
+    if (!sidebar) return;
 
-        // モバイル表示のときはhiddenクラスで制御、PCではwidth制御もあるがここではhidden/closedで管理
-        if (window.innerWidth >= 768) {
-            if (resizer) resizer.classList.toggle('hidden', !open);
-            // 幅の復元などはCSSまたはutils側で制御
-            if (open) {
-                const w = localStorage.getItem('sidebarWidth') || 280;
-                sidebar.style.width = `${w}px`;
-            } else {
-                sidebar.style.width = '0';
-            }
+    sidebar.classList.toggle(CLOSED, !open);
+    sidebar.classList.toggle(HIDDEN, !open);
+
+    if (isDesktop()) {
+        if (resizer) resizer.classList.toggle(HIDDEN, !open);
+        if (open) {
+            const w = localStorage.getItem(SIDEBAR_CONFIG.STORAGE_KEYS.WIDTH) || SIDEBAR_CONFIG.DEFAULT_WIDTH;
+            sidebar.style.width = `${w}px`;
+        } else {
+            sidebar.style.width = '0';
         }
-        updateSidebarVisibility();
     }
+    updateSidebarVisibility();
 }
 
 function updateSidebarVisibility() {
-    const sidebar = document.getElementById('sidebar');
-    const openBtn = document.getElementById('sidebar-open-btn');
-    const closeBtn = document.getElementById('sidebar-close-btn');
+    const { sidebar, openBtn, closeBtn } = UI;
+    const { CLOSED, HIDDEN } = SIDEBAR_CONFIG.CLASSES;
     if (!sidebar || !openBtn || !closeBtn) return;
 
-    // クラスベースか、実際の表示状態かで判定
-    const isClosed = sidebar.classList.contains('sidebar-closed') || sidebar.classList.contains('hidden');
+    const isClosed = sidebar.classList.contains(CLOSED) || sidebar.classList.contains(HIDDEN);
 
-    if (window.innerWidth >= 768) {
-        // デスクトップ
-        openBtn.classList.toggle('hidden', !isClosed);
-        closeBtn.classList.toggle('hidden', isClosed);
-        // sidebar自体の表示切り替えは toggleSidebar で制御済みだが、リサイズ時の補正
-        if (!isClosed) sidebar.classList.remove('hidden');
+    if (isDesktop()) {
+        openBtn.classList.toggle(HIDDEN, !isClosed);
+        closeBtn.classList.toggle(HIDDEN, isClosed);
+        if (!isClosed) sidebar.classList.remove(HIDDEN);
     } else {
-        // モバイル
-        openBtn.classList.remove('hidden');
-        closeBtn.classList.remove('hidden');
-        sidebar.classList.remove('hidden');
+        openBtn.classList.remove(HIDDEN);
+        closeBtn.classList.remove(HIDDEN);
+        sidebar.classList.remove(HIDDEN);
     }
 }
 
 function setupCompactModeListener() {
     window.addEventListener('sidebar-settings-updated', (e) => {
-        // 型強制してbooleanとして扱う
-        const isCompact = Boolean(e.detail.compact);
-        applyCompactMode(isCompact);
+        applyCompactMode(Boolean(e.detail.compact));
     });
 }

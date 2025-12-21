@@ -1,28 +1,42 @@
-// @miyter:20251221
-// Webアプリケーションの物理的な開始点
-
+/**
+ * 更新日: 2025-12-21
+ * 内容: 初期化エラーハンドリング、ファビコン処理の完全リセット、リスナー二重登録防止
+ */
 import '../index.css';
 import { initializeApp } from './app.js';
 
+let isBootstrapped = false;
+
 /**
- * ブラウザ環境固有のセットアップ（ファビコン等）
+ * ブラウザ環境固有のセットアップ
  */
-function setupBrowserEnvironment() {
-    let link = document.querySelector("link[rel*='icon']");
-    if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-    }
+function setupHeadElements() {
+    // 既存のアイコンを全削除して一元化
+    document.querySelectorAll("link[rel*='icon']").forEach(el => el.remove());
+
+    const link = document.createElement('link');
+    link.rel = 'icon';
     link.type = 'image/png';
     link.href = '/images/favicon-96x96.png';
+    document.head.appendChild(link);
 }
 
-// DOMの読み込み完了を待機してアプリを起動
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. ブラウザ環境の調整
-    setupBrowserEnvironment();
+function startApplication() {
+    if (isBootstrapped) return;
+    isBootstrapped = true;
 
-    // 2. アプリケーションロジックの開始
-    initializeApp();
-});
+    try {
+        setupHeadElements();
+        initializeApp();
+    } catch (error) {
+        console.error('[Main] Critical Initialization Error:', error);
+        // 必要ならユーザー向けの緊急エラーUIをここに
+    }
+}
+
+// DOM読み込み待機
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApplication);
+} else {
+    startApplication();
+}

@@ -1,40 +1,45 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: ストア連携によるヘルパー強化、変数のカプセル化
+ * 内容: SIDEBAR_CONFIG のインポートパス確認とヘルパー強化
  */
-
+import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { getProjects } from '../store/projects.js';
 
-// 幅管理用のクロージャ
-const SidebarState = (() => {
-    let width = 280;
-    return {
-        getWidth: () => width,
-        setWidth: (w) => { width = w; }
-    };
-})();
+export const isDesktop = () => window.innerWidth >= SIDEBAR_CONFIG.BREAKPOINT_MD;
+
+export const getStoredBool = (key, defaultValue = true) => {
+    const val = localStorage.getItem(key);
+    if (val === null) return defaultValue;
+    return val === 'true';
+};
+
+export const isSidebarCompact = () => getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
+
+/**
+ * 条件に一致する未完了タスクの数をカウント
+ */
+export const countActiveTasks = (tasks, predicate) => {
+    if (!Array.isArray(tasks)) return 0;
+    return tasks.filter(t => t.status !== 'completed' && predicate(t)).length;
+};
 
 /**
  * サイドバーのリサイズ機能をセットアップ
  */
-export function setupResizer(sidebar, mainContent, resizer) {
+export function setupResizer(sidebar, resizer) {
     if (!resizer || !sidebar) return;
 
-    // 初期幅の復元
-    const storedWidth = localStorage.getItem('sidebarWidth');
-    const initialWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
-    SidebarState.setWidth(initialWidth);
+    const savedWidth = localStorage.getItem(SIDEBAR_CONFIG.STORAGE_KEYS.WIDTH);
+    const initialWidth = savedWidth ? parseInt(savedWidth, 10) : SIDEBAR_CONFIG.DEFAULT_WIDTH;
     
-    // 閉じている状態でなければ幅を適用
-    if (!sidebar.classList.contains('sidebar-closed')) {
+    if (!sidebar.classList.contains(SIDEBAR_CONFIG.CLASSES.CLOSED)) {
         sidebar.style.width = `${initialWidth}px`;
     }
 
     let isResizing = false;
 
     const startResize = (e) => {
-        if (sidebar.classList.contains('sidebar-closed')) return;
+        if (sidebar.classList.contains(SIDEBAR_CONFIG.CLASSES.CLOSED)) return;
         isResizing = true;
         document.body.style.cursor = 'col-resize';
         document.body.classList.add('select-none');
@@ -46,13 +51,9 @@ export function setupResizer(sidebar, mainContent, resizer) {
     const resize = (e) => {
         if (!isResizing) return;
         let newWidth = e.clientX;
-        const minWidth = 150;
-        const maxWidth = 500;
+        const { MIN_WIDTH, MAX_WIDTH } = SIDEBAR_CONFIG;
 
-        if (newWidth < minWidth) newWidth = minWidth;
-        if (newWidth > maxWidth) newWidth = maxWidth;
-
-        SidebarState.setWidth(newWidth);
+        newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, newWidth));
         sidebar.style.width = `${newWidth}px`;
     };
 
@@ -63,31 +64,21 @@ export function setupResizer(sidebar, mainContent, resizer) {
         document.body.classList.remove('select-none');
         document.removeEventListener('mousemove', resize);
         document.removeEventListener('mouseup', stopResize);
-        localStorage.setItem('sidebarWidth', SidebarState.getWidth());
+        
+        const finalWidth = parseInt(sidebar.style.width, 10);
+        localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.WIDTH, finalWidth);
     };
 
     resizer.addEventListener('mousedown', startResize);
 }
 
-/**
- * ランダムなカラーを生成
- */
 export function getRandomColor() {
-    const colors = [
-        '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6',
-        '#EC4899', '#14B8A6', '#06B6D4', '#0EA5E9', '#8B5CF6', '#A78BFA',
-        '#F472B6', '#FB923C', '#A3E635', '#22D3EE'
-    ];
+    const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899'];
     return colors[Math.floor(Math.random() * colors.length)];
 }
 
-/**
- * プロジェクト名を取得するUIヘルパー (ストア自動連携)
- */
 export function getProjectName(projectId, allProjects = null) {
-    if (!projectId || projectId === 'inbox' || projectId === 'INBOX') return 'インボックス';
-    
-    // 引数で渡されなければストアから取得
+    if (!projectId || projectId.toLowerCase() === 'inbox') return 'インボックス';
     const projects = allProjects || getProjects();
     const project = projects.find(p => p.id === projectId);
     return project ? project.name : '未分類';

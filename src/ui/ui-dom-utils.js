@@ -1,57 +1,54 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 設定ビューの廃止（モーダル統一）、検索ビューの安全性向上
+ * 内容: 検索ステート表示関数のエクスポート、ビルドエラーの解消
  */
-
 import { createGlassCard } from './components/glass-card.js';
+import { DASHBOARD_CONFIG } from './dashboard-constants.js';
+
+/**
+ * 簡易HTMLエスケープ
+ */
+function escapeHTML(str) {
+    if (!str) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    };
+    return str.replace(/[&<>"']/g, (m) => map[m]);
+}
 
 /**
  * KPI（重要指標）アイテムのHTMLを生成
  */
 export function renderKPIItem(label, value, id, colorClass) {
     return createGlassCard(`
-        <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">${label}</span>
-        <span id="${id}" class="text-2xl font-bold ${colorClass} dark:text-white font-mono tracking-tight">${value}</span>
-    `, 'p-3 flex flex-col items-center justify-center hover:scale-[1.02] transition-transform');
+        <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">${escapeHTML(label)}</span>
+        <span id="${id}" class="text-2xl font-bold ${colorClass} dark:text-white font-mono tracking-tight">${escapeHTML(value)}</span>
+    `, DASHBOARD_CONFIG.CLASSES.KPI_CARD);
 }
 
 /**
  * ダッシュボード画面のHTML構造を生成
  */
-export function buildDashboardViewHTML(kpiRenderer) {
-    const summaryItems = [
-        { id: 'today-count', label: '今日の完了', color: 'text-blue-600' },
-        { id: 'weekly-count', label: '今週の完了', color: 'text-green-600' },
-        { id: 'monthly-count', label: '今月の完了', color: 'text-purple-600' },
-        { id: 'total-count', label: '全期間', color: 'text-gray-600' }
-    ];
-
-    const charts = [
-        { id: 'daily', label: '日次推移 (直近7日)', dot: 'bg-blue-500' },
-        { id: 'weekly', label: '週次推移', dot: 'bg-green-500' },
-        { id: 'monthly', label: '月次推移', dot: 'bg-purple-500', fullWidth: true }
-    ];
-
-    const renderer = typeof kpiRenderer === 'function' ? kpiRenderer : renderKPIItem;
-
+export function buildDashboardViewHTML() {
     return `
         <div class="space-y-4 animate-fade-in p-1">
             <h2 class="text-xl font-bold text-gray-800 dark:text-white px-1 mb-2">ダッシュボード</h2>
-
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                ${summaryItems.map(item => renderer(item.label, '-', item.id, item.color)).join('')}
+                ${DASHBOARD_CONFIG.KPI_ITEMS.map(item => renderKPIItem(item.label, '-', item.id, item.color)).join('')}
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                ${charts.map(chart => createGlassCard(`
+                ${DASHBOARD_CONFIG.CHARTS.map(chart => createGlassCard(`
                     <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full ${chart.dot}"></span> ${chart.label}
+                        <span class="w-1.5 h-1.5 rounded-full ${chart.dot}"></span> ${escapeHTML(chart.label)}
                     </h3>
-                    <div class="relative flex-1 min-h-0 w-full">
+                    <div class="${DASHBOARD_CONFIG.CLASSES.CHART_CONTAINER}">
                         <canvas id="${chart.id}Chart"></canvas>
                     </div>
-                `, `p-3 h-64 flex flex-col ${chart.fullWidth ? 'md:col-span-2' : ''}`)).join('')}
+                `, `${DASHBOARD_CONFIG.CLASSES.CHART_CARD} ${chart.fullWidth ? 'md:col-span-2' : ''}`)).join('')}
             </div>
         </div>
     `;
@@ -59,11 +56,10 @@ export function buildDashboardViewHTML(kpiRenderer) {
 
 /**
  * 検索画面のHTML構造を生成
- * 引数が空でもエラーにならないようにガード
  */
 export function buildSearchViewHTML(projects = []) {
     const safeProjects = Array.isArray(projects) ? projects : [];
-    const options = safeProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    const options = safeProjects.map(p => `<option value="${escapeHTML(p.id)}">${escapeHTML(p.name)}</option>`).join('');
     
     const formHTML = `
         <div class="flex flex-col md:flex-row gap-4">
@@ -91,19 +87,38 @@ export function buildSearchViewHTML(projects = []) {
                 タスク検索
             </h2>
             ${createGlassCard(formHTML, 'p-8 mb-8')}
-            <div id="search-results-container">
-                <div class="text-center text-gray-400 py-16 flex flex-col items-center">
-                    <span class="text-sm">キーワードを入力してタスクを検索</span>
-                </div>
-            </div>
+            <div id="search-results-container"></div>
         </div>
     `;
 }
 
 /**
- * 古い設定ビュー生成関数（廃止）
- * ui-view-manager.js の修正により呼び出されなくなる想定だが、
- * 安全のため空文字を返すように変更
+ * 検索画面：キーワード未入力時の空状態HTML
+ */
+export function buildSearchEmptyStateHTML() {
+    return `
+        <div class="text-center text-gray-400 py-16 flex flex-col items-center">
+            <svg class="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <span class="text-sm font-medium">キーワードを入力してタスクを検索</span>
+        </div>
+    `;
+}
+
+/**
+ * 検索画面：結果ゼロ時のHTML
+ */
+export function buildSearchNoResultsHTML() {
+    return `
+        <div class="text-center text-gray-400 py-12 flex flex-col items-center">
+            <span class="text-sm">一致するタスクが見つかりませんでした</span>
+        </div>
+    `;
+}
+
+/**
+ * 廃止済みの設定ビュー生成（互換性維持のため空文字を返す）
  */
 export function buildSettingsViewHTML() {
     return ''; 

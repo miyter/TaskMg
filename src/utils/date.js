@@ -1,35 +1,73 @@
 // @ts-nocheck
-// @miyter:20251221
-// 日付操作・フォーマット・繰り返し計算の共通ユーティリティ
+/**
+ * 更新日: 2025-12-21
+ * 内容: 集計ヘルパーの統合、toDateの堅牢化、繰り返し計算ロジック保持
+ */
 
 /**
  * 入力値をDateオブジェクトに安全に変換する (Firestore Timestamp対応)
  */
-const toDate = (date) => {
-    if (!date) return null;
-    return date.toDate ? date.toDate() : new Date(date);
-};
+export function toDate(val) {
+    if (!val) return null;
+    if (val.toDate && typeof val.toDate === 'function') return val.toDate();
+    if (val instanceof Date) return val;
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+}
 
 /**
  * 2つの日付が同じ日かどうかを判定する
  */
-const isSameDay = (d1, d2) => {
-    return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth() &&
-           d1.getDate() === d2.getDate();
+export const isSameDay = (d1, d2) => {
+    const a = toDate(d1);
+    const b = toDate(d2);
+    if (!a || !b) return false;
+    return a.getFullYear() === b.getFullYear() &&
+           a.getMonth() === b.getMonth() &&
+           a.getDate() === b.getDate();
 };
+
+// --- 集計用ヘルパー ---
+
+export function getStartOfDay(date = new Date()) {
+    const d = toDate(date) || new Date();
+    const res = new Date(d);
+    res.setHours(0, 0, 0, 0);
+    return res;
+}
+
+export function getEndOfDay(date = new Date()) {
+    const d = toDate(date) || new Date();
+    const res = new Date(d);
+    res.setHours(23, 59, 59, 999);
+    return res;
+}
+
+export function getStartOfWeek(date = new Date()) {
+    const d = toDate(date) || new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // 月曜始まり
+    const start = new Date(d.setDate(diff));
+    return getStartOfDay(start);
+}
+
+export function getStartOfMonth(date = new Date()) {
+    const d = toDate(date) || new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+// --- UI・フォーマット関連 ---
 
 /**
  * 日付をコンパクトにフォーマット (今日/明日/昨日 または mm/dd)
  */
 export function formatDateCompact(date) {
     const target = toDate(date);
-    if (!target || isNaN(target.getTime())) return '';
+    if (!target) return '';
 
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = getStartOfDay(now);
     
-    // 相対表記の判定
     const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return '今日';
@@ -50,8 +88,7 @@ export function getTaskDateColor(date) {
     const target = toDate(date);
     if (!target) return 'text-gray-500';
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = getStartOfDay(new Date());
     const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) return 'text-red-500 font-bold';
@@ -59,6 +96,8 @@ export function getTaskDateColor(date) {
     if (diffDays === 1) return 'text-orange-500 dark:text-orange-400 font-medium';
     return 'text-gray-500 dark:text-gray-400';
 }
+
+// --- 繰り返し計算ロジック ---
 
 /**
  * 次回の繰り返し期限日を計算
@@ -93,8 +132,7 @@ export function getNextRecurrenceDate(currentDueDate, recurrence) {
  * 繰り返し設定から初期の期限日を決定
  */
 export function getInitialDueDateFromRecurrence(recurrence) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getStartOfDay(new Date());
     
     if (!recurrence?.type || recurrence.type === 'daily' || recurrence.type === 'monthly') {
         return today;

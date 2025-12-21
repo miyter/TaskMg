@@ -1,79 +1,73 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 設定画面のモーダル統一（ビュー廃止）、ヘッダー更新責務の整理
+ * 内容: DOMキャッシュ化、副作用の統合、定数連携、フリッカー抑制の簡略化
  */
-
+import { UI_VIEW_CONFIG } from './ui-view-constants.js';
 import { renderDashboard } from './dashboard.js';
 import { renderTaskView } from './task-view.js';
 import { getProcessedTasks } from '../logic/search.js';
-import { buildDashboardViewHTML, renderKPIItem } from './ui-dom-utils.js';
-import { showView, highlightSidebarItem, renderLoginState } from './ui-view-utils.js';
+import { buildDashboardViewHTML } from './ui-dom-utils.js';
+import { showView, highlightSidebarItem, updateHeaderTitleByFilter } from './ui-view-utils.js';
 import { renderSearchPage } from './search-view-ctrl.js';
-// 設定モーダル
 import { showSettingsModal } from './settings.js';
 
 let currentFilter = { type: 'inbox', id: null };
+let UI = {};
 
-export function setCurrentFilter(filter) {
+function cacheViews() {
+    const { VIEW_IDS } = UI_VIEW_CONFIG;
+    UI = {
+        task: document.getElementById(VIEW_IDS.TASK),
+        dashboard: document.getElementById(VIEW_IDS.DASHBOARD),
+        search: document.getElementById(VIEW_IDS.SEARCH),
+        settings: document.getElementById(VIEW_IDS.SETTINGS)
+    };
+}
+
+/**
+ * フィルター更新 + UI同期
+ */
+export function setCurrentFilter(filter, allProjects = [], allLabels = []) {
     currentFilter = filter;
+    
+    // 設定遷移のインターセプト
+    if (filter.type === 'settings') {
+        currentFilter = { type: 'inbox', id: null };
+        showSettingsModal();
+    }
+
+    highlightSidebarItem(currentFilter);
+    updateHeaderTitleByFilter(currentFilter, allProjects, allLabels);
 }
 
 export function getCurrentFilter() {
     return currentFilter;
 }
 
-export { renderLoginState };
-
-/**
- * ビューの切り替えと描画
- */
 export function updateView(allTasks, allProjects, allLabels) {
-    const views = {
-        task: document.getElementById('task-view'),
-        dashboard: document.getElementById('dashboard-view'),
-        search: document.getElementById('search-view'),
-        settings: document.getElementById('settings-view') // DOM上は残すが使用しない
-    };
-
-    if (!views.task || !views.dashboard || !views.search) return;
+    if (Object.keys(UI).length === 0) cacheViews();
+    if (!UI.task || !UI.dashboard || !UI.search) return;
 
     const sortTrigger = document.getElementById('sort-trigger');
     const sortCriteria = sortTrigger?.dataset.value || 'createdAt_desc';
+    const otherViews = [UI.task, UI.dashboard, UI.search, UI.settings].filter(v => !!v);
 
     // 1. ダッシュボード
     if (currentFilter.type === 'dashboard') {
-        showView(views.dashboard, [views.task, views.search, views.settings]);
-        views.dashboard.innerHTML = buildDashboardViewHTML(renderKPIItem);
+        showView(UI.dashboard, otherViews.filter(v => v !== UI.dashboard));
+        UI.dashboard.innerHTML = buildDashboardViewHTML();
         renderDashboard(allTasks, allProjects);
-        // ヘッダータイトルの更新はここで行う
-        updateHeaderTitle('ダッシュボード');
-        highlightSidebarItem(currentFilter);
         return;
     }
     
-    // 2. 設定（モーダルへリダイレクト）
-    if (currentFilter.type === 'settings') {
-        // 設定ビューは廃止されたため、直前のビュー（またはInbox）に戻してモーダルを開く
-        // ループ防止のため Inbox へ強制遷移
-        currentFilter = { type: 'inbox', id: null };
-        highlightSidebarItem(currentFilter);
-        showSettingsModal();
-        // Inboxの描画へ進む
-    }
-
-    // 3. 検索
+    // 2. 検索
     if (currentFilter.type === 'search') {
-        renderSearchPage(views.search, [views.task, views.dashboard, views.settings], allTasks, allProjects, currentFilter);
-        // SearchPage内でヘッダー更新していない場合はここで行う必要があるが、
-        // renderSearchPageの実装に依存。念のため。
-        updateHeaderTitle('タスク検索');
+        renderSearchPage(UI.search, otherViews.filter(v => v !== UI.search), allTasks, allProjects, currentFilter);
         return;
     }
 
-    // 4. タスクリストビュー（デフォルト）
-    showView(views.task, [views.dashboard, views.settings, views.search]);
-
+    // 3. タスクリスト
+    showView(UI.task, otherViews.filter(v => v !== UI.task));
     const showCompleted = document.getElementById('toggle-completed-btn')?.classList.contains('text-blue-500') || false;
 
     const config = {
@@ -88,33 +82,8 @@ export function updateView(allTasks, allProjects, allLabels) {
 
     const processedTasks = getProcessedTasks(allTasks, config);
 
-    // 描画（フリッカー防止）
-    views.task.style.opacity = '0';
-    requestAnimationFrame(() => {
-        renderTaskView(
-            processedTasks, 
-            allProjects, 
-            allLabels,
-            config.projectId, 
-            config.labelId
-        );
-
-        requestAnimationFrame(() => {
-            views.task.style.opacity = '1'; 
-            highlightSidebarItem(currentFilter);
-            
-            // ヘッダータイトルは renderTaskView 内で updateHeaderInfo が呼ばれるため
-            // ここでの重複更新は行わない
-        });
-    });
-}
-
-/**
- * 簡易ヘッダータイトル更新（Dashboard/Search用）
- */
-function updateHeaderTitle(title) {
-    const headerTitle = document.getElementById('header-title');
-    const headerCount = document.getElementById('header-count');
-    if (headerTitle) headerTitle.textContent = title;
-    if (headerCount) headerCount.textContent = '';
+    // 描画
+    UI.task.style.opacity = '0.5'; 
+    renderTaskView(processedTasks, allProjects, allLabels, config.projectId, config.labelId);
+    UI.task.style.opacity = '1';
 }
