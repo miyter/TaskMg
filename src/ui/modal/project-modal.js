@@ -1,10 +1,11 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 代入式左辺でのオプショナルチェイニング使用によるビルドエラーを修正
+ * 内容: プロジェクト作成時に workspaceId を付与し、成功ポップアップを削除
  */
 
 import { addProject, updateProject, deleteProject } from '../../store/projects.js';
+import { getCurrentWorkspaceId } from '../../store/workspace.js';
 import { showMessageModal } from '../components.js';
 import { buildProjectModalHTML } from './project-modal-dom.js';
 
@@ -33,11 +34,9 @@ function setupEvents(overlay, project) {
     const deleteBtn = overlay.querySelector('#delete-project-btn');
     const cancelBtn = overlay.querySelector('#cancel-modal-btn');
 
-    // 閉じる操作
     if (cancelBtn) cancelBtn.onclick = close;
     overlay.onclick = (e) => { if (e.target === overlay) close(); };
 
-    // 保存処理
     const handleSave = async () => {
         const name = nameInput?.value.trim();
         if (!name) return showMessageModal('プロジェクト名を入力してください', 'error');
@@ -45,14 +44,17 @@ function setupEvents(overlay, project) {
         try {
             if (project) {
                 await updateProject(project.id, { name });
-                showMessageModal('変更を保存しました');
             } else {
-                await addProject(name);
-                showMessageModal('プロジェクトを作成しました');
+                // 現在のワークスペースIDを取得してプロジェクトを作成
+                const workspaceId = getCurrentWorkspaceId();
+                if (!workspaceId) throw new Error("ワークスペースが選択されていません");
+                
+                await addProject(name, workspaceId);
+                // 「プロジェクトを作成しました」のポップアップは削除
             }
             close();
         } catch (err) {
-            showMessageModal('保存に失敗しました', 'error');
+            showMessageModal('保存に失敗しました: ' + err.message, 'error');
         }
     };
 
@@ -61,7 +63,6 @@ function setupEvents(overlay, project) {
         nameInput.onkeydown = (e) => { if (e.key === 'Enter') handleSave(); };
     }
 
-    // 削除処理
     if (deleteBtn && project) {
         deleteBtn.onclick = () => {
             showMessageModal(`プロジェクト「${project.name}」を削除しますか？`, async () => {
@@ -75,7 +76,6 @@ function setupEvents(overlay, project) {
         };
     }
 
-    // 初期フォーカス
     requestAnimationFrame(() => {
         if (nameInput) {
             nameInput.focus();
