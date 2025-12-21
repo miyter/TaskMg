@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: TimeBlock編集バグ修正、Filterレンダリングの引数修正（Grok指摘対応）
+ * 内容: アイコン処理の正規化(DOM操作排除)、フィルター件数計算の実装、import追加
  */
 
 import { setupDropZone } from './sidebar-drag-drop.js';
@@ -9,6 +9,7 @@ import { createSidebarItem, showItemContextMenu } from './sidebar-components.js'
 import { getTimeBlocks } from '../store/timeblocks.js';
 import { showTimeBlockModal } from './timeblock-modal.js';
 import { updateSidebarProjects } from './components/SidebarProjects.js';
+import { filterTasks } from '../logic/search.js'; // 追加: フィルター計算用
 
 /**
  * インボックスのカウント更新
@@ -39,6 +40,7 @@ export function renderLabels(labels = [], tasks = []) {
 
     labels.forEach(label => {
         const count = tasks.filter(t => t.labelIds?.includes(label.id) && t.status !== 'completed').length;
+        // createSidebarItem(name, type, id, color, count)
         const item = createSidebarItem(label.name, 'label', label.id, label.color, count);
         
         item.addEventListener('click', () => {
@@ -78,7 +80,6 @@ export function renderTimeBlocks(tasks = []) {
         
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            // 修正: 編集対象のblockを渡す
             showTimeBlockModal(block);
         });
 
@@ -106,22 +107,13 @@ export function renderDurations(tasks = []) {
     list.innerHTML = '';
 
     const durations = [30, 45, 60, 75, 90];
+    const iconHtml = '<span class="mr-3 text-sm">⏱️</span>';
 
     durations.forEach(mins => {
         const count = tasks.filter(t => Number(t.duration) === mins && t.status !== 'completed').length;
-        const item = createSidebarItem(`${mins} min`, 'duration', mins.toString(), null, count);
+        // meta引数にHTML文字列を渡す
+        const item = createSidebarItem(`${mins} min`, 'duration', mins.toString(), iconHtml, count);
         
-        const content = item.firstElementChild;
-        if (content) {
-            const dot = content.querySelector('span[class*="w-2.5"]');
-            if (dot) dot.remove();
-            
-            const icon = document.createElement('span');
-            icon.className = 'mr-3 text-sm'; 
-            icon.textContent = '⏱️';
-            content.insertBefore(icon, content.firstChild);
-        }
-
         item.addEventListener('click', () => {
              document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'duration', id: mins.toString() } }));
         });
@@ -139,22 +131,24 @@ export function renderFilters(filters = [], tasks = []) {
     if (!list) return;
     list.innerHTML = '';
 
-    filters.forEach(filter => {
-        // TODO: フィルター条件に基づいた件数計算（現時点では0）
-        // filter-parserの実装が必要
-        const count = 0;
+    const iconHtml = `<svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>`;
 
-        const item = createSidebarItem(filter.name, 'filter', filter.id, null, count);
-        
-        const content = item.firstElementChild;
-        if (content) {
-            const dot = content.querySelector('span[class*="w-2.5"]');
-            if (dot) dot.remove();
-            
-            const iconHtml = `<svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>`;
-            content.insertAdjacentHTML('afterbegin', iconHtml);
+    filters.forEach(filter => {
+        // フィルター件数の計算
+        let count = 0;
+        try {
+            // search.js の filterTasks を利用して計算
+            // filter オブジェクトそのもの (savedFilter) として条件を渡す
+            if (typeof filterTasks === 'function') {
+                const results = filterTasks(tasks, { savedFilter: filter, showCompleted: false });
+                count = results.length;
+            }
+        } catch (e) {
+            console.warn('[Sidebar] Filter count error:', e);
         }
 
+        const item = createSidebarItem(filter.name, 'filter', filter.id, iconHtml, count);
+        
         item.addEventListener('click', () => {
             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'custom', id: filter.id } }));
         });
@@ -174,10 +168,11 @@ export function renderFilters(filters = [], tasks = []) {
 export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels, allFilters = []) {
     if (!document.getElementById('project-list')) return;
     
+    // tasksを渡して件数更新を確実に
     renderProjects(allProjects, allTasks);
     renderLabels(allLabels, allTasks);
     renderTimeBlocks(allTasks);
     renderDurations(allTasks);
-    renderFilters(allFilters, allTasks); // tasksを渡すように修正
+    renderFilters(allFilters, allTasks); // tasksを渡す
     updateInboxCount(allTasks);
 }

@@ -1,13 +1,19 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 日付処理の堅牢化、グラフロジックの修正（過去→未来順序）、リソース破棄の徹底
+ * 内容: 日付処理のヘルパー化、ロジック整理、Chart設定の定数化
  */
 
 import Chart from 'chart.js/auto';
 import { buildDashboardViewHTML } from './ui-dom-utils.js';
 
-// チャートインスタンスの管理
+// チャート設定定数
+const CHART_COLORS = {
+    daily: '#3B82F6',
+    weekly: '#10B981',
+    monthly: '#8B5CF6'
+};
+
 const instances = { daily: null, weekly: null, monthly: null };
 
 /**
@@ -17,7 +23,6 @@ export function renderDashboard(tasks) {
     const view = document.getElementById('dashboard-view');
     if (!tasks || !view) return;
 
-    // 前回のインスタンスを確実に破棄
     cleanupCharts();
 
     view.innerHTML = buildDashboardViewHTML();
@@ -27,14 +32,13 @@ export function renderDashboard(tasks) {
     
     updateSummaryStats(completed);
     
-    // グラフ描画の設定
-    const config = [
-        { id: 'daily', color: '#3B82F6', label: '日次', count: 7, unit: 'day' }, // 直近7日
-        { id: 'weekly', color: '#10B981', label: '週次', count: 4, unit: 'week' },
-        { id: 'monthly', color: '#8B5CF6', label: '月次', count: 6, unit: 'month' }
+    const chartConfigs = [
+        { id: 'daily', color: CHART_COLORS.daily, label: '日次', count: 7, unit: 'day' },
+        { id: 'weekly', color: CHART_COLORS.weekly, label: '週次', count: 4, unit: 'week' },
+        { id: 'monthly', color: CHART_COLORS.monthly, label: '月次', count: 6, unit: 'month' }
     ];
 
-    config.forEach(cfg => {
+    chartConfigs.forEach(cfg => {
         const { labels, data } = processChartData(completed, cfg.count, cfg.unit);
         renderGenericChart(cfg.id, labels, data, cfg.color);
     });
@@ -52,32 +56,54 @@ function cleanupCharts() {
     });
 }
 
-/**
- * 安全なDateオブジェクト変換
- */
+// ==========================================
+// Date Helpers (Internal)
+// ==========================================
+
 function toDate(val) {
     if (!val) return null;
-    if (val.toDate && typeof val.toDate === 'function') return val.toDate(); // Firestore Timestamp
+    if (val.toDate && typeof val.toDate === 'function') return val.toDate();
     if (val instanceof Date) return val;
     const d = new Date(val);
     return isNaN(d.getTime()) ? null : d;
 }
+
+function getStartOfDay(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function getEndOfDay(date) {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d;
+}
+
+function getStartOfWeek(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // 月曜始まり
+    const start = new Date(d.setDate(diff));
+    return getStartOfDay(start);
+}
+
+function getStartOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+// ==========================================
+// Stats & Data Processing
+// ==========================================
 
 /**
  * サマリー数値の更新
  */
 function updateSummaryStats(tasks) {
     const now = new Date();
-    const getStart = (d) => new Date(d).setHours(0,0,0,0);
-    
-    const todayStart = getStart(now);
-    
-    // 週の始まりを計算（月曜始まり）
-    const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // 月曜
-    const weekStart = getStart(new Date(now).setDate(diff));
-    
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const todayStart = getStartOfDay(now).getTime();
+    const weekStart = getStartOfWeek(now).getTime();
+    const monthStart = getStartOfMonth(now).getTime();
 
     const stats = tasks.reduce((acc, t) => {
         const dateObj = toDate(t.completedAt);
@@ -112,24 +138,20 @@ function processChartData(tasks, count, unit) {
         
         if (unit === 'day') {
             targetDate.setDate(now.getDate() - i);
-            start = new Date(targetDate.setHours(0,0,0,0));
-            end = new Date(targetDate.setHours(23,59,59,999));
+            start = getStartOfDay(targetDate);
+            end = getEndOfDay(targetDate);
             label = `${start.getMonth() + 1}/${start.getDate()}`;
         } else if (unit === 'week') {
-            // 月曜始まりで計算
-            const day = targetDate.getDay();
-            const diff = targetDate.getDate() - day + (day === 0 ? -6 : 1) - (i * 7);
-            start = new Date(targetDate.setDate(diff));
-            start.setHours(0,0,0,0);
-            
+            // 基準日から i週間前 にずらす
+            targetDate.setDate(now.getDate() - (i * 7));
+            start = getStartOfWeek(targetDate);
             end = new Date(start);
             end.setDate(start.getDate() + 6);
-            end.setHours(23,59,59,999);
-            
+            end.setHours(23, 59, 59, 999);
             label = `${start.getMonth() + 1}/${start.getDate()}`;
         } else {
             // 月次
-            start = new Date(targetDate.getFullYear(), targetDate.getMonth() - i, 1);
+            start = new Date(now.getFullYear(), now.getMonth() - i, 1);
             end = new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59, 999);
             label = `${start.getFullYear()}/${start.getMonth() + 1}`;
         }
@@ -152,7 +174,6 @@ function renderGenericChart(id, labels, data, color) {
     const canvas = document.getElementById(`${id}Chart`);
     if (!canvas) return;
 
-    // cleanupChartsで破棄済みだが、念のため二重チェック
     if (instances[id]) {
         instances[id].destroy();
         instances[id] = null;
@@ -166,7 +187,7 @@ function renderGenericChart(id, labels, data, color) {
                 data,
                 backgroundColor: color,
                 borderRadius: 4,
-                barThickness: 'flex', // レスポンシブ対応
+                barThickness: 'flex',
                 maxBarThickness: 30
             }]
         },
@@ -176,7 +197,7 @@ function renderGenericChart(id, labels, data, color) {
             scales: {
                 y: { 
                     beginAtZero: true, 
-                    ticks: { precision: 0 }, // 整数のみ
+                    ticks: { precision: 0 },
                     grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false } 
                 },
                 x: { 

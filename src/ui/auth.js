@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: エラーメッセージ日本語化、Enterキー対応、ユーザー情報表示、変数カプセル化
+ * 内容: コード構造の整理、不要な変数の排除
  */
 
 import { 
@@ -58,14 +58,12 @@ export async function updateUserPassword(newPassword) {
     
     try {
         await updatePassword(user, newPassword);
-        // メッセージ形式を統一（1引数版を使用）
         showMessageModal("パスワードを変更しました");
     } catch (error) {
         let message = "変更に失敗しました: " + error.message;
         if (error.code === 'auth/requires-recent-login') {
             message = "セキュリティのため、再ログインが必要です。一度ログアウトしてから再度お試しください。";
         }
-        // エラー時は2引数（メッセージ, タイプ）
         showMessageModal(message, "error");
         throw error;
     }
@@ -91,6 +89,7 @@ export function setupAuthHandlers() {
             try {
                 await loginWithEmail(email, pass);
             } catch (e) {
+                // UI層でのエラー表示は必須
                 showMessageModal(e.message, "error");
             }
         };
@@ -111,7 +110,7 @@ export function updateAuthUI(user) {
     const elements = {
         loginForm: document.getElementById('login-form-container'),
         userInfo: document.getElementById('user-info'),
-        userEmailDisplay: document.getElementById('user-email-display'), // メール表示用要素
+        userEmailDisplay: document.getElementById('user-email-display'),
         emailInput: document.getElementById('email-input'),
         passInput: document.getElementById('password-input')
     };
@@ -124,7 +123,6 @@ export function updateAuthUI(user) {
         elements.userInfo.classList.remove('hidden');
         elements.userInfo.classList.add('flex');
         
-        // ユーザー情報の表示更新
         if (elements.userEmailDisplay) {
             elements.userEmailDisplay.textContent = user.email || 'ユーザー';
         }

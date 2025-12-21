@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: ドラッグ＆ドロップのちらつき防止、入力値検証、エラー通知（Grok指摘対応）
+ * 内容: エラー通知の追加、ログ強化、バリデーション改善
  */
 
 import { updateTask } from '../store/store.js';
@@ -77,9 +77,13 @@ async function handleTaskDrop(taskId, type, value) {
                 updates.duration = dur;
             } else {
                 console.warn("[Drop] Invalid duration value:", value);
+                // エラー通知を追加
+                showMessageModal({ message: "無効な所要時間です。", type: "error" });
+                return;
             }
             break;
         default:
+            console.warn(`[Drop] Unknown drop type: ${type}`);
             return;
     }
 

@@ -1,21 +1,20 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: Inboxカウントロジックの統一、コンパクトモード初期適用の追加
+ * 内容: sidebar-dom.js依存の解消、設定値(true)の統一
  */
 
 import { setupResizer } from './sidebar-utils.js';
-import { buildSidebarHTML, setupSidebarToggles } from './sidebar-dom.js';
+// 修正: sidebar-dom.js 廃止に伴い直接インポート
+import { buildSidebarHTML, setupSidebarToggles } from './sidebar-structure.js';
 import { setupDropZone } from './sidebar-drag-drop.js'; 
 import { showFilterModal } from './filter-modal.js';
 import { showTimeBlockModal } from './timeblock-modal.js'; 
 import { showSettingsModal } from './settings.js';
 import { initSidebarProjects, updateSidebarProjects } from './components/SidebarProjects.js';
-// 修正: rendererからインポート
 import { renderLabels, updateInboxCount } from './sidebar-renderer.js';
 
 // DataSyncManager が期待する名前で再エクスポート
-// updateInboxCountはrendererのものを使用し、ロジックを統一
 export { updateSidebarProjects as renderProjects, renderLabels, updateInboxCount };
 
 export function initSidebar() {
@@ -36,7 +35,6 @@ export function initSidebar() {
     updateSidebarVisibility();
     window.addEventListener('resize', updateSidebarVisibility);
     
-    // 修正: 初期化時に設定を即時適用
     applyInitialSettings();
     setupCompactModeListener();
 }
@@ -45,7 +43,8 @@ export function initSidebar() {
  * 初期の表示設定（コンパクトモードなど）を適用
  */
 function applyInitialSettings() {
-    const isCompact = localStorage.getItem('sidebar_compact') === 'compact';
+    // 修正: 'true' で統一
+    const isCompact = localStorage.getItem('sidebar_compact') === 'true';
     if (isCompact) {
         document.querySelectorAll('.sidebar-item-row').forEach(item => {
             item.classList.add('py-0.5');
