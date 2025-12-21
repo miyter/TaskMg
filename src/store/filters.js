@@ -1,7 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// フィルターデータの管理
-// ★修正: ガード処理の統一(throw)、サーバータイムスタンプの導入
+/**
+ * 更新日: 2025-12-21
+ * 内容: subscribeToFilters の引数シグネチャを (workspaceId, onUpdate) に統一
+ */
 
 import { db, auth } from '../core/firebase.js';
 import { 
@@ -21,14 +22,14 @@ export function clearFiltersCache() {
 
 /**
  * フィルターのリアルタイム購読
- * Note: フィルターはユーザー単位の設定として扱う（ワークスペース間で共有）
  */
-export function subscribeToFilters(onUpdate) {
+export function subscribeToFilters(workspaceId, onUpdate) {
+    const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
     const userId = auth.currentUser?.uid;
 
-    if (!userId) {
+    if (!userId || typeof callback !== 'function') {
         _cachedFilters = [];
-        if(onUpdate) onUpdate([]);
+        if (typeof callback === 'function') callback([]);
         return () => {};
     }
 
@@ -38,11 +39,11 @@ export function subscribeToFilters(onUpdate) {
     return onSnapshot(q, (snapshot) => {
         const filters = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         _cachedFilters = filters;
-        if(onUpdate) onUpdate(filters);
+        callback(filters);
     }, (error) => {
         console.error("Error subscribing to filters:", error);
         _cachedFilters = [];
-        if(onUpdate) onUpdate([]);
+        callback([]);
     });
 }
 
@@ -59,7 +60,7 @@ export async function addFilter(filterData) {
     await addDoc(collection(db, path), {
         ...data,
         ownerId: userId,
-        createdAt: serverTimestamp() // 修正: サーバー時刻を使用
+        createdAt: serverTimestamp()
     });
 }
 
@@ -68,14 +69,14 @@ export async function addFilter(filterData) {
  */
 export async function updateFilter(filterId, filterData) {
     const userId = auth.currentUser?.uid;
-    if (!userId) throw new Error("Authentication required"); // 修正: ガードをthrowに統一
+    if (!userId) throw new Error("Authentication required");
 
     const path = paths.filters(userId);
     const { id, ...data } = filterData;
 
     await updateDoc(doc(db, path, filterId), {
         ...data,
-        updatedAt: serverTimestamp() // 修正: サーバー時刻を使用
+        updatedAt: serverTimestamp()
     });
 }
 
@@ -84,7 +85,7 @@ export async function updateFilter(filterId, filterData) {
  */
 export async function deleteFilter(filterId) {
     const userId = auth.currentUser?.uid;
-    if (!userId) throw new Error("Authentication required"); // 修正: ガードをthrowに統一
+    if (!userId) throw new Error("Authentication required");
 
     const path = paths.filters(userId);
     await deleteDoc(doc(db, path, filterId));

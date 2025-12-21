@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: unsubscribeの返却漏れ修正、ガード処理の統一、古いコメント削除
+ * 内容: subscribeToLabels の引数シグネチャを (workspaceId, onUpdate) に統一
  */
 
 import { auth } from '../core/firebase.js';
@@ -26,22 +26,18 @@ function requireAuth() {
     return userId;
 }
 
-// ==========================================================
-// ★ UI層向けラッパー関数
-// ==========================================================
-
 /**
  * ラベルのリアルタイム購読
+ * Note: ラベルは全WS共通だが DataSyncManager の呼び出し規約に合わせる
  */
-export function subscribeToLabels(onUpdate) {
+export function subscribeToLabels(workspaceId, onUpdate) {
+    const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
     const userId = auth.currentUser?.uid;
     
-    if (userId) {
-        // 重要: unsubscribe関数を返す
-        return subscribeToLabelsRaw(userId, onUpdate);
+    if (userId && typeof callback === 'function') {
+        return subscribeToLabelsRaw(userId, callback);
     } else {
-        // 未認証時は空データを通知し、ダミーの解除関数を返す
-        onUpdate([]);
+        if (typeof callback === 'function') callback([]);
         return () => {};
     }
 }

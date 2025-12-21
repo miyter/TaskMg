@@ -1,6 +1,7 @@
 /**
  * 更新日: 2025-12-21
- * 内容: 同期取得用 getTasks の追加、タスク購読データのキャッシュ
+ * 内容: subscribeToTasks の引数シグネチャを (workspaceId, onUpdate) に修正し、
+ * Firestore の onSnapshot に確実に関数を渡すようガードを強化。
  */
 
 import { auth } from '../core/firebase.js';
@@ -76,27 +77,36 @@ async function handleRecurringTask(completedTask) {
 }
 
 /**
- * タスク一覧を購読する (キャッシュを更新)
+ * タスク一覧を購読する
+ * @param {string|function} workspaceId - ワークスペースIDまたはコールバック関数
+ * @param {function} [onUpdate] - コールバック関数
  */
-export function subscribeToTasks(onUpdate) {
+export function subscribeToTasks(workspaceId, onUpdate) {
+    // 引数の順序ミスや省略を許容するガード
+    // DataSyncManager が (workspaceId, callback) で呼ぶため、順序を正しく解決する
+    const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
+    const targetWorkspaceId = typeof workspaceId === 'string' ? workspaceId : getCurrentWorkspaceId();
+    
     const userId = auth.currentUser?.uid;
-    const workspaceId = getCurrentWorkspaceId();
 
-    if (userId && workspaceId) {
-        return subscribeToTasksRaw(userId, workspaceId, (tasks) => {
+    // 1. 認証とワークスペースID、かつコールバックが関数であることを厳密にチェック
+    if (userId && targetWorkspaceId && typeof callback === 'function') {
+        return subscribeToTasksRaw(userId, targetWorkspaceId, (tasks) => {
             cachedTasks = tasks; // キャッシュを更新
-            onUpdate(tasks);
+            callback(tasks);
         }); 
     } else {
+        // 条件を満たさない場合は空データを返して終了（クラッシュ防止）
         cachedTasks = [];
-        onUpdate([]);
+        if (typeof callback === 'function') {
+            callback([]);
+        }
         return () => {};
     }
 }
 
 /**
  * キャッシュされたタスク一覧を同期的に取得する
- * (ビルドエラー解消用)
  */
 export function getTasks() {
     return cachedTasks;

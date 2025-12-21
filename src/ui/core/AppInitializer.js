@@ -1,6 +1,6 @@
 /**
  * 更新日: 2025-12-21
- * 内容: renderLoginState のインポート元修正、認証監視ロジックの堅牢化
+ * 内容: 同期フローの安定化（ワークスペース確定後の同期開始）、二重起動防止ガードの追加
  */
 
 import { onAuthStateChanged } from '../../core/firebase-sdk.js';
@@ -18,7 +18,8 @@ import {
     startAllSubscriptions, 
     stopDataSync, 
     getWorkspaceUnsubscribe, 
-    setWorkspaceUnsubscribe 
+    setWorkspaceUnsubscribe,
+    isSyncing 
 } from './DataSyncManager.js';
 import { setupGlobalEventListeners } from './EventManager.js';
 import { subscribeToWorkspaces } from '../../store/workspace.js';
@@ -79,20 +80,22 @@ function setupAuthObserver() {
 function handleUserLogin(user) {
     initSidebar();
 
-    // ワークスペース購読
+    // 既存のワークスペース購読があれば解除
     const prevUnsub = getWorkspaceUnsubscribe();
-    if (prevUnsub) prevUnsub();
+    if (typeof prevUnsub === 'function') prevUnsub();
 
     const unsubscribeWs = subscribeToWorkspaces(user.uid, (workspaces) => {
         updateWorkspaceDropdownUI(workspaces);
+
+        // ★最重要: ワークスペースが確定（自動選択含む）した後にデータ同期を開始
+        startAllSubscriptions();
+        
+        // 初回のみページ状態を復元（二重実行防止）
+        if (!isSyncing()) {
+            restorePageState();
+        }
     });
     setWorkspaceUnsubscribe(unsubscribeWs);
-
-    // データ同期開始
-    startAllSubscriptions(user.uid);
-    
-    // ページ状態を復元
-    restorePageState();
 }
 
 /**
@@ -100,11 +103,12 @@ function handleUserLogin(user) {
  */
 function handleUserLogout() {
     const unsubWorkspaces = getWorkspaceUnsubscribe();
-    if (unsubWorkspaces) {
+    if (typeof unsubWorkspaces === 'function') {
         unsubWorkspaces();
         setWorkspaceUnsubscribe(null);
     }
     
+    // ワークスペース購読も止めるため true を指定
     stopDataSync(true); 
     renderLoginState();
 }
