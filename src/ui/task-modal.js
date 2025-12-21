@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: インポートパスの修正（simple-modals.js から分割済みモジュールへ）
+ * 内容: Escapeキーイベントのライフサイクル管理を動的に変更（競合回避）
  */
 
 import { buildModalHTML } from './modal/modal-dom-generator.js';
@@ -12,15 +12,19 @@ export { showLabelModal } from './modal/label-modal.js';
 export { showProjectModal } from './modal/project-modal.js';
 export { showWorkspaceModal } from './modal/workspace-modal.js';
 
+// Escapeキーハンドラーの参照を保持
+const handleEscapeKey = (e) => {
+    if (e.key === 'Escape') {
+        closeTaskModal();
+    }
+};
+
 /**
- * モーダル機能の初期化（グローバルなショートカット等）
+ * モーダル機能の初期化
+ * 以前はここでグローバルイベントを登録していたが、動的登録に変更したため空処理
  */
 export function initTaskModal() {
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeTaskModal();
-        }
-    });
+    // No-op
 }
 
 /**
@@ -39,6 +43,9 @@ export function openTaskEditModal(task) {
 
     // イベント設定（コントローラーに委譲）
     setupTaskModalEvents(container, task, closeTaskModal);
+
+    // Escapeキーイベントを登録
+    document.addEventListener('keydown', handleEscapeKey);
 }
 
 /**
@@ -46,5 +53,9 @@ export function openTaskEditModal(task) {
  */
 export function closeTaskModal() {
     const container = document.getElementById('modal-container');
-    if (container) container.innerHTML = '';
+    if (container) {
+        container.innerHTML = '';
+        // Escapeキーイベントを解除
+        document.removeEventListener('keydown', handleEscapeKey);
+    }
 }

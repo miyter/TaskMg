@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: HTML構造の適正化（ul直下のdivを修正）
+ * 内容: 不要なドラッグイベント設定の削除
  */
 
 import { createTaskItem } from './components/TaskItem.js';
@@ -25,19 +25,8 @@ export function renderTaskList(container, tasks) {
         tasks.forEach(task => {
             list.appendChild(createTaskItem(task));
         });
-        setupListDragEvents(list);
     }
     
     container.innerHTML = '';
     container.appendChild(list);
-}
-
-/**
- * リスト内のドラッグ＆ドロップイベントを設定
- */
-function setupListDragEvents(list) {
-    // 将来的なソート機能のために枠組みを残すが、現状はフィードバックなし
-    list.addEventListener('dragover', (e) => {
-        e.preventDefault();
-    });
 }
