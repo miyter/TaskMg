@@ -1,10 +1,19 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: カラーパレットの拡張と堅牢性の向上
+ * 内容: ストア連携によるヘルパー強化、変数のカプセル化
  */
 
-let sidebarWidth = 280; 
+import { getProjects } from '../store/projects.js';
+
+// 幅管理用のクロージャ
+const SidebarState = (() => {
+    let width = 280;
+    return {
+        getWidth: () => width,
+        setWidth: (w) => { width = w; }
+    };
+})();
 
 /**
  * サイドバーのリサイズ機能をセットアップ
@@ -14,11 +23,12 @@ export function setupResizer(sidebar, mainContent, resizer) {
 
     // 初期幅の復元
     const storedWidth = localStorage.getItem('sidebarWidth');
-    sidebarWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
+    const initialWidth = storedWidth ? parseInt(storedWidth, 10) : 280;
+    SidebarState.setWidth(initialWidth);
     
     // 閉じている状態でなければ幅を適用
     if (!sidebar.classList.contains('sidebar-closed')) {
-        sidebar.style.width = `${sidebarWidth}px`;
+        sidebar.style.width = `${initialWidth}px`;
     }
 
     let isResizing = false;
@@ -42,7 +52,7 @@ export function setupResizer(sidebar, mainContent, resizer) {
         if (newWidth < minWidth) newWidth = minWidth;
         if (newWidth > maxWidth) newWidth = maxWidth;
 
-        sidebarWidth = newWidth;
+        SidebarState.setWidth(newWidth);
         sidebar.style.width = `${newWidth}px`;
     };
 
@@ -53,14 +63,14 @@ export function setupResizer(sidebar, mainContent, resizer) {
         document.body.classList.remove('select-none');
         document.removeEventListener('mousemove', resize);
         document.removeEventListener('mouseup', stopResize);
-        localStorage.setItem('sidebarWidth', sidebarWidth);
+        localStorage.setItem('sidebarWidth', SidebarState.getWidth());
     };
 
     resizer.addEventListener('mousedown', startResize);
 }
 
 /**
- * ランダムなカラーを生成（拡張版）
+ * ランダムなカラーを生成
  */
 export function getRandomColor() {
     const colors = [
@@ -72,10 +82,13 @@ export function getRandomColor() {
 }
 
 /**
- * プロジェクト名を取得するUIヘルパー
+ * プロジェクト名を取得するUIヘルパー (ストア自動連携)
  */
-export function getProjectName(projectId, allProjects = []) {
+export function getProjectName(projectId, allProjects = null) {
     if (!projectId || projectId === 'inbox' || projectId === 'INBOX') return 'インボックス';
-    const project = allProjects.find(p => p.id === projectId);
+    
+    // 引数で渡されなければストアから取得
+    const projects = allProjects || getProjects();
+    const project = projects.find(p => p.id === projectId);
     return project ? project.name : '未分類';
 }

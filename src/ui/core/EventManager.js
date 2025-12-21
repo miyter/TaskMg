@@ -1,13 +1,24 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: ワークスペース切り替え時の同期フローを修正
+ * 内容: ワークスペース切り替え時の同期フロー修正、検索入力のデバウンス対応
  */
 
 import { auth } from '../../core/firebase.js';
 import { setCurrentFilter } from '../ui-view-manager.js';
 import { startAllSubscriptions, stopDataSync, updateUI } from './DataSyncManager.js';
 import { setupCustomSortDropdown } from '../components/SortDropdown.js';
+
+/**
+ * デバウンス関数（高頻度イベントの間引き）
+ */
+function debounce(func, wait) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
+}
 
 /**
  * アプリケーション全体のイベントリスナーを設定
@@ -42,7 +53,9 @@ export function setupGlobalEventListeners() {
     });
     
     // 3. 検索・フィルタUI
-    document.getElementById('search-input')?.addEventListener('input', updateUI);
+    // 検索入力は頻度が高いのでデバウンスを適用して負荷軽減
+    const debouncedSearch = debounce(() => updateUI(), 300);
+    document.getElementById('search-input')?.addEventListener('input', debouncedSearch);
     
     document.getElementById('toggle-completed-btn')?.addEventListener('click', (e) => {
         e.currentTarget.classList.toggle('text-blue-500');

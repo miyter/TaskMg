@@ -15,16 +15,16 @@
         font-family: 'M PLUS 2', 'Inter', sans-serif;
     }
 
-    /* 文字サイズ設定クラス（!importantを避け、カスケードで制御） */
-    body.font-large { font-size: 1.125rem; } /* 18px */
-    body.font-medium { font-size: 1rem; }     /* 16px */
-    body.font-small { font-size: 0.875rem; }  /* 14px */
+    /* 文字サイズ設定: Tailwind Configの値(@apply)を参照して一元化 */
+    body.font-large { @apply text-app-lg; }
+    body.font-medium { @apply text-app-md; }
+    body.font-small { @apply text-app-sm; }
 }
 
 @layer components {
-    /* 共通のすりガラス効果 */
+    /* 共通のすりガラス効果: Configのshadow-glassを活用 */
     .glass-effect {
-        @apply bg-white/70 dark:bg-gray-900/60 backdrop-blur-md border border-white/20 dark:border-gray-800/30;
+        @apply bg-white/70 dark:bg-gray-900/60 backdrop-blur-md border border-white/20 dark:border-gray-800/30 shadow-glass;
     }
 
     /* カスタムスクロールバー */
@@ -46,15 +46,7 @@
     }
 }
 
-/* アニメーション */
-@keyframes viewFadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-    animation: viewFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
+/* アニメーション: 重複していた .animate-fade-in 定義を削除し、Tailwind Config側を利用 */
 
 /* Markdown出力用の装飾 */
 .markdown-output ul {

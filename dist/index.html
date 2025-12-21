@@ -21,25 +21,31 @@
             document.documentElement.classList.remove('dark');
         }
 
-        // Firebase Config 等のグローバル定義
-        window.GLOBAL_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyCD6u_GAQJrU8DBu1LMUGw0wUsAXtdC6qw",
-            authDomain: "taskmg-c5be0.firebaseapp.com",
-            projectId: "taskmg-c5be0",
-            storageBucket: "taskmg-c5be0.firebasestorage.app",
-            messagingSenderId: "245900813558",
-            appId: "1:245900813558:web:3502cafdd4fa5d1c9538d7",
-            measurementId: "G-NQC4YWR4EM"
-        };
+        // Firebase Config: 環境変数から安全に読み込む（ハードコード廃止）
+        // 開発環境等で変数が無い場合はエラーログを出しつつ空オブジェクトでフォールバック
+        let fbConfig = {};
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                fbConfig = JSON.parse(__firebase_config);
+            } else {
+                console.warn('Firebase Config not found via environment variables.');
+            }
+        } catch (e) {
+            console.error('Failed to parse firebase config', e);
+        }
+
+        window.GLOBAL_FIREBASE_CONFIG = fbConfig;
+        
+        // アプリケーション固有ID等の注入
         window.GLOBAL_INITIAL_AUTH_TOKEN = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         window.GLOBAL_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     </script>
-  <script type="module" crossorigin src="/assets/main-MTDv1Wxs.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-oI_30uRn.css">
+  <script type="module" crossorigin src="/assets/main-kzQ5TNDk.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-DF0yeunR.css">
 </head>
 <body class="h-screen overflow-hidden">
 
-    <!-- アプリケーションルート（JavaScriptによりレイアウトが構築される） -->
+    <!-- アプリケーションルート -->
     <div id="app" class="h-full flex overflow-hidden"></div>
 
     <!-- エントリーポイント -->
