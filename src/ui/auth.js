@@ -1,25 +1,44 @@
 // @ts-nocheck
-// @miyter:20251221
-// 認証ロジックとヘッダーの認証UI制御
+/**
+ * 更新日: 2025-12-21
+ * 内容: エラーメッセージ日本語化、Enterキー対応、ユーザー情報表示、変数カプセル化
+ */
 
 import { 
     signInWithEmailAndPassword,
     signOut,
-    signInWithCustomToken,
-    onAuthStateChanged,
     updatePassword
 } from "../core/firebase-sdk.js";
 import { auth, isFirebaseInitialized } from '../core/firebase.js'; 
 import { showMessageModal } from './components.js'; 
 
-export let currentUserId = null;
+// 外部からの直接変更を防ぐため、変数は非公開にしGetterのみ公開
+let currentUserId = null;
+
+export function getCurrentUserId() {
+    return currentUserId;
+}
 
 /**
  * ログイン実行
  */
 export async function loginWithEmail(email, password) {
     if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
-    return await signInWithEmailAndPassword(auth, email, password);
+    try {
+        return await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        // エラーコードを日本語メッセージに変換して再スロー
+        let msg = "ログインに失敗しました。";
+        switch (error.code) {
+            case 'auth/invalid-email': msg = "メールアドレスの形式が正しくありません。"; break;
+            case 'auth/user-disabled': msg = "このアカウントは無効化されています。"; break;
+            case 'auth/user-not-found': msg = "アカウントが見つかりません。"; break;
+            case 'auth/wrong-password': msg = "パスワードが間違っています。"; break;
+            case 'auth/too-many-requests': msg = "試行回数が多すぎます。しばらく待ってからお試しください。"; break;
+            case 'auth/network-request-failed': msg = "ネットワークエラーが発生しました。通信環境を確認してください。"; break;
+        }
+        throw new Error(msg);
+    }
 }
 
 /**
@@ -39,40 +58,49 @@ export async function updateUserPassword(newPassword) {
     
     try {
         await updatePassword(user, newPassword);
-        showMessageModal("成功", "パスワードが正常に変更されました。", "success");
+        // メッセージ形式を統一（1引数版を使用）
+        showMessageModal("パスワードを変更しました");
     } catch (error) {
-        let message = "変更に失敗しました。";
+        let message = "変更に失敗しました: " + error.message;
         if (error.code === 'auth/requires-recent-login') {
-            message = "再ログインが必要です。一度ログアウトしてから再度お試しください。";
+            message = "セキュリティのため、再ログインが必要です。一度ログアウトしてから再度お試しください。";
         }
-        showMessageModal("エラー", message, "error");
+        // エラー時は2引数（メッセージ, タイプ）
+        showMessageModal(message, "error");
         throw error;
     }
 }
 
 /**
- * ヘッダーの認証ボタンにイベントリスナーを登録する (初期化時に一度だけ呼ぶ)
+ * ヘッダーの認証ボタンにイベントリスナーを登録する
  */
 export function setupAuthHandlers() {
     const loginBtn = document.getElementById('email-login-btn');
     const emailInput = document.getElementById('email-input');
     const passInput = document.getElementById('password-input');
 
-    if (loginBtn) {
-        loginBtn.onclick = async () => {
+    if (loginBtn && emailInput && passInput) {
+        const handleLogin = async () => {
             const email = emailInput.value.trim();
             const pass = passInput.value.trim();
             
             if (!email || !pass) {
-                return showMessageModal("メールアドレスとパスワードを入力してください。");
+                return showMessageModal("メールアドレスとパスワードを入力してください。", "error");
             }
             
             try {
                 await loginWithEmail(email, pass);
             } catch (e) {
-                showMessageModal("ログイン失敗: " + e.message, "error");
+                showMessageModal(e.message, "error");
             }
         };
+
+        loginBtn.onclick = handleLogin;
+
+        // Enterキーでログイン実行
+        passInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
     }
 }
 
@@ -83,6 +111,7 @@ export function updateAuthUI(user) {
     const elements = {
         loginForm: document.getElementById('login-form-container'),
         userInfo: document.getElementById('user-info'),
+        userEmailDisplay: document.getElementById('user-email-display'), // メール表示用要素
         emailInput: document.getElementById('email-input'),
         passInput: document.getElementById('password-input')
     };
@@ -94,6 +123,11 @@ export function updateAuthUI(user) {
         elements.loginForm.classList.add('hidden');
         elements.userInfo.classList.remove('hidden');
         elements.userInfo.classList.add('flex');
+        
+        // ユーザー情報の表示更新
+        if (elements.userEmailDisplay) {
+            elements.userEmailDisplay.textContent = user.email || 'ユーザー';
+        }
     } else {
         currentUserId = null;
         elements.loginForm.classList.remove('hidden');
@@ -102,5 +136,6 @@ export function updateAuthUI(user) {
         
         if (elements.emailInput) elements.emailInput.value = '';
         if (elements.passInput) elements.passInput.value = '';
+        if (elements.userEmailDisplay) elements.userEmailDisplay.textContent = '';
     }
 }

@@ -1,5 +1,8 @@
-// @miyter:20251221
-// Firestoreのコレクションパスを一括管理するユーティリティ
+// @ts-nocheck
+/**
+ * 更新日: 2025-12-21
+ * 内容: Firestoreパス定義の統合（filters復元、getAppIdエクスポート）
+ */
 
 /**
  * グローバルなApp IDを取得する
@@ -14,7 +17,7 @@ export function getAppId() {
  * ユーザー配下のベースパスを取得
  */
 function getUserBasePath(userId) {
-    return `/artifacts/${getAppId()}/users/${userId}`;
+    return `artifacts/${getAppId()}/users/${userId}`;
 }
 
 /**
@@ -29,6 +32,7 @@ function getWorkspaceBasePath(userId, workspaceId) {
  */
 export const paths = {
     // ユーザー共通データ
+    users: (userId) => getUserBasePath(userId),
     filters: (userId) => `${getUserBasePath(userId)}/filters`,
     labels: (userId) => `${getUserBasePath(userId)}/labels`,
     workspaces: (userId) => `${getUserBasePath(userId)}/workspaces`,

@@ -1,6 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// グローバルイベントリスナーの管理
+/**
+ * 更新日: 2025-12-21
+ * 内容: ワークスペース切り替え時の同期フローを修正
+ */
 
 import { auth } from '../../core/firebase.js';
 import { setCurrentFilter } from '../ui-view-manager.js';
@@ -17,10 +19,15 @@ export function setupGlobalEventListeners() {
         if (headerTitle) headerTitle.textContent = '読み込み中...';
         
         if (auth?.currentUser) {
-            // フィルタをインボックスにリセットして同期開始
+            // UI上のフィルタをインボックスにリセット
             setCurrentFilter({ type: 'inbox', id: null });
+            
+            // 一旦全てのデータ同期を停止し、再開する
+            // これにより新しいworkspaceIdに基づいた購読が開始される
             stopDataSync(false); 
             startAllSubscriptions();
+            
+            // 即座にUIを更新（クリア状態またはロード中表示のため）
             updateUI();
         }
     });

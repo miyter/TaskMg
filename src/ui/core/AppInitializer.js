@@ -1,10 +1,12 @@
 // @ts-nocheck
-// @miyter:20251221
-// アプリケーション初期化のコアロジック
+/**
+ * 更新日: 2025-12-21
+ * 内容: ログイン時のデータ同期開始漏れとページ状態復元タイミングの修正（Grok指摘対応）
+ */
 
 import { onAuthStateChanged } from '../../core/firebase-sdk.js';
-import { auth, initializeFirebase } from '../../core/firebase.js';
-import { updateAuthUI, setupAuthHandlers } from '../auth.js'; // ★修正: setupAuthHandlers を追加
+import { initializeFirebase, auth } from '../../core/firebase.js';
+import { updateAuthUI, setupAuthHandlers } from '../auth.js';
 import { renderLayout } from '../layout.js';
 import { initTheme } from '../theme.js';
 import { initTaskModal } from '../task-modal.js';
@@ -12,7 +14,7 @@ import { initSidebar } from '../sidebar.js';
 import { initSettings } from '../settings.js';
 import { setCurrentFilter, renderLoginState } from '../ui-view-manager.js';
 import { initWorkspaceDropdown, updateWorkspaceDropdownUI } from '../components/WorkspaceDropdown.js';
-import { stopDataSync, getWorkspaceUnsubscribe, setWorkspaceUnsubscribe } from './DataSyncManager.js';
+import { startAllSubscriptions, stopDataSync, getWorkspaceUnsubscribe, setWorkspaceUnsubscribe } from './DataSyncManager.js';
 import { setupGlobalEventListeners } from './EventManager.js';
 import { subscribeToWorkspaces } from '../../store/workspace.js';
 
@@ -32,9 +34,10 @@ export function runInitialization() {
     initSettings();
     initTaskModal();
     initWorkspaceDropdown();
-    setupAuthHandlers(); // ★追加: ログインボタン等のイベントを登録
+    setupAuthHandlers();
     setupGlobalEventListeners();
-    restorePageState();
+    
+    // ページ状態の復元はここではなく、ログイン後に実施する
     setupAuthObserver();
 }
 
@@ -72,12 +75,20 @@ function setupAuthObserver() {
 function handleUserLogin(user) {
     initSidebar();
 
-    if (!getWorkspaceUnsubscribe()) {
-        const unsubscribe = subscribeToWorkspaces((workspaces) => {
-            updateWorkspaceDropdownUI(workspaces);
-        });
-        setWorkspaceUnsubscribe(unsubscribe);
-    }
+    // ワークスペース購読 (再ログイン時も確実に再開)
+    const prevUnsub = getWorkspaceUnsubscribe();
+    if (prevUnsub) prevUnsub();
+
+    const unsubscribeWs = subscribeToWorkspaces((workspaces) => {
+        updateWorkspaceDropdownUI(workspaces);
+    });
+    setWorkspaceUnsubscribe(unsubscribeWs);
+
+    // データ同期開始（これが抜けていた）
+    startAllSubscriptions();
+    
+    // ページ状態を復元
+    restorePageState();
 }
 
 /**
@@ -90,6 +101,7 @@ function handleUserLogout() {
         setWorkspaceUnsubscribe(null);
     }
     
+    // 全データ同期停止（ワークスペース含む強制停止）
     stopDataSync(true); 
     renderLoginState();
 }

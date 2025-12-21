@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: ワークスペースIDによるデータフィルタリングの追加と同期ロジックの堅牢化
+ * 内容: プロジェクト購読時の引数を削除し、他のStore呼び出しと統一（Grok指摘対応）
  */
 
 import { auth } from '../../core/firebase.js';
@@ -19,7 +19,7 @@ import { renderProjects, renderLabels, updateInboxCount } from '../sidebar.js';
 import { renderTimeBlocks, renderDurations } from '../sidebar-renderer.js';
 import { updateView } from '../ui-view-manager.js';
 
-// データキャッシュ（Firestoreから取得した生データ）
+// データキャッシュ（UI更新用の一時ストア）
 let state = {
     tasks: [],
     projects: [],
@@ -28,7 +28,7 @@ let state = {
     filters: []
 };
 
-// 購読解除関数
+// 購読解除関数保持用
 let subscriptions = {
     tasks: null,
     projects: null,
@@ -42,33 +42,23 @@ let isDataSyncing = false;
 let updateTimer = null;
 
 /**
- * UI全体を更新する（ワークスペースによるフィルタリングを実施）
+ * UI全体を更新する（デバウンス処理付き）
  */
 export function updateUI() {
     if (updateTimer) return;
     
     updateTimer = requestAnimationFrame(() => {
-        const workspaceId = getCurrentWorkspaceId();
-        if (!workspaceId) {
-            updateTimer = null;
-            return;
-        }
-
-        // 現在のワークスペースに属するデータのみを抽出
-        // ※Firestore側でフィルタリングされていても、メモリ上での最終チェックとして実施
-        const filteredTasks = state.tasks.filter(t => t.workspaceId === workspaceId);
-        const filteredProjects = state.projects.filter(p => p.workspaceId === workspaceId);
-        const filteredLabels = state.labels.filter(l => l.workspaceId === workspaceId);
+        const { tasks, projects, labels } = state;
         
-        // 描画系にフィルタリング済みのデータを渡す
-        updateInboxCount(filteredTasks);
-        renderProjects(filteredProjects, filteredTasks);
-        renderLabels(filteredLabels, filteredTasks);
-        renderTimeBlocks(filteredTasks);
-        renderDurations(filteredTasks);
+        // 描画系にデータを渡す
+        updateInboxCount(tasks);
+        renderProjects(projects, tasks);
+        renderLabels(labels, tasks);
+        renderTimeBlocks(tasks);
+        renderDurations(tasks);
         
         // メインビューの更新
-        updateView(filteredTasks, filteredProjects, filteredLabels);
+        updateView(tasks, projects, labels);
         
         updateTimer = null;
     });
@@ -79,45 +69,48 @@ export function updateUI() {
  */
 export function startAllSubscriptions() {
     if (!auth?.currentUser) {
-        console.warn('Cannot start sync: User not authenticated.');
         return;
     }
 
+    // 既存の購読があれば停止
     stopDataSync(false);
     
     const workspaceId = getCurrentWorkspaceId();
-    if (!workspaceId) return;
+    if (!workspaceId) {
+        console.warn('[DataSync] No workspace selected.');
+        return;
+    }
 
     isDataSyncing = true;
     console.log('[DataSync] Start syncing workspace:', workspaceId);
 
-    // 各データソースの購読
-    // Store側の subscribe 関数が第2引数に workspaceId を受け取り、
-    // クエリレベルでフィルタリングを行うことを期待する設計
+    // --- 各データソースの購読 ---
+    // Store側の subscribe 関数は内部で getCurrentWorkspaceId() を使用してパスを解決する
+
     subscriptions.tasks = subscribeToTasks((data) => {
         state.tasks = data;
         updateUI();
-    }, workspaceId);
+    });
 
     subscriptions.projects = subscribeToProjects((data) => {
         state.projects = data;
         updateUI();
-    }, workspaceId);
+    });
 
     subscriptions.labels = subscribeToLabels((data) => {
         state.labels = data;
         updateUI();
-    }, workspaceId);
+    });
     
     subscriptions.timeBlocks = subscribeToTimeBlocks((data) => {
         state.timeBlocks = data;
         updateUI();
-    }, workspaceId);
+    });
 
     subscriptions.filters = subscribeToFilters((data) => {
         state.filters = data;
         updateUI();
-    }, workspaceId);
+    });
 }
 
 /**
@@ -138,23 +131,15 @@ export function stopDataSync(stopWorkspaceSync = false) {
     state = { tasks: [], projects: [], labels: [], timeBlocks: [], filters: [] };
     isDataSyncing = false;
     
+    // クリア状態でUI更新
     updateUI();
 }
 
 // --- Getters ---
 export const getData = {
-    tasks: () => {
-        const wsId = getCurrentWorkspaceId();
-        return state.tasks.filter(t => t.workspaceId === wsId);
-    },
-    projects: () => {
-        const wsId = getCurrentWorkspaceId();
-        return state.projects.filter(p => p.workspaceId === wsId);
-    },
-    labels: () => {
-        const wsId = getCurrentWorkspaceId();
-        return state.labels.filter(l => l.workspaceId === wsId);
-    },
+    tasks: () => state.tasks,
+    projects: () => state.projects,
+    labels: () => state.labels,
     timeBlocks: () => state.timeBlocks,
     filters: () => state.filters,
     workspaceId: () => getCurrentWorkspaceId()

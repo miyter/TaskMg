@@ -1,101 +1,72 @@
 // @ts-nocheck
-// @miyter:20251129
+/**
+ * 更新日: 2025-12-21
+ * 内容: serverTimestamp導入、paths利用によるパス統一、エラーハンドリング追加
+ */
 
-// 修正: SDKラッパーからインポート
 import { 
-    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot 
+    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, serverTimestamp 
 } from "../core/firebase-sdk.js";
 
-// 修正: dbの直接インポートを廃止し、getFirebaseヘルパーを使用
-// import { db } from '../core/firebase.js';
 import { getFirebase } from '../core/firebase.js';
+import { paths } from '../utils/paths.js';
 
 // ==========================================================
-// ★ RAW FUNCTIONS (userId必須) - ラッパー層からのみ呼び出し
+// ★ RAW FUNCTIONS (userId必須)
 // ==========================================================
 
 /**
- * ラベルデータのリアルタイムリスナーを開始する (RAW)。
- * @param {string} userId - ユーザーID (必須)
- * @param {function} onUpdate - データ更新時に呼び出されるコールバック関数
- * @returns {function} リスナーを解除するための関数
+ * ラベルデータのリアルタイムリスナーを開始する (RAW)
  */
 export function subscribeToLabelsRaw(userId, onUpdate) {
-    const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
-        ? window.GLOBAL_APP_ID 
-        : 'default-app-id';
-        
-    const path = `/artifacts/${appId}/users/${userId}/labels`;
-    
-    // 修正: 実行時にインスタンスを取得
+    if (!userId) {
+        onUpdate([]);
+        return () => {};
+    }
+
+    const path = paths.labels(userId);
     const { db } = getFirebase();
-    
     const q = query(collection(db, path));
 
     return onSnapshot(q, (snapshot) => {
         const labels = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         onUpdate(labels);
+    }, (error) => {
+        console.error("[Labels] Subscription error:", error);
+        onUpdate([]);
     });
 }
 
 /**
- * 新しいラベルを追加する (RAW)。
- * @param {string} userId - ユーザーID (必須)
- * @param {string} name - ラベル名
- * @param {string} color - ラベルの色 (HEXまたはTailwindクラス名)
+ * 新しいラベルを追加する (RAW)
  */
 export async function addLabelRaw(userId, name, color) {
-    const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
-        ? window.GLOBAL_APP_ID 
-        : 'default-app-id';
-        
-    const path = `/artifacts/${appId}/users/${userId}/labels`;
-    
-    // 修正: 実行時にインスタンスを取得
+    const path = paths.labels(userId);
     const { db } = getFirebase();
 
     await addDoc(collection(db, path), {
         name,
         color,
         ownerId: userId,
-        createdAt: new Date()
+        createdAt: serverTimestamp() // 修正: サーバー時刻を使用
     });
 }
 
 /**
- * ラベルを更新する (RAW)。
- * @param {string} userId - ユーザーID (必須)
- * @param {string} labelId - ラベルID
- * @param {object} updates - 更新内容
+ * ラベルを更新する (RAW)
  */
 export async function updateLabelRaw(userId, labelId, updates) {
-    const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
-        ? window.GLOBAL_APP_ID 
-        : 'default-app-id';
-        
-    const path = `/artifacts/${appId}/users/${userId}/labels`;
-    
-    // 修正: 実行時にインスタンスを取得
+    const path = paths.labels(userId);
     const { db } = getFirebase();
-
     const ref = doc(db, path, labelId);
     return updateDoc(ref, updates);
 }
 
 /**
- * ラベルを削除する (RAW)。
- * @param {string} userId - ユーザーID (必須)
- * @param {string} labelId - ラベルID
+ * ラベルを削除する (RAW)
  */
 export async function deleteLabelRaw(userId, labelId) {
-    const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
-        ? window.GLOBAL_APP_ID 
-        : 'default-app-id';
-        
-    const path = `/artifacts/${appId}/users/${userId}/labels`;
-    
-    // 修正: 実行時にインスタンスを取得
+    const path = paths.labels(userId);
     const { db } = getFirebase();
-
     await deleteDoc(doc(db, path, labelId));
 }

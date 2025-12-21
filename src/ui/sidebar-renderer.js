@@ -1,6 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// サイドバーの各パーツを描画する純粋なレンダラー
+/**
+ * 更新日: 2025-12-21
+ * 内容: TimeBlock編集バグ修正、Filterレンダリングの引数修正（Grok指摘対応）
+ */
 
 import { setupDropZone } from './sidebar-drag-drop.js';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components.js';
@@ -76,7 +78,8 @@ export function renderTimeBlocks(tasks = []) {
         
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            showTimeBlockModal();
+            // 修正: 編集対象のblockを渡す
+            showTimeBlockModal(block);
         });
 
         setupDropZone(item, 'timeblock', block.id);
@@ -131,13 +134,17 @@ export function renderDurations(tasks = []) {
 /**
  * カスタムフィルターを描画
  */
-export function renderFilters(filters = []) {
+export function renderFilters(filters = [], tasks = []) {
     const list = document.getElementById('filter-list');
     if (!list) return;
     list.innerHTML = '';
 
     filters.forEach(filter => {
-        const item = createSidebarItem(filter.name, 'filter', filter.id, null, 0);
+        // TODO: フィルター条件に基づいた件数計算（現時点では0）
+        // filter-parserの実装が必要
+        const count = 0;
+
+        const item = createSidebarItem(filter.name, 'filter', filter.id, null, count);
         
         const content = item.firstElementChild;
         if (content) {
@@ -171,6 +178,6 @@ export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels, al
     renderLabels(allLabels, allTasks);
     renderTimeBlocks(allTasks);
     renderDurations(allTasks);
-    renderFilters(allFilters);
+    renderFilters(allFilters, allTasks); // tasksを渡すように修正
     updateInboxCount(allTasks);
 }

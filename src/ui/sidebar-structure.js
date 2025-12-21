@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 全セクションのヘッダー構造と余白を完全に統一
+ * 内容: 開閉状態の判定ロジック修正、トグル挙動の安定化（Grok指摘対応）
  */
 
 /**
@@ -90,8 +90,9 @@ export function setupSidebarToggles() {
         const icon = header.querySelector('svg');
         if (!list || !icon) return;
 
+        // 修正: 'false' でない限り true (null含む)
         const savedState = localStorage.getItem(`sidebar:${targetId}-open`);
-        const isOpen = savedState === null ? true : savedState === 'true';
+        const isOpen = savedState !== 'false';
 
         const updateState = (open) => {
             list.classList.toggle('hidden', !open);
@@ -101,8 +102,12 @@ export function setupSidebarToggles() {
         updateState(isOpen);
 
         header.addEventListener('click', (e) => {
+            // 追加ボタン押下時は開閉しない
             if (e.target.closest('button')) return;
-            const newState = list.classList.contains('hidden');
+            
+            const isHidden = list.classList.contains('hidden');
+            const newState = isHidden; // hiddenなら開く(true)
+            
             updateState(newState);
             localStorage.setItem(`sidebar:${targetId}-open`, newState);
         });

@@ -1,8 +1,11 @@
 // @ts-nocheck
-// @miyter:20251221
-// サイドバーのドラッグ＆ドロップ機能管理
+/**
+ * 更新日: 2025-12-21
+ * 内容: ドラッグ＆ドロップのちらつき防止、入力値検証、エラー通知（Grok指摘対応）
+ */
 
 import { updateTask } from '../store/store.js';
+import { showMessageModal } from './components.js';
 
 const DRAG_OVER_CLASSES = ['bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400'];
 
@@ -12,17 +15,35 @@ const DRAG_OVER_CLASSES = ['bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-bl
 export function setupDropZone(element, type, value = null) {
     if (!element) return;
 
-    element.addEventListener('dragover', (e) => {
+    // 子要素を跨いだ時のちらつき防止用カウンター
+    let enterCount = 0;
+
+    element.addEventListener('dragenter', (e) => {
         e.preventDefault();
+        enterCount++;
         element.classList.add(...DRAG_OVER_CLASSES);
     });
 
-    element.addEventListener('dragleave', () => {
-        element.classList.remove(...DRAG_OVER_CLASSES);
+    element.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        // dragoverでもクラスを維持（念のため）
+        if (!element.classList.contains('ring-2')) {
+            element.classList.add(...DRAG_OVER_CLASSES);
+        }
+    });
+
+    element.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        enterCount--;
+        if (enterCount <= 0) {
+            element.classList.remove(...DRAG_OVER_CLASSES);
+            enterCount = 0; // カウンターリセット
+        }
     });
 
     element.addEventListener('drop', async (e) => {
         e.preventDefault();
+        enterCount = 0;
         element.classList.remove(...DRAG_OVER_CLASSES);
         
         const taskId = e.dataTransfer.getData('text/plain');
@@ -50,7 +71,13 @@ async function handleTaskDrop(taskId, type, value) {
             updates.timeBlockId = (value === 'unassigned' || value === null) ? null : value;
             break;
         case 'duration':
-            if (value) updates.duration = parseInt(value, 10);
+            // 数値変換とバリデーション
+            const dur = parseInt(value, 10);
+            if (!isNaN(dur) && dur > 0) {
+                updates.duration = dur;
+            } else {
+                console.warn("[Drop] Invalid duration value:", value);
+            }
             break;
         default:
             return;
@@ -62,5 +89,6 @@ async function handleTaskDrop(taskId, type, value) {
         }
     } catch (error) {
         console.error(`[Drop Error] Type: ${type}, Task: ${taskId}`, error);
+        showMessageModal({ message: "タスクの更新に失敗しました", type: 'error' });
     }
 }

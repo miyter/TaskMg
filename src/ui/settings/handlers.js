@@ -1,6 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// 設定モーダルのイベントハンドラー
+/**
+ * 更新日: 2025-12-21
+ * 内容: 設定反映の確実性向上、UX改善、保守性対応（Grok指摘対応）
+ */
 
 import { auth } from '../../core/firebase.js';
 import { updateUserPassword } from '../auth.js';
@@ -22,6 +24,7 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
     });
 
     // 表示設定（ラジオボタングループ）
+    // 初期化時に現在の値を適用することで、localStorageとUIの同期を保証する
     setupRadioGroupHandler('app-theme', 'theme', (val) => {
         document.documentElement.classList.toggle('dark', val === 'dark');
         applyBackground();
@@ -47,17 +50,29 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
 
 /**
  * ラジオボタン・グループの共通ハンドラー生成
+ * 初期化時に現在の値でonUpdateを実行する
  */
 function setupRadioGroupHandler(name, storageKey, onUpdate) {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
+    const savedValue = localStorage.getItem(storageKey);
+
     radios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             const val = e.target.value;
-            // 数値や真偽値の保存が必要な場合はここで変換
             localStorage.setItem(storageKey, val);
             onUpdate(val);
         });
     });
+
+    // モーダルが開かれた時点で、保存されている設定（またはデフォルト）を確実に適用する
+    if (savedValue) {
+        onUpdate(savedValue);
+    } else {
+        const defaultRadio = document.querySelector(`input[name="${name}"]:checked`);
+        if (defaultRadio) {
+            onUpdate(defaultRadio.value);
+        }
+    }
 }
 
 /**
@@ -68,9 +83,13 @@ function setupExportHandler() {
     if (!btn) return;
 
     btn.onclick = async () => {
-        const original = btn.innerHTML;
+        const originalText = btn.querySelector('div.font-medium').textContent;
+        const subText = btn.querySelector('div.text-xs');
+        
+        // UI更新: ローディング状態
         btn.disabled = true;
-        btn.innerHTML = `<span class="flex items-center gap-2">作成中...</span>`;
+        btn.classList.add('opacity-70', 'cursor-wait');
+        btn.querySelector('div.font-medium').textContent = "バックアップ作成中...";
         
         try {
             const data = await createBackupData();
@@ -78,10 +97,13 @@ function setupExportHandler() {
             downloadJSON(data, `backup_${timestamp}.json`);
             showMessageModal("バックアップをダウンロードしました");
         } catch (e) {
+            console.error(e);
             showMessageModal("エクスポートに失敗しました", 'error');
         } finally {
+            // UI復元
             btn.disabled = false;
-            btn.innerHTML = original;
+            btn.classList.remove('opacity-70', 'cursor-wait');
+            btn.querySelector('div.font-medium').textContent = originalText;
         }
     };
 }
@@ -103,9 +125,10 @@ function setupPasswordHandler() {
             showMessageModal("パスワードを変更しました");
             input.value = '';
         } catch (err) {
-            const msg = err.code === 'auth/requires-recent-login' 
-                ? "再ログインが必要です" 
-                : "失敗しました: " + err.message;
+            let msg = "失敗しました: " + err.message;
+            if (err.code === 'auth/requires-recent-login') {
+                msg = "セキュリティのため、再ログインが必要です。ログアウトして再度お試しください。";
+            }
             showMessageModal(msg, 'error');
         }
     };
@@ -125,6 +148,9 @@ function setupLogoutHandler(closeModal) {
     });
 }
 
+/**
+ * JSONファイルダウンロード（モジュールローカル関数）
+ */
 function downloadJSON(data, filename) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);

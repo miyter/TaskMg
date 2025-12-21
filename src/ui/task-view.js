@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 重複宣言の解消とモジュールの一本化
+ * 内容: ヘッダータイトルの具体化、ソートロジックの改善（Grok指摘対応）
  */
 
 import { renderTaskList } from './task-list.js';
@@ -15,19 +15,31 @@ export { renderTaskList };
  * タスクビュー全体（リスト＋入力欄）を描画
  * @param {Array} tasks - 表示するタスクの配列
  * @param {Array} allProjects - 全プロジェクトの配列
+ * @param {Array} allLabels - 全ラベルの配列 (追加)
  * @param {string|null} projectId - 現在のプロジェクトID
  * @param {string|null} labelId - 現在のラベルID
  */
-export function renderTaskView(tasks, allProjects, projectId = null, labelId = null) {
+export function renderTaskView(tasks, allProjects, allLabels = [], projectId = null, labelId = null) {
     const container = document.getElementById('task-view');
     if (!container) return;
 
-    // ヘッダー情報の更新
-    updateHeaderInfo(tasks.length, projectId, labelId);
+    // ヘッダー情報の更新（具体的な名前を表示）
+    updateHeaderInfo(tasks.length, projectId, labelId, allProjects, allLabels);
 
     // ソートの適用
+    // 1. 隠しselect要素があればそれを使う
+    // 2. なければカスタムドロップダウンのトリガーから値を取得
+    // 3. どちらもなければデフォルト
     const sortSelect = document.getElementById('sort-select');
-    const sortValue = sortSelect ? sortSelect.value : 'createdAt_desc';
+    const sortTrigger = document.getElementById('sort-trigger');
+    
+    let sortValue = 'createdAt_desc';
+    if (sortSelect) {
+        sortValue = sortSelect.value;
+    } else if (sortTrigger && sortTrigger.dataset.value) {
+        sortValue = sortTrigger.dataset.value;
+    }
+
     const sortedTasks = sortTasks(tasks, sortValue);
 
     container.innerHTML = '';
@@ -51,19 +63,24 @@ export function renderTaskView(tasks, allProjects, projectId = null, labelId = n
 /**
  * ヘッダータイトルと件数の更新
  */
-function updateHeaderInfo(count, projectId, labelId) {
+function updateHeaderInfo(count, projectId, labelId, allProjects, allLabels) {
     const headerTitle = document.getElementById('header-title');
     const headerCount = document.getElementById('header-count');
     
     if (headerTitle) {
+        let title = "インボックス";
+        
         if (projectId) {
-            headerTitle.textContent = "プロジェクトタスク"; 
+            const project = allProjects.find(p => p.id === projectId);
+            title = project ? project.name : "プロジェクト";
         } else if (labelId) {
-            headerTitle.textContent = "ラベル付きタスク";
-        } else {
-            headerTitle.textContent = "インボックス";
+            const label = allLabels.find(l => l.id === labelId);
+            title = label ? `${label.name}` : "ラベル";
         }
+        
+        headerTitle.textContent = title;
     }
+    
     if (headerCount) {
         headerCount.textContent = `${count}件`;
     }

@@ -1,6 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// テーマ管理（ライト/ダーク）と背景設定の適用
+/**
+ * 更新日: 2025-12-21
+ * 内容: 背景設定のライトモード対応、未使用引数の削除（Grok指摘対応）
+ */
 
 /**
  * アプリのテーマと文字サイズ、背景設定を初期化・適用する
@@ -31,21 +33,25 @@ export function toggleTheme() {
 /**
  * 背景設定をメインコンテンツに適用する
  */
-export function applyBackground(forceType = null) {
+export function applyBackground() {
     const mainContent = document.getElementById('main-content');
     if (!mainContent) return;
 
-    const bgType = forceType || localStorage.getItem('background') || 'none';
-    const isDark = document.documentElement.classList.contains('dark');
-
-    // リセット（デフォルトはCSSで定義されていることを前提）
+    const bgType = localStorage.getItem('background') || 'none';
+    
+    // リセット
     mainContent.style.backgroundImage = '';
     
-    // 背景適用の条件チェック（ダークモード時のみ適用など）
-    if (!isDark || bgType === 'none') return;
+    if (bgType === 'none') return;
 
-    // 特定のパターン（テクスチャなど）の適用
+    // 背景パターンの適用 (ライト/ダーク両対応)
     if (bgType === 'haikei') {
+        // 画像パスは適宜調整。ダーク/ライトで画像を切り替える場合はここで分岐可能
+        const imageUrl = document.documentElement.classList.contains('dark') 
+            ? "/images/haikei_black_1.jpg" 
+            : "/images/haikei_white_1.jpg"; // ライト用画像があれば切り替え
+
+        // 現状は共通画像またはダーク用のものを適用
         Object.assign(mainContent.style, {
             backgroundImage: "url('/images/haikei_black_1.jpg')",
             backgroundSize: 'cover',

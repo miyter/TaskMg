@@ -1,8 +1,10 @@
 // @ts-nocheck
-// @miyter:20251221
-// ワークスペース作成・編集モーダル制御
+/**
+ * 更新日: 2025-12-21
+ * 内容: Grokのレビューに基づくバグ修正（クリック判定、Escキー対応、保存中無効化）
+ */
 
-import { addWorkspace, updateWorkspaceName, setCurrentWorkspaceId } from '../../store/workspace.js';
+import { addWorkspace, updateWorkspaceName, setCurrentWorkspaceId, getWorkspaces } from '../../store/workspace.js';
 import { showMessageModal } from '../components.js';
 import { buildWorkspaceModalHTML } from './workspace-modal-dom.js';
 
@@ -10,7 +12,7 @@ import { buildWorkspaceModalHTML } from './workspace-modal-dom.js';
  * ワークスペースモーダルを表示
  */
 export function showWorkspaceModal(workspaceData = null) {
-    const modalId = 'workspace-modal';
+    const modalId = 'workspace-modal-root';
     document.getElementById(modalId)?.remove();
 
     const overlay = document.createElement('div');
@@ -25,31 +27,58 @@ export function showWorkspaceModal(workspaceData = null) {
  * イベントリスナーの設定
  */
 function setupEvents(overlay, workspaceData) {
-    const close = () => overlay.remove();
-    const nameInput = overlay.querySelector('#modal-workspace-name');
     const saveBtn = overlay.querySelector('#save-workspace-btn');
+    const nameInput = overlay.querySelector('#modal-workspace-name');
+    const cancelBtn = overlay.querySelector('#cancel-modal-btn');
+    const actualOverlay = overlay.querySelector('#workspace-modal-overlay');
 
-    // 閉じる操作
-    overlay.querySelector('#cancel-modal-btn')?.addEventListener('click', close);
-    overlay.onclick = (e) => { if (e.target === overlay.firstElementChild) close(); };
+    // 閉じる処理（メモリリーク防止のためリスナー管理）
+    const close = () => {
+        document.removeEventListener('keydown', escHandler);
+        overlay.remove();
+    };
 
-    // 保存処理
+    const escHandler = (e) => {
+        if (e.key === 'Escape') close();
+    };
+
+    // 1. Escキー対応
+    document.addEventListener('keydown', escHandler);
+
+    // 2. 背景クリック判定（カード部分ではなく背景のみ）
+    actualOverlay.onclick = (e) => {
+        if (e.target === actualOverlay) close();
+    };
+
+    if (cancelBtn) cancelBtn.onclick = close;
+
+    // 3. 保存処理（バリデーションと連打防止）
     const handleSave = async () => {
+        if (saveBtn.disabled) return;
+
         const name = nameInput?.value.trim();
-        if (!name) return showMessageModal('名前を入力してください', 'error');
+        if (!name) return showMessageModal('ワークスペース名を入力してください', 'error');
+
+        // 名前重複チェック（簡易）
+        const isDuplicate = getWorkspaces().some(ws => ws.name === name && ws.id !== workspaceData?.id);
+        if (isDuplicate) return showMessageModal('その名前のワークスペースは既に存在します', 'error');
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = workspaceData ? '更新中...' : '作成中...';
 
         try {
             if (workspaceData) {
                 await updateWorkspaceName(workspaceData.id, name);
-                showMessageModal(`変更しました`);
+                // 成功ポップアップは出さない方針
             } else {
                 const newWs = await addWorkspace(name);
                 setCurrentWorkspaceId(newWs.id);
-                showMessageModal(`作成しました`);
             }
             close();
         } catch (error) {
-            showMessageModal(`失敗しました`, 'error');
+            saveBtn.disabled = false;
+            saveBtn.textContent = workspaceData ? '保存' : '作成';
+            showMessageModal(`失敗しました: ${error.message}`, 'error');
         }
     };
 

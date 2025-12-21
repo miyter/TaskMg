@@ -1,128 +1,93 @@
 // @ts-nocheck
-// @miyter:20251129
+/**
+ * 更新日: 2025-12-21
+ * 内容: パス生成の統一、serverTimestamp導入、キャッシュ管理の改善、orderBy有効化
+ */
 
-// 修正: SDKラッパーからインポート
 import { 
-    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, orderBy 
+    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, orderBy, serverTimestamp 
 } from "../core/firebase-sdk.js";
 
-// 修正: dbの直接インポートを廃止し、getFirebaseヘルパーを使用
 import { getFirebase } from '../core/firebase.js';
-
-import { getCurrentWorkspaceId } from './workspace.js';
+import { paths } from '../utils/paths.js';
 
 // ==========================================================
-// ★ RAW FUNCTIONS (userId必須) - ラッパー層からのみ呼び出し
+// ★ RAW FUNCTIONS (userId, workspaceId 必須)
 // ==========================================================
 
-// プロジェクトリストのキャッシュ（同期的に取得するため）
+// プロジェクトリストのキャッシュ
+// 注意: このキャッシュは同期的な getProjects() のためだけに使用され、
+// 最後に購読されたワークスペースのデータを保持します。
 let _cachedProjects = [];
 
 /**
- * プロジェクトコレクションへのパスを取得する内部ヘルパー
- * @param {string} userId 
- * @returns {string|null} パスまたはnull（ワークスペース未選択時）
- */
-function getProjectsPath(userId) {
-    const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
-        ? window.GLOBAL_APP_ID 
-        : 'default-app-id';
-        
-    // ワークスペース選択状態を確認し、パスに含める
-    const workspaceId = getCurrentWorkspaceId();
-    if (!workspaceId) return null;
-
-    // 修正: ワークスペースごとの階層に変更
-    // /artifacts/${appId}/users/${userId}/workspaces/${workspaceId}/projects
-    return `/artifacts/${appId}/users/${userId}/workspaces/${workspaceId}/projects`;
-}
-
-/**
- * プロジェクト数据的リアルタイムリスナーを開始する (RAW)。
+ * プロジェクトデータのリアルタイムリスナーを開始する (RAW)
  * @param {string} userId - ユーザーID (必須)
+ * @param {string} workspaceId - ワークスペースID (必須)
  * @param {function} onUpdate - データ更新時に呼び出されるコールバック関数
  * @returns {function} リスナーを解除するための関数
  */
-export function subscribeToProjectsRaw(userId, onUpdate) {
-    const path = getProjectsPath(userId);
+export function subscribeToProjectsRaw(userId, workspaceId, onUpdate) {
+    // パスを paths ユーティリティから生成
+    const path = paths.projects(userId, workspaceId);
 
-    // ワークスペースが選択されていない、またはパス生成不可の場合は空で返す
-    if (!path) {
-        console.warn('subscribeToProjectsRaw: No workspace selected or path invalid');
-        _cachedProjects = [];
-        onUpdate([]);
-        return () => {};
-    }
-
-    // 修正: 実行時にインスタンスを取得
     const { db } = getFirebase();
 
-    // orderByはインデックスエラー回避のため一旦外しています。
-    const q = query(collection(db, path)); 
+    // 並び順を保証（インデックス未作成時はコンソールにリンクが表示されるので作成すること）
+    const q = query(collection(db, path), orderBy('createdAt', 'asc')); 
 
     return onSnapshot(q, (snapshot) => {
         const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         // キャッシュを更新
         _cachedProjects = projects;
         onUpdate(projects);
+    }, (error) => {
+        console.error("Error subscribing to projects:", error);
+        // エラー時はキャッシュもクリアして空を返す
+        _cachedProjects = [];
+        onUpdate([]);
     });
 }
 
 /**
  * 現在キャッシュされているプロジェクトリストを取得する
- * @returns {Array} プロジェクトの配列
+ * 注意: 購読中の最新データが返るが、ワークスペース切り替え直後などは古い可能性があるため、
+ * 基本的にはリアクティブなデータソース（onUpdate経由）を使用すること。
  */
 export function getProjects() {
     return _cachedProjects;
 }
 
 /**
- * 新しいプロジェクトを追加する (RAW)。
- * @param {string} userId - ユーザーID (必須)
- * @param {string} name - プロジェクト名
+ * 新しいプロジェクトを追加する (RAW)
  */
-export async function addProjectRaw(userId, name) {
-    const path = getProjectsPath(userId);
-    if (!path) throw new Error('Workspace not selected');
-
-    // 修正: 実行時にインスタンスを取得
+export async function addProjectRaw(userId, workspaceId, name) {
+    const path = paths.projects(userId, workspaceId);
     const { db } = getFirebase();
 
     await addDoc(collection(db, path), {
         name,
         ownerId: userId,
-        createdAt: new Date()
+        // クライアント時刻ではなくサーバー時刻を使用
+        createdAt: serverTimestamp()
     });
 }
 
 /**
- * プロジェクトを更新する (RAW)。
- * @param {string} userId - ユーザーID (必須)
- * @param {string} projectId - プロジェクトID
- * @param {object} updates - 更新内容
+ * プロジェクトを更新する (RAW)
  */
-export async function updateProjectRaw(userId, projectId, updates) {
-    const path = getProjectsPath(userId);
-    if (!path) throw new Error('Workspace not selected');
-
-    // 修正: 実行時にインスタンスを取得
+export async function updateProjectRaw(userId, workspaceId, projectId, updates) {
+    const path = paths.projects(userId, workspaceId);
     const { db } = getFirebase();
-
     const ref = doc(db, path, projectId);
     return updateDoc(ref, updates);
 }
 
 /**
- * プロジェクトを削除する (RAW)。
- * @param {string} userId - ユーザーID (必須)
- * @param {string} projectId - プロジェクトID
+ * プロジェクトを削除する (RAW)
  */
-export async function deleteProjectRaw(userId, projectId) {
-    const path = getProjectsPath(userId);
-    if (!path) throw new Error('Workspace not selected');
-
-    // 修正: 実行時にインスタンスを取得
+export async function deleteProjectRaw(userId, workspaceId, projectId) {
+    const path = paths.projects(userId, workspaceId);
     const { db } = getFirebase();
-
     await deleteDoc(doc(db, path, projectId));
 }

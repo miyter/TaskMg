@@ -1,6 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// サイドバーのUI状態管理（リサイズ・開閉状態）
+/**
+ * 更新日: 2025-12-21
+ * 内容: カラーパレットの拡張と堅牢性の向上
+ */
 
 let sidebarWidth = 280; 
 
@@ -58,10 +60,14 @@ export function setupResizer(sidebar, mainContent, resizer) {
 }
 
 /**
- * ランダムなカラーを生成（新規プロジェクト等用）
+ * ランダムなカラーを生成（拡張版）
  */
 export function getRandomColor() {
-    const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6'];
+    const colors = [
+        '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6',
+        '#EC4899', '#14B8A6', '#06B6D4', '#0EA5E9', '#8B5CF6', '#A78BFA',
+        '#F472B6', '#FB923C', '#A3E635', '#22D3EE'
+    ];
     return colors[Math.floor(Math.random() * colors.length)];
 }
 

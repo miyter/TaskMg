@@ -1,10 +1,12 @@
 // @ts-nocheck
-// @miyter:20251129
+/**
+ * 更新日: 2025-12-21
+ * 内容: unsubscribeの返却漏れ修正、ガード処理の統一、古いコメント削除
+ */
 
 import { auth } from '../core/firebase.js';
 import { showMessageModal } from '../ui/components.js';
 
-// ★修正: store-rawをインポート (updateLabelRawを追加)
 import { 
     subscribeToLabelsRaw,
     addLabelRaw,
@@ -13,61 +15,57 @@ import {
 } from './labels-raw.js';
 
 /**
- * 認証ガード。未認証ならエラーモーダルを表示し例外をスローする。
- * @returns {string} 認証済みのユーザーID
+ * 認証ガード
  */
 function requireAuth() {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-        showMessageModal("操作にはログインが必要です。", null); 
+        showMessageModal("操作にはログインが必要です。", "error"); 
         throw new Error('Authentication required.'); 
     }
     return userId;
 }
 
 // ==========================================================
-// ★ UI層向けラッパー関数 (認証ガードと userId の自動注入)
+// ★ UI層向けラッパー関数
 // ==========================================================
 
 /**
- * ラベルのリアルタイム購読 (ラッパー)
+ * ラベルのリアルタイム購読
  */
-function subscribeToLabels(onUpdate) { // ★修正: exportを削除
+export function subscribeToLabels(onUpdate) {
     const userId = auth.currentUser?.uid;
-    // 認証前に呼ばれる可能性もあるため、userIdが存在すれば購読
+    
     if (userId) {
-        subscribeToLabelsRaw(userId, onUpdate);
+        // 重要: unsubscribe関数を返す
+        return subscribeToLabelsRaw(userId, onUpdate);
+    } else {
+        // 未認証時は空データを通知し、ダミーの解除関数を返す
+        onUpdate([]);
+        return () => {};
     }
 }
 
 /**
- * 新しいラベルを追加する (ラッパー)
- * @param {string} name - ラベル名
- * @param {string} color - ラベルの色
+ * 新しいラベルを追加する
  */
-async function addLabel(name, color) { // ★修正: exportを削除
+export async function addLabel(name, color) {
     const userId = requireAuth();
     return addLabelRaw(userId, name, color);
 }
 
 /**
- * ラベルを更新する (ラッパー)
- * @param {string} labelId - ラベルID
- * @param {object} updates - 更新内容
+ * ラベルを更新する
  */
-async function updateLabel(labelId, updates) { // ★修正: exportを削除
+export async function updateLabel(labelId, updates) {
     const userId = requireAuth();
     return updateLabelRaw(userId, labelId, updates);
 }
 
 /**
- * ラベルを削除する (ラッパー)
- * @param {string} labelId - ラベルID
+ * ラベルを削除する
  */
-async function deleteLabel(labelId) { // ★修正: exportを削除
+export async function deleteLabel(labelId) {
     const userId = requireAuth();
     return deleteLabelRaw(userId, labelId);
 }
-
-// ★修正: 全ての公開関数をファイル末尾で一度だけエクスポート
-export { subscribeToLabels, addLabel, updateLabel, deleteLabel };

@@ -1,14 +1,14 @@
 // @ts-nocheck
-// @miyter:20251221
-// タスク入力フォームの制御（スタンドアロン版 & インライン版）
+/**
+ * 更新日: 2025-12-21
+ * 内容: 状態管理のローカル化(DOM属性)、エラーハンドリング強化、日付変換
+ */
 
 import { addTaskCompatibility } from '../store/store.js';
 import { getProjects } from '../store/projects.js';
 import { getTimeBlocks } from '../store/timeblocks.js';
 import { createGlassCard } from './components/glass-card.js';
 import { showMessageModal } from './components.js';
-
-let isInputExpanded = false;
 
 /**
  * スタンドアロン入力フォーム (検索/ダッシュボード用)
@@ -17,6 +17,9 @@ export function renderTaskInput() {
     const container = document.getElementById('task-input-container');
     if (!container) return;
 
+    // データがまだロードされていない場合のフォールバックは
+    // 各Storeが初期値を返す設計に依存するか、UI側で再描画を促す必要があるが、
+    // ここでは同期取得を試みる
     const projects = getProjects();
     const projectOptions = projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
 
@@ -47,7 +50,10 @@ export function renderTaskInput() {
  * インライン入力フォーム (タスクリスト下部)
  */
 export function renderInlineInput(container, projectId, labelId) {
-    if (!isInputExpanded) {
+    // グローバル変数を廃止し、DOMの状態属性で判定
+    const isExpanded = container.dataset.expanded === 'true';
+
+    if (!isExpanded) {
         container.innerHTML = `
             <div id="show-input-btn" class="flex items-center text-gray-500 hover:text-red-500 cursor-pointer py-2 px-1 rounded hover:bg-gray-50 dark:hover:bg-gray-800/50 transition group select-none">
                 <div class="w-6 h-6 mr-2 rounded-full text-red-500 flex items-center justify-center transition-transform group-hover:scale-110">
@@ -57,7 +63,7 @@ export function renderInlineInput(container, projectId, labelId) {
             </div>
         `;
         container.querySelector('#show-input-btn').addEventListener('click', () => {
-            isInputExpanded = true;
+            container.dataset.expanded = 'true';
             renderInlineInput(container, projectId, labelId);
         });
         return;
@@ -98,10 +104,12 @@ function setupStandaloneEvents() {
         const title = document.getElementById('task-title-input').value.trim();
         if (!title) return;
 
+        const dateVal = document.getElementById('task-due-date-input').value;
+
         await handleAddTask({
             title,
             projectId: document.getElementById('task-project-input').value || null,
-            dueDate: document.getElementById('task-due-date-input').value || null
+            dueDate: dateVal ? new Date(dateVal) : null
         });
 
         form.reset();
@@ -116,7 +124,7 @@ function setupInlineEvents(container, projectId, labelId) {
     titleInput.focus();
 
     container.querySelector('#cancel-input-btn').addEventListener('click', () => {
-        isInputExpanded = false;
+        container.dataset.expanded = 'false';
         renderInlineInput(container, projectId, labelId);
     });
 
@@ -125,6 +133,7 @@ function setupInlineEvents(container, projectId, labelId) {
         if (!title) return;
 
         submitBtn.disabled = true;
+        
         await handleAddTask({
             title,
             description: container.querySelector('#inline-desc-input').value.trim(),
@@ -150,8 +159,7 @@ async function handleAddTask(data) {
         await addTaskCompatibility(data);
     } catch (e) {
         console.error(e);
-        if (e.message !== 'Authentication required.') {
-            showMessageModal("タスクの追加に失敗しました", 'error');
-        }
+        // エラーの種類に関わらずユーザーに通知する（認証エラー含む）
+        showMessageModal("タスクの追加に失敗しました: " + (e.message || "不明なエラー"), 'error');
     }
 }

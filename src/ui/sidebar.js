@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: renderProjects のエクスポート元を SidebarProjects.js に修正
+ * 内容: Inboxカウントロジックの統一、コンパクトモード初期適用の追加
  */
 
 import { setupResizer } from './sidebar-utils.js';
@@ -11,37 +11,47 @@ import { showFilterModal } from './filter-modal.js';
 import { showTimeBlockModal } from './timeblock-modal.js'; 
 import { showSettingsModal } from './settings.js';
 import { initSidebarProjects, updateSidebarProjects } from './components/SidebarProjects.js';
-import { renderLabels } from './sidebar-renderer.js';
+// 修正: rendererからインポート
+import { renderLabels, updateInboxCount } from './sidebar-renderer.js';
 
 // DataSyncManager が期待する名前で再エクスポート
-export { updateSidebarProjects as renderProjects, renderLabels };
-
-export function updateInboxCount(tasks) {
-    const inboxBadge = document.getElementById('inbox-count');
-    if (!inboxBadge) return;
-    const count = tasks.filter(t => !t.completed && !t.projectId).length;
-    inboxBadge.textContent = count > 0 ? count : '';
-    if (count > 0) {
-        inboxBadge.classList.remove('hidden');
-    } else {
-        inboxBadge.classList.add('hidden');
-    }
-}
+// updateInboxCountはrendererのものを使用し、ロジックを統一
+export { updateSidebarProjects as renderProjects, renderLabels, updateInboxCount };
 
 export function initSidebar() {
     const container = document.getElementById('sidebar-content');
     if (!container) return;
+    
     container.innerHTML = buildSidebarHTML();
+    
     const sidebar = document.getElementById('sidebar');
     const resizer = document.getElementById('sidebar-resizer');
+    
     setupResizer(sidebar, document.querySelector('main'), resizer);
     setupSidebarEvents();
     setupSidebarToggles();
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
     initSidebarProjects(container);
+    
     updateSidebarVisibility();
     window.addEventListener('resize', updateSidebarVisibility);
+    
+    // 修正: 初期化時に設定を即時適用
+    applyInitialSettings();
     setupCompactModeListener();
+}
+
+/**
+ * 初期の表示設定（コンパクトモードなど）を適用
+ */
+function applyInitialSettings() {
+    const isCompact = localStorage.getItem('sidebar_compact') === 'compact';
+    if (isCompact) {
+        document.querySelectorAll('.sidebar-item-row').forEach(item => {
+            item.classList.add('py-0.5');
+            item.classList.remove('py-1.5');
+        });
+    }
 }
 
 function setupSidebarEvents() {
@@ -59,8 +69,10 @@ function updateSidebarVisibility() {
     const openBtn = document.getElementById('sidebar-open-btn');
     const closeBtn = document.getElementById('sidebar-close-btn');
     if (!sidebar || !openBtn || !closeBtn) return;
+    
     const isClosed = sidebar.classList.contains('sidebar-closed');
     const resizer = document.getElementById('sidebar-resizer');
+    
     if (window.innerWidth >= 768) {
         openBtn.classList.toggle('hidden', !isClosed); 
         closeBtn.classList.toggle('hidden', isClosed);

@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: Firebase初期化フローの適正化（動的コンフィグ対応）
+ * 内容: 設定パース処理の安全性向上
  */
 
 import { initializeApp, getAuth, getFirestore } from './firebase-sdk.js';
@@ -31,7 +31,7 @@ export function initializeFirebase() {
             throw e;
         }
     } else {
-        const msg = "Firebase configuration is missing.";
+        const msg = "Firebase configuration is missing or invalid.";
         console.error(msg);
         throw new Error(msg);
     }
@@ -47,9 +47,12 @@ function getConfiguration() {
     
     if (typeof __firebase_config !== 'undefined') {
         try {
+            // 文字列以外が渡された場合のガード
+            if (typeof __firebase_config === 'object') return __firebase_config;
             return JSON.parse(__firebase_config);
         } catch (e) {
             console.error("[Firebase] Config parse failed:", e);
+            return null;
         }
     }
     return null;

@@ -1,5 +1,9 @@
 // @ts-nocheck
-// 修正: SDKラッパーからインポート
+/**
+ * 更新日: 2025-12-21
+ * 内容: Grokのレビューに基づく不整合の修正（createdAt戻り値、二重発火防止、境界チェック）
+ */
+
 import { 
     collection, 
     query, 
@@ -7,17 +11,16 @@ import {
     onSnapshot, 
     addDoc, 
     updateDoc, 
-    deleteDoc, // 追加
+    deleteDoc, 
     doc, 
     serverTimestamp,
     getDocs,
-    limit
+    limit,
+    where
 } from "../core/firebase-sdk.js";
 
-// 初期化済みインスタンスをインポート
 import { db, auth } from "../core/firebase.js";
 
-// グローバル変数からアプリID取得 (修正: GLOBAL_APP_IDを優先)
 const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
     ? window.GLOBAL_APP_ID 
     : (typeof __app_id !== 'undefined' ? __app_id : 'default-app-id');
@@ -26,34 +29,27 @@ const STORAGE_KEY = 'currentWorkspaceId';
 const CHANGE_EVENT = 'workspace-changed';
 const COLLECTION_NAME = 'workspaces';
 
-// 初期値を空関数に変更（安全のため）
-let unsubscribe = () => {};
+let unsubscribe = null;
 let _workspaces = [];
 
 /**
- * 現在キャッシュされているワークスペース一覧を取得
- * @returns {Array}
+ * キャッシュされたワークスペース一覧を取得
  */
 export function getWorkspaces() {
     return _workspaces;
 }
 
 /**
- * ワークスペース一覧をリアルタイム購読する
- * @param {Function} onUpdate - 更新時に呼ばれるコールバック (workspaces) => void
+ * ワークスペース一覧をリアルタイム購読
  */
 export function subscribeToWorkspaces(onUpdate) {
     const user = auth.currentUser;
     if (!user) {
-        console.warn('subscribeToWorkspaces: User not authenticated');
         onUpdate([]);
         return () => {};
     }
 
-    // 既存の購読があれば解除
-    if (unsubscribe) {
-        unsubscribe();
-    }
+    if (unsubscribe) unsubscribe();
 
     const collRef = collection(db, 'artifacts', appId, 'users', user.uid, COLLECTION_NAME);
     const q = query(collRef, orderBy('createdAt', 'asc'));
@@ -66,11 +62,9 @@ export function subscribeToWorkspaces(onUpdate) {
 
         _workspaces = items;
 
-        // 初期化ロジック: ワークスペースが0個の場合、デフォルトを作成
         if (items.length === 0 && !snapshot.metadata.hasPendingWrites) {
             await ensureDefaultWorkspace(onUpdate);
         } else {
-            // 現在のIDが有効かチェック
             validateCurrentWorkspace(items);
             onUpdate(items);
         }
@@ -83,29 +77,19 @@ export function subscribeToWorkspaces(onUpdate) {
 }
 
 /**
- * デフォルトのワークスペースを作成し、選択状態にする
- * 作成完了後、即座にUI更新コールバックを呼ぶ
+ * デフォルトワークスペースの確保（二重更新を防止）
  */
 async function ensureDefaultWorkspace(onUpdate) {
     try {
         const user = auth.currentUser;
         if (!user) return;
         
-        // 重複作成を防ぐために一度getして確認（onSnapshotのラグ対策）
         const collRef = collection(db, 'artifacts', appId, 'users', user.uid, COLLECTION_NAME);
         const snapshot = await getDocs(query(collRef, limit(1)));
         
         if (snapshot.empty) {
-            console.log('Creating default workspace...');
-            // addWorkspaceがオブジェクトを返すようになったので受け取る
-            const newWorkspace = await addWorkspace('メイン');
-            
-            // イベント発火とID保存
-            setCurrentWorkspaceId(newWorkspace.id);
-            
-            // UIを即座に更新（Snapshotの再発火を待たずに反映）
-            _workspaces = [newWorkspace];
-            if (onUpdate) onUpdate(_workspaces);
+            // 作成のみ行う。状態更新はonSnapshotに任せることで二重発火を防止
+            await addWorkspace('メイン');
         }
     } catch (err) {
         console.error('Failed to ensure default workspace:', err);
@@ -113,55 +97,39 @@ async function ensureDefaultWorkspace(onUpdate) {
 }
 
 /**
- * 現在選択中のワークスペースIDが一覧に含まれているか確認し、
- * 存在しない場合は先頭のワークスペースを選択する
+ * 選択中のIDが有効か確認（境界条件チェック強化）
  */
 function validateCurrentWorkspace(items) {
+    if (items.length === 0) return;
+
     const currentId = getCurrentWorkspaceId();
-    if (items.length > 0) {
-        const exists = items.find(w => w.id === currentId);
-        // IDがない、または削除されていた場合は先頭を選択
-        // setCurrentWorkspaceId内で変更イベントが発火される
-        if (!currentId || !exists) {
-            console.log('Current workspace invalid or missing, resetting to default.');
-            setCurrentWorkspaceId(items[0].id);
-        }
+    const exists = items.some(w => w.id === currentId);
+
+    if (!currentId || !exists) {
+        setCurrentWorkspaceId(items[0].id);
     }
 }
 
-/**
- * 現在のワークスペースIDを取得
- * @returns {string|null}
- */
 export function getCurrentWorkspaceId() {
     return localStorage.getItem(STORAGE_KEY);
 }
 
-/**
- * 現在のワークスペースIDを設定し、変更イベントを発火
- * @param {string} id 
- */
 export function setCurrentWorkspaceId(id) {
     if (!id) return;
     
     const oldId = localStorage.getItem(STORAGE_KEY);
-    if (oldId === id) return; // 変更なし
+    if (oldId === id) return;
 
     localStorage.setItem(STORAGE_KEY, id);
     
-    // イベント発火 (validateCurrentWorkspace等からの呼び出しでもこれで通知される)
     const event = new CustomEvent(CHANGE_EVENT, { 
         detail: { workspaceId: id } 
     });
     document.dispatchEvent(event);
-    
-    console.log(`Workspace changed to: ${id}`);
 }
 
 /**
- * 新規ワークスペースを追加
- * @param {string} name 
- * @returns {Promise<Object>} 作成されたワークスペースオブジェクト {id, ...data}
+ * ワークスペース追加（戻り値のcreatedAt不整合を修正）
  */
 export async function addWorkspace(name) {
     const user = auth.currentUser;
@@ -176,38 +144,39 @@ export async function addWorkspace(name) {
 
     const docRef = await addDoc(collRef, newDocData);
     
-    // IDを含めた完全なオブジェクトを返す
+    // createdAtはサーバーでセットされるため、クライアント側では返さない（不整合防止）
     return {
         id: docRef.id,
-        ...newDocData
+        name: name
     };
 }
 
 /**
- * ワークスペース名を変更
- * @param {string} id 
- * @param {string} newName 
+ * 名前の重複チェック（Grok指摘事項）
  */
+export async function isWorkspaceNameDuplicate(name, excludeId = null) {
+    const user = auth.currentUser;
+    if (!user) return false;
+
+    const collRef = collection(db, 'artifacts', appId, 'users', user.uid, COLLECTION_NAME);
+    const q = query(collRef, where('name', '==', name), limit(5));
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.some(doc => doc.id !== excludeId);
+}
+
 export async function updateWorkspaceName(id, newName) {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
 
     const docRef = doc(db, 'artifacts', appId, 'users', user.uid, COLLECTION_NAME, id);
-    
-    await updateDoc(docRef, {
-        name: newName
-    });
+    await updateDoc(docRef, { name: newName });
 }
 
-/**
- * ワークスペースを削除
- * @param {string} id 
- */
 export async function deleteWorkspace(id) {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
 
     const docRef = doc(db, 'artifacts', appId, 'users', user.uid, COLLECTION_NAME, id);
-    
     await deleteDoc(docRef);
 }

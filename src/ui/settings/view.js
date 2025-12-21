@@ -1,6 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// 設定モーダルのUIコンポーネント
+/**
+ * 更新日: 2025-12-21
+ * 内容: 設定モーダルのUIコンポーネント（UX改善）
+ */
 
 /**
  * ラジオボタンの選択肢を生成
@@ -44,6 +46,9 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
     const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     const currentFontSize = localStorage.getItem('fontSize') || 'medium';
     const currentBg = localStorage.getItem('background') || 'none';
+    
+    // 安全策: userInitialが未定義の場合はデフォルト表示
+    const safeInitial = userInitial || '?';
 
     // 1. 表示設定コンテンツ
     const displayContent = `
@@ -93,11 +98,11 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
     const accountContent = `
         <div class="flex items-center gap-3 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
             <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-200 font-bold text-lg shadow-sm">
-                ${userInitial}
+                ${safeInitial}
             </div>
             <div>
                 <div class="text-sm font-bold text-gray-900 dark:text-white">ログイン中</div>
-                <div class="text-xs text-gray-600 dark:text-gray-300 font-mono">${userEmail}</div>
+                <div class="text-xs text-gray-600 dark:text-gray-300 font-mono">${userEmail || ''}</div>
             </div>
         </div>
         <div class="space-y-3">

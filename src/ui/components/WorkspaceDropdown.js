@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: workspace-changedイベントを監視し、自身のUIを即座に更新するよう修正
+ * 内容: 断片化していたコードの修復とUI同期の安定化
  */
 
 import { setCurrentWorkspaceId, getCurrentWorkspaceId, getWorkspaces } from '../../store/workspace.js';
@@ -17,6 +17,9 @@ const CLASSES = {
 let menuEl = null;
 let triggerEl = null;
 
+/**
+ * メニューの表示制御
+ */
 function setMenuVisible(visible) {
     if (!menuEl) return;
     
@@ -57,15 +60,14 @@ export function initWorkspaceDropdown() {
     if (addBtn) addBtn.onclick = () => { setMenuVisible(false); showWorkspaceModal(null); };
     if (settingsBtn) settingsBtn.onclick = () => { setMenuVisible(false); showSettingsModal(); };
 
-    // 追加: ワークスペースが変更されたら、Storeのキャッシュを使ってUIを再描画する
+    // ワークスペース変更時にUIを即座に再描画
     document.addEventListener('workspace-changed', () => {
-        const workspaces = getWorkspaces();
-        updateWorkspaceDropdownUI(workspaces);
+        updateWorkspaceDropdownUI(getWorkspaces());
     });
 }
 
 /**
- * UIの更新
+ * UIの更新（ラベルとメニューリスト）
  */
 export function updateWorkspaceDropdownUI(workspaces) {
     const listContainer = document.getElementById('workspace-list');
@@ -83,6 +85,9 @@ export function updateWorkspaceDropdownUI(workspaces) {
     }
 }
 
+/**
+ * メニュー項目のレンダリング
+ */
 function renderWorkspaceMenu(workspaces, container, currentId) {
     container.innerHTML = '';
 
@@ -98,7 +103,11 @@ function renderWorkspaceMenu(workspaces, container, currentId) {
         
         btn.innerHTML = `
             <span class="truncate pointer-events-none">${ws.name}</span>
-            ${isCurrent ? '<svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : ''}
+            ${isCurrent ? `
+                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            ` : ''}
         `;
         
         btn.onclick = () => {
