@@ -17,7 +17,7 @@ import { filterTasks } from '../logic/search.js'; // 追加: フィルター計�
 export function updateInboxCount(allTasks) {
     const inboxCountEl = document.getElementById('inbox-count');
     if (!inboxCountEl) return;
-    
+
     const count = allTasks.filter(t => !t.projectId && t.status !== 'completed').length;
     inboxCountEl.textContent = count;
     inboxCountEl.classList.toggle('hidden', count === 0);
@@ -42,11 +42,11 @@ export function renderLabels(labels = [], tasks = []) {
         const count = tasks.filter(t => t.labelIds?.includes(label.id) && t.status !== 'completed').length;
         // createSidebarItem(name, type, id, color, count)
         const item = createSidebarItem(label.name, 'label', label.id, label.color, count);
-        
+
         item.addEventListener('click', () => {
             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'label', id: label.id } }));
         });
-        
+
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             showItemContextMenu(e, 'label', label);
@@ -67,17 +67,17 @@ export function renderTimeBlocks(tasks = []) {
     const blocks = getTimeBlocks();
 
     blocks.forEach(block => {
-        const count = tasks.filter(t => 
+        const count = tasks.filter(t =>
             String(t.timeBlockId) === String(block.id) && t.status !== 'completed'
         ).length;
-        
+
         const displayName = `${block.start} - ${block.end}`;
         const item = createSidebarItem(displayName, 'timeblock', block.id, block.color, count);
-        
+
         item.addEventListener('click', () => {
-             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: block.id } }));
+            document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: block.id } }));
         });
-        
+
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             showTimeBlockModal(block);
@@ -89,11 +89,11 @@ export function renderTimeBlocks(tasks = []) {
 
     const unassignedCount = tasks.filter(t => (t.timeBlockId === null || t.timeBlockId === 'null') && t.status !== 'completed').length;
     const unassignedItem = createSidebarItem('未定', 'timeblock', 'unassigned', '#a0aec0', unassignedCount);
-    
+
     unassignedItem.addEventListener('click', () => {
         document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: 'unassigned' } }));
     });
-    
+
     setupDropZone(unassignedItem, 'timeblock', 'unassigned');
     list.appendChild(unassignedItem);
 }
@@ -113,9 +113,9 @@ export function renderDurations(tasks = []) {
         const count = tasks.filter(t => Number(t.duration) === mins && t.status !== 'completed').length;
         // meta引数にHTML文字列を渡す
         const item = createSidebarItem(`${mins} min`, 'duration', mins.toString(), iconHtml, count);
-        
+
         item.addEventListener('click', () => {
-             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'duration', id: mins.toString() } }));
+            document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'duration', id: mins.toString() } }));
         });
 
         setupDropZone(item, 'duration', mins.toString());
@@ -148,7 +148,7 @@ export function renderFilters(filters = [], tasks = []) {
         }
 
         const item = createSidebarItem(filter.name, 'filter', filter.id, iconHtml, count);
-        
+
         item.addEventListener('click', () => {
             document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'custom', id: filter.id } }));
         });
@@ -167,10 +167,9 @@ export function renderFilters(filters = [], tasks = []) {
  */
 export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels, allFilters = []) {
     if (!document.getElementById('project-list')) return;
-    
+
     // tasksを渡して件数更新を確実に
     renderProjects(allProjects, allTasks);
-    renderLabels(allLabels, allTasks);
     renderTimeBlocks(allTasks);
     renderDurations(allTasks);
     renderFilters(allFilters, allTasks); // tasksを渡す

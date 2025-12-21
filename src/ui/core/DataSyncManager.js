@@ -15,7 +15,7 @@ import { subscribeToFilters, clearFiltersCache } from '../../store/filters.js';
 import { getCurrentWorkspaceId } from '../../store/workspace.js';
 
 // UI描画関連
-import { renderProjects, renderLabels, updateInboxCount } from '../sidebar.js';
+import { renderProjects, updateInboxCount } from '../sidebar.js';
 import { renderTimeBlocks, renderDurations } from '../sidebar-renderer.js';
 import { updateView } from '../ui-view-manager.js';
 
@@ -46,20 +46,19 @@ let updateTimer = null;
  */
 export function updateUI() {
     if (updateTimer) return;
-    
+
     updateTimer = requestAnimationFrame(() => {
         const { tasks, projects, labels } = state;
-        
+
         // 描画系にデータを渡す
         updateInboxCount(tasks);
         renderProjects(projects, tasks);
-        renderLabels(labels, tasks);
         renderTimeBlocks(tasks);
         renderDurations(tasks);
-        
+
         // メインビューの更新
         updateView(tasks, projects, labels);
-        
+
         updateTimer = null;
     });
 }
@@ -74,7 +73,7 @@ export function startAllSubscriptions() {
 
     // 既存の購読があれば停止
     stopDataSync(false);
-    
+
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) {
         console.warn('[DataSync] No workspace selected.');
@@ -101,7 +100,7 @@ export function startAllSubscriptions() {
         state.labels = data;
         updateUI();
     });
-    
+
     subscriptions.timeBlocks = subscribeToTimeBlocks((data) => {
         state.timeBlocks = data;
         updateUI();
@@ -124,13 +123,13 @@ export function stopDataSync(stopWorkspaceSync = false) {
             subscriptions[key] = null;
         }
     });
-    
+
     clearTimeBlocksCache();
     clearFiltersCache();
-    
+
     state = { tasks: [], projects: [], labels: [], timeBlocks: [], filters: [] };
     isDataSyncing = false;
-    
+
     // クリア状態でUI更新
     updateUI();
 }

@@ -19,7 +19,7 @@ function createSectionHeader(title, targetId, hasAddButton = false, buttonId = '
     const isOpen = getSavedOpenState(targetId);
     // 初期状態で回転角度と表示クラスを決定
     const rotateStyle = isOpen ? 'transform: rotate(0deg);' : 'transform: rotate(-90deg);';
-    
+
     const addButton = hasAddButton ? `
         <button id="${buttonId}" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center" title="${title}を追加">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -100,10 +100,6 @@ export function buildSidebarHTML() {
             ${createSectionHeader('プロジェクト', 'project-list', true, 'add-project-btn')}
             ${createListContainer('project-list')}
 
-            <!-- ラベル (復活) -->
-            ${createSectionHeader('ラベル', 'label-list', true, 'add-label-btn')}
-            ${createListContainer('label-list')}
-
             <!-- 時間帯 -->
             ${createSectionHeader('時間帯', 'timeblock-list', true, 'edit-timeblocks-btn')}
             ${createListContainer('timeblock-list')}
@@ -133,13 +129,13 @@ export function setupSidebarToggles() {
         header.addEventListener('click', (e) => {
             // 追加ボタン押下時は開閉しない
             if (e.target.closest('button')) return;
-            
+
             const isHidden = list.classList.contains('hidden');
             const newState = isHidden; // hiddenなら開く(true)
-            
+
             list.classList.toggle('hidden', !newState);
             icon.style.transform = newState ? 'rotate(0deg)' : 'rotate(-90deg)';
-            
+
             localStorage.setItem(`sidebar:${targetId}-open`, newState);
         });
     });

@@ -6,36 +6,35 @@
 
 import { setupResizer } from './sidebar-utils.js';
 import { buildSidebarHTML, setupSidebarToggles } from './sidebar-structure.js';
-import { setupDropZone } from './sidebar-drag-drop.js'; 
+import { setupDropZone } from './sidebar-drag-drop.js';
 import { showFilterModal } from './filter-modal.js';
-import { showTimeBlockModal } from './timeblock-modal.js'; 
-import { showLabelModal } from './modal/label-modal.js'; // ラベルモーダル追加
+import { showTimeBlockModal } from './timeblock-modal.js';
 import { showSettingsModal } from './settings.js';
 import { initSidebarProjects, updateSidebarProjects } from './components/SidebarProjects.js';
-import { renderLabels, updateInboxCount } from './sidebar-renderer.js';
+import { updateInboxCount } from './sidebar-renderer.js';
 
-export { updateSidebarProjects as renderProjects, renderLabels, updateInboxCount };
+export { updateSidebarProjects as renderProjects, updateInboxCount };
 
 export function initSidebar() {
     const container = document.getElementById('sidebar-content');
     if (!container) return;
-    
+
     container.innerHTML = buildSidebarHTML();
-    
+
     const sidebar = document.getElementById('sidebar');
     const resizer = document.getElementById('sidebar-resizer');
-    
+
     setupResizer(sidebar, document.querySelector('main'), resizer);
     setupSidebarEvents();
     setupSidebarToggles();
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
-    
+
     // コンポーネント初期化
     initSidebarProjects(container);
-    
+
     updateSidebarVisibility();
     window.addEventListener('resize', updateSidebarVisibility);
-    
+
     applyInitialSettings();
     setupCompactModeListener();
 }
@@ -66,17 +65,16 @@ function applyCompactMode(isCompact) {
 
 function setupSidebarEvents() {
     const dispatch = (page, id = null) => document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
-    
+
     // ナビゲーション
     document.getElementById('nav-dashboard')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('dashboard'); });
     document.getElementById('nav-inbox')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('inbox'); });
     document.getElementById('nav-search')?.addEventListener('click', (e) => { e.preventDefault(); dispatch('search'); });
     document.getElementById('nav-settings')?.addEventListener('click', (e) => { e.preventDefault(); showSettingsModal(); });
-    
+
     // 追加ボタン
     document.getElementById('add-filter-btn')?.addEventListener('click', () => showFilterModal());
     document.getElementById('edit-timeblocks-btn')?.addEventListener('click', () => showTimeBlockModal());
-    document.getElementById('add-label-btn')?.addEventListener('click', () => showLabelModal());
 
     // サイドバー開閉ボタン
     document.getElementById('sidebar-open-btn')?.addEventListener('click', () => toggleSidebar(true));
@@ -89,21 +87,21 @@ function setupSidebarEvents() {
 function toggleSidebar(open) {
     const sidebar = document.getElementById('sidebar');
     const resizer = document.getElementById('sidebar-resizer');
-    
+
     if (sidebar) {
         sidebar.classList.toggle('sidebar-closed', !open);
         sidebar.classList.toggle('hidden', !open);
-        
+
         // モバイル表示のときはhiddenクラスで制御、PCではwidth制御もあるがここではhidden/closedで管理
         if (window.innerWidth >= 768) {
-             if (resizer) resizer.classList.toggle('hidden', !open);
-             // 幅の復元などはCSSまたはutils側で制御
-             if (open) {
+            if (resizer) resizer.classList.toggle('hidden', !open);
+            // 幅の復元などはCSSまたはutils側で制御
+            if (open) {
                 const w = localStorage.getItem('sidebarWidth') || 280;
                 sidebar.style.width = `${w}px`;
-             } else {
+            } else {
                 sidebar.style.width = '0';
-             }
+            }
         }
         updateSidebarVisibility();
     }
@@ -114,13 +112,13 @@ function updateSidebarVisibility() {
     const openBtn = document.getElementById('sidebar-open-btn');
     const closeBtn = document.getElementById('sidebar-close-btn');
     if (!sidebar || !openBtn || !closeBtn) return;
-    
+
     // クラスベースか、実際の表示状態かで判定
     const isClosed = sidebar.classList.contains('sidebar-closed') || sidebar.classList.contains('hidden');
-    
+
     if (window.innerWidth >= 768) {
         // デスクトップ
-        openBtn.classList.toggle('hidden', !isClosed); 
+        openBtn.classList.toggle('hidden', !isClosed);
         closeBtn.classList.toggle('hidden', isClosed);
         // sidebar自体の表示切り替えは toggleSidebar で制御済みだが、リサイズ時の補正
         if (!isClosed) sidebar.classList.remove('hidden');
@@ -128,7 +126,7 @@ function updateSidebarVisibility() {
         // モバイル
         openBtn.classList.remove('hidden');
         closeBtn.classList.remove('hidden');
-        sidebar.classList.remove('hidden'); 
+        sidebar.classList.remove('hidden');
     }
 }
 
