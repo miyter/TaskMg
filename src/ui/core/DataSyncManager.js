@@ -1,7 +1,6 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: プロジェクト購読時の引数を削除し、他のStore呼び出しと統一（Grok指摘対応）
+ * 内容: サイドバーキャッシュ連携の追加、イベント発火によるUI同期の自動化
  */
 
 import { auth } from '../../core/firebase.js';
@@ -14,12 +13,11 @@ import { subscribeToTimeBlocks, clearTimeBlocksCache } from '../../store/timeblo
 import { subscribeToFilters, clearFiltersCache } from '../../store/filters.js';
 import { getCurrentWorkspaceId } from '../../store/workspace.js';
 
-// UI描画関連
-import { renderProjects, updateInboxCount } from '../sidebar.js';
-import { renderTimeBlocks, renderDurations } from '../sidebar-renderer.js';
+// UI連携
+import { updateSidebarCache } from '../sidebar.js';
 import { updateView } from '../ui-view-manager.js';
 
-// データキャッシュ（UI更新用の一時ストア）
+// データキャッシュ
 let state = {
     tasks: [],
     projects: [],
@@ -42,21 +40,18 @@ let isDataSyncing = false;
 let updateTimer = null;
 
 /**
- * UI全体を更新する（デバウンス処理付き）
+ * UI全体を更新する（サイドバーキャッシュ更新 + メインビュー描画）
  */
 export function updateUI() {
     if (updateTimer) return;
 
     updateTimer = requestAnimationFrame(() => {
-        const { tasks, projects, labels } = state;
+        const { tasks, projects, labels, filters } = state;
 
-        // 描画系にデータを渡す
-        updateInboxCount(tasks);
-        renderProjects(projects, tasks);
-        renderTimeBlocks(tasks);
-        renderDurations(tasks);
+        // 1. サイドバーのキャッシュを物理的に更新
+        updateSidebarCache({ tasks, labels, projects, filters });
 
-        // メインビューの更新
+        // 2. メインビューの更新
         updateView(tasks, projects, labels);
 
         updateTimer = null;
@@ -64,14 +59,19 @@ export function updateUI() {
 }
 
 /**
+ * 特定のデータ種別が更新されたことを通知
+ */
+function notifyUpdate(eventType) {
+    document.dispatchEvent(new CustomEvent(eventType));
+    updateUI();
+}
+
+/**
  * 同期開始
  */
 export function startAllSubscriptions() {
-    if (!auth?.currentUser) {
-        return;
-    }
+    if (!auth?.currentUser) return;
 
-    // 既存の購読があれば停止
     stopDataSync(false);
 
     const workspaceId = getCurrentWorkspaceId();
@@ -84,31 +84,29 @@ export function startAllSubscriptions() {
     console.log('[DataSync] Start syncing workspace:', workspaceId);
 
     // --- 各データソースの購読 ---
-    // Store側の subscribe 関数は内部で getCurrentWorkspaceId() を使用してパスを解決する
-
     subscriptions.tasks = subscribeToTasks((data) => {
         state.tasks = data;
-        updateUI();
+        notifyUpdate('tasks-updated');
     });
 
     subscriptions.projects = subscribeToProjects((data) => {
         state.projects = data;
-        updateUI();
+        notifyUpdate('projects-updated');
     });
 
     subscriptions.labels = subscribeToLabels((data) => {
         state.labels = data;
-        updateUI();
+        notifyUpdate('labels-updated');
     });
 
     subscriptions.timeBlocks = subscribeToTimeBlocks((data) => {
         state.timeBlocks = data;
-        updateUI();
+        notifyUpdate('timeblocks-updated');
     });
 
     subscriptions.filters = subscribeToFilters((data) => {
         state.filters = data;
-        updateUI();
+        notifyUpdate('filters-updated');
     });
 }
 
@@ -130,7 +128,8 @@ export function stopDataSync(stopWorkspaceSync = false) {
     state = { tasks: [], projects: [], labels: [], timeBlocks: [], filters: [] };
     isDataSyncing = false;
 
-    // クリア状態でUI更新
+    // キャッシュを空にしてUI更新
+    updateSidebarCache(state);
     updateUI();
 }
 
