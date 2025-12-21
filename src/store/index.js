@@ -1,11 +1,10 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: ガード処理の統一、不要な互換関数の削除、エラー通知の追加
+ * 内容: Store層からのUI依存（showMessageModal）を排除、エラーハンドリングの責務分離
  */
 
 import { auth } from '../core/firebase.js';
-import { showMessageModal } from '../ui/components.js';
 import { getNextRecurrenceDate } from '../utils/date.js';
 import { getCurrentWorkspaceId } from './workspace.js';
 
@@ -25,7 +24,6 @@ import {
 function requireAuth() {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-        showMessageModal("操作にはログインが必要です。", "error"); 
         throw new Error('Authentication required.'); 
     }
     return userId;
@@ -37,7 +35,6 @@ function requireAuth() {
 function requireWorkspace() {
     const workspaceId = getCurrentWorkspaceId();
     if (!workspaceId) {
-        showMessageModal("ワークスペースが選択されていません。", "error");
         throw new Error('Workspace required.');
     }
     return workspaceId;
@@ -73,7 +70,7 @@ async function handleRecurringTask(completedTask) {
         }
     } catch (e) {
         console.error('[Recurring] Generation failed:', e);
-        showMessageModal("繰り返しタスクの作成に失敗しました。", "error");
+        // UI通知は行わずログのみ
     }
 }
 

@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: Firestoreパス定義の統合（filters復元、getAppIdエクスポート）
+ * 内容: timeblocksのパス定義を追加
  */
 
 /**
@@ -36,6 +36,7 @@ export const paths = {
     filters: (userId) => `${getUserBasePath(userId)}/filters`,
     labels: (userId) => `${getUserBasePath(userId)}/labels`,
     workspaces: (userId) => `${getUserBasePath(userId)}/workspaces`,
+    timeblocks: (userId) => `${getUserBasePath(userId)}/timeblocks`, // 追加
     
     // ワークスペース依存データ
     tasks: (userId, workspaceId) => `${getWorkspaceBasePath(userId, workspaceId)}/tasks`,

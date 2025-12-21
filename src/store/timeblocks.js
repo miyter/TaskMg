@@ -1,27 +1,21 @@
 // @ts-nocheck
-// 時間帯ブロックデータ管理 (Firestore対応版)
+/**
+ * 更新日: 2025-12-21
+ * 内容: paths.jsへの依存統合、workspaceId依存の排除
+ */
 
-// 修正: SDKラッパーからインポート
 import { 
     collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp 
 } from "../core/firebase-sdk.js";
 
-// 初期化済みインスタンスをインポート
 import { auth, db } from "../core/firebase.js";
-import { getCurrentWorkspaceId } from './workspace.js';
 import { showMessageModal } from '../ui/components.js';
-
-// GLOBAL_APP_ID に統一
-const appId = (typeof window !== 'undefined' && window.GLOBAL_APP_ID) 
-    ? window.GLOBAL_APP_ID 
-    : (typeof __app_id !== 'undefined' ? __app_id : 'default-app-id');
+import { paths } from '../utils/paths.js';
 
 // メモリキャッシュ
 let timeBlocks = [];
-// 削除: グローバル変数での購読管理を廃止
-// let unsubscribe = null;
 
-// デフォルトの時間帯データ（初回用・未ログイン時用）
+// デフォルトの時間帯データ
 const defaultTimeBlocks = [
     { id: 'tb_morning', name: '06:00 - 09:00', start: '06:00', end: '09:00', color: '#EF4444', order: 0 },
     { id: 'tb_afternoon', name: '13:00 - 17:00', start: '13:00', end: '17:00', color: '#3B82F6', order: 1 },
@@ -29,59 +23,21 @@ const defaultTimeBlocks = [
 ];
 
 /**
- * ユーザーIDを取得するヘルパー
- */
-function getUserId() {
-    return auth.currentUser?.uid;
-}
-
-/**
- * 時間帯ブロックのコレクションパスを取得
- * 変更: ワークスペース依存を排除し、ユーザー直下の階層に統一 (/users/{userId}/timeblocks)
- * これによりFirestoreセキュリティルールとの整合性を確保する
- */
-function getCollectionRef() {
-    const userId = getUserId();
-    // ワークスペース選択状態はアプリのUI制御として引き続きチェックするが、パス生成には使用しない
-    const workspaceId = getCurrentWorkspaceId();
-    
-    // ユーザーまたはワークスペースが特定できない場合はnull
-    if (!userId || !workspaceId) return null;
-    
-    // 以前のパス: .../workspaces/{workspaceId}/users/{userId}/timeblocks
-    // 新しいパス: .../users/{userId}/timeblocks
-    return collection(db, 'artifacts', appId, 'users', userId, 'timeblocks');
-}
-
-/**
- * キャッシュをクリアする (ワークスペース切り替え時などに使用)
- */
-export function clearTimeBlocksCache() {
-    timeBlocks = [];
-}
-
-/**
  * 時間帯ブロックをリアルタイム購読する
- * @param {Function} callback - 更新時に呼ばれるコールバック
- * @returns {Function} 購読解除関数
  */
 export function subscribeToTimeBlocks(callback) {
-    // 削除: モジュールレベルの変数は使用しない
-    // if (unsubscribe) unsubscribe();
-
-    const colRef = getCollectionRef();
+    const userId = auth.currentUser?.uid;
     
-    // 未ログイン時またはワークスペース未選択時はデフォルトデータを返す
-    if (!colRef) {
+    // 未ログイン時はデフォルトデータを返す
+    if (!userId) {
         timeBlocks = [...defaultTimeBlocks]; 
         if (callback) callback(timeBlocks);
         return () => {};
     }
 
-    // orderでソートして取得
-    const q = query(colRef, orderBy('order', 'asc'));
+    const path = paths.timeblocks(userId);
+    const q = query(collection(db, path), orderBy('order', 'asc'));
 
-    // 変更: onSnapshotの戻り値（解除関数）を直接呼び出し元へ返す
     return onSnapshot(q, (snapshot) => {
         const newBlocks = snapshot.docs.map(doc => ({
             id: doc.id,
@@ -89,7 +45,6 @@ export function subscribeToTimeBlocks(callback) {
         }));
 
         timeBlocks = newBlocks;
-        
         if (callback) callback(timeBlocks);
     }, (error) => {
         console.error("Timeblocks subscription error:", error);
@@ -111,15 +66,23 @@ export function getTimeBlockById(id) {
 }
 
 /**
+ * キャッシュをクリアする
+ */
+export function clearTimeBlocksCache() {
+    timeBlocks = [];
+}
+
+/**
  * 時間帯ブロックを保存 (追加/更新)
  */
 export async function saveTimeBlock(block) {
-    const colRef = getCollectionRef();
-    if (!colRef) {
-        showMessageModal("ワークスペースを選択してください");
-        throw new Error("ログインまたはワークスペース選択が必要です");
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+        showMessageModal("ログインが必要です");
+        throw new Error("Authentication required");
     }
 
+    const path = paths.timeblocks(userId);
     const id = block.id || crypto.randomUUID();
     
     // 順序設定: 新規の場合は末尾に追加
@@ -137,7 +100,7 @@ export async function saveTimeBlock(block) {
         updatedAt: serverTimestamp()
     };
 
-    await setDoc(doc(colRef, id), dataToSave, { merge: true });
+    await setDoc(doc(db, path, id), dataToSave, { merge: true });
     return true;
 }
 
@@ -145,30 +108,26 @@ export async function saveTimeBlock(block) {
  * 時間帯ブロックを削除
  */
 export async function deleteTimeBlock(id) {
-    const colRef = getCollectionRef();
-    if (!colRef) {
-        showMessageModal("ワークスペースを選択してください");
-        throw new Error("ログインまたはワークスペース選択が必要です");
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+        throw new Error("Authentication required");
     }
 
-    await deleteDoc(doc(colRef, id));
+    const path = paths.timeblocks(userId);
+    await deleteDoc(doc(db, path, id));
     return true;
 }
 
 /**
  * 時間帯ブロックの順序を更新
- * @param {string[]} orderedIds - IDの配列
  */
 export async function updateTimeBlockOrder(orderedIds) {
-    const colRef = getCollectionRef();
-    if (!colRef) {
-        // ドラッグ操作中などはモーダルが邪魔になる可能性もあるが、不整合を防ぐため通知
-        console.warn("Cannot update order: No workspace selected");
-        return;
-    }
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
 
+    const path = paths.timeblocks(userId);
     const batchPromises = orderedIds.map((id, index) => {
-        return setDoc(doc(colRef, id), { order: index }, { merge: true });
+        return setDoc(doc(db, path, id), { order: index }, { merge: true });
     });
 
     await Promise.all(batchPromises);

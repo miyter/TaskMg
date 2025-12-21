@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: serverTimestampの導入とデータ変換ロジックの堅牢化
+ * 内容: 日付変換ロジックの整理、意図の明確化
  */
 
 import { 
@@ -52,7 +52,8 @@ export async function addTaskRaw(userId, workspaceId, taskData) {
     const path = paths.tasks(userId, workspaceId);
     const safeTaskData = { ...taskData };
     
-    // 日付の正規化は呼び出し側で行う前提だが、念のためTimestamp変換
+    // index.js側でDate正規化済みであれば、ここでは変換のみを行う
+    // もしDateオブジェクトならTimestampへ変換してFirestoreに保存
     if (safeTaskData.dueDate instanceof Date) {
         safeTaskData.dueDate = Timestamp.fromDate(safeTaskData.dueDate);
     }
@@ -61,7 +62,7 @@ export async function addTaskRaw(userId, workspaceId, taskData) {
         ...safeTaskData,
         ownerId: userId,
         status: 'todo',
-        createdAt: serverTimestamp() // クライアント時刻ではなくサーバー時刻を使用
+        createdAt: serverTimestamp()
     });
 }
 
@@ -84,6 +85,8 @@ export async function updateTaskRaw(userId, workspaceId, taskId, updates) {
         }
     }
     
+    // undefinedのrecurrenceは送信データから除外（既存の値を維持するため）
+    // 明示的に消したい場合はnull等を渡す規約とする
     if (safeUpdates.recurrence === undefined) delete safeUpdates.recurrence;
 
     await updateDoc(ref, safeUpdates);
@@ -111,7 +114,7 @@ export async function createBackupDataRaw(userId, workspaceId) {
         const data = d.data();
         const serialized = { id: d.id };
         for (const key in data) {
-            // TimestampはISO文字列に変換
+            // TimestampはISO文字列に変換してポータビリティを確保
             serialized[key] = (data[key] && data[key].toDate) ? data[key].toDate().toISOString() : data[key];
         }
         return serialized;

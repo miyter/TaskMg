@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 設定パース処理の安全性向上
+ * 内容: 設定パースエラー時のログ出力強化
  */
 
 import { initializeApp, getAuth, getFirestore } from './firebase-sdk.js';
@@ -51,7 +51,8 @@ function getConfiguration() {
             if (typeof __firebase_config === 'object') return __firebase_config;
             return JSON.parse(__firebase_config);
         } catch (e) {
-            console.error("[Firebase] Config parse failed:", e);
+            console.error("[Firebase] Config parse failed. Check raw config:", __firebase_config);
+            console.error("Parse error details:", e);
             return null;
         }
     }

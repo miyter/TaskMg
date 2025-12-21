@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 初期トークンログインの順序修正（ちらつき防止）、状態取得の安全性向上
+ * 内容: 初期トークンログインのエラーハンドリング強化
  */
 
 import { 
@@ -38,7 +38,11 @@ export function initAuthListener(onLogin, onLogout) {
     if (initialToken) {
         signInWithCustomToken(auth, initialToken)
             .then(() => console.log("[Auth] Initial token login success"))
-            .catch(err => console.error("[Auth] Initial token login failed:", err));
+            .catch(err => {
+                // エラーログを詳細化し、失敗時はクリーンな状態を保証するためにサインアウトを試行
+                console.error("[Auth] Initial token login failed. Error:", err);
+                signOut(auth).catch(() => {});
+            });
     }
 
     // 認証状態の監視

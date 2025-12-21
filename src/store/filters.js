@@ -1,14 +1,13 @@
 // @ts-nocheck
 // @miyter:20251221
 // フィルターデータの管理
+// ★修正: ガード処理の統一(throw)、サーバータイムスタンプの導入
 
 import { db, auth } from '../core/firebase.js';
 import { 
-    collection, addDoc, deleteDoc, updateDoc, doc, query, onSnapshot 
+    collection, addDoc, deleteDoc, updateDoc, doc, query, onSnapshot, serverTimestamp 
 } from "../core/firebase-sdk.js";
-import { showMessageModal } from '../ui/components.js';
-import { getCurrentWorkspaceId } from './workspace.js';
-import { paths } from '../utils/paths.js'; // パス管理を導入
+import { paths } from '../utils/paths.js';
 
 let _cachedFilters = [];
 
@@ -22,12 +21,12 @@ export function clearFiltersCache() {
 
 /**
  * フィルターのリアルタイム購読
+ * Note: フィルターはユーザー単位の設定として扱う（ワークスペース間で共有）
  */
 export function subscribeToFilters(onUpdate) {
     const userId = auth.currentUser?.uid;
-    const workspaceId = getCurrentWorkspaceId();
 
-    if (!userId || !workspaceId) {
+    if (!userId) {
         _cachedFilters = [];
         if(onUpdate) onUpdate([]);
         return () => {};
@@ -52,11 +51,7 @@ export function subscribeToFilters(onUpdate) {
  */
 export async function addFilter(filterData) {
     const userId = auth.currentUser?.uid;
-    const workspaceId = getCurrentWorkspaceId();
-    if (!userId || !workspaceId) {
-        showMessageModal("ログインまたはワークスペースの選択が必要です");
-        return;
-    }
+    if (!userId) throw new Error("Authentication required");
 
     const path = paths.filters(userId);
     const { id, ...data } = filterData;
@@ -64,7 +59,7 @@ export async function addFilter(filterData) {
     await addDoc(collection(db, path), {
         ...data,
         ownerId: userId,
-        createdAt: new Date().toISOString()
+        createdAt: serverTimestamp() // 修正: サーバー時刻を使用
     });
 }
 
@@ -73,14 +68,14 @@ export async function addFilter(filterData) {
  */
 export async function updateFilter(filterId, filterData) {
     const userId = auth.currentUser?.uid;
-    if (!userId) return;
+    if (!userId) throw new Error("Authentication required"); // 修正: ガードをthrowに統一
 
     const path = paths.filters(userId);
     const { id, ...data } = filterData;
 
     await updateDoc(doc(db, path, filterId), {
         ...data,
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp() // 修正: サーバー時刻を使用
     });
 }
 
@@ -89,7 +84,7 @@ export async function updateFilter(filterId, filterData) {
  */
 export async function deleteFilter(filterId) {
     const userId = auth.currentUser?.uid;
-    if (!userId) return;
+    if (!userId) throw new Error("Authentication required"); // 修正: ガードをthrowに統一
 
     const path = paths.filters(userId);
     await deleteDoc(doc(db, path, filterId));
