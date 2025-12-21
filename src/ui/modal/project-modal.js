@@ -1,6 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// プロジェクト作成・編集モーダルの制御
+/**
+ * 更新日: 2025-12-21
+ * 内容: 代入式左辺でのオプショナルチェイニング使用によるビルドエラーを修正
+ */
 
 import { addProject, updateProject, deleteProject } from '../../store/projects.js';
 import { showMessageModal } from '../components.js';
@@ -29,9 +31,10 @@ function setupEvents(overlay, project) {
     const nameInput = overlay.querySelector('#modal-project-name');
     const saveBtn = overlay.querySelector('#save-project-btn');
     const deleteBtn = overlay.querySelector('#delete-project-btn');
+    const cancelBtn = overlay.querySelector('#cancel-modal-btn');
 
     // 閉じる操作
-    overlay.querySelector('#cancel-modal-btn')?.onclick = close;
+    if (cancelBtn) cancelBtn.onclick = close;
     overlay.onclick = (e) => { if (e.target === overlay) close(); };
 
     // 保存処理
@@ -53,11 +56,13 @@ function setupEvents(overlay, project) {
         }
     };
 
-    saveBtn.onclick = handleSave;
-    nameInput.onkeydown = (e) => { if (e.key === 'Enter') handleSave(); };
+    if (saveBtn) saveBtn.onclick = handleSave;
+    if (nameInput) {
+        nameInput.onkeydown = (e) => { if (e.key === 'Enter') handleSave(); };
+    }
 
     // 削除処理
-    if (deleteBtn) {
+    if (deleteBtn && project) {
         deleteBtn.onclick = () => {
             showMessageModal(`プロジェクト「${project.name}」を削除しますか？`, async () => {
                 try {

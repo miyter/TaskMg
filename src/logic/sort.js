@@ -1,6 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// タスク配列のソートロジック
+/**
+ * 更新日: 2025-12-21
+ * 内容: 所要時間順(duration_asc)の追加と日付比較ロジックの強化
+ */
 
 /**
  * 指定された基準でタスクをソート
@@ -30,7 +32,7 @@ export function sortTasks(tasks, criteria = 'createdAt_desc') {
                 return compareNullable(a.projectId, b.projectId, (v1, v2) => String(v1).localeCompare(String(v2)));
 
             case 'duration_asc':
-                // ★追加: 所要時間順 (短い順)
+                // 所要時間順 (短い順)
                 return compareNullable(a.duration, b.duration, (v1, v2) => Number(v1) - Number(v2));
 
             case 'title_asc':

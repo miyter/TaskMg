@@ -1,62 +1,66 @@
 // @ts-nocheck
-// @miyter:20251221
-// タスク配列のソートロジック
+/**
+ * 更新日: 2025-12-21
+ * 内容: Firebase初期化フローの適正化（動的コンフィグ対応）
+ */
+
+import { initializeApp, getAuth, getFirestore } from './firebase-sdk.js';
+
+export let app;
+export let auth;
+export let db;
+export let isFirebaseInitialized = false;
 
 /**
- * 指定された基準でタスクをソート
- * @param {Array} tasks - タスク配列
- * @param {string} criteria - ソートキー
+ * アプリ起動時に呼び出し、Firebase接続を確立する
  */
-export function sortTasks(tasks, criteria = 'createdAt_desc') {
-    if (!Array.isArray(tasks)) return [];
-    
-    return [...tasks].sort((a, b) => {
-        switch (criteria) {
-            case 'createdAt_asc':
-                return compareDates(a.createdAt, b.createdAt);
-            
-            case 'createdAt_desc':
-                return compareDates(b.createdAt, a.createdAt);
+export function initializeFirebase() {
+    if (isFirebaseInitialized) return;
 
-            case 'dueDate_asc':
-                // 期限なし(null)は最後に配置
-                return compareNullable(a.dueDate, b.dueDate, (d1, d2) => compareDates(d1, d2));
+    const firebaseConfig = getConfiguration();
 
-            case 'timeBlockId_asc':
-                // 未定を最後に
-                return compareNullable(a.timeBlockId, b.timeBlockId, (v1, v2) => String(v1).localeCompare(String(v2)));
-
-            case 'projectId_asc':
-                return compareNullable(a.projectId, b.projectId, (v1, v2) => String(v1).localeCompare(String(v2)));
-
-            case 'title_asc':
-                return (a.title || '').localeCompare(b.title || '', 'ja');
-
-            default:
-                return 0;
+    if (firebaseConfig?.apiKey) {
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            isFirebaseInitialized = true;
+            console.log("[Firebase] Initialized successfully.");
+        } catch (e) {
+            console.error("[Firebase] Initialization error:", e);
+            throw e;
         }
-    });
+    } else {
+        const msg = "Firebase configuration is missing.";
+        console.error(msg);
+        throw new Error(msg);
+    }
 }
 
 /**
- * 内部ヘルパー: 日付/Timestampの比較
+ * 環境に応じたFirebase Configの取得
  */
-function compareDates(valA, valB) {
-    const getTime = (v) => {
-        if (!v) return 0;
-        if (v.toDate) return v.toDate().getTime();
-        if (v instanceof Date) return v.getTime();
-        return new Date(v).getTime() || 0;
-    };
-    return getTime(valA) - getTime(valB);
+function getConfiguration() {
+    if (typeof window !== 'undefined' && window.GLOBAL_FIREBASE_CONFIG) {
+        return window.GLOBAL_FIREBASE_CONFIG;
+    }
+    
+    if (typeof __firebase_config !== 'undefined') {
+        try {
+            return JSON.parse(__firebase_config);
+        } catch (e) {
+            console.error("[Firebase] Config parse failed:", e);
+        }
+    }
+    return null;
 }
 
 /**
- * 内部ヘルパー: null値を考慮した比較（nullを常に後ろに持っていく）
+ * 初期化済みインスタンスを取得する
  */
-function compareNullable(a, b, comparator) {
-    if (a === b) return 0;
-    if (a == null || a === 'null') return 1;
-    if (b == null || b === 'null') return -1;
-    return comparator(a, b);
+export function getFirebase() {
+    if (!isFirebaseInitialized) {
+        throw new Error("Firebase not initialized. Call initializeFirebase() first.");
+    }
+    return { app, auth, db };
 }

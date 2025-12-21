@@ -1,11 +1,16 @@
 // @ts-nocheck
-// @miyter:20251221
-// タスク編集モーダルのエントリーポイント
+/**
+ * 更新日: 2025-12-21
+ * 内容: インポートパスの修正（simple-modals.js から分割済みモジュールへ）
+ */
 
 import { buildModalHTML } from './modal/modal-dom-generator.js';
 import { setupTaskModalEvents } from './modal/task-modal-ctrl.js';
 
-export { showLabelModal } from './modal/simple-modals.js';
+// 各種モーダルのエントリーポイントを再エクスポート
+export { showLabelModal } from './modal/label-modal.js';
+export { showProjectModal } from './modal/project-modal.js';
+export { showWorkspaceModal } from './modal/workspace-modal.js';
 
 /**
  * モーダル機能の初期化（グローバルなショートカット等）

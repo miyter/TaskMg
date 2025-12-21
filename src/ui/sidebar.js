@@ -1,6 +1,8 @@
 // @ts-nocheck
-// @miyter:20251221
-// サイドバーの初期化と構造・イベント管理
+/**
+ * 更新日: 2025-12-21
+ * 内容: サイドバーの初期化ロジックとデータ同期用エクスポートの統合
+ */
 
 import { setupResizer } from './sidebar-utils.js';
 import { buildSidebarHTML, setupSidebarToggles } from './sidebar-dom.js';
@@ -9,10 +11,31 @@ import { showFilterModal } from './filter-modal.js';
 import { showTimeBlockModal } from './timeblock-modal.js'; 
 import { showSettingsModal } from './settings.js';
 import { initSidebarProjects } from './components/SidebarProjects.js';
+import { renderProjects, renderLabels } from './sidebar-renderer.js';
+
+// 他のモジュールから参照するために再エクスポート
+export { renderProjects, renderLabels };
+
+/**
+ * サイドバーのインボックス件数バッジを更新
+ * @param {Array} tasks - タスク配列
+ */
+export function updateInboxCount(tasks) {
+    const inboxBadge = document.getElementById('inbox-count');
+    if (!inboxBadge) return;
+
+    const count = tasks.filter(t => !t.completed && !t.projectId).length;
+    inboxBadge.textContent = count > 0 ? count : '';
+    
+    if (count > 0) {
+        inboxBadge.classList.remove('hidden');
+    } else {
+        inboxBadge.classList.add('hidden');
+    }
+}
 
 /**
  * サイドバーの初期セットアップ
- * 実際のデータ描画は DataSyncManager が担うため、ここでは静的な構造とイベントのみを定義する
  */
 export function initSidebar() {
     const container = document.getElementById('sidebar-content');
@@ -32,7 +55,7 @@ export function initSidebar() {
     // 3. インボックスへのドロップを有効化
     setupDropZone(document.getElementById('nav-inbox'), 'inbox');
 
-    // 4. プロジェクトセクション（個別コンポーネント）の初期化
+    // 4. プロジェクトセクションの初期化
     initSidebarProjects(container);
 
     // 5. 初期表示とレスポンシブ設定
