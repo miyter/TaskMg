@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 断片化していたコードの修復とUI同期の安定化
+ * 内容: XSS対策(textContent採用)、冪等性の確保、イベントデータの直接利用によるレースコンディション回避
  */
 
 import { setCurrentWorkspaceId, getCurrentWorkspaceId, getWorkspaces } from '../../store/workspace.js';
@@ -16,34 +16,34 @@ const CLASSES = {
 
 let menuEl = null;
 let triggerEl = null;
+let isInitialized = false;
 
-/**
- * メニューの表示制御
- */
 function setMenuVisible(visible) {
     if (!menuEl) return;
-    
+
     if (visible) {
         menuEl.classList.remove(...CLASSES.MENU_INVISIBLE);
         menuEl.classList.add(...CLASSES.MENU_VISIBLE);
-        document.addEventListener('click', handleOutsideClick);
+        document.addEventListener('click', handleOutsideClick, { capture: true });
     } else {
         menuEl.classList.remove(...CLASSES.MENU_VISIBLE);
         menuEl.classList.add(...CLASSES.MENU_INVISIBLE);
-        document.removeEventListener('click', handleOutsideClick);
+        document.removeEventListener('click', handleOutsideClick, { capture: true });
     }
 }
 
 const handleOutsideClick = (e) => {
-    if (menuEl && !menuEl.contains(e.target) && !triggerEl.contains(e.target)) {
+    if (menuEl && !menuEl.contains(e.target) && triggerEl && !triggerEl.contains(e.target)) {
         setMenuVisible(false);
     }
 };
 
 /**
- * ドロップダウンの初期化
+ * ドロップダウンの初期化（冪等性を確保）
  */
 export function initWorkspaceDropdown() {
+    if (isInitialized) return;
+
     triggerEl = document.getElementById('workspace-trigger');
     menuEl = document.getElementById('workspace-menu');
     const addBtn = document.getElementById('add-workspace-btn');
@@ -60,24 +60,28 @@ export function initWorkspaceDropdown() {
     if (addBtn) addBtn.onclick = () => { setMenuVisible(false); showWorkspaceModal(null); };
     if (settingsBtn) settingsBtn.onclick = () => { setMenuVisible(false); showSettingsModal(); };
 
-    // ワークスペース変更時にUIを即座に再描画
-    document.addEventListener('workspace-changed', () => {
-        updateWorkspaceDropdownUI(getWorkspaces());
+    // ワークスペース変更イベントを購読
+    document.addEventListener('workspace-changed', (e) => {
+        const { workspaceId, workspaces } = e.detail;
+        updateWorkspaceDropdownUI(workspaces, workspaceId);
     });
+
+    isInitialized = true;
 }
 
 /**
- * UIの更新（ラベルとメニューリスト）
+ * UIの更新
+ * @param {Array} workspaces - 最新のリスト（イベントから渡されたもの）
+ * @param {string} currentId - 選択中のID
  */
-export function updateWorkspaceDropdownUI(workspaces) {
+export function updateWorkspaceDropdownUI(workspaces, currentId = getCurrentWorkspaceId()) {
     const listContainer = document.getElementById('workspace-list');
     const label = document.getElementById('workspace-label');
-    const currentId = getCurrentWorkspaceId();
 
     if (listContainer) {
         renderWorkspaceMenu(workspaces, listContainer, currentId);
     }
-    
+
     if (label) {
         const currentWs = workspaces.find(w => w.id === currentId);
         label.textContent = currentWs ? currentWs.name : "ワークスペース";
@@ -86,7 +90,7 @@ export function updateWorkspaceDropdownUI(workspaces) {
 }
 
 /**
- * メニュー項目のレンダリング
+ * メニュー項目のレンダリング（XSS対策済み）
  */
 function renderWorkspaceMenu(workspaces, container, currentId) {
     container.innerHTML = '';
@@ -94,22 +98,28 @@ function renderWorkspaceMenu(workspaces, container, currentId) {
     workspaces.forEach(ws => {
         const isCurrent = ws.id === currentId;
         const btn = document.createElement('button');
-        
-        btn.className = `workspace-option w-full text-left px-4 py-2 text-sm flex items-center justify-between transition-colors ${
-            isCurrent 
-            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium' 
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-        }`;
-        
-        btn.innerHTML = `
-            <span class="truncate pointer-events-none">${ws.name}</span>
-            ${isCurrent ? `
+
+        btn.className = `workspace-option w-full text-left px-4 py-2 text-sm flex items-center justify-between transition-colors ${isCurrent
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`;
+
+        // テキスト部分はtextContentを使用して安全にセット
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'truncate pointer-events-none';
+        nameSpan.textContent = ws.name;
+        btn.appendChild(nameSpan);
+
+        if (isCurrent) {
+            const icon = document.createElement('div');
+            icon.innerHTML = `
                 <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-            ` : ''}
-        `;
-        
+            `;
+            btn.appendChild(icon.firstElementChild);
+        }
+
         btn.onclick = () => {
             if (!isCurrent) setCurrentWorkspaceId(ws.id);
             setMenuVisible(false);
@@ -119,7 +129,7 @@ function renderWorkspaceMenu(workspaces, container, currentId) {
             e.preventDefault();
             showItemContextMenu(e, 'workspace', ws);
         };
-        
+
         container.appendChild(btn);
     });
 }

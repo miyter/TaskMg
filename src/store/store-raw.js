@@ -1,14 +1,20 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: 日付変換ロジックの整理、意図の明確化
+ * 内容: 日付変換の共通化、バックアップ仕様のコメント追記、Timestamp判定の厳密化
  */
 
-import { 
-    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, getDoc, getDocs, Timestamp, serverTimestamp 
+import {
+    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, getDoc, getDocs, Timestamp, serverTimestamp
 } from "../core/firebase-sdk.js";
 import { db } from '../core/firebase.js';
 import { paths } from '../utils/paths.js';
+
+/**
+ * 共通の日付変換ヘルパー
+ */
+const toJSDate = (val) => (val instanceof Timestamp) ? val.toDate() : val;
+const toFirestoreDate = (val) => (val instanceof Date) ? Timestamp.fromDate(val) : val;
 
 /**
  * FirestoreドキュメントをJSオブジェクトに変換
@@ -17,18 +23,18 @@ function deserializeTask(id, data) {
     return {
         id,
         ...data,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt || null),
-        dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : (data.dueDate || null),
+        createdAt: toJSDate(data.createdAt) || null,
+        dueDate: toJSDate(data.dueDate) || null,
         recurrence: data.recurrence || null,
     };
 }
 
 export function subscribeToTasksRaw(userId, workspaceId, onUpdate) {
     if (!userId || !workspaceId) {
-        onUpdate([]); 
-        return () => {}; 
+        onUpdate([]);
+        return () => { };
     }
-    
+
     const path = paths.tasks(userId, workspaceId);
     const q = query(collection(db, path));
 
@@ -51,13 +57,12 @@ export async function getTaskByIdRaw(userId, workspaceId, taskId) {
 export async function addTaskRaw(userId, workspaceId, taskData) {
     const path = paths.tasks(userId, workspaceId);
     const safeTaskData = { ...taskData };
-    
-    // index.js側でDate正規化済みであれば、ここでは変換のみを行う
-    // もしDateオブジェクトならTimestampへ変換してFirestoreに保存
-    if (safeTaskData.dueDate instanceof Date) {
-        safeTaskData.dueDate = Timestamp.fromDate(safeTaskData.dueDate);
+
+    // 日付の正規化
+    if (safeTaskData.dueDate) {
+        safeTaskData.dueDate = toFirestoreDate(safeTaskData.dueDate);
     }
-    
+
     return await addDoc(collection(db, path), {
         ...safeTaskData,
         ownerId: userId,
@@ -76,17 +81,11 @@ export async function updateTaskRaw(userId, workspaceId, taskId, updates) {
     const ref = doc(db, path, taskId);
     const safeUpdates = { ...updates };
 
-    // 期限日の変換処理
     if (safeUpdates.dueDate !== undefined) {
-        if (safeUpdates.dueDate instanceof Date) {
-            safeUpdates.dueDate = Timestamp.fromDate(safeUpdates.dueDate);
-        } else if (safeUpdates.dueDate === null) {
-            safeUpdates.dueDate = null;
-        }
+        safeUpdates.dueDate = toFirestoreDate(safeUpdates.dueDate);
     }
-    
-    // undefinedのrecurrenceは送信データから除外（既存の値を維持するため）
-    // 明示的に消したい場合はnull等を渡す規約とする
+
+    // undefinedを削除して既存のフィールドを保護（Firestoreの標準挙動に準拠）
     if (safeUpdates.recurrence === undefined) delete safeUpdates.recurrence;
 
     await updateDoc(ref, safeUpdates);
@@ -97,6 +96,11 @@ export async function deleteTaskRaw(userId, workspaceId, taskId) {
     await deleteDoc(doc(db, path, taskId));
 }
 
+/**
+ * バックアップデータの生成
+ * ※ labels はワークスペースに依存せずユーザー全体で共有される仕様のため
+ * workspaceId は tasks/projects の抽出にのみ使用する。
+ */
 export async function createBackupDataRaw(userId, workspaceId) {
     if (!userId || !workspaceId) throw new Error("Credentials missing for backup");
 
@@ -114,8 +118,10 @@ export async function createBackupDataRaw(userId, workspaceId) {
         const data = d.data();
         const serialized = { id: d.id };
         for (const key in data) {
-            // TimestampはISO文字列に変換してポータビリティを確保
-            serialized[key] = (data[key] && data[key].toDate) ? data[key].toDate().toISOString() : data[key];
+            // TimestampはISO文字列へ変換。それ以外はそのまま
+            serialized[key] = (data[key] instanceof Timestamp)
+                ? data[key].toDate().toISOString()
+                : data[key];
         }
         return serialized;
     });

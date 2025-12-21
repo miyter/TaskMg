@@ -1,15 +1,16 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-21
- * 内容: paths.jsへの依存統合、appId重複排除
+ * 内容: レースコンディション対策、エラーハンドリング追加、デフォルト作成ロジックの改善
  */
 
-import { 
+import {
     collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs, limit, where
 } from "../core/firebase-sdk.js";
 
 import { db, auth } from "../core/firebase.js";
 import { paths } from '../utils/paths.js';
+import { showMessageModal } from '../ui/components.js';
 
 const STORAGE_KEY = 'currentWorkspaceId';
 const CHANGE_EVENT = 'workspace-changed';
@@ -17,9 +18,6 @@ const CHANGE_EVENT = 'workspace-changed';
 let unsubscribe = null;
 let _workspaces = [];
 
-/**
- * キャッシュされたワークスペース一覧を取得
- */
 export function getWorkspaces() {
     return _workspaces;
 }
@@ -31,12 +29,11 @@ export function subscribeToWorkspaces(onUpdate) {
     const user = auth.currentUser;
     if (!user) {
         onUpdate([]);
-        return () => {};
+        return () => { };
     }
 
     if (unsubscribe) unsubscribe();
 
-    // paths.jsを利用してパス生成
     const path = paths.workspaces(user.uid);
     const q = query(collection(db, path), orderBy('createdAt', 'asc'));
 
@@ -46,53 +43,54 @@ export function subscribeToWorkspaces(onUpdate) {
             ...doc.data()
         }));
 
+        // キャッシュを先に更新してレースコンディションを防止
         _workspaces = items;
 
         if (items.length === 0 && !snapshot.metadata.hasPendingWrites) {
-            await ensureDefaultWorkspace(onUpdate);
+            // 作成後にonSnapshotが再発火するため、ここでは作成のみ行う
+            await ensureDefaultWorkspace();
         } else {
-            validateCurrentWorkspace(items);
+            const currentId = validateCurrentWorkspace(items);
             onUpdate(items);
+
+            // UI側に最新の状態を通知
+            dispatchWorkspaceEvent(currentId, items);
         }
     }, (error) => {
-        console.error("Error subscribing to workspaces:", error);
+        console.error("[Workspace] Subscription error:", error);
         onUpdate([]);
     });
 
     return unsubscribe;
 }
 
-/**
- * デフォルトワークスペースの確保
- */
-async function ensureDefaultWorkspace(onUpdate) {
+async function ensureDefaultWorkspace() {
     try {
         const user = auth.currentUser;
         if (!user) return;
-        
+
         const path = paths.workspaces(user.uid);
         const snapshot = await getDocs(query(collection(db, path), limit(1)));
-        
+
         if (snapshot.empty) {
             await addWorkspace('メイン');
         }
     } catch (err) {
-        console.error('Failed to ensure default workspace:', err);
+        console.error('[Workspace] Failed to ensure default workspace:', err);
     }
 }
 
-/**
- * 選択中のIDが有効か確認
- */
 function validateCurrentWorkspace(items) {
-    if (items.length === 0) return;
+    if (items.length === 0) return null;
 
-    const currentId = getCurrentWorkspaceId();
+    let currentId = getCurrentWorkspaceId();
     const exists = items.some(w => w.id === currentId);
 
     if (!currentId || !exists) {
-        setCurrentWorkspaceId(items[0].id);
+        currentId = items[0].id;
+        localStorage.setItem(STORAGE_KEY, currentId);
     }
+    return currentId;
 }
 
 export function getCurrentWorkspaceId() {
@@ -101,43 +99,41 @@ export function getCurrentWorkspaceId() {
 
 export function setCurrentWorkspaceId(id) {
     if (!id) return;
-    
+
     const oldId = localStorage.getItem(STORAGE_KEY);
     if (oldId === id) return;
 
     localStorage.setItem(STORAGE_KEY, id);
-    
-    const event = new CustomEvent(CHANGE_EVENT, { 
-        detail: { workspaceId: id } 
+    dispatchWorkspaceEvent(id, _workspaces);
+}
+
+function dispatchWorkspaceEvent(id, workspaces) {
+    const event = new CustomEvent(CHANGE_EVENT, {
+        detail: { workspaceId: id, workspaces: workspaces }
     });
     document.dispatchEvent(event);
 }
 
-/**
- * ワークスペース追加
- */
 export async function addWorkspace(name) {
-    const user = auth.currentUser;
-    if (!user) throw new Error('User not authenticated');
+    try {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Authentication required');
 
-    const path = paths.workspaces(user.uid);
-    
-    const newDocData = {
-        name: name,
-        createdAt: serverTimestamp()
-    };
+        const path = paths.workspaces(user.uid);
+        const newDocData = {
+            name: name,
+            createdAt: serverTimestamp()
+        };
 
-    const docRef = await addDoc(collection(db, path), newDocData);
-    
-    return {
-        id: docRef.id,
-        name: name
-    };
+        const docRef = await addDoc(collection(db, path), newDocData);
+        return { id: docRef.id, name: name };
+    } catch (e) {
+        console.error("[Workspace] Add error:", e);
+        showMessageModal("ワークスペースの作成に失敗した。");
+        throw e;
+    }
 }
 
-/**
- * 名前の重複チェック
- */
 export async function isWorkspaceNameDuplicate(name, excludeId = null) {
     const user = auth.currentUser;
     if (!user) return false;
@@ -150,17 +146,27 @@ export async function isWorkspaceNameDuplicate(name, excludeId = null) {
 }
 
 export async function updateWorkspaceName(id, newName) {
-    const user = auth.currentUser;
-    if (!user) throw new Error('User not authenticated');
+    try {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Authentication required');
 
-    const path = paths.workspaces(user.uid);
-    await updateDoc(doc(db, path, id), { name: newName });
+        const path = paths.workspaces(user.uid);
+        await updateDoc(doc(db, path, id), { name: newName });
+    } catch (e) {
+        console.error("[Workspace] Update error:", e);
+        showMessageModal("名前の更新に失敗した。");
+    }
 }
 
 export async function deleteWorkspace(id) {
-    const user = auth.currentUser;
-    if (!user) throw new Error('User not authenticated');
+    try {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Authentication required');
 
-    const path = paths.workspaces(user.uid);
-    await deleteDoc(doc(db, path, id));
+        const path = paths.workspaces(user.uid);
+        await deleteDoc(doc(db, path, id));
+    } catch (e) {
+        console.error("[Workspace] Delete error:", e);
+        showMessageModal("削除に失敗した。");
+    }
 }
