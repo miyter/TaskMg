@@ -4,7 +4,7 @@
  * 内容: ワークスペースが0個の場合の処理を修正
  *      - ensureDefaultWorkspace() を呼び出す前に onUpdate([]) を呼び出すように変更
  *      - onSnapshot コールバックから async を削除（SDK互換性のため）
- *      - onUpdate にデフォルト値を設定し、呼び出しを簡素化（Minifyエラー回避）
+ *      - onUpdate を関数内で強制的に正規化（safeOnUpdate）し、Minifyエラーを根絶
  */
 
 import {
@@ -30,9 +30,12 @@ export function getWorkspaces() {
  * @param {string} userId
  * @param {function} onUpdate
  */
-export function subscribeToWorkspaces(userId, onUpdate = () => { }) {
+export function subscribeToWorkspaces(userId, onUpdate) {
+    // コールバックの安全な正規化（nullやundefined対策の決定版）
+    const safeOnUpdate = typeof onUpdate === 'function' ? onUpdate : () => { };
+
     if (!userId) {
-        onUpdate([]);
+        safeOnUpdate([]);
         return () => { };
     }
 
@@ -53,16 +56,16 @@ export function subscribeToWorkspaces(userId, onUpdate = () => { }) {
         if (items.length === 0 && !snapshot.metadata.hasPendingWrites) {
             // ワークスペースが0個の場合、デフォルトを作成
             // 作成後、再度 onSnapshot が発火して正しく処理される
-            onUpdate([]);
+            safeOnUpdate([]);
             ensureDefaultWorkspace().catch(err => console.error('[Workspace] Default creation error:', err));
         } else {
             const currentId = validateCurrentWorkspace(items);
-            onUpdate(items);
+            safeOnUpdate(items);
             dispatchWorkspaceEvent(currentId, items);
         }
     }, (error) => {
         console.error("[Workspace] Subscription error:", error);
-        onUpdate([]);
+        safeOnUpdate([]);
     });
 
     return unsubscribe;
