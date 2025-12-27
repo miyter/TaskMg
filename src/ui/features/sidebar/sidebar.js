@@ -84,7 +84,7 @@ function setupDataEventListeners() {
     ];
 
     if (refreshSidebarHandler) {
-        updateEvents.forEach(ev => window.removeEventListener(ev, refreshSidebarHandler));
+        updateEvents.forEach(ev => document.removeEventListener(ev, refreshSidebarHandler));
     }
 
     refreshSidebarHandler = () => {
@@ -95,7 +95,7 @@ function setupDataEventListeners() {
         applyCompactMode(isCompact);
     };
 
-    updateEvents.forEach(ev => window.addEventListener(ev, refreshSidebarHandler));
+    updateEvents.forEach(ev => document.addEventListener(ev, refreshSidebarHandler));
 }
 
 function setupSidebarEvents() {
