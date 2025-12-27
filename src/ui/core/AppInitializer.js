@@ -1,6 +1,9 @@
 /**
- * 更新日: 2025-12-21
- * 内容: 同期フローの安定化（ワークスペース確定後の同期開始）、二重起動防止ガードの追加
+ * 更新日: 2025-12-27
+ * 内容: ワークスペース読み込みタイミングの修正
+ *      - subscribeToWorkspaces のコールバック内で startAllSubscriptions を呼び出さないように変更
+ *      - workspace-changed イベントに同期開始を任せることで、タイミング問題を解決
+ *      - ページ状態の復元処理を EventManager.js に移動
  */
 
 import { onAuthStateChanged } from '../../core/firebase-sdk.js';
@@ -11,15 +14,12 @@ import { initTheme } from '../theme.js';
 import { initTaskModal } from '../task-modal.js';
 import { initSidebar } from '../sidebar.js';
 import { initSettings } from '../settings.js';
-import { setCurrentFilter } from '../ui-view-manager.js';
-import { renderLoginState } from '../ui-view-utils.js'; 
+import { renderLoginState } from '../ui-view-utils.js';
 import { initWorkspaceDropdown, updateWorkspaceDropdownUI } from '../components/WorkspaceDropdown.js';
-import { 
-    startAllSubscriptions, 
-    stopDataSync, 
-    getWorkspaceUnsubscribe, 
-    setWorkspaceUnsubscribe,
-    isSyncing 
+import {
+    stopDataSync,
+    getWorkspaceUnsubscribe,
+    setWorkspaceUnsubscribe
 } from './DataSyncManager.js';
 import { setupGlobalEventListeners } from './EventManager.js';
 import { subscribeToWorkspaces } from '../../store/workspace.js';
@@ -42,20 +42,8 @@ export function runInitialization() {
     initWorkspaceDropdown();
     setupAuthHandlers();
     setupGlobalEventListeners();
-    
-    setupAuthObserver();
-}
 
-/**
- * LocalStorageからのページ状態復元
- */
-function restorePageState() {
-    try {
-        const saved = JSON.parse(localStorage.getItem('lastPage'));
-        setCurrentFilter(saved ? { type: saved.page, id: saved.id || null } : { type: 'inbox' });
-    } catch (e) {
-        setCurrentFilter({ type: 'inbox' });
-    }
+    setupAuthObserver();
 }
 
 /**
@@ -87,13 +75,9 @@ function handleUserLogin(user) {
     const unsubscribeWs = subscribeToWorkspaces(user.uid, (workspaces) => {
         updateWorkspaceDropdownUI(workspaces);
 
-        // ★最重要: ワークスペースが確定（自動選択含む）した後にデータ同期を開始
-        startAllSubscriptions();
-        
-        // 初回のみページ状態を復元（二重実行防止）
-        if (!isSyncing()) {
-            restorePageState();
-        }
+        // ワークスペースが確定した後、workspace.js から workspace-changed イベントが発火され、
+        // EventManager.js でそのイベントを受け取って startAllSubscriptions() が呼ばれる。
+        // ここでは呼び出さない（タイミングの問題を避けるため）
     });
     setWorkspaceUnsubscribe(unsubscribeWs);
 }
@@ -107,8 +91,8 @@ function handleUserLogout() {
         unsubWorkspaces();
         setWorkspaceUnsubscribe(null);
     }
-    
+
     // ワークスペース購読も止めるため true を指定
-    stopDataSync(true); 
+    stopDataSync(true);
     renderLoginState();
 }

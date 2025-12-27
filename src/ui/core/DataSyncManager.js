@@ -1,6 +1,9 @@
 /**
- * 更新日: 2025-12-21
- * 内容: startAllSubscriptions の引数不整合を修正、Store購読時への workspaceId 伝搬を追加
+ * 更新日: 2025-12-27
+ * 内容: デバッグログの改善
+ *      - startAllSubscriptions 開始時のログを詳細化
+ *      - stopDataSync 時のログを追加
+ *      - エラー時のログを改善
  */
 
 import { auth } from '../../core/firebase.js';
@@ -71,7 +74,10 @@ function notifyUpdate(eventType) {
  * @param {string} userId - 呼び出し元から渡されるUID（必要に応じて使用）
  */
 export function startAllSubscriptions(userId) {
-    if (!auth?.currentUser) return;
+    if (!auth?.currentUser) {
+        console.warn('[DataSync] No authenticated user. Cannot start subscriptions.');
+        return;
+    }
 
     stopDataSync(false);
 
@@ -82,12 +88,12 @@ export function startAllSubscriptions(userId) {
     }
 
     isDataSyncing = true;
-    console.log('[DataSync] Start syncing workspace:', workspaceId);
+    console.log('[DataSync] Starting subscriptions for workspace:', workspaceId);
 
     // --- 各データソースの購読 ---
     // Store側の各 subscribe 関数が (workspaceId, callback) を期待している場合、
     // ここで workspaceId を渡さないと callback が第1引数扱いになり、内部の onSnapshot で callback が undefined になる。
-    
+
     subscriptions.tasks = subscribeToTasks(workspaceId, (data) => {
         state.tasks = data;
         notifyUpdate('tasks-updated');
@@ -118,6 +124,10 @@ export function startAllSubscriptions(userId) {
  * 同期停止
  */
 export function stopDataSync(stopWorkspaceSync = false) {
+    if (isDataSyncing || stopWorkspaceSync) {
+        console.log('[DataSync] Stopping data sync...');
+    }
+
     Object.keys(subscriptions).forEach(key => {
         if (key === 'workspaces' && !stopWorkspaceSync) return;
         if (typeof subscriptions[key] === 'function') {
