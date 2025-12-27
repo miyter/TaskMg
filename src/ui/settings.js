@@ -6,6 +6,7 @@ import { getSettingsModalHTML } from './settings/view.js';
 import { setupSettingsEvents } from './settings/handlers.js';
 import { SIDEBAR_CONFIG } from './features/sidebar/sidebar-constants.js';
 import { isSidebarCompact } from './features/sidebar/sidebar-utils.js';
+import { applyFonts } from './layout/fonts.js';
 
 let isInitialized = false;
 
@@ -21,6 +22,9 @@ function closeSettingsModal() {
  */
 export function initSettings() {
     if (isInitialized) return;
+
+    // フォント適用の初期化
+    applyFonts();
 
     const handleSettingsClick = (e) => {
         if (e.target.closest('#nav-settings')) {

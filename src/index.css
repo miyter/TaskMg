@@ -8,11 +8,13 @@
     :root {
         --app-bg-light: #ffffff;
         --app-bg-dark: #111827; /* gray-900 */
+        --font-en: 'Inter';
+        --font-jp: 'M PLUS 2';
     }
 
     body {
         @apply font-sans antialiased text-gray-800 dark:text-gray-100 transition-colors duration-300;
-        font-family: 'M PLUS 2', 'Inter', sans-serif;
+        font-family: var(--font-en), var(--font-jp), sans-serif;
     }
 
     /* 文字サイズ設定: Tailwind Configの値(@apply)を参照して一元化 */

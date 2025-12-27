@@ -10,6 +10,7 @@ import { createBackupData } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { applyBackground } from '../layout/theme.js';
 import { SIDEBAR_CONFIG } from '../features/sidebar/sidebar-constants.js';
+import { setFont } from '../layout/fonts.js';
 
 export function setupSettingsEvents(modalOverlay, closeModal) {
     // 閉じる処理の統合
@@ -42,6 +43,12 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
         window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { compact: isCompact } }));
     });
 
+    setupRadioGroupHandler('sidebar-density', SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, (val) => {
+        const isCompact = val === 'compact';
+        window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { compact: isCompact } }));
+    });
+
+    setupFontHandlers();
     setupExportHandler();
     setupPasswordHandler();
     setupLogoutHandler(closeModal);
@@ -69,6 +76,23 @@ function setupRadioGroupHandler(name, storageKey, onUpdate) {
     } else {
         const checked = Array.from(radios).find(r => r.checked);
         if (checked) onUpdate(checked.value);
+    }
+}
+
+function setupFontHandlers() {
+    const enSelect = document.querySelector('select[name="font-en-select"]');
+    const jpSelect = document.querySelector('select[name="font-jp-select"]');
+
+    if (enSelect) {
+        enSelect.addEventListener('change', (e) => {
+            setFont('EN', e.target.value);
+        });
+    }
+
+    if (jpSelect) {
+        jpSelect.addEventListener('change', (e) => {
+            setFont('JP', e.target.value);
+        });
     }
 }
 

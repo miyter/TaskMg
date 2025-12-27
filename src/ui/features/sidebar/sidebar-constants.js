@@ -13,6 +13,9 @@ export const SIDEBAR_CONFIG = {
         HIDDEN: 'hidden',
         DRAG_OVER: ['bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400']
     },
+    COLORS: {
+        DEFAULT: '#CBD5E0' // gray-300 equivalent
+    },
     STORAGE_KEYS: {
         WIDTH: 'sidebarWidth',
         COMPACT: 'sidebar_compact',

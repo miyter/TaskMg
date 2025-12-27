@@ -15,6 +15,43 @@ export const FONT_SIZES = {
     LARGE: 'lg'
 };
 
+import { FONT_OPTIONS, getCurrentFonts } from '../layout/fonts.js';
+
+function createSelectOption(label, options, selectedValue, name) {
+    const optionsHtml = options.map(opt =>
+        `<option value="${opt.value}" ${opt.value === selectedValue ? 'selected' : ''}>${opt.label}</option>`
+    ).join('');
+
+    return `
+        <div>
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">${label}</label>
+            <div class="relative">
+                <select name="${name}" class="w-full pl-3 pr-8 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-700 dark:text-gray-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
+                    ${optionsHtml}
+                </select>
+                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getFontSettingsHTML() {
+    const current = getCurrentFonts();
+
+    return `
+        <div class="grid grid-cols-1 gap-4">
+            ${createSelectOption('英数字フォント (English / Number)', FONT_OPTIONS.EN, current.en, 'font-en-select')}
+            ${createSelectOption('日本語フォント (Japanese)', FONT_OPTIONS.JP, current.jp, 'font-jp-select')}
+        </div>
+        <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/30 rounded border border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+            <p>※ フォントの変更は即座に反映されます。</p>
+            <p>※ 一部のフォントはOSにインストールされている必要があります。</p>
+        </div>
+    `;
+}
+
 function createRadioOption(name, value, label, isChecked, icon = '') {
     return `
         <label class="flex items-center cursor-pointer p-2 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
@@ -47,7 +84,7 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
     const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     const currentFontSize = localStorage.getItem('fontSize') || FONT_SIZES.MEDIUM;
     const currentBg = localStorage.getItem('background') || BACKGROUND_PATTERNS.NONE;
-    
+
     const safeInitial = userInitial || '?';
 
     const displayContent = `
@@ -126,6 +163,7 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
 
             <div class="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-3">
                 ${createSettingsSection('表示設定', displayContent, true)}
+                ${createSettingsSection('フォント設定', getFontSettingsHTML())}
                 ${createSettingsSection('データ管理', dataContent)}
                 ${createSettingsSection('アカウント', accountContent)}
             </div>
