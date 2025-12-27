@@ -1,7 +1,7 @@
 /**
  * 更新日: 2025-12-27
- * 内容: updateUI で updateSidebarCache に timeBlocks を渡すように修正
- * これによりサイドバーの時間帯・所要時間セクションの表示を正常化
+ * 内容: updateUI 内で updateSidebarCache に labels を含む全ステートを渡すように修正
+ * これによりサイドバーのラベル名やプロジェクト名が空になる問題を解消
  */
 
 import { auth } from '../../core/firebase.js';
@@ -47,10 +47,10 @@ export function updateUI() {
     if (updateTimer) return;
 
     updateTimer = requestAnimationFrame(() => {
-        // state から timeBlocks も抽出
+        // state から全エンティティを抽出
         const { tasks, projects, labels, filters, timeBlocks } = state;
 
-        // 1. サイドバーのキャッシュを物理的に更新（timeBlocks を追加）
+        // 1. サイドバーのキャッシュを更新（labels と timeBlocks を確実に含める）
         updateSidebarCache({ tasks, labels, projects, filters, timeBlocks });
 
         // 2. メインビューの更新
@@ -70,7 +70,7 @@ function notifyUpdate(eventType) {
 
 /**
  * 同期開始
- * @param {string} userId - 呼び出し元から渡されるUID（必要に応じて使用）
+ * @param {string} userId - 呼び出し元から渡されるUID
  */
 export function startAllSubscriptions(userId) {
     if (!auth?.currentUser) {
@@ -137,7 +137,7 @@ export function stopDataSync(stopWorkspaceSync = false) {
     state = { tasks: [], projects: [], labels: [], timeBlocks: [], filters: [] };
     isDataSyncing = false;
 
-    // キャッシュを空にしてUI更新
+    // キャッシュをリセットしてUIをクリア
     updateSidebarCache(state);
     updateUI();
 }
