@@ -1,7 +1,9 @@
 // @ts-nocheck
 /**
- * 更新日: 2025-12-21
- * 内容: 引数シグネチャの修正 (userId, onUpdate)
+ * 更新日: 2025-12-27
+ * 内容: ワークスペースが0個の場合の処理を修正
+ *      - ensureDefaultWorkspace() を呼び出す前に onUpdate([]) を呼び出すように変更
+ *      - これにより、初回ログイン時のUIが正しく初期化される
  */
 
 import {
@@ -38,6 +40,7 @@ export function subscribeToWorkspaces(userId, onUpdate) {
     const path = paths.workspaces(userId);
     const q = query(collection(db, path), orderBy('createdAt', 'asc'));
 
+
     unsubscribe = onSnapshot(q, async (snapshot) => {
         const items = snapshot.docs.map(doc => ({
             id: doc.id,
@@ -47,6 +50,9 @@ export function subscribeToWorkspaces(userId, onUpdate) {
         _workspaces = items;
 
         if (items.length === 0 && !snapshot.metadata.hasPendingWrites) {
+            // ワークスペースが0個の場合、デフォルトを作成
+            // 作成後、再度 onSnapshot が発火して正しく処理される
+            if (typeof onUpdate === 'function') onUpdate([]);
             await ensureDefaultWorkspace();
         } else {
             const currentId = validateCurrentWorkspace(items);
