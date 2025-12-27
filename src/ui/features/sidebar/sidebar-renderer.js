@@ -45,28 +45,7 @@ export function renderProjects() {
     updateSidebarProjects(projects, tasks);
 }
 
-export function renderLabels() {
-    const list = document.getElementById(SIDEBAR_CONFIG.LIST_IDS.LABELS);
-    if (!list) return;
-    list.innerHTML = '';
-
-    const labels = getLabels();
-    const tasks = getTasks();
-
-    const fragment = document.createDocumentFragment();
-    labels.forEach(label => {
-        const count = countActiveTasks(tasks, t => t.labelIds?.includes(label.id));
-        const item = createSidebarItem(label.name, 'label', label.id, { color: label.color }, count);
-
-        item.onclick = () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'label', id: label.id } }));
-        item.oncontextmenu = (e) => {
-            e.preventDefault();
-            showItemContextMenu(e, 'label', label);
-        };
-        fragment.appendChild(item);
-    });
-    list.appendChild(fragment);
-}
+// export function renderLabels() { ... } // Removed
 
 export function renderTimeBlocks() {
     const list = document.getElementById(SIDEBAR_CONFIG.LIST_IDS.TIMEBLOCKS);
@@ -78,6 +57,7 @@ export function renderTimeBlocks() {
     const tasks = getTasks();
 
     blocks.forEach(block => {
+
         const count = countActiveTasks(tasks, t => String(t.timeBlockId) === String(block.id));
         const displayName = `${block.start} - ${block.end}`;
         const item = createSidebarItem(displayName, 'timeblock', block.id, { color: block.color }, count);
@@ -157,7 +137,7 @@ export function renderFilters() {
 export function renderSidebarItems() {
     // データは各レンダラー内で同期的に取得する方式に変更
     renderProjects();
-    renderLabels();
+    // renderLabels(); // Removed
     renderTimeBlocks();
     renderDurations();
     renderFilters();

@@ -24,7 +24,7 @@ function createSectionHeader(title, targetId, hasAddButton = false, buttonId = '
                 <svg class="w-3 h-3 text-gray-400 mr-2 transition-transform duration-200 flex-shrink-0 ${rotationClass}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                 </svg>
-                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate select-none">${title}</h3>
+                <h3 class="font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate select-none">${title}</h3>
             </div>
             ${addButton}
         </div>
@@ -65,9 +65,6 @@ export function buildSidebarHTML() {
 
             ${createSectionHeader('プロジェクト', 'project-list', true, 'add-project-btn')}
             ${createListContainer('project-list')}
-
-            ${createSectionHeader('ラベル', 'label-list')}
-            ${createListContainer('label-list')}
 
             ${createSectionHeader('時間帯', 'timeblock-list', true, 'edit-timeblocks-btn')}
             ${createListContainer('timeblock-list')}

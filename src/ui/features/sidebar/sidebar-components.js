@@ -26,12 +26,12 @@ export function createSidebarItem(name, type, id, meta = {}, count = 0, isCompac
         project: `<svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`,
         label: `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="background-color: ${meta.color || COLORS.DEFAULT}"></span>`,
         timeblock: `<span class="w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0" style="background-color: ${meta.color || COLORS.DEFAULT}"></span>`,
-        duration: meta.iconHtml || `<span class="mr-3 text-sm">⏱️</span>`,
-        filter: meta.iconHtml || `<span class="mr-3 text-sm">🔍</span>`
+        duration: meta.iconHtml || `<span class="mr-3">⏱️</span>`,
+        filter: meta.iconHtml || `<span class="mr-3">🔍</span>`
     };
 
-    const iconHtml = iconMap[type] || `<span class="mr-3 text-sm">🔹</span>`;
-    const countHtml = count > 0 ? `<span class="text-xs text-gray-400 font-light mr-2">${count}</span>` : '';
+    const iconHtml = iconMap[type] || `<span class="mr-3">🔹</span>`;
+    const countHtml = count > 0 ? `<span class="text-gray-400 font-light mr-2" style="font-size: 0.85em;">${count}</span>` : '';
 
     item.innerHTML = `
         <div class="flex items-center flex-1 min-w-0 pointer-events-none">

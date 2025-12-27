@@ -1,47 +1,51 @@
 /**
  * 更新日: 2025-12-27
- * 内容: updateUI 内で updateSidebarCache に labels を含む全ステートを渡すように修正
- * これによりサイドバーのラベル名やプロジェクト名が空になる問題を解消
+ * 内容: ReferenceError対策のため変数をトップレベルで確実に定義し、
+ * データ同期ロジックを再構築
  */
 
 import { auth } from '../../core/firebase.js';
-
-// Store関連
-// Store関連
 import { subscribeToTasks } from '../../store/store.js';
 import { subscribeToProjects } from '../../store/projects.js';
 import { subscribeToLabels } from '../../store/labels.js';
 import { subscribeToTimeBlocks, clearTimeBlocksCache } from '../../store/timeblocks.js';
 import { subscribeToFilters, clearFiltersCache } from '../../store/filters.js';
 import { getCurrentWorkspaceId } from '../../store/workspace.js';
-
-// UI連携
-// import { updateSidebarCache } from '../features/sidebar/sidebar.js'; // 削除
 import { updateView } from '../layout/ui-view-manager.js';
 
-// ... (omitted)
+// 変数宣言（巻き上げ対策として const/let を明示的にトップレベル配置）
+const state = {
+    tasks: [],
+    projects: [],
+    labels: [],
+    timeBlocks: [],
+    filters: []
+};
+
+const subscriptions = {
+    tasks: null,
+    projects: null,
+    labels: null,
+    timeBlocks: null,
+    filters: null,
+    workspaces: null
+};
+
+let isDataSyncing = false;
+let updateTimer = null;
 
 /**
- * UI全体を更新する（サイドバーキャッシュ更新 + メインビュー描画）
+ * UI全体を更新する
  */
 export function updateUI() {
     if (updateTimer) return;
 
     updateTimer = requestAnimationFrame(() => {
-        // state から全エンティティを抽出
         const { tasks, projects, labels } = state;
-
-        // 1. サイドバーのキャッシュ更新は不要になった（自律的にプルするため）
-        // updateSidebarCache({ tasks, labels, projects, filters, timeBlocks });
-
-        // 2. メインビューの更新
         updateView(tasks, projects, labels);
-
         updateTimer = null;
     });
 }
-
-// ... (omitted)
 
 /**
  * 特定のデータ種別が更新されたことを通知
@@ -53,7 +57,6 @@ function notifyUpdate(eventType) {
 
 /**
  * 同期開始
- * @param {string} userId - 呼び出し元から渡されるUID
  */
 export function startAllSubscriptions(userId) {
     if (!auth?.currentUser) {
@@ -98,7 +101,6 @@ export function startAllSubscriptions(userId) {
     });
 }
 
-
 /**
  * 同期停止
  */
@@ -118,11 +120,16 @@ export function stopDataSync(stopWorkspaceSync = false) {
     clearTimeBlocksCache();
     clearFiltersCache();
 
-    state = { tasks: [], projects: [], labels: [], timeBlocks: [], filters: [] };
-    isDataSyncing = false;
+    // 状態リセット（オブジェクトの参照を維持しつつ中身を空にする場合はこちら、
+    // しかし今回は再代入不可のconstではなくプロパティ操作でリセット推奨だが、
+    // ここでは単純化のため配列長0にする）
+    state.tasks = [];
+    state.projects = [];
+    state.labels = [];
+    state.timeBlocks = [];
+    state.filters = [];
 
-    // キャッシュをリセットしてUIをクリア
-    // updateSidebarCache(state); // 削除
+    isDataSyncing = false;
     updateUI();
 }
 
