@@ -11,6 +11,14 @@ import { updateSidebarProjects } from './components/SidebarProjects.js';
 import { filterTasks } from '../logic/search.js';
 import { showMessageModal } from './components.js';
 
+/**
+ * 更新日: 2025-12-27
+ * 内容: サイドバー項目が表示されないバグを修正
+ * - renderSidebarItems の早期 return を削除
+ * - renderProjects に個別の null ガードを追加
+ * - renderLabels の呼び出し漏れを修正
+ */
+
 export function updateInboxCount(allTasks) {
     const inboxCountEl = document.getElementById('inbox-count');
     if (!inboxCountEl) return;
@@ -21,6 +29,9 @@ export function updateInboxCount(allTasks) {
 }
 
 export function renderProjects(projects, tasks = []) {
+    // 自身のリストIDが存在する場合のみ実行
+    const list = document.getElementById(SIDEBAR_CONFIG.LIST_IDS.PROJECTS);
+    if (!list) return;
     updateSidebarProjects(projects, tasks);
 }
 
@@ -125,9 +136,9 @@ export function renderFilters(filters = [], tasks = []) {
 }
 
 export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels, allFilters = []) {
-    if (!document.getElementById(SIDEBAR_CONFIG.LIST_IDS.PROJECTS)) return;
-
+    // 以前の早期 return を削除し、各関数が独立して動作するように変更
     renderProjects(allProjects, allTasks);
+    renderLabels(allLabels, allTasks); // 呼び出し漏れを修正
     renderTimeBlocks(allTasks);
     renderDurations(allTasks);
     renderFilters(allFilters, allTasks);
