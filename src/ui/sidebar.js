@@ -1,5 +1,7 @@
 /**
- * サイドバーのメイン制御
+ * 更新日: 2025-12-27
+ * 内容: 動的アイテムのレンダリング後に applyCompactMode を再実行するよう修正
+ * これにより、データ同期後もコンパクト表示の設定が正しく反映される
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { setupResizer, isDesktop, getStoredBool } from './sidebar-utils.js';
@@ -77,6 +79,7 @@ export function initSidebar() {
 
     updateSidebarVisibility();
 
+    // 初期化時の適用
     const isCompact = getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
     applyCompactMode(isCompact);
     setupCompactModeListener();
@@ -106,6 +109,10 @@ function setupDataEventListeners() {
             cachedLabels, 
             filters
         );
+
+        // 【修正】動的アイテム描画後にコンパクトモードを再適用
+        const isCompact = getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
+        applyCompactMode(isCompact);
     };
 
     updateEvents.forEach(ev => window.addEventListener(ev, refreshSidebarHandler));

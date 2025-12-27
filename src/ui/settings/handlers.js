@@ -1,5 +1,7 @@
 /**
- * 設定画面のイベントハンドリング
+ * 更新日: 2025-12-27
+ * 内容: サイドバー密度設定のキーを SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT に統一
+ * これによりリロード後もコンパクト表示の設定が維持されるよう修正
  */
 import { auth } from '../../core/firebase.js';
 import { updateUserPassword } from '../auth.js';
@@ -7,6 +9,7 @@ import { signOut } from 'firebase/auth';
 import { createBackupData } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { applyBackground } from '../theme.js';
+import { SIDEBAR_CONFIG } from '../sidebar-constants.js';
 
 export function setupSettingsEvents(modalOverlay, closeModal) {
     // 閉じる処理の統合
@@ -33,8 +36,8 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
     // 背景パターン
     setupRadioGroupHandler('bg-pattern', 'background', () => applyBackground());
 
-    // サイドバー密度
-    setupRadioGroupHandler('sidebar-density', 'sidebar_compact', (val) => {
+    // サイドバー密度 - SIDEBAR_CONFIG の定数を使用するように修正
+    setupRadioGroupHandler('sidebar-density', SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, (val) => {
         const isCompact = val === 'compact';
         window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { compact: isCompact } }));
     });
@@ -58,6 +61,10 @@ function setupRadioGroupHandler(name, storageKey, onUpdate) {
 
     // モーダル表示時に保存値を強制適用
     if (savedValue) {
+        // ラジオボタンのチェック状態も復元
+        radios.forEach(radio => {
+            radio.checked = (radio.value === savedValue);
+        });
         onUpdate(savedValue);
     } else {
         const checked = Array.from(radios).find(r => r.checked);
@@ -114,7 +121,7 @@ function setupPasswordHandler() {
             await updateUserPassword(pass);
             input.value = '';
         } catch (err) {
-            // エラー表示は auth.js 側で行われるが、ここでも追加制御が必要なら行う
+            // エラー表示は auth.js 側で行われる
         }
     };
 }
