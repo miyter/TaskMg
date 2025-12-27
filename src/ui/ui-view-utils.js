@@ -5,16 +5,18 @@ const { CLASSES, HEADER_IDS, DATA_ATTRS } = UI_CONFIG;
 
 /**
  * 更新日: 2025-12-27
- * 内容: showView を null-safe に修正（存在しないビュー要素による実行時エラーを防止）
+ * 内容: showView を完全に null-safe 化。Optional Chaining を導入し classList の参照エラーを封殺。
  */
 export function showView(activeView, otherViews) {
-    otherViews.forEach(v => {
-        if (v) {
-            v.classList.add(CLASSES.HIDDEN);
-            v.classList.remove(CLASSES.FADE_IN);
-        }
-    });
-    if (activeView) {
+    if (Array.isArray(otherViews)) {
+        otherViews.forEach(v => {
+            // 要素が存在し、かつ classList を持っている場合のみ操作
+            v?.classList?.add(CLASSES.HIDDEN);
+            v?.classList?.remove(CLASSES.FADE_IN);
+        });
+    }
+    
+    if (activeView?.classList) {
         activeView.classList.remove(CLASSES.HIDDEN);
         activeView.classList.add(CLASSES.FADE_IN);
     }
@@ -25,14 +27,13 @@ export function showView(activeView, otherViews) {
  */
 export function clearSidebarHighlight() {
     document.querySelectorAll('.sidebar-item-row').forEach(el => {
-        el.classList.remove(...CLASSES.HIGHLIGHT);
-        el.classList.add(...CLASSES.NORMAL);
+        el.classList.remove(...(Array.isArray(CLASSES.HIGHLIGHT) ? CLASSES.HIGHLIGHT : [CLASSES.HIGHLIGHT]));
+        el.classList.add(...(Array.isArray(CLASSES.NORMAL) ? CLASSES.NORMAL : [CLASSES.NORMAL]));
         
         const icon = el.querySelector('svg, span:not(.truncate)');
         if (icon) {
-            // text-で始まるクラス（色指定）をすべて削除してデフォルトに戻す
             const textClasses = Array.from(icon.classList).filter(c => c.startsWith('text-'));
-            icon.classList.remove(...textClasses);
+            if (textClasses.length > 0) icon.classList.remove(...textClasses);
             
             const defaultColor = el.getAttribute(DATA_ATTRS.DEFAULT_COLOR);
             if (defaultColor) {
@@ -49,14 +50,14 @@ export function highlightSidebarItem(filter) {
     clearSidebarHighlight();
 
     const target = getSidebarTarget(filter);
-    if (target) {
-        target.classList.remove(...CLASSES.NORMAL);
-        target.classList.add(...CLASSES.HIGHLIGHT);
+    if (target?.classList) {
+        target.classList.remove(...(Array.isArray(CLASSES.NORMAL) ? CLASSES.NORMAL : [CLASSES.NORMAL]));
+        target.classList.add(...(Array.isArray(CLASSES.HIGHLIGHT) ? CLASSES.HIGHLIGHT : [CLASSES.HIGHLIGHT]));
         
         const icon = target.querySelector('svg, span:not(.truncate)');
         if (icon) {
             const textClasses = Array.from(icon.classList).filter(c => c.startsWith('text-'));
-            icon.classList.remove(...textClasses);
+            if (textClasses.length > 0) icon.classList.remove(...textClasses);
             icon.classList.add('text-white');
         }
     }
@@ -89,7 +90,6 @@ export function updateHeaderTitleByFilter(filter, allProjects = [], allLabels = 
     let title = 'インボックス';
     const { type, id, name } = filter;
 
-    // filterオブジェクトにnameがあれば優先使用（最適化）
     if (name) {
         title = name;
     } else {
@@ -134,7 +134,7 @@ export function renderLoginState() {
     const { VIEW_IDS } = UI_CONFIG;
     Object.values(VIEW_IDS).forEach(id => {
         const el = document.getElementById(id);
-        if (!el) return;
+        if (!el?.classList) return;
         
         if (id === VIEW_IDS.TASK) {
             el.innerHTML = '';
