@@ -4,15 +4,20 @@ import { getTimeBlockById } from '../store/timeblocks.js';
 const { CLASSES, HEADER_IDS, DATA_ATTRS } = UI_CONFIG;
 
 /**
- * 指定した要素を表示し、残りを非表示にする
+ * 更新日: 2025-12-27
+ * 内容: showView を null-safe に修正（存在しないビュー要素による実行時エラーを防止）
  */
 export function showView(activeView, otherViews) {
     otherViews.forEach(v => {
-        v.classList.add(CLASSES.HIDDEN);
-        v.classList.remove(CLASSES.FADE_IN);
+        if (v) {
+            v.classList.add(CLASSES.HIDDEN);
+            v.classList.remove(CLASSES.FADE_IN);
+        }
     });
-    activeView.classList.remove(CLASSES.HIDDEN);
-    activeView.classList.add(CLASSES.FADE_IN);
+    if (activeView) {
+        activeView.classList.remove(CLASSES.HIDDEN);
+        activeView.classList.add(CLASSES.FADE_IN);
+    }
 }
 
 /**
