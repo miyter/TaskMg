@@ -4,9 +4,9 @@
  * 内容: ヘッダー位置のずれを修正。sidebar-structure.js の共通ヘッダーに統合。
  */
 
-import { showProjectModal } from '../modal/project-modal.js';
-import { createSidebarItem, showItemContextMenu } from '../sidebar-components.js';
-import { setupDropZone } from '../sidebar-drag-drop.js';
+import { showProjectModal } from '../../modals/project-modal.js';
+import { createSidebarItem, showItemContextMenu } from './sidebar-components.js';
+import { setupDropZone } from './sidebar-drag-drop.js';
 
 /**
  * プロジェクトセクションのイベント初期化
@@ -42,14 +42,14 @@ export function updateSidebarProjects(projects, allTasks = []) {
     projects.forEach(project => {
         // 未完了タスク数をカウント
         const count = allTasks.filter(t => t.projectId === project.id && !t.completed).length;
-        
+
         // 汎用アイテムコンポーネントを使用
         const item = createSidebarItem(project.name, 'project', project.id, project.color, count);
-        
+
         // ナビゲーションイベント
         item.onclick = () => {
-            document.dispatchEvent(new CustomEvent('route-change', { 
-                detail: { page: 'project', id: project.id } 
+            document.dispatchEvent(new CustomEvent('route-change', {
+                detail: { page: 'project', id: project.id }
             }));
         };
 

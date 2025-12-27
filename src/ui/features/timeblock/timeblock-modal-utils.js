@@ -1,7 +1,7 @@
 /**
  * 時間計算、重複チェック、ボタン状態管理のユーティリティ
  */
-import { getTimeBlocks } from '../store/timeblocks.js';
+import { getTimeBlocks } from '../../../store/timeblocks.js';
 
 export const MAX_BLOCKS = 5;
 

@@ -2,9 +2,9 @@
  * レイアウト構造の構築と基本操作
  */
 import { LAYOUT_CONFIG } from './layout-constants.js';
-import { SIDEBAR_CONFIG } from './sidebar-constants.js';
-import { setupResizer } from './sidebar-utils.js';
-import { initWorkspaceDropdown } from './components/WorkspaceDropdown.js';
+import { SIDEBAR_CONFIG } from '../features/sidebar/sidebar-constants.js';
+import { setupResizer } from '../features/sidebar/sidebar-utils.js';
+import { initWorkspaceDropdown } from '../components/WorkspaceDropdown.js';
 
 const { Z_INDEX } = LAYOUT_CONFIG;
 
@@ -96,7 +96,7 @@ function setupSidebarToggles() {
     const toggle = (force) => {
         const isCurrentlyClosed = sidebar.classList.contains('-translate-x-full');
         const willBeClosed = force ?? !isCurrentlyClosed;
-        
+
         sidebar.classList.toggle('-translate-x-full', willBeClosed);
         overlay?.classList.toggle('hidden', willBeClosed);
     };
@@ -110,7 +110,7 @@ function setupGlobalShortcuts() {
     document.addEventListener('keydown', (e) => {
         const isInput = ['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.closest('[contenteditable]');
         const hasModal = document.querySelector('[role="dialog"]');
-        
+
         if (e.key === '/' && !isInput && !hasModal) {
             const searchInput = document.getElementById('page-search-input');
             if (searchInput) {

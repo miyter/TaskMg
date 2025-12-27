@@ -8,14 +8,14 @@ import { updateUserPassword } from '../auth.js';
 import { signOut } from 'firebase/auth';
 import { createBackupData } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
-import { applyBackground } from '../theme.js';
-import { SIDEBAR_CONFIG } from '../sidebar-constants.js';
+import { applyBackground } from '../layout/theme.js';
+import { SIDEBAR_CONFIG } from '../features/sidebar/sidebar-constants.js';
 
 export function setupSettingsEvents(modalOverlay, closeModal) {
     // 閉じる処理の統合
     const closers = ['close-settings-modal', 'close-settings-footer'];
     closers.forEach(id => document.getElementById(id)?.addEventListener('click', closeModal));
-    
+
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) closeModal();
     });
@@ -79,15 +79,15 @@ function setupExportHandler() {
     btn.onclick = async () => {
         const label = btn.querySelector('div.font-medium');
         const originalText = label.textContent;
-        
+
         btn.disabled = true;
         btn.classList.add('opacity-70', 'cursor-wait');
         label.textContent = "バックアップ作成中...";
-        
+
         try {
             const data = await createBackupData();
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-            
+
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -116,7 +116,7 @@ function setupPasswordHandler() {
     btn.onclick = async () => {
         const pass = input.value.trim();
         if (pass.length < 6) return showMessageModal({ message: "6文字以上入力してくれ", type: 'error' });
-        
+
         try {
             await updateUserPassword(pass);
             input.value = '';

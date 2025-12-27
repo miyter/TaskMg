@@ -1,8 +1,8 @@
 /**
  * モジュール分割後の統合、コントローラー責務への純化
  */
-import { getTimeBlocks, saveTimeBlock, deleteTimeBlock } from '../store/timeblocks.js';
-import { showMessageModal } from './components.js';
+import { getTimeBlocks, saveTimeBlock, deleteTimeBlock } from '../../../store/timeblocks.js';
+import { showMessageModal } from '../../components.js';
 import { buildModalSkeletonHTML, buildRowHTML } from './timeblock-modal-dom.js';
 import { timeToMinutes, checkOverlap, updateAddButtonUI, MAX_BLOCKS } from './timeblock-modal-utils.js';
 
@@ -29,11 +29,11 @@ function renderList(targetBlock) {
 
     container.innerHTML = '';
     const blocks = getTimeBlocks();
-    
+
     const fragment = document.createDocumentFragment();
     blocks.forEach(block => fragment.appendChild(createRowElement(block)));
     container.appendChild(fragment);
-    
+
     updateAddButtonUI(addBtn, blocks.length);
 
     if (targetBlock?.id) {
@@ -91,10 +91,10 @@ function setupRowEvents(row) {
         try {
             const saved = await saveTimeBlock({ id: currentId, name: `${start}-${end}`, start, end, color });
             if (saved?.id) row.dataset.id = saved.id;
-            
+
             row.classList.add('bg-green-50', 'dark:bg-green-900/20');
             setTimeout(() => row.classList.remove('bg-green-50', 'dark:bg-green-900/20'), 1000);
-            
+
             document.dispatchEvent(new CustomEvent('timeblocks-updated'));
             updateAddButtonUI(document.getElementById('add-tb-btn'), getTimeBlocks().length);
         } catch (e) {
@@ -130,7 +130,7 @@ function setupRowEvents(row) {
 
 function setupGlobalEvents(modal) {
     const addBtn = modal.querySelector('#add-tb-btn');
-    
+
     const handleKeydown = (e) => {
         if (e.key === 'Escape') close();
     };

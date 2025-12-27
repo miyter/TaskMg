@@ -4,8 +4,8 @@
 import { auth } from '../core/firebase.js';
 import { getSettingsModalHTML } from './settings/view.js';
 import { setupSettingsEvents } from './settings/handlers.js';
-import { SIDEBAR_CONFIG } from './sidebar-constants.js';
-import { isSidebarCompact } from './sidebar-utils.js';
+import { SIDEBAR_CONFIG } from './features/sidebar/sidebar-constants.js';
+import { isSidebarCompact } from './features/sidebar/sidebar-utils.js';
 
 let isInitialized = false;
 
@@ -47,7 +47,7 @@ export function showSettingsModal() {
     const overlay = document.createElement('div');
     overlay.id = SIDEBAR_CONFIG.MODAL_IDS.SETTINGS;
     overlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in';
-    
+
     overlay.innerHTML = getSettingsModalHTML(initial, email, isCompact);
     document.body.appendChild(overlay);
 

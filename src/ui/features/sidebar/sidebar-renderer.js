@@ -5,11 +5,11 @@ import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { countActiveTasks } from './sidebar-utils.js';
 import { setupDropZone } from './sidebar-drag-drop.js';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components.js';
-import { getTimeBlocks } from '../store/timeblocks.js';
-import { showTimeBlockModal } from './timeblock-modal.js';
-import { updateSidebarProjects } from './components/SidebarProjects.js';
-import { filterTasks } from '../logic/search.js';
-import { showMessageModal } from './components.js';
+import { getTimeBlocks } from '../../../store/timeblocks.js';
+import { showTimeBlockModal } from '../timeblock/timeblock-modal.js';
+import { updateSidebarProjects } from './SidebarProjects.js';
+import { filterTasks } from '../../../logic/search.js';
+import { showMessageModal } from '../../components.js';
 
 /**
  * 更新日: 2025-12-27
@@ -62,7 +62,7 @@ export function renderTimeBlocks(tasks = []) {
 
     const fragment = document.createDocumentFragment();
     const blocks = getTimeBlocks();
-    
+
     blocks.forEach(block => {
         const count = countActiveTasks(tasks, t => String(t.timeBlockId) === String(block.id));
         const displayName = `${block.start} - ${block.end}`;
@@ -83,7 +83,7 @@ export function renderTimeBlocks(tasks = []) {
     unassignedItem.onclick = () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: 'unassigned' } }));
     setupDropZone(unassignedItem, 'timeblock', 'unassigned');
     fragment.appendChild(unassignedItem);
-    
+
     list.appendChild(fragment);
 }
 

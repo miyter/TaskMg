@@ -3,7 +3,7 @@
  * 内容: 検索ステート表示関数のエクスポート、ビルドエラーの解消
  */
 import { createGlassCard } from './components/glass-card.js';
-import { DASHBOARD_CONFIG } from './dashboard-constants.js';
+import { DASHBOARD_CONFIG } from './features/dashboard/dashboard-constants.js';
 
 /**
  * 簡易HTMLエスケープ
@@ -60,7 +60,7 @@ export function buildDashboardViewHTML() {
 export function buildSearchViewHTML(projects = []) {
     const safeProjects = Array.isArray(projects) ? projects : [];
     const options = safeProjects.map(p => `<option value="${escapeHTML(p.id)}">${escapeHTML(p.name)}</option>`).join('');
-    
+
     const formHTML = `
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
@@ -121,5 +121,5 @@ export function buildSearchNoResultsHTML() {
  * 廃止済みの設定ビュー生成（互換性維持のため空文字を返す）
  */
 export function buildSettingsViewHTML() {
-    return ''; 
+    return '';
 }

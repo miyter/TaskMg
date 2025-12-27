@@ -1,12 +1,12 @@
 /**
  * タスクモーダル統合管理
  */
-import { buildModalHTML } from './modal/modal-dom-generator.js';
-import { setupTaskModalEvents } from './modal/task-modal-ctrl.js';
+import { buildModalHTML } from './modal-dom-generator.js';
+import { setupTaskModalEvents } from './task-modal-ctrl.js';
 
-export { showLabelModal } from './modal/label-modal.js';
-export { showProjectModal } from './modal/project-modal.js';
-export { showWorkspaceModal } from './modal/workspace-modal.js';
+export { showLabelModal } from './label-modal.js';
+export { showProjectModal } from './project-modal.js';
+export { showWorkspaceModal } from './workspace-modal.js';
 
 const handleEscapeKey = (e) => {
     if (e.key === 'Escape') {
@@ -17,7 +17,7 @@ const handleEscapeKey = (e) => {
 /**
  * 初期化（現在は動的登録のため空）
  */
-export function initTaskModal() {}
+export function initTaskModal() { }
 
 /**
  * タスク編集モーダルを開く
@@ -29,7 +29,7 @@ export function openTaskEditModal(task) {
         container.id = 'modal-container';
         document.body.appendChild(container);
     }
-    
+
     container.innerHTML = buildModalHTML(task);
 
     // イベント委譲

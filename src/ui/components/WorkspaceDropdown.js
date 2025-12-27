@@ -6,8 +6,8 @@
 
 import { setCurrentWorkspaceId, getCurrentWorkspaceId, getWorkspaces } from '../../store/workspace.js';
 import { showSettingsModal } from '../settings.js';
-import { showWorkspaceModal } from '../modal/workspace-modal.js';
-import { showItemContextMenu } from '../sidebar-components.js';
+import { showWorkspaceModal } from '../modals/workspace-modal.js';
+import { showItemContextMenu } from '../features/sidebar/sidebar-components.js';
 
 const CLASSES = {
     MENU_VISIBLE: ['opacity-100', 'visible', 'scale-100', 'pointer-events-auto'],
@@ -100,8 +100,8 @@ function renderWorkspaceMenu(workspaces, container, currentId) {
         const btn = document.createElement('button');
 
         btn.className = `workspace-option w-full text-left px-4 py-2 text-sm flex items-center justify-between transition-colors ${isCurrent
-                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`;
 
         // テキスト部分はtextContentを使用して安全にセット

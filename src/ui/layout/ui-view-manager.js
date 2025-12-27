@@ -1,11 +1,11 @@
 import { UI_CONFIG } from './ui-view-constants.js';
-import { renderDashboard } from './dashboard.js';
-import { renderTaskView } from './task-view.js';
-import { getProcessedTasks } from '../logic/search.js';
-import { buildDashboardViewHTML } from './ui-dom-utils.js';
+import { renderDashboard } from '../features/dashboard/dashboard.js';
+import { renderTaskView } from '../task-view.js';
+import { getProcessedTasks } from '../../logic/search.js';
+import { buildDashboardViewHTML } from '../ui-dom-utils.js';
 import { showView, highlightSidebarItem, updateHeaderTitleByFilter } from './ui-view-utils.js';
-import { renderSearchPage } from './search-view-ctrl.js';
-import { showSettingsModal } from './settings.js';
+import { renderSearchPage } from '../search-view-ctrl.js';
+import { showSettingsModal } from '../settings.js';
 
 let currentFilter = { type: 'inbox', id: null };
 let UI = null;
@@ -64,7 +64,7 @@ export function updateView(allTasks, allProjects, allLabels) {
         renderDashboard(allTasks, allProjects);
         return;
     }
-    
+
     // 2. 検索
     if (currentFilter.type === 'search') {
         showView(UI.search, allViewElements.filter(v => v !== UI.search));
@@ -74,13 +74,13 @@ export function updateView(allTasks, allProjects, allLabels) {
 
     // 3. タスクリスト
     showView(UI.task, allViewElements.filter(v => v !== UI.task));
-    
+
     // 安全なボタン参照（存在しない場合はデフォルト false）
     const toggleBtn = document.getElementById(CONTROL_IDS.COMPLETED_TOGGLE);
     const showCompleted = toggleBtn ? toggleBtn.classList.contains('text-blue-500') : false;
 
     const config = {
-        keyword: '', 
+        keyword: '',
         showCompleted,
         projectId: currentFilter.type === 'project' ? currentFilter.id : null,
         labelId: currentFilter.type === 'label' ? currentFilter.id : null,

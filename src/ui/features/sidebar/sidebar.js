@@ -7,15 +7,15 @@ import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { setupResizer, isDesktop, getStoredBool } from './sidebar-utils.js';
 import { buildSidebarHTML, setupSidebarToggles } from './sidebar-structure.js';
 import { setupDropZone } from './sidebar-drag-drop.js';
-import { showFilterModal } from './filter-modal.js';
-import { showTimeBlockModal } from './timeblock-modal.js';
-import { initSidebarProjects, updateSidebarProjects } from './components/SidebarProjects.js';
+import { showFilterModal } from '../../modals/filter-modal.js';
+import { showTimeBlockModal } from '../timeblock/timeblock-modal.js';
+import { initSidebarProjects, updateSidebarProjects } from './SidebarProjects.js';
 import { renderSidebarItems, updateInboxCount } from './sidebar-renderer.js';
-import { showSettingsModal } from './settings.js';
+import { showSettingsModal } from '../../settings.js';
 
 // 同期取得関数
-import { getProjects } from '../store/projects.js';
-import { getFilters } from '../store/filters.js';
+import { getProjects } from '../../../store/projects.js';
+import { getFilters } from '../../../store/filters.js';
 
 export { updateSidebarProjects as renderProjects, updateInboxCount };
 
@@ -59,7 +59,7 @@ export function initSidebar() {
 
     // HTML構築
     UI.container.innerHTML = buildSidebarHTML();
-    
+
     // 再キャッシュ
     cacheElements();
 
@@ -67,7 +67,7 @@ export function initSidebar() {
     setupSidebarEvents();
     setupSidebarToggles();
     setupDataEventListeners();
-    
+
     if (UI.inbox) setupDropZone(UI.inbox, 'inbox');
 
     initSidebarProjects(UI.container);
@@ -90,7 +90,7 @@ export function initSidebar() {
  */
 function setupDataEventListeners() {
     const updateEvents = [
-        'timeblocks-updated', 'projects-updated', 'labels-updated', 
+        'timeblocks-updated', 'projects-updated', 'labels-updated',
         'filters-updated', 'tasks-updated'
     ];
 
@@ -103,10 +103,10 @@ function setupDataEventListeners() {
         const filters = cachedFilters.length > 0 ? cachedFilters : getFilters();
 
         renderSidebarItems(
-            UI.sidebar, 
-            cachedTasks, 
-            projects, 
-            cachedLabels, 
+            UI.sidebar,
+            cachedTasks,
+            projects,
+            cachedLabels,
             filters
         );
 
@@ -119,7 +119,7 @@ function setupDataEventListeners() {
 }
 
 function setupSidebarEvents() {
-    const dispatch = (page, id = null) => 
+    const dispatch = (page, id = null) =>
         document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
 
     // イベント委譲の統合
@@ -151,7 +151,7 @@ function setupSidebarEvents() {
 function applyCompactMode(isCompact) {
     const items = document.querySelectorAll('.sidebar-item-row');
     const { COMPACT_PY, NORMAL_PY } = SIDEBAR_CONFIG.CLASSES;
-    
+
     items.forEach(item => {
         item.classList.toggle(COMPACT_PY, isCompact);
         item.classList.toggle(NORMAL_PY, !isCompact);

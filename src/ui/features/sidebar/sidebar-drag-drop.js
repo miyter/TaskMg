@@ -2,8 +2,8 @@
  * サイドバーへのドラッグ&ドロップ制御
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
-import { updateTask } from '../store/store.js';
-import { showMessageModal } from './components.js';
+import { updateTask } from '../../../store/store.js';
+import { showMessageModal } from '../../components.js';
 
 export function setupDropZone(element, type, value = null) {
     if (!element) return;
@@ -37,7 +37,7 @@ export function setupDropZone(element, type, value = null) {
         e.preventDefault();
         enterCount = 0;
         element.classList.remove(...classes);
-        
+
         const taskId = e.dataTransfer.getData('text/plain');
         if (!taskId) return;
 
@@ -64,9 +64,9 @@ async function handleTaskDrop(taskId, type, value) {
             if (!isNaN(dur) && dur >= DURATION_LIMITS.MIN && dur <= DURATION_LIMITS.MAX) {
                 updates.duration = dur;
             } else {
-                showMessageModal({ 
-                    message: `所要時間は ${DURATION_LIMITS.MIN}〜${DURATION_LIMITS.MAX} 分の範囲で設定してくれ。`, 
-                    type: "error" 
+                showMessageModal({
+                    message: `所要時間は ${DURATION_LIMITS.MIN}〜${DURATION_LIMITS.MAX} 分の範囲で設定してくれ。`,
+                    type: "error"
                 });
                 return;
             }
@@ -84,9 +84,9 @@ async function handleTaskDrop(taskId, type, value) {
         }
     } catch (error) {
         console.error(`[Drop Error] Type: ${type}, Task: ${taskId}`, error);
-        showMessageModal({ 
-            message: "タスクの更新に失敗したぞ。通信環境を確認してくれ。", 
-            type: 'error' 
+        showMessageModal({
+            message: "タスクの更新に失敗したぞ。通信環境を確認してくれ。",
+            type: 'error'
         });
     }
 }

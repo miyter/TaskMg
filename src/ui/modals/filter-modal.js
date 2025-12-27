@@ -1,7 +1,7 @@
-import { getProjects } from '../store/projects.js';
-import { getTimeBlocks } from '../store/timeblocks.js';
-import { addFilter, updateFilter } from '../store/store.js';
-import { showMessageModal } from './components.js';
+import { getProjects } from '../../store/projects.js';
+import { getTimeBlocks } from '../../store/timeblocks.js';
+import { addFilter, updateFilter } from '../../store/store.js';
+import { showMessageModal } from '../components.js';
 
 const UNASSIGNED_ID = 'none';
 const MESSAGES = {
@@ -23,7 +23,7 @@ export function showFilterModal(filterToEdit = null) {
     const modal = document.createElement('div');
     modal.id = 'filter-creation-modal';
     modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fade-in';
-    
+
     modal.innerHTML = `
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]" role="dialog" aria-modal="true">
             <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
@@ -77,14 +77,14 @@ function createSelectionBox(title, items, initials, className, labelFn = (i) => 
             <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700 text-xs font-bold text-gray-500">${title}</div>
             <div class="p-2 overflow-y-auto space-y-1 custom-scrollbar">
                 ${items.map(item => {
-                    const id = String(item.id || item);
-                    return `
+        const id = String(item.id || item);
+        return `
                         <label class="flex items-center px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer transition">
                             <input type="checkbox" value="${id}" ${initials.includes(id) ? 'checked' : ''} class="${className} h-4 w-4 text-blue-600 rounded">
                             <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate">${labelFn(item)}</span>
                         </label>
                     `;
-                }).join('')}
+    }).join('')}
             </div>
         </div>
     `;
@@ -92,7 +92,7 @@ function createSelectionBox(title, items, initials, className, labelFn = (i) => 
 
 function createTimeBlockBox(blocks, initials) {
     const items = [{ id: UNASSIGNED_ID, name: '未定' }, ...blocks];
-    return createSelectionBox('時間帯', items, initials, 'filter-timeblock-checkbox', b => 
+    return createSelectionBox('時間帯', items, initials, 'filter-timeblock-checkbox', b =>
         b.id === UNASSIGNED_ID ? b.name : `${b.start}-${b.end}`
     );
 }
@@ -102,7 +102,7 @@ function setupEvents(modal, filterToEdit) {
         document.removeEventListener('keydown', onEsc);
         modal.remove();
     };
-    
+
     const onEsc = (e) => e.key === 'Escape' && cleanup();
     document.addEventListener('keydown', onEsc);
 
@@ -115,10 +115,10 @@ function setupEvents(modal, filterToEdit) {
         if (!name) return showMessageModal({ message: MESSAGES.NAME_REQUIRED, type: 'error' });
 
         const getVals = (cls) => Array.from(modal.querySelectorAll(`.${cls}:checked`)).map(cb => cb.value);
-        
+
         // 保存時は none を null 文字列に戻してクエリ化（既存検索ロジックとの互換性）
         const timeblocks = getVals('filter-timeblock-checkbox').map(v => v === UNASSIGNED_ID ? 'null' : v);
-        
+
         const queryMap = {
             project: getVals('filter-project-checkbox'),
             timeblock: timeblocks,

@@ -5,18 +5,18 @@
 import { updateTaskStatus } from '../../store/store.js';
 import { getTaskDateColor, formatDateCompact } from '../../utils/date.js';
 import { getTimeBlocks } from '../../store/timeblocks.js';
-import { openTaskEditModal } from '../task-modal.js';
+import { openTaskEditModal } from '../modals/task-modal.js';
 import { showTaskContextMenu } from './TaskContextMenu.js';
 
 export function createTaskItem(task) {
     const li = document.createElement('li');
     li.setAttribute('data-id', task.id);
-    li.setAttribute('draggable', 'true'); 
-    
+    li.setAttribute('draggable', 'true');
+
     const isCompleted = task.status === 'completed';
     const dateText = formatDateCompact(task.dueDate);
     const dateColorClass = getTaskDateColor(task.dueDate);
-    const isRecurring = !!task.recurrence; 
+    const isRecurring = !!task.recurrence;
     const isOneTime = !!task.dueDate && !isRecurring;
 
     const timeBlocks = getTimeBlocks();

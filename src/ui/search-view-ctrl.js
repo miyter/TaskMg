@@ -4,7 +4,7 @@
 import { buildSearchViewHTML, buildSearchEmptyStateHTML, buildSearchNoResultsHTML } from './ui-dom-utils.js';
 import { filterTasks } from '../logic/search.js';
 import { renderTaskList } from './task-list.js';
-import { clearSidebarHighlight, updateHeaderTitleByFilter, showView } from './ui-view-utils.js';
+import { clearSidebarHighlight, updateHeaderTitleByFilter, showView } from './layout/ui-view-utils.js';
 
 let UI = {};
 
@@ -33,7 +33,7 @@ function cacheSearchElements(container) {
 export function renderSearchPage(searchView, viewsToHide, allTasks, allProjects, currentFilter) {
     showView(searchView, viewsToHide);
     searchView.innerHTML = buildSearchViewHTML(allProjects);
-    
+
     cacheSearchElements(searchView);
     if (!UI.input || !UI.results) return;
 

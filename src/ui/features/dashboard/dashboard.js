@@ -1,7 +1,7 @@
 import Chart from 'chart.js/auto';
-import { buildDashboardViewHTML } from './ui-dom-utils.js';
+import { buildDashboardViewHTML } from '../../ui-dom-utils.js';
 import { DASHBOARD_CONFIG } from './dashboard-constants.js';
-import * as DateUtils from '../utils/date.js';
+import * as DateUtils from '../../../utils/date.js';
 
 // チャートインスタンスの管理（メモリリーク防止）
 const chartInstances = new WeakMap();
@@ -40,12 +40,12 @@ function updateSummaryStats(tasks) {
     const stats = tasks.reduce((acc, t) => {
         const d = DateUtils.toDate(t.completedAt);
         if (!d) return acc;
-        
+
         const time = d.getTime();
         if (time >= today) acc.today++;
         if (time >= week) acc.weekly++;
         if (time >= month) acc.monthly++;
-        
+
         return acc;
     }, { today: 0, weekly: 0, monthly: 0, total: tasks.length });
 

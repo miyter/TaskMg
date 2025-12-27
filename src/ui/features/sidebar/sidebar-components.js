@@ -2,13 +2,13 @@
  * サイドバーの共有コンポーネント
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
-import { deleteProject } from '../store/projects.js';
-import { deleteFilter } from '../store/filters.js';
-import { deleteWorkspace, getWorkspaces, setCurrentWorkspaceId } from '../store/workspace.js';
-import { showFilterModal } from './filter-modal.js';
-import { showMessageModal } from './components.js';
-import { showProjectModal } from './modal/project-modal.js';
-import { showWorkspaceModal } from './modal/workspace-modal.js';
+import { deleteProject } from '../../../store/projects.js';
+import { deleteFilter } from '../../../store/filters.js';
+import { deleteWorkspace, getWorkspaces, setCurrentWorkspaceId } from '../../../store/workspace.js';
+import { showFilterModal } from '../../modals/filter-modal.js';
+import { showMessageModal } from '../../components.js';
+import { showProjectModal } from '../../modals/project-modal.js';
+import { showWorkspaceModal } from '../../modals/workspace-modal.js';
 
 /**
  * リストアイテム要素を作成
@@ -17,7 +17,7 @@ import { showWorkspaceModal } from './modal/workspace-modal.js';
 export function createSidebarItem(name, type, id, meta = {}, count = 0, isCompact = false) {
     const item = document.createElement('li');
     const { CLASSES, COLORS } = SIDEBAR_CONFIG;
-    
+
     item.dataset.type = type;
     item.dataset.id = id;
     item.className = `group flex items-center justify-between px-3 ${isCompact ? CLASSES.COMPACT_PY : CLASSES.NORMAL_PY} font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors sidebar-item-row select-none`;
@@ -87,9 +87,9 @@ function getMenuConfig(type, itemData) {
             onDelete: async () => {
                 const workspaces = getWorkspaces();
                 if (workspaces.length <= 1) throw new Error("最後のワークスペースは削除できない。");
-                
+
                 await deleteWorkspace(itemData.id);
-                
+
                 const remaining = getWorkspaces().filter(ws => ws.id !== itemData.id);
                 if (remaining.length > 0) {
                     setCurrentWorkspaceId(remaining[0].id);
@@ -125,9 +125,9 @@ function adjustMenuPosition(menu, e) {
     const winW = window.innerWidth;
     const winH = window.innerHeight;
 
-    menu.style.visibility = 'hidden'; 
+    menu.style.visibility = 'hidden';
     const { width: mW, height: mH } = menu.getBoundingClientRect();
-    
+
     let left = x;
     let top = y;
 
@@ -146,7 +146,7 @@ function setupMenuEvents(menu, config) {
         document.removeEventListener('keydown', escKey);
     };
     const escKey = (ev) => ev.key === 'Escape' && cleanup();
-    
+
     setTimeout(() => {
         document.addEventListener('click', cleanup);
         document.addEventListener('keydown', escKey);

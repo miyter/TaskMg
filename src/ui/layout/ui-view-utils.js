@@ -1,5 +1,5 @@
 import { UI_CONFIG, SIDEBAR_TYPE } from './ui-view-constants.js';
-import { getTimeBlockById } from '../store/timeblocks.js';
+import { getTimeBlockById } from '../../store/timeblocks.js';
 
 const { CLASSES, HEADER_IDS, DATA_ATTRS } = UI_CONFIG;
 
@@ -15,7 +15,7 @@ export function showView(activeView, otherViews) {
             v?.classList?.remove(CLASSES.FADE_IN);
         });
     }
-    
+
     if (activeView?.classList) {
         activeView.classList.remove(CLASSES.HIDDEN);
         activeView.classList.add(CLASSES.FADE_IN);
@@ -29,12 +29,12 @@ export function clearSidebarHighlight() {
     document.querySelectorAll('.sidebar-item-row').forEach(el => {
         el.classList.remove(...(Array.isArray(CLASSES.HIGHLIGHT) ? CLASSES.HIGHLIGHT : [CLASSES.HIGHLIGHT]));
         el.classList.add(...(Array.isArray(CLASSES.NORMAL) ? CLASSES.NORMAL : [CLASSES.NORMAL]));
-        
+
         const icon = el.querySelector('svg, span:not(.truncate)');
         if (icon) {
             const textClasses = Array.from(icon.classList).filter(c => c.startsWith('text-'));
             if (textClasses.length > 0) icon.classList.remove(...textClasses);
-            
+
             const defaultColor = el.getAttribute(DATA_ATTRS.DEFAULT_COLOR);
             if (defaultColor) {
                 icon.classList.add(defaultColor);
@@ -53,7 +53,7 @@ export function highlightSidebarItem(filter) {
     if (target?.classList) {
         target.classList.remove(...(Array.isArray(CLASSES.NORMAL) ? CLASSES.NORMAL : [CLASSES.NORMAL]));
         target.classList.add(...(Array.isArray(CLASSES.HIGHLIGHT) ? CLASSES.HIGHLIGHT : [CLASSES.HIGHLIGHT]));
-        
+
         const icon = target.querySelector('svg, span:not(.truncate)');
         if (icon) {
             const textClasses = Array.from(icon.classList).filter(c => c.startsWith('text-'));
@@ -69,7 +69,7 @@ export function highlightSidebarItem(filter) {
 function getSidebarTarget(filter) {
     if (!filter) return null;
     const { type, id } = filter;
-    
+
     const navTypes = ['inbox', 'dashboard', 'search', 'settings'];
     if (navTypes.includes(type)) {
         return document.getElementById(`nav-${type}`);
@@ -135,7 +135,7 @@ export function renderLoginState() {
     Object.values(VIEW_IDS).forEach(id => {
         const el = document.getElementById(id);
         if (!el?.classList) return;
-        
+
         if (id === VIEW_IDS.TASK) {
             el.innerHTML = '';
             const msg = document.createElement('div');

@@ -5,7 +5,7 @@
  */
 
 import { auth } from '../../core/firebase.js';
-import { setCurrentFilter } from '../ui-view-manager.js';
+import { setCurrentFilter } from '../layout/ui-view-manager.js';
 import { startAllSubscriptions, stopDataSync, updateUI } from './DataSyncManager.js';
 import { setupCustomSortDropdown } from '../components/SortDropdown.js';
 

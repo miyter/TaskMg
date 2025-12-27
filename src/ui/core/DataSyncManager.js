@@ -15,8 +15,8 @@ import { subscribeToFilters, clearFiltersCache } from '../../store/filters.js';
 import { getCurrentWorkspaceId } from '../../store/workspace.js';
 
 // UI連携
-import { updateSidebarCache } from '../sidebar.js';
-import { updateView } from '../ui-view-manager.js';
+import { updateSidebarCache } from '../features/sidebar/sidebar.js';
+import { updateView } from '../layout/ui-view-manager.js';
 
 // データキャッシュ
 let state = {
