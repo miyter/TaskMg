@@ -45,6 +45,10 @@ export function getCurrentFilter() {
     return currentFilter;
 }
 
+/**
+ * 更新日: 2025-12-27
+ * 内容: toggle-completed-btn が存在しない場合の null チェックを追加（ランタイムエラー修正）
+ */
 export function updateView(allTasks, allProjects, allLabels) {
     ensureUICache();
     if (!UI.task || !UI.dashboard || !UI.search) return;
@@ -71,7 +75,10 @@ export function updateView(allTasks, allProjects, allLabels) {
     // 3. タスクリスト
     showView(UI.task, allViewElements.filter(v => v !== UI.task));
     
-    const showCompleted = document.getElementById(CONTROL_IDS.COMPLETED_TOGGLE)?.classList.contains('text-blue-500') || false;
+    // 安全なボタン参照（存在しない場合はデフォルト false）
+    const toggleBtn = document.getElementById(CONTROL_IDS.COMPLETED_TOGGLE);
+    const showCompleted = toggleBtn ? toggleBtn.classList.contains('text-blue-500') : false;
+
     const config = {
         keyword: '', 
         showCompleted,

@@ -1,10 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-27
- * 内容: ワークスペース切り替え時のページ状態復元ロジックを追加
- *      - 初回ログイン時は localStorage からページ状態を復元
- *      - ワークスペース切り替え時はインボックスにリセット
- *      - デバッグログの追加
+ * 内容: 存在しない toggle-completed-btn のリスナーを削除（ランタイムエラー修正）
  */
 
 import { auth } from '../../core/firebase.js';
@@ -54,7 +51,6 @@ export function setupGlobalEventListeners() {
             }
 
             // 一旦全てのデータ同期を停止し、再開する
-            // これにより新しいworkspaceIdに基づいた購読が開始される
             stopDataSync(false);
             startAllSubscriptions();
 
@@ -76,11 +72,6 @@ export function setupGlobalEventListeners() {
     // 検索入力は頻度が高いのでデバウンスを適用して負荷軽減
     const debouncedSearch = debounce(() => updateUI(), 300);
     document.getElementById('search-input')?.addEventListener('input', debouncedSearch);
-
-    document.getElementById('toggle-completed-btn')?.addEventListener('click', (e) => {
-        e.currentTarget.classList.toggle('text-blue-500');
-        updateUI();
-    });
 
     // 4. コンポーネント固有のイベント
     setupCustomSortDropdown();
