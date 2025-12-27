@@ -52,7 +52,7 @@ function createNavItem(id, iconPath, label, extra = '') {
 
 export function buildSidebarHTML() {
     const inboxExtra = `<span id="inbox-count" class="hidden bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-0.5 px-2 rounded-full text-xs font-semibold">0</span>`;
-    
+
     return `
         <div class="mt-2 select-none">
             ${createSectionHeader('基本項目', 'basic-list')}
@@ -65,6 +65,9 @@ export function buildSidebarHTML() {
 
             ${createSectionHeader('プロジェクト', 'project-list', true, 'add-project-btn')}
             ${createListContainer('project-list')}
+
+            ${createSectionHeader('ラベル', 'label-list')}
+            ${createListContainer('label-list')}
 
             ${createSectionHeader('時間帯', 'timeblock-list', true, 'edit-timeblocks-btn')}
             ${createListContainer('timeblock-list')}

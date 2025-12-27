@@ -7,12 +7,15 @@
 import { auth } from '../core/firebase.js';
 import { showMessageModal } from '../ui/components.js';
 
-import { 
+import {
     subscribeToLabelsRaw,
     addLabelRaw,
-    updateLabelRaw, 
-    deleteLabelRaw
+    updateLabelRaw,
+    deleteLabelRaw,
+    getLabels as getLabelsRaw
 } from './labels-raw.js';
+
+export const getLabels = getLabelsRaw;
 
 /**
  * 認証ガード
@@ -20,8 +23,8 @@ import {
 function requireAuth() {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-        showMessageModal("操作にはログインが必要です。", "error"); 
-        throw new Error('Authentication required.'); 
+        showMessageModal("操作にはログインが必要です。", "error");
+        throw new Error('Authentication required.');
     }
     return userId;
 }
@@ -33,12 +36,12 @@ function requireAuth() {
 export function subscribeToLabels(workspaceId, onUpdate) {
     const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
     const userId = auth.currentUser?.uid;
-    
+
     if (userId && typeof callback === 'function') {
         return subscribeToLabelsRaw(userId, callback);
     } else {
         if (typeof callback === 'function') callback([]);
-        return () => {};
+        return () => { };
     }
 }
 

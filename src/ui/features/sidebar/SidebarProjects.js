@@ -8,6 +8,8 @@ import { showProjectModal } from '../../modals/project-modal.js';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components.js';
 import { setupDropZone } from './sidebar-drag-drop.js';
 
+// import { getTasks } from '../../../store/index.js'; // 循環参照回避のため削除
+
 /**
  * プロジェクトセクションのイベント初期化
  * @param {HTMLElement} container - サイドバーのコンテンツコンテナ
@@ -29,6 +31,7 @@ export function initSidebarProjects(container) {
  * @param {Array} allTasks - カウント計算用の全タスク
  */
 export function updateSidebarProjects(projects, allTasks = []) {
+    // const allTasks = getTasks(); // 呼び出し元から受け取る
     const list = document.getElementById('project-list');
     if (!list) return;
 

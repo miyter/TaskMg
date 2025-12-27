@@ -14,30 +14,16 @@ import { renderSidebarItems, updateInboxCount } from './sidebar-renderer.js';
 import { showSettingsModal } from '../../settings.js';
 
 // 同期取得関数
-import { getProjects } from '../../../store/projects.js';
-import { getFilters } from '../../../store/filters.js';
+// 同期取得関数
+// import { getProjects } from '../../../store/projects.js';
+// import { getFilters } from '../../../store/filters.js';
 
 export { updateSidebarProjects as renderProjects, updateInboxCount };
 
 // キャッシュ
-let cachedTasks = [];
-let cachedLabels = [];
-let cachedProjects = [];
-let cachedFilters = [];
-
 let refreshSidebarHandler = null;
 let resizeHandler = null;
 let UI = {};
-
-/**
- * 外部からキャッシュを更新
- */
-export function updateSidebarCache({ tasks, labels, projects, filters }) {
-    if (tasks !== undefined) cachedTasks = tasks || [];
-    if (labels !== undefined) cachedLabels = labels || [];
-    if (projects !== undefined) cachedProjects = projects || [];
-    if (filters !== undefined) cachedFilters = filters || [];
-}
 
 function cacheElements() {
     UI = {
@@ -102,16 +88,7 @@ function setupDataEventListeners() {
     }
 
     refreshSidebarHandler = () => {
-        const projects = cachedProjects.length > 0 ? cachedProjects : getProjects();
-        const filters = cachedFilters.length > 0 ? cachedFilters : getFilters();
-
-        renderSidebarItems(
-            UI.sidebar,
-            cachedTasks,
-            projects,
-            cachedLabels,
-            filters
-        );
+        renderSidebarItems();
 
         // 【修正】動的アイテム描画後にコンパクトモードを再適用
         const isCompact = getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);

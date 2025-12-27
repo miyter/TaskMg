@@ -4,8 +4,8 @@
  * 内容: serverTimestamp導入、paths利用によるパス統一、エラーハンドリング追加
  */
 
-import { 
-    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, serverTimestamp 
+import {
+    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, serverTimestamp
 } from "../core/firebase-sdk.js";
 
 import { getFirebase } from '../core/firebase.js';
@@ -15,13 +15,19 @@ import { paths } from '../utils/paths.js';
 // ★ RAW FUNCTIONS (userId必須)
 // ==========================================================
 
+let _cachedLabels = [];
+
+export function getLabels() {
+    return _cachedLabels;
+}
+
 /**
  * ラベルデータのリアルタイムリスナーを開始する (RAW)
  */
 export function subscribeToLabelsRaw(userId, onUpdate) {
     if (!userId) {
         onUpdate([]);
-        return () => {};
+        return () => { };
     }
 
     const path = paths.labels(userId);
@@ -30,9 +36,11 @@ export function subscribeToLabelsRaw(userId, onUpdate) {
 
     return onSnapshot(q, (snapshot) => {
         const labels = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        _cachedLabels = labels;
         onUpdate(labels);
     }, (error) => {
         console.error("[Labels] Subscription error:", error);
+        _cachedLabels = [];
         onUpdate([]);
     });
 }

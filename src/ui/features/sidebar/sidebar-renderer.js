@@ -11,6 +11,11 @@ import { updateSidebarProjects } from './SidebarProjects.js';
 import { filterTasks } from '../../../logic/search.js';
 import { showMessageModal } from '../../components.js';
 
+import { getTasks } from '../../../store/store-raw.js';
+import { getProjects } from '../../../store/projects-raw.js';
+import { getLabels } from '../../../store/labels-raw.js';
+import { getFilters } from '../../../store/filters.js';
+
 /**
  * 更新日: 2025-12-27
  * 内容: サイドバー項目が表示されないバグを修正
@@ -19,26 +24,34 @@ import { showMessageModal } from '../../components.js';
  * - renderLabels の呼び出し漏れを修正
  */
 
-export function updateInboxCount(allTasks) {
+export function updateInboxCount() {
     const inboxCountEl = document.getElementById('inbox-count');
     if (!inboxCountEl) return;
 
+    const allTasks = getTasks();
     const count = countActiveTasks(allTasks, t => !t.projectId);
     inboxCountEl.textContent = count;
     inboxCountEl.classList.toggle('hidden', count === 0);
 }
 
-export function renderProjects(projects, tasks = []) {
+export function renderProjects() {
     // 自身のリストIDが存在する場合のみ実行
     const list = document.getElementById(SIDEBAR_CONFIG.LIST_IDS.PROJECTS);
     if (!list) return;
+
+    // SidebarProjects側の循環参照を避けるため、ここで取得して渡す
+    const projects = getProjects();
+    const tasks = getTasks();
     updateSidebarProjects(projects, tasks);
 }
 
-export function renderLabels(labels = [], tasks = []) {
+export function renderLabels() {
     const list = document.getElementById(SIDEBAR_CONFIG.LIST_IDS.LABELS);
     if (!list) return;
     list.innerHTML = '';
+
+    const labels = getLabels();
+    const tasks = getTasks();
 
     const fragment = document.createDocumentFragment();
     labels.forEach(label => {
@@ -55,13 +68,14 @@ export function renderLabels(labels = [], tasks = []) {
     list.appendChild(fragment);
 }
 
-export function renderTimeBlocks(tasks = []) {
+export function renderTimeBlocks() {
     const list = document.getElementById(SIDEBAR_CONFIG.LIST_IDS.TIMEBLOCKS);
     if (!list) return;
     list.innerHTML = '';
 
     const fragment = document.createDocumentFragment();
     const blocks = getTimeBlocks();
+    const tasks = getTasks();
 
     blocks.forEach(block => {
         const count = countActiveTasks(tasks, t => String(t.timeBlockId) === String(block.id));
@@ -87,10 +101,12 @@ export function renderTimeBlocks(tasks = []) {
     list.appendChild(fragment);
 }
 
-export function renderDurations(tasks = []) {
+export function renderDurations() {
     const list = document.getElementById(SIDEBAR_CONFIG.LIST_IDS.DURATIONS);
     if (!list) return;
     list.innerHTML = '';
+
+    const tasks = getTasks();
 
     const fragment = document.createDocumentFragment();
     const iconHtml = '<span class="mr-3 text-sm">⏱️</span>';
@@ -105,10 +121,13 @@ export function renderDurations(tasks = []) {
     list.appendChild(fragment);
 }
 
-export function renderFilters(filters = [], tasks = []) {
+export function renderFilters() {
     const list = document.getElementById(SIDEBAR_CONFIG.LIST_IDS.FILTERS);
     if (!list) return;
     list.innerHTML = '';
+
+    const filters = getFilters();
+    const tasks = getTasks();
 
     const fragment = document.createDocumentFragment();
     const iconHtml = `<svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>`;
@@ -135,12 +154,12 @@ export function renderFilters(filters = [], tasks = []) {
     list.appendChild(fragment);
 }
 
-export function renderSidebarItems(sidebar, allTasks, allProjects, allLabels, allFilters = []) {
-    // 以前の早期 return を削除し、各関数が独立して動作するように変更
-    renderProjects(allProjects, allTasks);
-    renderLabels(allLabels, allTasks); // 呼び出し漏れを修正
-    renderTimeBlocks(allTasks);
-    renderDurations(allTasks);
-    renderFilters(allFilters, allTasks);
-    updateInboxCount(allTasks);
+export function renderSidebarItems() {
+    // データは各レンダラー内で同期的に取得する方式に変更
+    renderProjects();
+    renderLabels();
+    renderTimeBlocks();
+    renderDurations();
+    renderFilters();
+    updateInboxCount();
 }

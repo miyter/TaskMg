@@ -23,6 +23,16 @@ function deserializeTask(id, data) {
     };
 }
 
+// ==========================================================
+// ★ RAW FUNCTIONS (userId必須)
+// ==========================================================
+
+let _cachedTasks = [];
+
+export function getTasks() {
+    return _cachedTasks;
+}
+
 export function subscribeToTasksRaw(userId, workspaceId, onUpdate) {
     const safeUpdate = (data) => {
         if (typeof onUpdate === 'function') onUpdate(data);
@@ -38,9 +48,11 @@ export function subscribeToTasksRaw(userId, workspaceId, onUpdate) {
 
     return onSnapshot(q, (snapshot) => {
         const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
+        _cachedTasks = tasks;
         safeUpdate(tasks);
     }, (error) => {
         console.error("[Tasks] Subscription error:", error);
+        _cachedTasks = [];
         safeUpdate([]);
     });
 }

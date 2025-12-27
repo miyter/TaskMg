@@ -8,11 +8,11 @@ import { auth } from '../core/firebase.js';
 import { getNextRecurrenceDate } from '../utils/date.js';
 import { getCurrentWorkspaceId } from './workspace.js';
 
-import { 
+import {
     subscribeToTasksRaw,
-    addTaskRaw, 
+    addTaskRaw,
     updateTaskStatusRaw,
-    updateTaskRaw, 
+    updateTaskRaw,
     deleteTaskRaw,
     createBackupDataRaw,
     getTaskByIdRaw
@@ -27,7 +27,7 @@ let cachedTasks = [];
 function requireAuth() {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-        throw new Error('Authentication required.'); 
+        throw new Error('Authentication required.');
     }
     return userId;
 }
@@ -86,22 +86,20 @@ export function subscribeToTasks(workspaceId, onUpdate) {
     // DataSyncManager が (workspaceId, callback) で呼ぶため、順序を正しく解決する
     const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
     const targetWorkspaceId = typeof workspaceId === 'string' ? workspaceId : getCurrentWorkspaceId();
-    
+
     const userId = auth.currentUser?.uid;
 
     // 1. 認証とワークスペースID、かつコールバックが関数であることを厳密にチェック
     if (userId && targetWorkspaceId && typeof callback === 'function') {
         return subscribeToTasksRaw(userId, targetWorkspaceId, (tasks) => {
-            cachedTasks = tasks; // キャッシュを更新
             callback(tasks);
-        }); 
+        });
     } else {
         // 条件を満たさない場合は空データを返して終了（クラッシュ防止）
-        cachedTasks = [];
         if (typeof callback === 'function') {
             callback([]);
         }
-        return () => {};
+        return () => { };
     }
 }
 
@@ -109,13 +107,13 @@ export function subscribeToTasks(workspaceId, onUpdate) {
  * キャッシュされたタスク一覧を同期的に取得する
  */
 export function getTasks() {
-    return cachedTasks;
+    return getTasksRaw();
 }
 
 export async function addTask(taskData) {
     const userId = requireAuth();
     const workspaceId = requireWorkspace();
-    
+
     const data = { ...taskData };
     if (data.dueDate && !(data.dueDate instanceof Date)) {
         data.dueDate = new Date(data.dueDate);
@@ -128,9 +126,9 @@ export async function addTask(taskData) {
 export async function updateTaskStatus(taskId, status) {
     const userId = requireAuth();
     const workspaceId = requireWorkspace();
-    
+
     await updateTaskStatusRaw(userId, workspaceId, taskId, status);
-    
+
     if (status === 'completed') {
         const task = await getTaskByIdRaw(userId, workspaceId, taskId);
         if (task) {
