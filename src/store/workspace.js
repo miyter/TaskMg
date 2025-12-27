@@ -3,7 +3,7 @@
  * 更新日: 2025-12-27
  * 内容: ワークスペースが0個の場合の処理を修正
  *      - ensureDefaultWorkspace() を呼び出す前に onUpdate([]) を呼び出すように変更
- *      - これにより、初回ログイン時のUIが正しく初期化される
+ *      - onSnapshot コールバックから async を削除（SDK互換性のため）
  */
 
 import {
@@ -41,7 +41,7 @@ export function subscribeToWorkspaces(userId, onUpdate) {
     const q = query(collection(db, path), orderBy('createdAt', 'asc'));
 
 
-    unsubscribe = onSnapshot(q, async (snapshot) => {
+    unsubscribe = onSnapshot(q, (snapshot) => {
         const items = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
@@ -53,7 +53,7 @@ export function subscribeToWorkspaces(userId, onUpdate) {
             // ワークスペースが0個の場合、デフォルトを作成
             // 作成後、再度 onSnapshot が発火して正しく処理される
             if (typeof onUpdate === 'function') onUpdate([]);
-            await ensureDefaultWorkspace();
+            ensureDefaultWorkspace().catch(err => console.error('[Workspace] Default creation error:', err));
         } else {
             const currentId = validateCurrentWorkspace(items);
             if (typeof onUpdate === 'function') onUpdate(items);
