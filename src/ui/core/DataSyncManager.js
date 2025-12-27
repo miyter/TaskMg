@@ -1,9 +1,7 @@
 /**
  * 更新日: 2025-12-27
- * 内容: デバッグログの改善
- *      - startAllSubscriptions 開始時のログを詳細化
- *      - stopDataSync 時のログを追加
- *      - エラー時のログを改善
+ * 内容: updateUI で updateSidebarCache に timeBlocks を渡すように修正
+ * これによりサイドバーの時間帯・所要時間セクションの表示を正常化
  */
 
 import { auth } from '../../core/firebase.js';
@@ -49,10 +47,11 @@ export function updateUI() {
     if (updateTimer) return;
 
     updateTimer = requestAnimationFrame(() => {
-        const { tasks, projects, labels, filters } = state;
+        // state から timeBlocks も抽出
+        const { tasks, projects, labels, filters, timeBlocks } = state;
 
-        // 1. サイドバーのキャッシュを物理的に更新
-        updateSidebarCache({ tasks, labels, projects, filters });
+        // 1. サイドバーのキャッシュを物理的に更新（timeBlocks を追加）
+        updateSidebarCache({ tasks, labels, projects, filters, timeBlocks });
 
         // 2. メインビューの更新
         updateView(tasks, projects, labels);
@@ -89,10 +88,6 @@ export function startAllSubscriptions(userId) {
 
     isDataSyncing = true;
     console.log('[DataSync] Starting subscriptions for workspace:', workspaceId);
-
-    // --- 各データソースの購読 ---
-    // Store側の各 subscribe 関数が (workspaceId, callback) を期待している場合、
-    // ここで workspaceId を渡さないと callback が第1引数扱いになり、内部の onSnapshot で callback が undefined になる。
 
     subscriptions.tasks = subscribeToTasks(workspaceId, (data) => {
         state.tasks = data;
