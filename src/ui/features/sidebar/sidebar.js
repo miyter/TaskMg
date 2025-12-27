@@ -83,6 +83,9 @@ export function initSidebar() {
     const isCompact = getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
     applyCompactMode(isCompact);
     setupCompactModeListener();
+
+    // 初回描画を強制実行
+    if (refreshSidebarHandler) refreshSidebarHandler();
 }
 
 /**
