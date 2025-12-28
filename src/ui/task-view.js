@@ -5,7 +5,7 @@
  */
 
 import { renderTaskList } from './task-list.js';
-import { renderInlineInput } from './task-input.js';
+import { renderInlineInput, renderFixedAddTaskBar } from './task-input.js';
 import { sortTasks } from '../logic/sort.js';
 import { renderTimeBlockStats } from './components/TimeBlockStats.js';
 
@@ -25,16 +25,12 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
     const container = document.getElementById('task-view');
     if (!container) return;
 
-    // ヘッダー情報の更新（具体的な名前を表示）
+    // ヘッダー情報の更新
     updateHeaderInfo(tasks.length, projectId, labelId, allProjects, allLabels);
 
-    // ソートの適用
-    // 1. 隠しselect要素があればそれを使う
-    // 2. なければカスタムドロップダウンのトリガーから値を取得
-    // 3. どちらもなければデフォルト
+    // ソート準備
     const sortSelect = document.getElementById('sort-select');
     const sortTrigger = document.getElementById('sort-trigger');
-
     let sortValue = 'createdAt_desc';
     if (sortSelect) {
         sortValue = sortSelect.value;
@@ -45,32 +41,42 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
     const sortedTasks = sortTasks(tasks, sortValue);
 
     container.innerHTML = '';
+    // レイアウト設定: 画面全体を使うためにflex columnとoverflow制御
+    container.className = 'flex flex-col h-full relative overflow-hidden';
 
-    // 1. タスクリスト表示エリア
+    // 1. スクロール領域 (リスト + 統計 + 入力フォーム)
+    const scrollContainer = document.createElement('div');
+    scrollContainer.className = 'flex-1 overflow-y-auto custom-scrollbar p-1 pb-20'; // フッター分の余白
+    container.appendChild(scrollContainer);
+
+    // タスクリスト
     const listContainer = document.createElement('div');
     listContainer.id = 'task-list-container';
-    container.appendChild(listContainer);
-
+    scrollContainer.appendChild(listContainer);
     renderTaskList(listContainer, sortedTasks, allProjects);
 
-    // 1.5. 時間帯別工数統計 (指定がある場合)
-    // ユーザー要望：メインカラム下部（リストの下、入力欄の上あたりが良いか、あるいは入力の下か）
-    // "メインカラム下部にその時間帯専用の工数まとめセクションを追加"
-    // タスクリスト -> 統計 -> 入力フォーム の順が良いと判断
+    // 時間帯別統計 (指定がある場合、リストの直下に表示)
     if (timeBlockId) {
         const statsContainer = document.createElement('div');
         statsContainer.id = 'timeblock-stats-container';
-        container.appendChild(statsContainer);
+        scrollContainer.appendChild(statsContainer);
         renderTimeBlockStats(statsContainer, tasks, timeBlockId);
     }
 
-    // 2. インライン入力フォームエリア
+    // インライン入力フォームエリア (初期は非表示、フッターボタンで展開)
     const inputContainer = document.createElement('div');
     inputContainer.id = 'inline-input-container';
-    inputContainer.className = 'mt-2 pb-10';
-    container.appendChild(inputContainer);
+    inputContainer.className = 'mt-4 hidden'; // 初期非表示
+    scrollContainer.appendChild(inputContainer);
 
-    renderInlineInput(inputContainer, projectId, labelId);
+    // 2. 固定フッター (タスク追加ボタン)
+    const footerContainer = document.createElement('div');
+    footerContainer.id = 'fixed-buffer-footer';
+    footerContainer.className = 'absolute bottom-0 left-0 w-full h-12 bg-white/90 dark:bg-[#1e1e1e]/90 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 z-20';
+    container.appendChild(footerContainer);
+
+    // 固定フッターを描画
+    renderFixedAddTaskBar(footerContainer, inputContainer, projectId, labelId);
 }
 
 /**

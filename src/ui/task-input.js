@@ -43,10 +43,19 @@ export function renderTaskInput() {
 /**
  * インライン入力フォーム (タスクリスト下部)
  */
-export function renderInlineInput(container, projectId, labelId) {
-    const isExpanded = container.dataset.expanded === 'true';
+/**
+ * インライン入力フォーム (タスクリスト下部)
+ * @param {HTMLElement} container 
+ * @param {string} projectId 
+ * @param {string} labelId 
+ * @param {Object} options - { onClose: function, forceExpand: boolean }
+ */
+export function renderInlineInput(container, projectId, labelId, options = {}) {
+    const isExpanded = options.forceExpand || container.dataset.expanded === 'true';
 
     if (!isExpanded) {
+        // 固定フッターモードの場合は、ここは空にするか、何もしない制御が必要
+        // 既存のリスト末尾ボタンとしての動作を維持しつつ、固定フッターからも呼ばれる
         container.innerHTML = `
             <div id="show-input-btn" class="flex items-center text-gray-500 hover:text-red-500 cursor-pointer py-2 px-1 rounded hover:bg-gray-50 dark:hover:bg-gray-800/50 transition group select-none">
                 <div class="w-6 h-6 mr-2 rounded-full text-red-500 flex items-center justify-center transition-transform group-hover:scale-110">
@@ -57,7 +66,7 @@ export function renderInlineInput(container, projectId, labelId) {
         `;
         container.querySelector('#show-input-btn').onclick = () => {
             container.dataset.expanded = 'true';
-            renderInlineInput(container, projectId, labelId);
+            renderInlineInput(container, projectId, labelId, options);
         };
         return;
     }
@@ -83,7 +92,43 @@ export function renderInlineInput(container, projectId, labelId) {
     `;
 
     container.innerHTML = createGlassCard(html, 'p-3 animate-fade-in-down');
-    setupInlineEvents(container, projectId, labelId);
+    setupInlineEvents(container, projectId, labelId, options);
+}
+
+/**
+ * 画面下部固定のタスク追加バーを描画
+ */
+export function renderFixedAddTaskBar(footerContainer, inputContainer, projectId, labelId) {
+    footerContainer.innerHTML = `
+        <div id="fixed-add-task-btn" class="w-full h-full flex items-center px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
+            <div class="w-6 h-6 mr-3 rounded-full text-red-500 bg-red-50 dark:bg-red-900/20 flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </div>
+            <span class="text-sm font-medium text-gray-600 dark:text-gray-300">タスクを追加</span>
+        </div>
+    `;
+
+    footerContainer.querySelector('#fixed-add-task-btn').onclick = () => {
+        // フッターを隠す
+        footerContainer.classList.add('hidden');
+
+        // フォームを表示
+        inputContainer.innerHTML = '';
+        inputContainer.classList.remove('hidden');
+        renderInlineInput(inputContainer, projectId, labelId, {
+            forceExpand: true,
+            onClose: () => {
+                inputContainer.innerHTML = ''; // フォーム消去
+                inputContainer.classList.add('hidden'); // コンテナ隠す
+                footerContainer.classList.remove('hidden'); // フッター復帰
+            }
+        });
+
+        // フォームへスクロール
+        setTimeout(() => {
+            inputContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    };
 }
 
 function setupStandaloneEvents() {
@@ -114,7 +159,7 @@ function setupStandaloneEvents() {
     };
 }
 
-function setupInlineEvents(container, projectId, labelId) {
+function setupInlineEvents(container, projectId, labelId, options = {}) {
     const titleInput = container.querySelector('#inline-title-input');
     const submitBtn = container.querySelector('#submit-task-btn');
     const cancelBtn = container.querySelector('#cancel-input-btn');
@@ -123,17 +168,24 @@ function setupInlineEvents(container, projectId, labelId) {
 
     titleInput.focus();
 
-    cancelBtn.onclick = () => {
+    const closeForm = () => {
         container.dataset.expanded = 'false';
-        renderInlineInput(container, projectId, labelId);
+        if (options.onClose) {
+            options.onClose();
+        } else {
+            // デフォルト動作（リスト内ボタンに戻る）
+            renderInlineInput(container, projectId, labelId);
+        }
     };
+
+    cancelBtn.onclick = closeForm;
 
     const submitAction = async () => {
         const title = titleInput.value.trim();
         if (!title) return;
 
         submitBtn.disabled = true;
-        
+
         await handleAddTask({
             title,
             description: descInput.value.trim(),
@@ -142,10 +194,20 @@ function setupInlineEvents(container, projectId, labelId) {
             timeBlockId: tbSelect.value || null
         });
 
+        // 連続入力を許可するか、閉じるか？
+        // ユーザーフロー的には連続入力したいことが多いが、今回は固定バー復帰ロジックもある。
+        // 一旦Todoist風に「フォームは開いたまま（内容はクリア）」にするのが一般的だが、
+        // 「固定の追加ボタンバー」の要件からすると、完了したら一旦閉じる方が「バー」の存在意義が出るかも。
+        // -> いや、Todoistは追加後もフォーム維持。今回はシンプルに「追加したら閉じてバー復帰」にしてみる（閉じるのが鬱陶しければ後で変更）。
+        // -> 待て、閉じてしまうと連続追加が面倒。
+        // -> フォーム維持（Inputクリアのみ）にして、キャンセルボタンでのみ閉じるのがUX上正解。
+
         titleInput.value = '';
         descInput.value = '';
         titleInput.focus();
         submitBtn.disabled = false;
+
+        // onCloseは呼ばない（フォーム維持）
     };
 
     submitBtn.onclick = submitAction;
@@ -159,9 +221,9 @@ async function handleAddTask(data) {
         await addTaskCompatibility(data);
     } catch (e) {
         console.error(e);
-        showMessageModal({ 
-            message: "タスクの追加に失敗した: " + (e.message || "不明なエラー"), 
-            type: 'error' 
+        showMessageModal({
+            message: "タスクの追加に失敗した: " + (e.message || "不明なエラー"),
+            type: 'error'
         });
     }
 }

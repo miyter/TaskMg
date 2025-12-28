@@ -67,7 +67,7 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
             <!-- Center: 数字とプログレスバー -->
             <div class="flex-1 flex flex-col justify-center gap-1 mx-2">
                 <div class="text-xs text-center text-gray-500 dark:text-gray-400">
-                    <span class="font-bold text-gray-700 dark:text-gray-300">${totalTaskHours}</span> <span class="text-[10px] text-gray-400">/</span> ${capacityHours} <span class="text-[10px]">時間</span>
+                    <span class="font-bold text-gray-700 dark:text-gray-300">${totalTaskHours}</span> <span class="text-[10px] text-gray-400">/</span> ${capacityHours} <span class="text-[10px]">h</span>
                 </div>
                 <div class="relative h-1.5 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden w-full">
                      <div class="${barColorClass} h-full rounded-full transition-all duration-500 ease-out"
@@ -82,7 +82,7 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
                     ${Math.round(rawPercent)}<span class="text-xs font-normal opacity-70">%</span>
                 </div>
                 <div class="text-[10px] font-medium ${diffColorClass} mt-0.5">
-                    ${diffLabel} ${formatTime(absDiffMinutes)} <span class="opacity-70">(${absDiffHours}h)</span>
+                    ${diffLabel} ${absDiffHours}h
                 </div>
             </div>
         </div>

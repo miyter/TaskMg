@@ -23,5 +23,5 @@ export const MODAL_CLASSES = {
     // 共通パーツ
     TITLE: 'text-lg font-bold text-gray-800 dark:text-white',
     CLOSE_BUTTON: 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700',
-    CHECKBOX: 'form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded cursor-pointer z-10 relative focus:ring-offset-0 focus:ring-1 focus:ring-blue-500'
+    CHECKBOX: 'w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer accent-blue-600'
 };
