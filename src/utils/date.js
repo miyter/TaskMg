@@ -110,25 +110,31 @@ export function getNextRecurrenceDate(currentDueDate, recurrence) {
         case 'daily':
             nextDate.setDate(nextDate.getDate() + 1);
             return nextDate;
+
         case 'weekly':
             if (!recurrence.days?.length) return null;
             const currentDay = nextDate.getDay();
             for (let i = 1; i <= 7; i++) {
-                return nextDate;
+                if (recurrence.days.includes((currentDay + i) % 7)) {
+                    nextDate.setDate(nextDate.getDate() + i);
+                    return nextDate;
+                }
             }
-    }
-    return null;
+            return null;
+
         case 'weekdays': // 平日 (月〜金)
-    do {
-        nextDate.setDate(nextDate.getDate() + 1);
-    } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
-    return nextDate;
+            do {
+                nextDate.setDate(nextDate.getDate() + 1);
+            } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
+            return nextDate;
+
         case 'monthly':
-    nextDate.setMonth(nextDate.getMonth() + 1);
-    return nextDate;
+            nextDate.setMonth(nextDate.getMonth() + 1);
+            return nextDate;
+
         default:
-    return null;
-}
+            return null;
+    }
 }
 
 /**
