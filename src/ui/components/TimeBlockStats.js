@@ -50,42 +50,40 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
     const diffColorClass = isOver ? 'text-red-500' : 'text-green-500';
     const diffLabel = isOver ? '超過' : '残り';
 
-    // HTML構築
+    // HTML構築 (コンパクト・ミニマル版)
+    // 背景薄く、上下パディング最小限(py-2 px-4程度)、横並び
+
+    // 背景色: darkモードで #1e1e1e (gray-900に近いが透明度調整)
+    // 影なし、フラット
+
     const html = `
-        <div class="mt-6 mb-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 animate-fade-in">
-            <div class="flex justify-between items-end mb-3">
-                <div>
-                    <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                        ${timeBlock.name} の工数状況
-                    </h3>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-2xl font-bold text-gray-900 dark:text-white font-mono">
-                            ${totalTaskHours}
-                        </span>
-                        <span class="text-sm text-gray-400 font-medium">
-                            / ${capacityHours} 時間
-                        </span>
-                    </div>
+        <div class="mt-4 mb-4 py-2 px-4 bg-gray-50/50 dark:bg-[#1e1e1e]/30 rounded-lg flex items-center justify-between gap-4 text-sm animate-fade-in border border-gray-100 dark:border-gray-800/50">
+            
+            <!-- Left: 時間帯名 -->
+            <div class="flex-shrink-0 text-xs text-gray-400 font-mono">
+                ${timeBlock.name}
+            </div>
+
+            <!-- Center: 数字とプログレスバー -->
+            <div class="flex-1 flex flex-col justify-center gap-1 mx-2">
+                <div class="text-xs text-center text-gray-500 dark:text-gray-400">
+                    <span class="font-bold text-gray-700 dark:text-gray-300">${totalTaskHours}</span> <span class="text-[10px] text-gray-400">/</span> ${capacityHours} <span class="text-[10px]">時間</span>
                 </div>
-                <div class="text-right">
-                    <div class="text-3xl font-bold ${isExceeded ? 'text-red-500' : 'text-blue-600'} mb-1">
-                        ${Math.round(rawPercent)}<span class="text-lg">%</span>
-                    </div>
-                    <div class="text-xs font-medium ${diffColorClass}">
-                        ${diffLabel} ${formatTime(absDiffMinutes)} (${absDiffHours}h)
+                <div class="relative h-1.5 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden w-full">
+                     <div class="${barColorClass} h-full rounded-full transition-all duration-500 ease-out"
+                         style="width: ${barWidth}">
                     </div>
                 </div>
             </div>
 
-            <div class="relative h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div class="${barColorClass} h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                     style="width: ${barWidth}">
+            <!-- Right: %と過不足 -->
+            <div class="flex-shrink-0 text-right min-w-[80px]">
+                <div class="text-xl font-bold ${isExceeded ? 'text-red-500' : 'text-blue-500'} leading-none">
+                    ${Math.round(rawPercent)}<span class="text-xs font-normal opacity-70">%</span>
                 </div>
-            </div>
-            
-            <div class="flex justify-between mt-2 text-xs text-gray-400 font-medium">
-                <span>合計: ${formatTime(totalTaskMinutes)}</span>
-                <span>容量: ${formatTime(capacityMinutes)}</span>
+                <div class="text-[10px] font-medium ${diffColorClass} mt-0.5">
+                    ${diffLabel} ${formatTime(absDiffMinutes)} <span class="opacity-70">(${absDiffHours}h)</span>
+                </div>
             </div>
         </div>
     `;
