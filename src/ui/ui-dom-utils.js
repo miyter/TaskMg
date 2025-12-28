@@ -64,12 +64,12 @@ export function buildSearchViewHTML(projects = []) {
     const formHTML = `
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
-                <label class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase mb-2">キーワード</label>
+                <label for="page-search-input" class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase mb-2">キーワード</label>
                 <input type="text" id="page-search-input" placeholder="タスク名を入力..." 
                     class="w-full px-4 py-2.5 bg-white/50 dark:bg-gray-800/40 border border-white/30 dark:border-gray-700/50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 dark:text-white placeholder-gray-400 text-sm">
             </div>
             <div class="md:w-1/3">
-                <label class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase mb-2">プロジェクト</label>
+                <label for="page-search-project" class="block text-xs font-bold text-gray-500 dark:text-gray-300 uppercase mb-2">プロジェクト</label>
                 <div class="relative">
                     <select id="page-search-project" class="w-full px-4 py-2.5 bg-white/50 dark:bg-gray-800/40 border border-white/30 dark:border-gray-700/50 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 dark:text-white text-sm appearance-none cursor-pointer">
                         <option value="">全てのプロジェクト</option>
