@@ -37,6 +37,10 @@ export function runInitialization() {
 
     initTheme();
     renderLayout();
+
+    // レイアウト生成後に背景を適用（要素が存在することを確認してから）
+    import('../layout/theme.js').then(({ applyBackground }) => applyBackground());
+
     initSettings();
     initTaskModal();
     initWorkspaceDropdown();

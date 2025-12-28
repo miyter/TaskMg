@@ -47,6 +47,7 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
     });
 
     setupFontHandlers();
+    setupTimezoneHandler();
     setupExportHandler();
     setupImportHandler();
     setupPasswordHandler();
@@ -173,6 +174,17 @@ function setupFontHandlers() {
     if (jpSelect) {
         jpSelect.addEventListener('change', (e) => {
             setFont('JP', e.target.value);
+        });
+    }
+}
+
+function setupTimezoneHandler() {
+    const tzSelect = document.querySelector('select[name="timezone-select"]');
+    if (tzSelect) {
+        tzSelect.addEventListener('change', (e) => {
+            localStorage.setItem('timezone', e.target.value);
+            // 必要に応じてグローバルイベントを発火
+            window.dispatchEvent(new CustomEvent('timezone-changed', { detail: { timezone: e.target.value } }));
         });
     }
 }

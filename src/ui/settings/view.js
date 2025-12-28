@@ -17,6 +17,15 @@ export const FONT_SIZES = {
     XL: 'xl'
 };
 
+// タイムゾーン設定の定数
+export const TIMEZONE_OPTIONS = [
+    { value: 'Asia/Tokyo', label: '日本 (JST/UTC+9)' },
+    { value: 'America/Los_Angeles', label: 'アメリカ・太平洋 (PST/UTC-8)' },
+    { value: 'America/New_York', label: 'アメリカ・東部 (EST/UTC-5)' },
+    { value: 'Asia/Shanghai', label: '中国・台湾 (CST/UTC+8)' },
+    { value: 'Europe/London', label: 'イギリス (GMT/UTC+0)' }
+];
+
 import { FONT_OPTIONS, getCurrentFonts } from '../layout/fonts.js';
 
 function createSelectOption(label, options, selectedValue, name) {
@@ -93,6 +102,8 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
 
     // --- Content Constructions ---
 
+    // タイムゾーン設定の定数 (Moved to top level)
+
     const appearanceContent = `
         <div class="space-y-6">
             <div>
@@ -107,6 +118,22 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
                 <div class="grid grid-cols-2 gap-3">
                     ${createRadioOption('bg-pattern', BACKGROUND_PATTERNS.NONE, '無地', currentBg === BACKGROUND_PATTERNS.NONE)}
                     ${createRadioOption('bg-pattern', BACKGROUND_PATTERNS.TEXTURE, 'テクスチャ', currentBg === BACKGROUND_PATTERNS.TEXTURE)}
+                </div>
+            </div>
+            <div>
+                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">タイムゾーン</label>
+                 <div class="relative">
+                     ${(() => {
+            const currentTimeZone = localStorage.getItem('timezone') || 'Asia/Tokyo';
+            return `
+                        <select name="timezone-select" class="w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer transition-shadow">
+                            ${TIMEZONE_OPTIONS.map(opt => `<option value="${opt.value}" ${opt.value === currentTimeZone ? 'selected' : ''}>${opt.label}</option>`).join('')}
+                        </select>
+                        `;
+        })()}
+                    <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
                 </div>
             </div>
             <div>

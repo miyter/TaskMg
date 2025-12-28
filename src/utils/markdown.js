@@ -19,36 +19,60 @@ export function simpleMarkdownToHtml(markdownText) {
 
     const lines = markdownText.split('\n');
     let htmlResult = [];
-    let inList = false;
+    let listType = null; // 'ul', 'ol', or null
 
     lines.forEach(line => {
         const trimmed = line.trimStart();
-        const isListItem = trimmed.startsWith('* ') || trimmed.startsWith('- ');
+        // リスト検出
+        const isUnordered = trimmed.startsWith('* ') || trimmed.startsWith('- ');
+        const isOrdered = /^\d+\.\s/.test(trimmed);
+        const isListItem = isUnordered || isOrdered;
 
-        // リストの開始・終了処理
-        if (isListItem && !inList) {
-            htmlResult.push('<ul class="list-disc ml-5 space-y-1">');
-            inList = true;
-        } else if (!isListItem && inList) {
-            htmlResult.push('</ul>');
-            inList = false;
+        // リスト切り替え・終了処理
+        if (isListItem) {
+            const newListType = isOrdered ? 'ol' : 'ul';
+
+            // 異なる種類のリストが始まった、あるいはリストが始まっていない場合
+            if (listType !== newListType) {
+                if (listType) htmlResult.push(`</${listType}>`); // 前のリストを閉じる
+                // 新しいリストを開始
+                const className = isOrdered ? 'list-decimal' : 'list-disc';
+                htmlResult.push(`<${newListType} class="${className} ml-5 space-y-1">`);
+                listType = newListType;
+            }
+        } else {
+            // リストアイテムでない行
+            if (listType) {
+                htmlResult.push(`</${listType}>`);
+                listType = null;
+            }
         }
 
         if (isListItem) {
-            const content = processInline(trimmed.substring(2));
+            // マーカー除去
+            let contentText = '';
+            if (isUnordered) {
+                contentText = trimmed.substring(2);
+            } else {
+                // "1. " などを除去
+                contentText = trimmed.replace(/^\d+\.\s/, '');
+            }
+            const content = processInline(contentText);
             htmlResult.push(`<li>${content}</li>`);
         } else if (line.trim()) {
             htmlResult.push(`<p class="mb-2">${processInline(line)}</p>`);
         } else {
-            // 空行は無視またはスペーサーに
-            if (inList) {
-                htmlResult.push('</ul>');
-                inList = false;
+            // 空行はリスト内でなければ無視、リスト内なら終了させるロジックは上記elseに入らないのでここで処理が必要か？
+            // 上記 else に入るので listType があれば閉じられる。
+            // 空行のみの処理
+            if (listType) {
+                htmlResult.push(`</${listType}>`);
+                listType = null;
             }
         }
     });
 
-    if (inList) htmlResult.push('</ul>');
+    if (listType) htmlResult.push(`</${listType}>`);
 
     return htmlResult.join('\n');
 }
