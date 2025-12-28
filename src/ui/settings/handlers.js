@@ -116,26 +116,49 @@ function setupRadioGroupHandler(name, storageKey, onUpdate) {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
     const savedValue = localStorage.getItem(storageKey);
 
+    const activeClasses = ['border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20', 'text-blue-700', 'dark:text-blue-300'];
+    const inactiveClasses = ['border-gray-200', 'dark:border-gray-700', 'hover:bg-gray-50', 'dark:hover:bg-gray-700/50', 'text-gray-600', 'dark:text-gray-300'];
+
+    const updateVisuals = (selectedRadio) => {
+        radios.forEach(r => {
+            const label = r.parentElement;
+            // ラベル自体にクラスがついていると仮定
+            if (r === selectedRadio) {
+                label.classList.remove(...inactiveClasses);
+                label.classList.add(...activeClasses);
+            } else {
+                label.classList.remove(...activeClasses);
+                label.classList.add(...inactiveClasses);
+            }
+        });
+    };
+
     radios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             const val = e.target.value;
             localStorage.setItem(storageKey, val);
+            updateVisuals(e.target);
             onUpdate(val);
         });
     });
 
     // モーダル表示時に保存値を強制適用
     if (savedValue) {
-        // ラジオボタンのチェック状態も復元
         radios.forEach(radio => {
-            radio.checked = (radio.value === savedValue);
+            if (radio.value === savedValue) {
+                radio.checked = true;
+                // 初期表示は view.js でクラス設定されているはずだが、念のため同期
+                // ただし view.js とロジックが重複するため、ここではcheckedのみにするのが無難だが、
+                // 動的な不整合を防ぐならここでも updateVisuals を呼ぶのが確実
+                // updateVisuals(radio); 
+            }
         });
-        // 既存のクラス削除のため一度実行しても良いが、ちらつき防止のためここではUI反映のみ
     } else {
         const checked = Array.from(radios).find(r => r.checked);
-        if (checked) localStorage.setItem(storageKey, checked.value); // 初期値を保存
+        if (checked) localStorage.setItem(storageKey, checked.value);
     }
 }
+
 
 function setupFontHandlers() {
     const enSelect = document.querySelector('select[name="font-en-select"]');
