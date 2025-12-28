@@ -148,8 +148,8 @@ export function buildModalHTML(task) {
                                         <select id="modal-task-recurrence" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer">
                                             <option value="none" ${recurrence.type === 'none' ? 'selected' : ''}>なし</option>
                                             <option value="daily" ${recurrence.type === 'daily' ? 'selected' : ''}>毎日</option>
+                                            <option value="weekdays" ${recurrence.type === 'weekdays' ? 'selected' : ''}>平日</option>
                                             <option value="weekly" ${recurrence.type === 'weekly' ? 'selected' : ''}>毎週</option>
-                                            <option value="weekdays" ${recurrence.type === 'weekdays' ? 'selected' : ''}>平日 (月〜金)</option>
                                             <option value="monthly" ${recurrence.type === 'monthly' ? 'selected' : ''}>毎月</option>
                                         </select>
                                     </div>

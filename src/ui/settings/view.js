@@ -11,10 +11,10 @@ export const BACKGROUND_PATTERNS = {
 // フォントサイズの定数管理 (Tailwindの定義と同期)
 export const FONT_SIZES = {
     SMALL: 'sm',
-    BASE: 'base', // Added base size
+    BASE: 'base',
     MEDIUM: 'md',
     LARGE: 'lg',
-    XL: 'xl'      // Added xl size
+    XL: 'xl'
 };
 
 import { FONT_OPTIONS, getCurrentFonts } from '../layout/fonts.js';
@@ -67,10 +67,13 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
     const currentBg = localStorage.getItem('background') || BACKGROUND_PATTERNS.NONE;
     const safeInitial = userInitial || '?';
 
-    // 2-column layout sections
+    // 2-column layout sections with Icons
     const leftColumn = `
         <section class="mb-8">
-            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Appearance</h4>
+            <h4 class="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+                Appearance
+            </h4>
             
             <div class="space-y-6">
                 <div>
@@ -90,7 +93,7 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
                 </div>
 
                 <div>
-                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">サイドバー密度</label>
+                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">サイドバーとUI密度</label>
                     <div class="grid grid-cols-2 gap-3">
                         ${createRadioOption('sidebar-density', 'normal', '通常', !isCompact)}
                         ${createRadioOption('sidebar-density', 'compact', 'コンパクト', isCompact)}
@@ -100,28 +103,41 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
         </section>
 
         <section>
-            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Typography</h4>
+            <h4 class="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                Typography
+            </h4>
              ${getFontSettingsHTML()}
         </section>
     `;
 
+    // 2-column font size radio options
+    const fontSizeOptions = `
+        <div class="grid grid-cols-2 gap-2">
+            ${createRadioOption('font-size', FONT_SIZES.XL, 'XL', currentFontSize === FONT_SIZES.XL)}
+            ${createRadioOption('font-size', FONT_SIZES.LARGE, 'Large', currentFontSize === FONT_SIZES.LARGE)}
+            ${createRadioOption('font-size', FONT_SIZES.MEDIUM, 'Medium', currentFontSize === FONT_SIZES.MEDIUM)}
+            ${createRadioOption('font-size', FONT_SIZES.BASE, 'Base', currentFontSize === FONT_SIZES.BASE)}
+            ${createRadioOption('font-size', FONT_SIZES.SMALL, 'Small', currentFontSize === FONT_SIZES.SMALL)}
+        </div>
+    `;
+
     const rightColumn = `
         <section class="mb-8">
-            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Font Size</h4>
+            <h4 class="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Font Size
+            </h4>
             <div class="space-y-2">
-                 <!-- 5-step font size control -->
-                 <div class="flex flex-col gap-2">
-                    ${createRadioOption('font-size', FONT_SIZES.XL, '特大 (XL)', currentFontSize === FONT_SIZES.XL)}
-                    ${createRadioOption('font-size', FONT_SIZES.LARGE, '大 (Large)', currentFontSize === FONT_SIZES.LARGE)}
-                    ${createRadioOption('font-size', FONT_SIZES.MEDIUM, '標準 (Medium)', currentFontSize === FONT_SIZES.MEDIUM)}
-                    ${createRadioOption('font-size', FONT_SIZES.BASE, 'やや小 (Base)', currentFontSize === FONT_SIZES.BASE)}
-                    ${createRadioOption('font-size', FONT_SIZES.SMALL, '小 (Small)', currentFontSize === FONT_SIZES.SMALL)}
-                 </div>
+                 ${fontSizeOptions}
             </div>
         </section>
 
          <section class="mb-8">
-            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Account</h4>
+            <h4 class="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                Account
+            </h4>
              <div class="flex items-center gap-3 mb-4 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
                     ${safeInitial}
@@ -145,7 +161,10 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
         </section>
 
         <section>
-            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Data Management</h4>
+            <h4 class="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                Data Management
+            </h4>
             <div class="space-y-3">
                 <button id="export-data-btn-new" class="w-full text-left px-4 py-3 bg-white dark:bg-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-all border border-gray-200 dark:border-gray-600 group shadow-sm hover:shadow-md">
                     <div class="flex justify-between items-center">

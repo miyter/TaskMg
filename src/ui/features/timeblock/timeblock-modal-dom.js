@@ -20,8 +20,8 @@ export function buildModalSkeletonHTML() {
                 </button>
             </div>
             
-            <div class="p-8 overflow-y-auto flex-1 space-y-6 custom-scrollbar relative" id="tb-scroll-container">
-                <div id="tb-list" class="space-y-4"></div>
+            <div class="p-8 overflow-y-auto flex-1 space-y-4 custom-scrollbar relative" id="tb-scroll-container">
+                <div id="tb-list" class="space-y-2"></div> <!-- space-y-2 for tighter spacing -->
                 
                 <button id="add-tb-btn" class="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-gray-400 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group">
                 </button>
@@ -78,13 +78,14 @@ export function buildRowHTML(data) {
     const [sH, sM] = data.start.split(':');
     const [eH, eM] = data.end.split(':');
 
+    // Add drag-handle-area
     return `
-        <div class="flex-shrink-0 relative pl-2">
-            <button type="button" class="tb-color-trigger w-6 h-6 rounded-full shadow-sm hover:scale-110 active:scale-95 transition-transform focus:outline-none ring-2 ring-transparent focus:ring-blue-400 ring-offset-2 dark:ring-offset-gray-900" 
-                style="background-color: ${data.color}" data-color="${data.color}" title="色を変更"></button>
+        <div class="flex-shrink-0 relative pl-2 cursor-grab active:cursor-grabbing handle p-1 rounded-md text-gray-400 hover:text-gray-600" title="移動">
+             <div class="tb-color-trigger w-6 h-6 rounded-full shadow-sm hover:scale-110 active:scale-95 transition-transform focus:outline-none ring-2 ring-transparent focus:ring-blue-400 ring-offset-2 dark:ring-offset-gray-900 cursor-pointer" 
+                style="background-color: ${data.color}" data-color="${data.color}" title="色を変更"></div>
         </div>
         
-        <div class="flex-1 flex items-center gap-4 px-2">
+        <div class="flex-1 flex items-center gap-4 px-2 handle cursor-grab active:cursor-grabbing">
             <div class="flex items-center gap-2">
                 ${buildCustomSelect(HOUR_OPTIONS, sH, 'start-h')}
                 <span class="text-gray-300 dark:text-gray-600 font-light select-none">:</span>

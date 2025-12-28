@@ -8,7 +8,7 @@ import { timeToMinutes, updateAddButtonUI } from './timeblock-modal-utils.js';
 /**
  * 行のDOM要素からデータを抽出
  */
-export function getRowValues(row) {
+export function getRowValues(row, index) {
     const startH = row.querySelector('.tb-custom-select[data-type="start-h"]').dataset.value;
     const startM = row.querySelector('.tb-custom-select[data-type="start-m"]').dataset.value;
     const endH = row.querySelector('.tb-custom-select[data-type="end-h"]').dataset.value;
@@ -19,7 +19,8 @@ export function getRowValues(row) {
         id: row.dataset.id || null,
         start: `${startH}:${startM}`,
         end: `${endH}:${endM}`,
-        color: color
+        color: color,
+        order: index // 現在のDOMの順番を保存
     };
 }
 
@@ -33,20 +34,31 @@ export function handleDelete(row) {
         updateAddButtonUI(document.getElementById('add-tb-btn'), getTimeBlocks().length);
         return;
     }
-    showMessageModal({
-        message: '削除しますか？\n（保存ボタンを押すまで確定しません... と言いたいところですが、削除は即時反映されます）',
-        type: 'confirm',
-        onConfirm: async () => {
-            try {
-                await deleteTimeBlock(currentId);
-                row.remove();
-                document.dispatchEvent(new CustomEvent('timeblocks-updated'));
-                updateAddButtonUI(document.getElementById('add-tb-btn'), getTimeBlocks().length);
-            } catch (e) {
-                showMessageModal({ message: "削除に失敗しました", type: 'error' });
+
+    // アニメーション付き削除
+    row.style.opacity = '0';
+    row.style.transform = 'translateX(-20px)';
+    setTimeout(() => {
+        showMessageModal({
+            message: '削除しますか？\n（完了ボタンを押さなくても、削除は即時反映されます）',
+            type: 'confirm',
+            onConfirm: async () => {
+                try {
+                    await deleteTimeBlock(currentId);
+                    row.remove();
+                    document.dispatchEvent(new CustomEvent('timeblocks-updated'));
+                    updateAddButtonUI(document.getElementById('add-tb-btn'), getTimeBlocks().length);
+                } catch (e) {
+                    showMessageModal({ message: "削除に失敗しました", type: 'error' });
+                    // Revert styles on error (optional)
+                }
+            },
+            onCancel: () => {
+                row.style.opacity = '1';
+                row.style.transform = 'translate(0)';
             }
-        }
-    });
+        });
+    }, 200); // Wait for transition
 }
 
 /**
@@ -54,7 +66,9 @@ export function handleDelete(row) {
  */
 export async function saveAllAndClose(btn, closeFn) {
     const rows = Array.from(document.querySelectorAll('.tb-row'));
-    const dataList = rows.map(getRowValues);
+
+    // SortableJSによってDOMの順序が変わっているので、その順序でデータを取得するだけでOK
+    const dataList = rows.map((row, index) => getRowValues(row, index));
 
     // 1. Basic Validation
     for (const data of dataList) {
@@ -66,26 +80,21 @@ export async function saveAllAndClose(btn, closeFn) {
         }
     }
 
-    // 重複チェックは削除しました
-
     // Execution
     btn.disabled = true;
     const originalText = btn.textContent;
     btn.textContent = '保存中...';
 
-    // 昇順に並べ替え（開始時刻順）
-    dataList.sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
-
-    // Order値を更新するためにインデックスを付与して保存
+    // ドラッグ＆ドロップされた順序（data.order）を使って保存
     try {
-        const promises = dataList.map((data, index) =>
+        const promises = dataList.map(data =>
             saveTimeBlock({
                 id: data.id,
                 name: `${data.start}-${data.end}`,
                 start: data.start,
                 end: data.end,
                 color: data.color,
-                order: index // 順番を保存
+                order: data.order
             })
         );
 
