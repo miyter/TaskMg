@@ -2,6 +2,7 @@ import { getProjects } from '../../store/projects.js';
 import { getTimeBlocks } from '../../store/timeblocks.js';
 import { addFilter, updateFilter } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
+import { MODAL_CLASSES } from '../core/ui-modal-constants.js';
 
 const UNASSIGNED_ID = 'none';
 const MESSAGES = {
@@ -28,31 +29,34 @@ export function showFilterModal(filterToEdit = null) {
     const state = parseFilterQuery(filterToEdit?.query || '');
     const modal = document.createElement('div');
     modal.id = 'filter-creation-modal';
-    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fade-in';
+    // クラス定義は定数から使用 (idは個別識別に残すが、スタイルは共通化)
+    modal.className = MODAL_CLASSES.CONTAINER;
 
     modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]" role="dialog" aria-modal="true">
-            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                <h3 class="text-base font-bold text-gray-800 dark:text-white">${isEditMode ? 'フィルター編集' : 'フィルター作成'}</h3>
-                <button id="close-filter-modal" class="text-gray-400 hover:text-gray-700 transition">
+        <div class="${MODAL_CLASSES.DIALOG} ${MODAL_CLASSES.WIDTH.DEFAULT}" role="dialog" aria-modal="true">
+            <div class="${MODAL_CLASSES.HEADER}">
+                <h3 class="${MODAL_CLASSES.TITLE}">${isEditMode ? 'フィルター編集' : 'フィルター作成'}</h3>
+                <button id="close-filter-modal" class="${MODAL_CLASSES.CLOSE_BUTTON}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="p-4 overflow-y-auto flex-1 space-y-6 custom-scrollbar">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">フィルター名</label>
-                    <input type="text" id="filter-name" value="${filterToEdit?.name || ''}" 
-                           class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                    ${createSelectionBox('プロジェクト', projects, state.project, 'filter-project-checkbox')}
-                    ${createTimeBlockBox(timeBlocks, state.timeblock)}
-                    ${createSelectionBox('所要時間', durations, state.duration, 'filter-duration-checkbox', d => `${d} min`)}
-                    ${createSelectionBox('日付', dateOptions, state.date, 'filter-date-checkbox')}
+            <div class="${MODAL_CLASSES.BODY}">
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">フィルター名</label>
+                        <input type="text" id="filter-name" value="${filterToEdit?.name || ''}" 
+                               class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        ${createSelectionBox('プロジェクト', projects, state.project, 'filter-project-checkbox')}
+                        ${createTimeBlockBox(timeBlocks, state.timeblock)}
+                        ${createSelectionBox('所要時間', durations, state.duration, 'filter-duration-checkbox', d => `${d} min`)}
+                        ${createSelectionBox('日付', dateOptions, state.date, 'filter-date-checkbox')}
+                    </div>
                 </div>
             </div>
-            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700">
-                <button id="cancel-filter-btn" class="text-sm font-medium text-gray-500 hover:text-gray-800 transition">キャンセル</button>
+            <div class="${MODAL_CLASSES.FOOTER}">
+                <button id="cancel-filter-btn" class="text-sm font-medium text-gray-500 hover:text-gray-800 transition mr-auto">キャンセル</button>
                 <button id="save-filter-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-md transition-all active:scale-95">
                     ${isEditMode ? '変更を保存' : '作成'}
                 </button>
@@ -86,9 +90,9 @@ function createSelectionBox(title, items, initials, className, labelFn = (i) => 
                 ${items.map(item => {
         const id = String(item.id || item);
         return `
-                        <label class="flex items-center px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer transition">
-                            <input type="checkbox" value="${id}" ${initials.includes(id) ? 'checked' : ''} class="${className} h-4 w-4 text-blue-600 rounded">
-                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate">${labelFn(item)}</span>
+                        <label class="flex items-center px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer transition relative">
+                            <input type="checkbox" value="${id}" ${initials.includes(id) ? 'checked' : ''} class="${className} ${MODAL_CLASSES.CHECKBOX}">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate pointer-events-none">${labelFn(item)}</span>
                         </label>
                     `;
     }).join('')}

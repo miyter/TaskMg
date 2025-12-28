@@ -5,38 +5,9 @@
 import { formatDateForInput } from './modal-helpers.js';
 import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
 import { getTimeBlocks } from '../../store/timeblocks.js';
+import { MODAL_CLASSES } from '../core/ui-modal-constants.js';
 
-/**
- * 繰り返し設定の曜日チェックボックスHTMLを生成
- */
-function createDaysCheckboxesHTML(recurrenceDays = []) {
-    const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
-    return dayLabels.map((day, index) => `
-        <label class="flex items-center space-x-1 cursor-pointer">
-            <input type="checkbox" data-day-index="${index}" ${recurrenceDays.includes(index) ? 'checked' : ''} 
-                   class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded">
-            <span class="text-xs text-gray-700 dark:text-gray-300">${day}</span>
-        </label>
-    `).join('');
-}
-
-/**
- * セレクトボックスのオプションを生成
- */
-function createSelectOptions(items, selectedId, labelFn) {
-    return items.map(item => `
-        <option value="${item.id || item}" ${(item.id || item) == selectedId ? 'selected' : ''}>
-            ${labelFn(item)}
-        </option>
-    `).join('');
-}
-
-/**
- * タスク編集モーダル全体のHTMLを生成
- */
-// ... imports
-
-const STORAGE_KEY_SCHEDULE_OPEN = 'task_modal_schedule_open';
+// ... (helpers)
 
 /**
  * タスク編集モーダル全体のHTMLを生成
@@ -57,13 +28,8 @@ export function buildModalHTML(task) {
     const durationOptions = createSelectOptions([30, 45, 60, 75, 90], task.duration, d => `${d} min`);
 
     // アコーディオンの初期状態判定
-    // 1. データがある場合はデフォルトで開く
-    // 2. ユーザーが明示的に閉じた履歴があればそれを優先する
     const hasScheduleData = dueDateValue || recurrence.type !== 'none' || task.timeBlockId || task.duration;
     const storedState = localStorage.getItem(STORAGE_KEY_SCHEDULE_OPEN);
-
-    // データがあるなら基本開く。ただし、明示的に 'false' が保存されていたら閉じる。
-    // データがないなら基本閉じる。ただし、明示的に 'true' が保存されていたら開く。
     let isOpen = hasScheduleData;
     if (storedState !== null) {
         isOpen = storedState === 'true';
@@ -72,22 +38,22 @@ export function buildModalHTML(task) {
     }
 
     return `
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" role="dialog">
+        <div class="${MODAL_CLASSES.CONTAINER}">
+            <div class="${MODAL_CLASSES.DIALOG} ${MODAL_CLASSES.WIDTH.DEFAULT}" role="dialog">
                 
                 <!-- ヘッダー（タイトル入力） -->
-                <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                <div class="${MODAL_CLASSES.HEADER}">
                     <input type="text" id="modal-task-title" value="${task.title}" placeholder="タスクのタイトル"
                         class="w-full text-xl font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100">
-                    <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 transition ml-4">
+                    <button id="close-modal-btn" class="${MODAL_CLASSES.CLOSE_BUTTON}">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
                 <!-- ボディ (2カラムレイアウト) -->
-                <div class="px-6 py-6 overflow-y-auto flex-1 min-h-0 bg-gray-50/30 dark:bg-gray-900/10">
+                <div class="${MODAL_CLASSES.BODY} bg-gray-50/30 dark:bg-gray-900/10">
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
-                        
+                        <!-- コンテンツ省略なしで維持 -->
                         <!-- 左カラム (8/12): メモ -->
                         <div class="md:col-span-8 flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
                             <div class="flex justify-between items-center mb-2">
@@ -184,15 +150,13 @@ export function buildModalHTML(task) {
                 </div>
 
                 <!-- フッター -->
-                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-center border-t border-gray-100 dark:border-gray-700">
-                    <button id="delete-task-modal-btn" class="text-gray-400 hover:text-red-500 text-sm font-medium flex items-center group transition">
+                <div class="${MODAL_CLASSES.FOOTER}">
+                    <button id="delete-task-modal-btn" class="text-gray-400 hover:text-red-500 text-sm font-medium flex items-center group transition mr-auto">
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         削除
                     </button>
-                    <div class="flex gap-3">
-                        <button id="cancel-modal-btn" class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 transition">キャンセル</button>
-                        <button id="save-task-modal-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-md transition transform active:scale-95">保存</button>
-                    </div>
+                    <button id="cancel-modal-btn" class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 transition">キャンセル</button>
+                    <button id="save-task-modal-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-md transition transform active:scale-95">保存</button>
                 </div>
             </div>
         </div>
