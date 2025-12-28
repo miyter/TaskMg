@@ -51,7 +51,64 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
     setupImportHandler();
     setupPasswordHandler();
     setupLogoutHandler(closeModal);
+    setupAccordionHandlers();
 }
+
+function setupAccordionHandlers() {
+    const headers = document.querySelectorAll('.accordion-header');
+
+    headers.forEach(header => {
+        header.addEventListener('click', () => {
+            const currentItem = header.parentElement;
+            const currentContent = currentItem.querySelector('.accordion-content');
+            const currentIcon = header.querySelector('.accordion-icon');
+            const isClosing = currentContent.style.maxHeight !== '0px' && currentContent.style.maxHeight !== '';
+
+            // Close all others
+            document.querySelectorAll('.settings-accordion').forEach(item => {
+                if (item !== currentItem) {
+                    const content = item.querySelector('.accordion-content');
+                    const icon = item.querySelector('.accordion-icon');
+                    content.style.maxHeight = '0px';
+                    content.classList.remove('opacity-100');
+                    content.classList.add('opacity-0');
+                    icon.classList.remove('rotate-180');
+                }
+            });
+
+            // Toggle current
+            if (isClosing) {
+                currentContent.style.maxHeight = '0px';
+                currentContent.classList.remove('opacity-100');
+                currentContent.classList.add('opacity-0');
+                currentIcon.classList.remove('rotate-180');
+            } else {
+                currentContent.style.maxHeight = currentContent.scrollHeight + 'px';
+                currentContent.classList.remove('opacity-0');
+                currentContent.classList.add('opacity-100');
+                currentIcon.classList.add('rotate-180');
+            }
+        });
+    });
+
+    // Initialize height for any pre-opened items (like Appearance)
+    // This ensures the animation works correctly from the start
+    document.querySelectorAll('.settings-accordion').forEach(item => {
+        const content = item.querySelector('.accordion-content');
+        if (!content.style.maxHeight) { // If it doesn't have inline style (meaning it's open via class logic in view.js)
+            // view.js sets no inline style for open implementation? 
+            // Wait, view.js logic was: style="${isOpen ? '' : 'max-height: 0px;'}"
+            // So if open, style is empty.
+            // We need to set exact pixel height for transition to work if we want to close it later smoothly?
+            // Actually, from 'auto' to '0' transition doesn't work well in CSS.
+            // So we should set it to scrollHeight initially if it's open.
+            if (content.classList.contains('opacity-100')) {
+                content.style.maxHeight = content.scrollHeight + 'px';
+            }
+        }
+    });
+}
+
 
 // ... helper functions ...
 
