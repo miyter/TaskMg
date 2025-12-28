@@ -5,16 +5,18 @@
 // フォントの選択肢定義
 export const FONT_OPTIONS = {
     EN: [
-        { value: 'Inter', label: 'Inter (Standard)' },
-        { value: 'Roboto Mono', label: 'Roboto Mono (Monospace)' },
-        { value: 'Lora', label: 'Lora (Serif)' },
-        { value: 'Oswald', label: 'Oswald (Condensed)' }
+        { value: 'Inter', label: 'Inter' },
+        { value: 'Roboto', label: 'Roboto' },
+        { value: 'Segoe UI', label: 'Segoe UI' },
+        { value: '-apple-system, BlinkMacSystemFont, "San Francisco", "Helvetica Neue", sans-serif', label: 'San Francisco' },
+        { value: '"Google Sans", "Open Sans"', label: 'Google Sans' }
     ],
     JP: [
-        { value: 'M PLUS 2', label: 'M PLUS 2 (Standard)' },
-        { value: 'Noto Sans JP', label: 'Noto Sans JP' },
-        { value: 'Yu Mincho', label: 'Yu Mincho (Serif)' },
-        { value: 'BIZ UDPGothic', label: 'BIZ UDPGothic' }
+        { value: '"Hiragino Kaku Gothic ProN", "Hiragino Sans"', label: 'ヒラギノ角ゴ' },
+        { value: '"Noto Sans JP"', label: 'Noto Sans JP' },
+        { value: '"LINE Seed JP"', label: 'LINE Seed JP' },
+        { value: '"M PLUS 2"', label: 'M PLUS 2' },
+        { value: '"BIZ UDPGothic"', label: 'BIZ UDPゴシック' }
     ]
 };
 

@@ -41,7 +41,12 @@ export function setupGlobalEventListeners() {
                 isFirstWorkspaceLoad = false;
                 try {
                     const saved = JSON.parse(localStorage.getItem('lastPage'));
-                    setCurrentFilter(saved ? { type: saved.page, id: saved.id || null } : { type: 'inbox' });
+                    // 設定画面は自動で開かないようにする
+                    if (saved && saved.page === 'settings') {
+                        setCurrentFilter({ type: 'inbox' });
+                    } else {
+                        setCurrentFilter(saved ? { type: saved.page, id: saved.id || null } : { type: 'inbox' });
+                    }
                 } catch (e) {
                     setCurrentFilter({ type: 'inbox' });
                 }
@@ -64,7 +69,10 @@ export function setupGlobalEventListeners() {
         const { page, id } = e.detail;
         setCurrentFilter({ type: page, id: id || null });
 
-        localStorage.setItem('lastPage', JSON.stringify({ page, id: id || null }));
+        // 設定画面は保存しない
+        if (page !== 'settings') {
+            localStorage.setItem('lastPage', JSON.stringify({ page, id: id || null }));
+        }
         updateUI();
     });
 

@@ -75,6 +75,66 @@ function insertText(textarea, prefix, suffix = '') {
     textarea.dispatchEvent(new Event('input'));
 }
 
+
+/**
+ * リストの状態を切り替える（マークダウン）
+ * 既存のリストマーカーがあれば置換/削除し、なければ追加する
+ */
+function toggleList(textarea, marker) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+
+    // 選択範囲が含まれる行の開始と終了を取得
+    let lineStart = text.lastIndexOf('\n', start - 1) + 1;
+    let lineEnd = text.indexOf('\n', end);
+    if (lineEnd === -1) lineEnd = text.length;
+
+    const selectionContent = text.substring(lineStart, lineEnd);
+    const lines = selectionContent.split('\n');
+
+    // リストマーカー検出用正規表現
+    // 行頭の空白($1) + マーカー($2) + 空白($3)
+    const listRegex = /^(\s*)([-*]|\d+\.)(\s+)/;
+
+    const newLines = lines.map(line => {
+        const match = line.match(listRegex);
+        if (match) {
+            const currentMarker = match[2];
+
+            // ターゲットが順序付きか判定
+            const isTargetOrdered = /^\d+\.\s*$/.test(marker);
+            // 現在が順序付きか判定
+            const isCurrentOrdered = /^\d+\.$/.test(currentMarker);
+            const isCurrentUnordered = /^[-*]$/.test(currentMarker);
+
+            // 同じ種類のマーカーなら削除（トグルオフ）
+            if ((isTargetOrdered && isCurrentOrdered) || (!isTargetOrdered && isCurrentUnordered)) {
+                return line.replace(listRegex, '$1'); // マーカーと直後のスペースを削除
+            } else {
+                // 違う種類なら置換
+                // $1(インデント) + 新マーカー + 残りのテキスト
+                // マーカーには既にスペースが含まれていると仮定するか、ここで調整するか
+                // replaceのロジック: 元のマーカー+スペース を 新マーカー に置き換える
+                return line.replace(listRegex, `$1${marker}`);
+            }
+        } else {
+            // マーカーがない場合は追加
+            return marker + line;
+        }
+    });
+
+    const newContent = newLines.join('\n');
+
+    // テキスト更新
+    // setRangeTextはUndoスタックに有利な場合があるが、ここではシンプルに実装
+    textarea.setRangeText(newContent, lineStart, lineEnd, 'select');
+
+    // イベント発火
+    textarea.dispatchEvent(new Event('input'));
+    textarea.focus();
+}
+
 /**
  * Markdown入力とプレビューの切り替えをセットアップ
  */
@@ -130,10 +190,10 @@ export function setupMarkdownControls() {
         boldBtn.addEventListener('click', () => insertText(textarea, '**', '**'));
     }
     if (listBtn) {
-        listBtn.addEventListener('click', () => insertText(textarea, '- ')); // 行頭挿入の簡易版
+        listBtn.addEventListener('click', () => toggleList(textarea, '- ')); // 切り替えロジックを使用
     }
     if (orderedBtn) {
-        orderedBtn.addEventListener('click', () => insertText(textarea, '1. ')); // 行頭挿入の簡易版
+        orderedBtn.addEventListener('click', () => toggleList(textarea, '1. ')); // 切り替えロジックを使用
     }
 
     // 初期状態（編集モード）に合わせてUIを強制
