@@ -90,5 +90,5 @@ export function updateView(allTasks, allProjects, allLabels) {
     };
 
     const processedTasks = getProcessedTasks(allTasks, config);
-    renderTaskView(processedTasks, allProjects, allLabels, config.projectId, config.labelId);
+    renderTaskView(processedTasks, allProjects, allLabels, config.projectId, config.labelId, config.timeBlockId);
 }

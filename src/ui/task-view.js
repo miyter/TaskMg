@@ -7,6 +7,7 @@
 import { renderTaskList } from './task-list.js';
 import { renderInlineInput } from './task-input.js';
 import { sortTasks } from '../logic/sort.js';
+import { renderTimeBlockStats } from './components/TimeBlockStats.js';
 
 // main.js 等で利用するために再エクスポート
 export { renderTaskList };
@@ -18,8 +19,9 @@ export { renderTaskList };
  * @param {Array} allLabels - 全ラベルの配列 (追加)
  * @param {string|null} projectId - 現在のプロジェクトID
  * @param {string|null} labelId - 現在のラベルID
+ * @param {string|null} timeBlockId - TimeBlock ID for stats
  */
-export function renderTaskView(tasks, allProjects, allLabels = [], projectId = null, labelId = null) {
+export function renderTaskView(tasks, allProjects, allLabels = [], projectId = null, labelId = null, timeBlockId = null) {
     const container = document.getElementById('task-view');
     if (!container) return;
 
@@ -32,7 +34,7 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
     // 3. どちらもなければデフォルト
     const sortSelect = document.getElementById('sort-select');
     const sortTrigger = document.getElementById('sort-trigger');
-    
+
     let sortValue = 'createdAt_desc';
     if (sortSelect) {
         sortValue = sortSelect.value;
@@ -48,8 +50,19 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
     const listContainer = document.createElement('div');
     listContainer.id = 'task-list-container';
     container.appendChild(listContainer);
-    
+
     renderTaskList(listContainer, sortedTasks, allProjects);
+
+    // 1.5. 時間帯別工数統計 (指定がある場合)
+    // ユーザー要望：メインカラム下部（リストの下、入力欄の上あたりが良いか、あるいは入力の下か）
+    // "メインカラム下部にその時間帯専用の工数まとめセクションを追加"
+    // タスクリスト -> 統計 -> 入力フォーム の順が良いと判断
+    if (timeBlockId) {
+        const statsContainer = document.createElement('div');
+        statsContainer.id = 'timeblock-stats-container';
+        container.appendChild(statsContainer);
+        renderTimeBlockStats(statsContainer, tasks, timeBlockId);
+    }
 
     // 2. インライン入力フォームエリア
     const inputContainer = document.createElement('div');
@@ -66,10 +79,10 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
 function updateHeaderInfo(count, projectId, labelId, allProjects, allLabels) {
     const headerTitle = document.getElementById('header-title');
     const headerCount = document.getElementById('header-count');
-    
+
     if (headerTitle) {
         let title = "インボックス";
-        
+
         if (projectId) {
             const project = allProjects.find(p => p.id === projectId);
             title = project ? project.name : "プロジェクト";
@@ -77,10 +90,10 @@ function updateHeaderInfo(count, projectId, labelId, allProjects, allLabels) {
             const label = allLabels.find(l => l.id === labelId);
             title = label ? `${label.name}` : "ラベル";
         }
-        
+
         headerTitle.textContent = title;
     }
-    
+
     if (headerCount) {
         headerCount.textContent = `${count}件`;
     }
