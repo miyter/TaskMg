@@ -16,9 +16,9 @@ export const MODAL_CLASSES = {
     },
 
     // 内部セクション
-    HEADER: 'px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center',
-    BODY: 'p-6 overflow-y-auto flex-1 min-h-0 custom-scrollbar',
-    FOOTER: 'px-6 py-4 bg-gray-50 dark:bg-gray-900/50 flex justify-end items-center gap-3 border-t border-gray-100 dark:border-gray-700',
+    HEADER: 'px-modal py-modal border-b border-gray-100 dark:border-gray-700 flex justify-between items-center',
+    BODY: 'p-modal overflow-y-auto flex-1 min-h-0 custom-scrollbar',
+    FOOTER: 'px-modal py-modal bg-gray-50 dark:bg-gray-900/50 flex justify-end items-center gap-modal border-t border-gray-100 dark:border-gray-700',
 
     // 共通パーツ
     TITLE: 'text-lg font-bold text-gray-800 dark:text-white',

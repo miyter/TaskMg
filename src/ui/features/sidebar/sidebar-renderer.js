@@ -58,7 +58,13 @@ export function renderTimeBlocks() {
     const density = getSidebarDensity();
 
     blocks.forEach(block => {
-        const count = countActiveTasks(tasks, t => String(t.timeBlockId) === String(block.id));
+        // 修正: 厳密な比較と型変換
+        const count = countActiveTasks(tasks, t => {
+            // タスクのtimeBlockIdが 'null' 文字列として保存されているケースへの対応
+            const tid = t.timeBlockId === 'null' ? null : t.timeBlockId;
+            const bid = block.id;
+            return tid === bid;
+        });
         const displayName = `${block.start} - ${block.end}`;
         const item = createSidebarItem(displayName, 'timeblock', block.id, { color: block.color }, count, density);
 

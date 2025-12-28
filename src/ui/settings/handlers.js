@@ -37,11 +37,17 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
     // 背景パターン
     setupRadioGroupHandler('bg-pattern', 'background', () => applyBackground());
 
-    // サイドバー密度 (4 levels)
+    // サイドバー密度 (Global UI Density)
     setupRadioGroupHandler('sidebar-density', SIDEBAR_CONFIG.STORAGE_KEYS.DENSITY, (val) => {
-        // Legacy support: also update compact key for fallback
+        // Legacy support
         if (val === 'compact') localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, 'true');
         else localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, 'false');
+
+        // Apply global density class to body
+        const densities = ['compact', 'normal', 'comfortable', 'spacious'];
+        const classes = densities.map(d => `app-density-${d}`);
+        document.body.classList.remove(...classes);
+        document.body.classList.add(`app-density-${val}`);
 
         window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { density: val } }));
     });
