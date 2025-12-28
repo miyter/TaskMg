@@ -86,22 +86,52 @@ export function buildModalHTML(task) {
 
                 <!-- ボディ (2カラムレイアウト) -->
                 <div class="px-6 py-6 overflow-y-auto flex-1 min-h-0 bg-gray-50/30 dark:bg-gray-900/10">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
                         
-                        <!-- 左カラム: スケジュール設定 -->
-                        <div class="space-y-4">
+                        <!-- 左カラム (8/12): メモ -->
+                        <div class="md:col-span-8 flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    メモ (Markdown)
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-md p-0.5">
+                                        <button type="button" id="md-bold-btn" class="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors" title="太字 (Ctrl+B)">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h8a4 4 0 014 4 4 4 0 01-4 4H6V4zm0 8h9a4 4 0 014 4 4 4 0 01-4 4H6v-8z"></path></svg>
+                                        </button>
+                                        <div class="w-px h-3 bg-gray-300 dark:bg-gray-600 mx-0.5"></div>
+                                        <button type="button" id="md-list-btn" class="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors" title="箇条書き">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                                        </button>
+                                        <button type="button" id="md-ordered-btn" class="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-white dark:hover:bg-gray-600 transition-colors" title="番号付きリスト">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h12M7 12h12M7 17h12M3 7v.01M3 12v.01M3 17v.01"></path></svg>
+                                        </button>
+                                    </div>
+                                    <button id="toggle-memo-view" class="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-0.5 rounded transition-colors text-xs font-medium ml-2">プレビュー</button>
+                                </div>
+                            </div>
+                            <div class="flex-1 relative min-h-[200px]">
+                                <textarea id="modal-task-desc" placeholder="詳細を入力..."
+                                    class="w-full h-full p-3 bg-gray-50 dark:bg-gray-900/50 border-0 rounded-lg outline-none text-sm transition-all resize-y leading-relaxed focus:ring-1 focus:ring-blue-500/50 text-gray-800 dark:text-gray-200 font-mono">${task.description || ''}</textarea>
+                                <div id="modal-task-desc-preview" class="hidden absolute inset-0 w-full h-full p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm markdown-output overflow-y-auto"></div>
+                            </div>
+                        </div>
+
+                        <!-- 右カラム (4/12): スケジュール設定 -->
+                        <div class="md:col-span-4 space-y-4">
                             <details id="modal-task-schedule-details" class="group border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm" ${isOpen ? 'open' : ''}>
                                 <summary class="flex items-center justify-between px-4 py-3 cursor-pointer list-none outline-none bg-gray-50 dark:bg-gray-700/30 rounded-t-lg group-[:not([open])]:rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50">
                                     <span class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                                         <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        スケジュール設定
+                                        スケジュール
                                     </span>
                                     <span class="transform group-open:rotate-180 transition-transform text-gray-400">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                     </span>
                                 </summary>
                                 
-                                <div class="p-4 grid grid-cols-1 gap-4">
+                                <div class="p-4 flex flex-col gap-4">
                                     <div>
                                         <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">期限日</label>
                                         <div class="relative">
@@ -113,23 +143,22 @@ export function buildModalHTML(task) {
                                         </div>
                                     </div>
                                     
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">繰り返し</label>
-                                            <select id="modal-task-recurrence" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer">
-                                                <option value="none" ${recurrence.type === 'none' ? 'selected' : ''}>なし</option>
-                                                <option value="daily" ${recurrence.type === 'daily' ? 'selected' : ''}>毎日</option>
-                                                <option value="weekly" ${recurrence.type === 'weekly' ? 'selected' : ''}>毎週</option>
-                                                <option value="monthly" ${recurrence.type === 'monthly' ? 'selected' : ''}>毎月</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">時間帯</label>
-                                            <select id="modal-task-timeblock" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer">
-                                                <option value="">未定</option>
-                                                ${timeBlockOptions}
-                                            </select>
-                                        </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">繰り返し</label>
+                                        <select id="modal-task-recurrence" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer">
+                                            <option value="none" ${recurrence.type === 'none' ? 'selected' : ''}>なし</option>
+                                            <option value="daily" ${recurrence.type === 'daily' ? 'selected' : ''}>毎日</option>
+                                            <option value="weekly" ${recurrence.type === 'weekly' ? 'selected' : ''}>毎週</option>
+                                            <option value="monthly" ${recurrence.type === 'monthly' ? 'selected' : ''}>毎月</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">時間帯</label>
+                                        <select id="modal-task-timeblock" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer">
+                                            <option value="">未定</option>
+                                            ${timeBlockOptions}
+                                        </select>
                                     </div>
 
                                     <div>
@@ -148,22 +177,6 @@ export function buildModalHTML(task) {
                                     </div>
                                 </div>
                             </details>
-                        </div>
-        
-                        <!-- 右カラム: メモ -->
-                        <div class="flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
-                            <label class="text-xs font-semibold text-gray-500 mb-2 flex justify-between items-center uppercase">
-                                <span class="flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                    メモ (Markdown)
-                                </span>
-                                <button id="toggle-memo-view" class="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-0.5 rounded transition-colors text-xs font-medium">プレビュー</button>
-                            </label>
-                            <div class="flex-1 relative min-h-[200px]">
-                                <textarea id="modal-task-desc" placeholder="詳細を入力..."
-                                    class="w-full h-full p-3 bg-gray-50 dark:bg-gray-900/50 border-0 rounded-lg outline-none text-sm transition-all resize-y leading-relaxed focus:ring-1 focus:ring-blue-500/50 text-gray-800 dark:text-gray-200">${task.description || ''}</textarea>
-                                <div id="modal-task-desc-preview" class="hidden absolute inset-0 w-full h-full p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm markdown-output overflow-y-auto"></div>
-                            </div>
                         </div>
 
                     </div>
