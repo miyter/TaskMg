@@ -41,6 +41,14 @@ export function setupTaskModalEvents(container, currentTask, onClose) {
         if (e.target === e.currentTarget) onClose();
     });
 
+    // スケジュール設定の開閉状態を保存
+    const scheduleDetails = container.querySelector('#modal-task-schedule-details');
+    if (scheduleDetails) {
+        scheduleDetails.addEventListener('toggle', () => {
+            localStorage.setItem('task_modal_schedule_open', scheduleDetails.open);
+        });
+    }
+
     // 2. データ操作
     saveBtn?.addEventListener('click', async () => {
         await handleSaveTask(currentTask, onClose);
