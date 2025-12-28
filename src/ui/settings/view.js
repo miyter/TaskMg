@@ -138,6 +138,14 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
             </div>
             <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
         </button>
+        <button id="import-data-btn-new" class="w-full text-left px-3 py-2.5 bg-gray-50 dark:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors flex justify-between items-center group border border-gray-100 dark:border-gray-700">
+            <div>
+                <div class="text-sm font-medium text-gray-800 dark:text-gray-200">データをインポート (復元)</div>
+                <div class="text-xs text-gray-500 mt-0.5">バックアップJSONファイルから追加読み込み</div>
+            </div>
+            <svg class="w-5 h-5 text-gray-400 group-hover:text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        </button>
+        <input type="file" id="import-file-input" accept=".json" class="hidden" />
     `;
 
     const accountContent = `

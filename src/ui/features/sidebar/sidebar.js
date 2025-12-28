@@ -5,7 +5,7 @@
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { setupResizer, isDesktop, getStoredBool } from './sidebar-utils.js';
-import { buildSidebarHTML, setupSidebarToggles } from './sidebar-structure.js';
+import { buildSidebarHTML, setupSidebarToggles, setupSectionDragAndDrop } from './sidebar-structure.js';
 import { setupDropZone } from './sidebar-drag-drop.js';
 import { showFilterModal } from '../../modals/filter-modal.js';
 import { showTimeBlockModal } from '../timeblock/timeblock-modal.js';
@@ -52,6 +52,7 @@ export function initSidebar() {
     setupResizer(UI.sidebar, UI.resizer);
     setupSidebarEvents();
     setupSidebarToggles();
+    setupSectionDragAndDrop(); // ドラッグ&ドロップのセットアップ
     setupDataEventListeners();
 
     if (UI.inbox) setupDropZone(UI.inbox, 'inbox');

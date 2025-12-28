@@ -19,7 +19,8 @@ export const SIDEBAR_CONFIG = {
     STORAGE_KEYS: {
         WIDTH: 'sidebarWidth',
         COMPACT: 'sidebar_compact',
-        SECTION_PREFIX: 'sidebar-section:'
+        SECTION_PREFIX: 'sidebar-section:',
+        SECTION_ORDER: 'sidebar_section_order'
     },
     LIST_IDS: {
         PROJECTS: 'project-list',

@@ -15,6 +15,7 @@ import {
     updateTaskRaw,
     deleteTaskRaw,
     createBackupDataRaw,
+    importBackupDataRaw,
     getTaskByIdRaw
 } from './store-raw.js';
 
@@ -159,4 +160,10 @@ export async function createBackupData() {
     const userId = requireAuth();
     const workspaceId = requireWorkspace();
     return createBackupDataRaw(userId, workspaceId);
+}
+
+export async function importBackupData(data) {
+    const userId = requireAuth();
+    const workspaceId = requireWorkspace();
+    return importBackupDataRaw(userId, workspaceId, data);
 }

@@ -6,7 +6,7 @@
 import { auth } from '../../core/firebase.js';
 import { updateUserPassword } from '../auth.js';
 import { signOut } from 'firebase/auth';
-import { createBackupData } from '../../store/store.js';
+import { createBackupData, importBackupData } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { applyBackground } from '../layout/theme.js';
 import { SIDEBAR_CONFIG } from '../features/sidebar/sidebar-constants.js';
@@ -53,6 +53,7 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
 
     setupFontHandlers();
     setupExportHandler();
+    setupImportHandler();
     setupPasswordHandler();
     setupLogoutHandler(closeModal);
 }
@@ -143,6 +144,58 @@ function setupExportHandler() {
             btn.classList.remove('opacity-70', 'cursor-wait');
             label.textContent = originalText;
         }
+    };
+}
+
+function setupImportHandler() {
+    const btn = document.getElementById('import-data-btn-new');
+    const input = document.getElementById('import-file-input');
+    if (!btn || !input) return;
+
+    btn.onclick = () => {
+        input.value = ''; // Reset
+        input.click();
+    };
+
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                const json = JSON.parse(evt.target.result);
+
+                // バージョンチェック等は必要に応じて
+                if (!json.tasks || !json.projects) {
+                    throw new Error("Invalid backup format");
+                }
+
+                btn.disabled = true;
+                btn.classList.add('opacity-70', 'cursor-wait');
+                const originalText = btn.innerHTML; // アイコンなど含むのでHTML保存
+                btn.querySelector('div.font-medium').textContent = "インポート中...";
+
+                const result = await importBackupData(json);
+
+                showMessageModal({
+                    message: `インポート完了！\nタスク: ${result.tasksCount}件\nプロジェクト: ${result.projectsCount}件\nラベル: ${result.labelsCount}件`,
+                    type: 'success'
+                });
+
+                // リロードして反映
+                setTimeout(() => window.location.reload(), 1500);
+
+            } catch (err) {
+                console.error(err);
+                showMessageModal({ message: "インポートに失敗しました。\nファイルが破損している可能性があります。", type: 'error' });
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-wait');
+                // テキスト戻すのはリロードするなら不要だが念のため
+            }
+        };
+        reader.readAsText(file);
     };
 }
 

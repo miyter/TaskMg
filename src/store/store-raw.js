@@ -131,3 +131,89 @@ export async function getTaskByIdRaw(userId, workspaceId, taskId) {
     const docSnap = await getDoc(doc(db, path, taskId));
     return docSnap.exists() ? deserializeTask(docSnap.id, docSnap.data()) : null;
 }
+
+/**
+ * データのインポート処理
+ * 関係性（プロジェクトID、ラベルID）を維持しながら新規データとして作成する
+ */
+export async function importBackupDataRaw(userId, workspaceId, backupData) {
+    if (!userId || !workspaceId || !backupData) throw new Error("Invalid import parameters.");
+
+    const { tasks = [], projects = [], labels = [] } = backupData;
+    const projectMap = new Map(); // OldID -> NewID
+    const labelMap = new Map();   // OldID -> NewID
+
+    // 1. ラベルのインポート (名前重複チェック)
+    const currentLabelsSnap = await getDocs(collection(db, paths.labels(userId)));
+    const currentLabelNames = new Map();
+    currentLabelsSnap.forEach(doc => currentLabelNames.set(doc.data().name, doc.id));
+
+    // ラベル処理
+    for (const label of labels) {
+        if (!label.name) continue;
+
+        // 既存ラベルがある場合はそのIDを利用
+        if (currentLabelNames.has(label.name)) {
+            labelMap.set(label.id, currentLabelNames.get(label.name));
+        } else {
+            // 新規作成
+            const newLabelData = { ...label };
+            delete newLabelData.id; // 新規ID生成のため削除
+            const docRef = await addDoc(collection(db, paths.labels(userId)), newLabelData);
+            labelMap.set(label.id, docRef.id);
+            currentLabelNames.set(label.name, docRef.id); // 重複防止用に追加
+        }
+    }
+
+    // 2. プロジェクトのインポート
+    for (const project of projects) {
+        const newProjectData = { ...project };
+        delete newProjectData.id;
+
+        // 日付文字列をDateオブジェクトに復元
+        if (typeof newProjectData.createdAt === 'string') newProjectData.createdAt = new Date(newProjectData.createdAt);
+
+        // メインのワークスペースに紐付け
+        const docRef = await addDoc(collection(db, paths.projects(userId, workspaceId)), newProjectData);
+        projectMap.set(project.id, docRef.id);
+    }
+
+    // 3. タスクのインポート
+    const tasksPromises = tasks.map(async (task) => {
+        const newTaskData = { ...task };
+        delete newTaskData.id;
+
+        // 日付復元
+        if (typeof newTaskData.createdAt === 'string') newTaskData.createdAt = new Date(newTaskData.createdAt);
+        if (typeof newTaskData.dueDate === 'string') newTaskData.dueDate = new Date(newTaskData.dueDate);
+        // Firestore Timestampへ変換 (addTaskRaw相当の処理)
+        if (newTaskData.dueDate) newTaskData.dueDate = toFirestoreDate(newTaskData.dueDate);
+
+        // IDの書き換え
+        if (newTaskData.projectId && projectMap.has(newTaskData.projectId)) {
+            newTaskData.projectId = projectMap.get(newTaskData.projectId);
+        } else {
+            newTaskData.projectId = null; // 該当プロジェクトがない場合は未分類へ
+        }
+
+        if (Array.isArray(newTaskData.labelIds)) {
+            newTaskData.labelIds = newTaskData.labelIds
+                .map(oldId => labelMap.get(oldId))
+                .filter(newId => newId); // マッピングできたものだけ残す
+        }
+
+        // ワークスペースID等はパスで決まるためデータには含めなくて良いが、念のためクリーンアップ
+        // ownerIdはaddDoc時に指定されるものを使うか、バックアップのものは無視
+        newTaskData.ownerId = userId;
+
+        return addDoc(collection(db, paths.tasks(userId, workspaceId)), newTaskData);
+    });
+
+    await Promise.all(tasksPromises);
+
+    return {
+        tasksCount: tasks.length,
+        projectsCount: projects.length,
+        labelsCount: labels.length
+    };
+}
