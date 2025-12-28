@@ -11,6 +11,12 @@ import { applyFonts, applyFontSize } from './layout/fonts.js';
 let isInitialized = false;
 
 // ...
+/**
+ * 既存の設定モーダルを削除
+ */
+function closeSettingsModal() {
+    document.getElementById(SIDEBAR_CONFIG.MODAL_IDS.SETTINGS)?.remove();
+}
 
 /**
  * 設定画面の初期化

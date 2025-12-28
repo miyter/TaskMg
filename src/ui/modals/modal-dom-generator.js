@@ -37,12 +37,12 @@ function createSelectOptions(items, selectedId, labelFn) {
 export function buildModalHTML(task) {
     let dueDate = task.dueDate;
     const recurrence = task.recurrence || { type: 'none', days: [] };
-    
+
     // 繰り返し設定時の初期日付補完
     if (recurrence.type !== 'none' && !dueDate) {
         dueDate = getInitialDueDateFromRecurrence(recurrence);
     }
-    
+
     const dueDateValue = dueDate ? formatDateForInput(dueDate.toDate ? dueDate.toDate() : new Date(dueDate)) : '';
 
     // オプション生成
@@ -83,8 +83,13 @@ export function buildModalHTML(task) {
                         <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/10 grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">期限日</label>
-                                <input type="date" id="modal-task-date" value="${dueDateValue}"
-                                    class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm">
+                                <div class="relative">
+                                    <input type="date" id="modal-task-date" value="${dueDateValue}"
+                                        class="w-full pl-3 pr-10 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:justify-end [&::-webkit-calendar-picker-indicator]:cursor-pointer">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500 dark:text-gray-400">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">繰り返し</label>

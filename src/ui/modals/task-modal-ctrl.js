@@ -61,6 +61,21 @@ export function setupTaskModalEvents(container, currentTask, onClose) {
         });
     });
 
+    // 日付入力のクリック体験向上 (カレンダーを明示的に開く)
+    const dateInput = modalElements.date;
+    if (dateInput) {
+        dateInput.addEventListener('click', (e) => {
+            if (typeof dateInput.showPicker === 'function') {
+                try {
+                    dateInput.showPicker();
+                } catch (err) {
+                    // preventDefaultなどが影響する場合の対策（通常は不要）
+                    console.debug('showPicker failed or already open', err);
+                }
+            }
+        });
+    }
+
     // 3. UIサブモジュールの初期化
     setupRecurrenceControls();
     setupMarkdownControls();
@@ -94,7 +109,7 @@ async function handleSaveTask(currentTask, onClose) {
                 .map(cb => parseInt(cb.dataset.dayIndex ?? '', 10))
                 .filter(n => !isNaN(n))
                 .sort((a, b) => a - b);
-            
+
             if (days.length === 0) {
                 showMessageModal({ message: "曜日を選択してくれ", type: 'error' });
                 return;
