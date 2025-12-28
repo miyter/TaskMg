@@ -18,6 +18,12 @@ export function showFilterModal(filterToEdit = null) {
     const projects = getProjects();
     const timeBlocks = getTimeBlocks();
     const durations = [30, 45, 60, 75, 90];
+    const dateOptions = [
+        { id: 'today', name: '今日 (過去含む)' },
+        { id: 'tomorrow', name: '明日' },
+        { id: 'week', name: '今週' },
+        { id: 'next-week', name: '来週' }
+    ];
 
     const state = parseFilterQuery(filterToEdit?.query || '');
     const modal = document.createElement('div');
@@ -42,6 +48,7 @@ export function showFilterModal(filterToEdit = null) {
                     ${createSelectionBox('プロジェクト', projects, state.project, 'filter-project-checkbox')}
                     ${createTimeBlockBox(timeBlocks, state.timeblock)}
                     ${createSelectionBox('所要時間', durations, state.duration, 'filter-duration-checkbox', d => `${d} min`)}
+                    ${createSelectionBox('日付', dateOptions, state.date, 'filter-date-checkbox')}
                 </div>
             </div>
             <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700">
@@ -58,7 +65,7 @@ export function showFilterModal(filterToEdit = null) {
 }
 
 function parseFilterQuery(query) {
-    const result = { project: [], timeblock: [], duration: [] };
+    const result = { project: [], timeblock: [], duration: [], date: [] };
     const regex = /(\w+):([^ ]+)/g;
     let match;
     while ((match = regex.exec(query)) !== null) {
@@ -122,7 +129,8 @@ function setupEvents(modal, filterToEdit) {
         const queryMap = {
             project: getVals('filter-project-checkbox'),
             timeblock: timeblocks,
-            duration: getVals('filter-duration-checkbox')
+            duration: getVals('filter-duration-checkbox'),
+            date: getVals('filter-date-checkbox')
         };
 
         const queryStr = Object.entries(queryMap)
