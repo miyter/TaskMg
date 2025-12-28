@@ -14,14 +14,6 @@ import { getCurrentWorkspaceId } from '../../store/workspace.js';
 import { updateView } from '../layout/ui-view-manager.js';
 
 // 変数宣言（巻き上げ対策として const/let を明示的にトップレベル配置）
-const state = {
-    tasks: [],
-    projects: [],
-    labels: [],
-    timeBlocks: [],
-    filters: []
-};
-
 const subscriptions = {
     tasks: null,
     projects: null,
@@ -41,7 +33,11 @@ export function updateUI() {
     if (updateTimer) return;
 
     updateTimer = requestAnimationFrame(() => {
-        const { tasks, projects, labels } = state;
+        // ストアから直接最新データを取得（SSOT）
+        const tasks = getData.tasks();
+        const projects = getData.projects();
+        const labels = getData.labels();
+
         updateView(tasks, projects, labels);
         updateTimer = null;
     });
@@ -75,30 +71,13 @@ export function startAllSubscriptions(userId) {
     isDataSyncing = true;
     console.log('[DataSync] Starting subscriptions for workspace:', workspaceId);
 
-    subscriptions.tasks = subscribeToTasks(workspaceId, (data) => {
-        state.tasks = data;
-        notifyUpdate('tasks-updated');
-    });
-
-    subscriptions.projects = subscribeToProjects(workspaceId, (data) => {
-        state.projects = data;
-        notifyUpdate('projects-updated');
-    });
-
-    subscriptions.labels = subscribeToLabels(workspaceId, (data) => {
-        state.labels = data;
-        notifyUpdate('labels-updated');
-    });
-
-    subscriptions.timeBlocks = subscribeToTimeBlocks(workspaceId, (data) => {
-        state.timeBlocks = data;
-        notifyUpdate('timeblocks-updated');
-    });
-
-    subscriptions.filters = subscribeToFilters(workspaceId, (data) => {
-        state.filters = data;
-        notifyUpdate('filters-updated');
-    });
+    // データはStore側でキャッシュされるため、ここでは受け取る必要はないが
+    // コールバックは更新通知のために必要
+    subscriptions.tasks = subscribeToTasks(workspaceId, () => notifyUpdate('tasks-updated'));
+    subscriptions.projects = subscribeToProjects(workspaceId, () => notifyUpdate('projects-updated'));
+    subscriptions.labels = subscribeToLabels(workspaceId, () => notifyUpdate('labels-updated'));
+    subscriptions.timeBlocks = subscribeToTimeBlocks(workspaceId, () => notifyUpdate('timeblocks-updated'));
+    subscriptions.filters = subscribeToFilters(workspaceId, () => notifyUpdate('filters-updated'));
 }
 
 /**
@@ -117,29 +96,28 @@ export function stopDataSync(stopWorkspaceSync = false) {
         }
     });
 
+    // キャッシュクリア（Store側のキャッシュクリアメソッドを呼ぶべきだが、現状の実装ではStoreの購読解除時に空配列をコールバックしているので
+    // UI更新によって実質クリアされる。厳密にはStoreにclearCacheメソッドを作るのが良い）
     clearTimeBlocksCache();
     clearFiltersCache();
-
-    // 状態リセット（オブジェクトの参照を維持しつつ中身を空にする場合はこちら、
-    // しかし今回は再代入不可のconstではなくプロパティ操作でリセット推奨だが、
-    // ここでは単純化のため配列長0にする）
-    state.tasks = [];
-    state.projects = [];
-    state.labels = [];
-    state.timeBlocks = [];
-    state.filters = [];
 
     isDataSyncing = false;
     updateUI();
 }
 
-// --- Getters ---
+// --- Getters (Storeへのプロキシ) ---
+import { getTasks } from '../../store/store-raw.js';
+import { getProjects } from '../../store/projects-raw.js';
+import { getLabels } from '../../store/labels-raw.js';
+import { getTimeBlocks } from '../../store/timeblocks.js';
+import { getFilters } from '../../store/filters.js';
+
 export const getData = {
-    tasks: () => state.tasks,
-    projects: () => state.projects,
-    labels: () => state.labels,
-    timeBlocks: () => state.timeBlocks,
-    filters: () => state.filters,
+    tasks: getTasks,
+    projects: getProjects,
+    labels: getLabels,
+    timeBlocks: getTimeBlocks,
+    filters: getFilters,
     workspaceId: () => getCurrentWorkspaceId()
 };
 
