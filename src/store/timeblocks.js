@@ -87,7 +87,7 @@ export async function saveTimeBlock(block) {
         return true;
     } catch (e) {
         console.error("[TimeBlocks] Save error:", e);
-        showMessageModal("保存に失敗した。");
+        // showMessageModal("保存に失敗した。");
     }
 }
 

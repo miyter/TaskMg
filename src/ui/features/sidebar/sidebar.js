@@ -4,7 +4,7 @@
  * これにより、データ同期後もコンパクト表示の設定が正しく反映される
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
-import { setupResizer, isDesktop, getStoredBool } from './sidebar-utils.js';
+import { setupResizer, isDesktop, getStoredBool, getSidebarDensity } from './sidebar-utils.js';
 import { buildSidebarHTML, setupSidebarToggles, setupSectionDragAndDrop } from './sidebar-structure.js';
 import { setupDropZone } from './sidebar-drag-drop.js';
 import { showFilterModal } from '../../modals/filter-modal.js';
@@ -67,9 +67,10 @@ export function initSidebar() {
     updateSidebarVisibility();
 
     // 初期化時の適用
-    const isCompact = getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
-    applyCompactMode(isCompact);
-    setupCompactModeListener();
+    const density = getSidebarDensity();
+    applyDensityMode(density);
+    setupDensityModeListener();
+
 
     // 初回描画を強制実行
     if (refreshSidebarHandler) refreshSidebarHandler();
@@ -88,12 +89,13 @@ function setupDataEventListeners() {
         updateEvents.forEach(ev => document.removeEventListener(ev, refreshSidebarHandler));
     }
 
+
     refreshSidebarHandler = () => {
         renderSidebarItems();
 
-        // 【修正】動的アイテム描画後にコンパクトモードを再適用
-        const isCompact = getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
-        applyCompactMode(isCompact);
+        // 【修正】動的アイテム描画後に密度設定を再適用
+        const density = getSidebarDensity();
+        applyDensityMode(density);
     };
 
     updateEvents.forEach(ev => document.addEventListener(ev, refreshSidebarHandler));
@@ -129,13 +131,14 @@ function setupSidebarEvents() {
     UI.closeBtn?.addEventListener('click', () => toggleSidebar(false));
 }
 
-function applyCompactMode(isCompact) {
+function applyDensityMode(density) {
     const items = document.querySelectorAll('.sidebar-item-row');
-    const { COMPACT_PY, NORMAL_PY } = SIDEBAR_CONFIG.CLASSES;
+    const densityClasses = Object.values(SIDEBAR_CONFIG.DENSITY_CLASSES);
+    const targetClass = SIDEBAR_CONFIG.DENSITY_CLASSES[density] || SIDEBAR_CONFIG.DENSITY_CLASSES.normal;
 
     items.forEach(item => {
-        item.classList.toggle(COMPACT_PY, isCompact);
-        item.classList.toggle(NORMAL_PY, !isCompact);
+        item.classList.remove(...densityClasses);
+        item.classList.add(targetClass);
     });
 }
 
@@ -178,8 +181,8 @@ function updateSidebarVisibility() {
     }
 }
 
-function setupCompactModeListener() {
+function setupDensityModeListener() {
     window.addEventListener('sidebar-settings-updated', (e) => {
-        applyCompactMode(Boolean(e.detail.compact));
+        applyDensityMode(e.detail.density);
     });
 }
