@@ -82,7 +82,7 @@ export function updateView(allTasks, allProjects, allLabels) {
     const config = {
         keyword: '',
         showCompleted,
-        projectId: currentFilter.type === 'project' ? currentFilter.id : null,
+        projectId: currentFilter.type === 'inbox' ? 'unassigned' : (currentFilter.type === 'project' ? currentFilter.id : null),
         labelId: currentFilter.type === 'label' ? currentFilter.id : null,
         timeBlockId: currentFilter.type === 'timeblock' ? currentFilter.id : null,
         duration: currentFilter.type === 'duration' ? currentFilter.id : null,

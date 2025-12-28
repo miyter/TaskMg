@@ -41,42 +41,41 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
     const sortedTasks = sortTasks(tasks, sortValue);
 
     container.innerHTML = '';
-    // レイアウト設定: 画面全体を使うためにflex columnとoverflow制御
-    container.className = 'flex flex-col h-full relative overflow-hidden';
+    // レイアウト設定: 画面全体を使うが、コンテンツは高さ固定のリストを含む
+    container.className = 'flex flex-col h-full bg-transparent overflow-y-hidden';
 
-    // 1. スクロール領域 (リスト + 統計 + 入力フォーム)
-    const scrollContainer = document.createElement('div');
-    scrollContainer.className = 'flex-1 overflow-y-auto custom-scrollbar p-1 pb-20'; // フッター分の余白
-    container.appendChild(scrollContainer);
+    // メインコンテンツラッパー (全体レイアウト制御)
+    const contentWrapper = document.createElement('div');
+    contentWrapper.className = 'w-full max-w-3xl mx-auto h-full flex flex-col pt-2'; // 中央寄せ
+    container.appendChild(contentWrapper);
 
-    // タスクリスト
+    // 1. タスクリスト表示エリア (高さ固定・内部スクロール)
+    // タスク12件分程度の高さを確保 (約520px)
     const listContainer = document.createElement('div');
     listContainer.id = 'task-list-container';
-    scrollContainer.appendChild(listContainer);
+    listContainer.className = 'flex-none h-[520px] overflow-y-auto custom-scrollbar pr-2 mb-4 scroll-smooth';
+    contentWrapper.appendChild(listContainer);
+
     renderTaskList(listContainer, sortedTasks, allProjects);
 
-    // 時間帯別統計 (指定がある場合、リストの直下に表示)
+    // 2. 時間帯別工数統計 (リストの直下、スクロール外の固定位置)
     if (timeBlockId) {
         const statsContainer = document.createElement('div');
         statsContainer.id = 'timeblock-stats-container';
-        scrollContainer.appendChild(statsContainer);
+        statsContainer.className = 'flex-none mb-4 animate-fade-in';
+        contentWrapper.appendChild(statsContainer);
         renderTimeBlockStats(statsContainer, tasks, timeBlockId);
     }
 
-    // インライン入力フォームエリア (初期は非表示、フッターボタンで展開)
+    // 3. タスク追加エリア (その下、固定位置)
     const inputContainer = document.createElement('div');
     inputContainer.id = 'inline-input-container';
-    inputContainer.className = 'mt-4 hidden'; // 初期非表示
-    scrollContainer.appendChild(inputContainer);
+    inputContainer.className = 'flex-none pb-10'; // 下部に余白
+    contentWrapper.appendChild(inputContainer);
 
-    // 2. 固定フッター (タスク追加ボタン)
-    const footerContainer = document.createElement('div');
-    footerContainer.id = 'fixed-buffer-footer';
-    footerContainer.className = 'absolute bottom-0 left-0 w-full h-12 bg-white/90 dark:bg-[#1e1e1e]/90 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 z-20';
-    container.appendChild(footerContainer);
-
-    // 固定フッターを描画
-    renderFixedAddTaskBar(footerContainer, inputContainer, projectId, labelId);
+    // 固定追加バーとして描画 (フッターではなく、静的配置)
+    // 第1引数をコンテナ自身にして、内部で書き換えさせる
+    renderFixedAddTaskBar(inputContainer, inputContainer, projectId, labelId);
 }
 
 /**

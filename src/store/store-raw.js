@@ -20,6 +20,7 @@ function deserializeTask(id, data) {
         createdAt: toJSDate(data.createdAt) || null,
         dueDate: toJSDate(data.dueDate) || null,
         recurrence: data.recurrence ?? null, // undefined を null に正規化
+        completedAt: toJSDate(data.completedAt) || null,
     };
 }
 
@@ -111,7 +112,13 @@ export async function addTaskRaw(userId, workspaceId, taskData) {
 
 export async function updateTaskStatusRaw(userId, workspaceId, taskId, status) {
     const path = paths.tasks(userId, workspaceId);
-    await updateDoc(doc(db, path, taskId), { status });
+    const updates = { status };
+    if (status === 'completed') {
+        updates.completedAt = serverTimestamp();
+    } else {
+        updates.completedAt = null;
+    }
+    await updateDoc(doc(db, path, taskId), updates);
 }
 
 export async function updateTaskRaw(userId, workspaceId, taskId, updates) {

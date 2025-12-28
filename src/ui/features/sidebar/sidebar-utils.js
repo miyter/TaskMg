@@ -99,5 +99,5 @@ export function isSidebarCompact() {
  */
 export function countActiveTasks(tasks, predicate) {
     if (!Array.isArray(tasks)) return 0;
-    return tasks.filter(task => !task.completed && predicate(task)).length;
+    return tasks.filter(task => task.status !== 'completed' && predicate(task)).length;
 }

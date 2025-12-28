@@ -14,21 +14,27 @@ export function getProcessedTasks(tasks, config) {
  * フィルタリングロジック
  */
 export function filterTasks(tasks, criteria) {
-    const { 
-        keyword, 
-        projectId, 
-        labelId, 
-        showCompleted, 
-        timeBlockId, 
-        duration 
+    const {
+        keyword,
+        projectId,
+        labelId,
+        showCompleted,
+        timeBlockId,
+        duration
     } = criteria;
-    
+
     return tasks.filter(task => {
         // 1. 完了状態
         if (!showCompleted && task.status === 'completed') return false;
 
         // 2. プロジェクト
-        if (projectId && task.projectId !== projectId) return false;
+        if (projectId) {
+            if (projectId === 'unassigned') {
+                if (task.projectId) return false;
+            } else if (task.projectId !== projectId) {
+                return false;
+            }
+        }
 
         // 3. ラベル
         if (labelId && (!task.labelIds || !task.labelIds.includes(labelId))) return false;
