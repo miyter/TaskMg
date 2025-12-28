@@ -64,9 +64,18 @@ function createRadioOption(name, value, label, isChecked, icon = '') {
     `;
 }
 
-function createSettingsSection(title, content, isOpen = false) {
+// ... imports ...
+
+// セクション開閉状態のキープレフィックス
+const SETTINGS_SECTION_PREFIX = 'settings_section_open_';
+
+function createSettingsSection(title, content, defaultOpen = false, id) {
+    const storageKey = SETTINGS_SECTION_PREFIX + id;
+    const isStoredOpen = localStorage.getItem(storageKey);
+    const isOpen = isStoredOpen !== null ? isStoredOpen === 'true' : defaultOpen;
+
     return `
-        <details class="group border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 overflow-hidden transition-all" ${isOpen ? 'open' : ''}>
+        <details class="group border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 overflow-hidden transition-all settings-section" ${isOpen ? 'open' : ''} data-id="${id}">
             <summary class="flex justify-between items-center px-3 py-2.5 cursor-pointer bg-gray-50 dark:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors select-none">
                 <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">${title}</h4>
                 <span class="transform group-open:rotate-180 transition-transform duration-200 text-gray-400">
@@ -81,12 +90,14 @@ function createSettingsSection(title, content, isOpen = false) {
 }
 
 export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
+    // ... (existing variable declarations) ...
     const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     const currentFontSize = localStorage.getItem('fontSize') || FONT_SIZES.MEDIUM;
     const currentBg = localStorage.getItem('background') || BACKGROUND_PATTERNS.NONE;
 
     const safeInitial = userInitial || '?';
 
+    // ... (content definitions unchanged) ...
     const displayContent = `
         <div>
             <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">テーマ</label>
@@ -155,17 +166,17 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
     `;
 
     return `
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] h-full sm:h-auto font-sans">
             <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
                 <h3 class="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">設定</h3>
                 <button id="close-settings-modal" class="text-gray-400 hover:text-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
 
             <div class="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-3">
-                ${createSettingsSection('表示設定', displayContent, true)}
-                ${createSettingsSection('フォント設定', getFontSettingsHTML())}
-                ${createSettingsSection('データ管理', dataContent)}
-                ${createSettingsSection('アカウント', accountContent)}
+                ${createSettingsSection('表示設定', displayContent, true, 'display')}
+                ${createSettingsSection('フォント設定', getFontSettingsHTML(), false, 'fonts')}
+                ${createSettingsSection('データ管理', dataContent, false, 'data')}
+                ${createSettingsSection('アカウント', accountContent, false, 'account')}
             </div>
 
             <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 flex justify-end">

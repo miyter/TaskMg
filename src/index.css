@@ -7,7 +7,8 @@
 @layer base {
     :root {
         --app-bg-light: #ffffff;
-        --app-bg-dark: #111827; /* gray-900 */
+        --app-bg-dark: #111827;
+        /* gray-900 */
         --font-en: 'Inter';
         --font-jp: 'M PLUS 2';
     }
@@ -18,12 +19,25 @@
     }
 
     /* 文字サイズ設定: Tailwind Configの値(@apply)を参照して一元化 */
-    body.font-large { @apply text-app-lg; }
-    body.font-medium { @apply text-app-md; }
-    body.font-small { @apply text-app-sm; }
+    /* !important を付与して、サイドバーや他のコンポーネントのデフォルトスタイルを確実に上書きする */
+    body.font-app-lg {
+        font-size: 1.125rem !important;
+        line-height: 1.75rem !important;
+    }
+
+    body.font-app-md {
+        font-size: 1rem !important;
+        line-height: 1.5rem !important;
+    }
+
+    body.font-app-sm {
+        font-size: 0.875rem !important;
+        line-height: 1.25rem !important;
+    }
 }
 
 @layer components {
+
     /* 共通のすりガラス効果: Configのshadow-glassを活用 */
     .glass-effect {
         @apply bg-white/70 dark:bg-gray-900/60 backdrop-blur-md border border-white/20 dark:border-gray-800/30 shadow-glass;

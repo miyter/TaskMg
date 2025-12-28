@@ -48,10 +48,24 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
         window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { compact: isCompact } }));
     });
 
+    // ... code ...
+    setupSettingsSectionToggles(modalOverlay);
+
     setupFontHandlers();
     setupExportHandler();
     setupPasswordHandler();
     setupLogoutHandler(closeModal);
+}
+
+function setupSettingsSectionToggles(modal) {
+    const details = modal.querySelectorAll('.settings-section');
+    details.forEach(detail => {
+        detail.addEventListener('toggle', () => {
+            const id = detail.dataset.id;
+            const isOpen = detail.open;
+            localStorage.setItem(`settings_section_open_${id}`, isOpen);
+        });
+    });
 }
 
 function setupRadioGroupHandler(name, storageKey, onUpdate) {
