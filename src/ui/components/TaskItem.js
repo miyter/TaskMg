@@ -37,7 +37,7 @@ export function createTaskItem(task) {
         <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 items-center">
             <div class="col-span-1 sm:col-span-7 flex flex-col justify-center">
                 <div class="leading-snug truncate font-medium transition-colors ${isCompleted ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}">${task.title}</div>
-                ${task.description ? `<div class="text-xs text-gray-400 mt-1 font-light line-clamp-2 markdown-output prose prose-xs dark:prose-invert max-w-none">${simpleMarkdownToHtml(task.description)}</div>` : ''}
+                ${task.description ? `<div class="text-xs text-gray-400 mt-0.5 font-light truncate markdown-summary">${simpleMarkdownToHtml(task.description.split('\n')[0]).replace(/<\/?p[^>]*>/g, '')}</div>` : ''}
             </div>
             
             <div class="col-span-1 sm:col-span-5 flex items-center sm:justify-end space-x-2 text-xs h-full mt-1 sm:mt-0 overflow-hidden">

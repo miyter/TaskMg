@@ -3,6 +3,7 @@
 
 import { deleteTask, updateTask } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
+import { getStartOfDay } from '../../utils/date.js';
 
 /**
  * コンテキストメニューを表示
@@ -45,16 +46,16 @@ export function showTaskContextMenu(task, x, y) {
     };
 
     menu.querySelector('#ctx-today').addEventListener('click', () => {
-        closeAndExec(() => updateTask(task.id, { dueDate: new Date() }));
+        closeAndExec(() => updateTask(task.id, { dueDate: getStartOfDay(new Date()) }));
     });
 
     menu.querySelector('#ctx-tomorrow').addEventListener('click', () => {
-        const d = new Date(); d.setDate(d.getDate() + 1);
+        const d = getStartOfDay(new Date()); d.setDate(d.getDate() + 1);
         closeAndExec(() => updateTask(task.id, { dueDate: d }));
     });
 
     menu.querySelector('#ctx-next-week').addEventListener('click', () => {
-        const d = new Date(); d.setDate(d.getDate() + (8 - d.getDay())); // 次の月躍
+        const d = getStartOfDay(new Date()); d.setDate(d.getDate() + (8 - d.getDay())); // 次の月曜
         closeAndExec(() => updateTask(task.id, { dueDate: d }));
     });
 

@@ -63,6 +63,8 @@ async function handleRecurringTask(completedTask) {
         dueDate: nextDueDate,
         projectId: completedTask.projectId || null,
         labelIds: completedTask.labelIds || [],
+        timeBlockId: completedTask.timeBlockId || null,
+        duration: completedTask.duration || null,
         recurrence: completedTask.recurrence,
     };
 
