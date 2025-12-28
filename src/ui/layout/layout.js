@@ -40,10 +40,10 @@ const createHeaderHTML = () => `
                     <span id="workspace-label" class="text-sm font-bold text-gray-800 dark:text-gray-200 max-w-[140px] truncate">読み込み中...</span>
                     <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
-                <div id="workspace-menu" class="absolute left-0 mt-2 w-60 origin-top-left rounded-lg shadow-xl bg-white dark:bg-gray-800 ring-1 ring-black/5 opacity-0 invisible scale-95 transition-all duration-150 transform pointer-events-none border border-gray-100 dark:border-gray-700">
-                    <div class="py-1 max-h-[300px] overflow-y-auto custom-scrollbar" id="workspace-list"></div>
+                <div id="workspace-menu" class="absolute left-0 mt-2 w-60 origin-top-left rounded-lg shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black/5 opacity-0 invisible scale-95 transition-all duration-150 transform pointer-events-none border border-gray-100 dark:border-gray-700 z-50">
+                    <div class="py-1 max-h-[300px] overflow-y-auto custom-scrollbar bg-white dark:bg-gray-800" id="workspace-list"></div>
                     <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                    <div class="py-1">
+                    <div class="py-1 bg-white dark:bg-gray-800">
                         <button id="add-workspace-btn" class="flex items-center w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                             ワークスペースを追加
