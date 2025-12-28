@@ -7,7 +7,32 @@ import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
 import { getTimeBlocks } from '../../store/timeblocks.js';
 import { MODAL_CLASSES } from '../core/ui-modal-constants.js';
 
-// ... (helpers)
+const STORAGE_KEY_SCHEDULE_OPEN = 'task_modal_schedule_open';
+
+/**
+ * 繰り返し設定の曜日チェックボックスHTMLを生成
+ */
+function createDaysCheckboxesHTML(recurrenceDays = []) {
+    const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+    return dayLabels.map((day, index) => `
+        <label class="flex items-center space-x-1 cursor-pointer">
+            <input type="checkbox" data-day-index="${index}" ${recurrenceDays.includes(index) ? 'checked' : ''} 
+                   class="${MODAL_CLASSES.CHECKBOX}">
+            <span class="text-xs text-gray-700 dark:text-gray-300 pointer-events-none relative z-10">${day}</span>
+        </label>
+    `).join('');
+}
+
+/**
+ * セレクトボックスのオプションを生成
+ */
+function createSelectOptions(items, selectedId, labelFn) {
+    return items.map(item => `
+        <option value="${item.id || item}" ${(item.id || item) == selectedId ? 'selected' : ''}>
+            ${labelFn(item)}
+        </option>
+    `).join('');
+}
 
 /**
  * タスク編集モーダル全体のHTMLを生成

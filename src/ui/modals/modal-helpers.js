@@ -12,7 +12,10 @@ const INBOX_LABEL = '📥 インボックス';
 export function formatDateForInput(date) {
     if (!date) return '';
     const d = date.toDate ? date.toDate() : new Date(date);
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 /**
@@ -32,7 +35,7 @@ export function showTaskMoveMenu(task, allProjects, x, y) {
     const isInbox = !task.projectId;
     const inboxItem = createMenuItem(INBOX_LABEL, null, isInbox);
 
-    const projectItems = allProjects.length > 0 
+    const projectItems = allProjects.length > 0
         ? allProjects.map(p => createMenuItem(p.name, p.id, task.projectId === p.id)).join('')
         : `<div class="px-3 py-2 text-gray-400 italic text-xs text-center">プロジェクトなし</div>`;
 
@@ -58,11 +61,11 @@ export function showTaskMoveMenu(task, allProjects, x, y) {
         menu.remove();
     };
 
-    const close = (e) => { 
-        if (!menu.contains(e.target)) { 
-            menu.remove(); 
-            document.removeEventListener('click', close); 
-        } 
+    const close = (e) => {
+        if (!menu.contains(e.target)) {
+            menu.remove();
+            document.removeEventListener('click', close);
+        }
     };
     setTimeout(() => document.addEventListener('click', close), 0);
 }
