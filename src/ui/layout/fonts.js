@@ -60,3 +60,13 @@ export function getCurrentFonts() {
         jp: localStorage.getItem(STORAGE_KEYS.FONT_JP) || DEFAULTS.JP
     };
 }
+
+/**
+ * 文字サイズ設定を適用する
+ */
+export function applyFontSize() {
+    const size = localStorage.getItem('fontSize') || 'md'; // default md
+    const sizeClasses = ['font-app-sm', 'font-app-md', 'font-app-lg'];
+    document.body.classList.remove(...sizeClasses);
+    document.body.classList.add(`font-app-${size}`);
+}

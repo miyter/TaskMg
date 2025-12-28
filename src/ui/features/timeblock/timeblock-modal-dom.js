@@ -6,7 +6,7 @@
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTE_OPTIONS = ['00', '15', '30', '45'];
 
-const generateOptions = (options, selected) => 
+const generateOptions = (options, selected) =>
     options.map(val => `<option value="${val}" ${val === selected ? 'selected' : ''}>${val}</option>`).join('');
 
 export function buildModalSkeletonHTML() {
@@ -44,16 +44,16 @@ export function buildRowHTML(data) {
             <div class="absolute inset-0 pointer-events-none rounded border border-gray-200 dark:border-gray-600"></div>
         </div>
         <div class="flex-1 flex items-center gap-2">
-            <div class="flex items-center gap-1 bg-gray-50 dark:bg-gray-900 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
-                <select class="start-h bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 cursor-pointer">${generateOptions(HOUR_OPTIONS, sH)}</select>
+            <div class="flex items-center gap-1 bg-white dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
+                <select class="start-h bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 cursor-pointer dark:bg-gray-800">${generateOptions(HOUR_OPTIONS, sH)}</select>
                 <span class="text-gray-400">:</span>
-                <select class="start-m bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 cursor-pointer">${generateOptions(MINUTE_OPTIONS, sM)}</select>
+                <select class="start-m bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 cursor-pointer dark:bg-gray-800">${generateOptions(MINUTE_OPTIONS, sM)}</select>
             </div>
             <span class="text-gray-300 font-bold">~</span>
-            <div class="flex items-center gap-1 bg-gray-50 dark:bg-gray-900 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
-                <select class="end-h bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 cursor-pointer">${generateOptions(HOUR_OPTIONS, eH)}</select>
+            <div class="flex items-center gap-1 bg-white dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
+                <select class="end-h bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 cursor-pointer dark:bg-gray-800">${generateOptions(HOUR_OPTIONS, eH)}</select>
                 <span class="text-gray-400">:</span>
-                <select class="end-m bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 cursor-pointer">${generateOptions(MINUTE_OPTIONS, eM)}</select>
+                <select class="end-m bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 cursor-pointer dark:bg-gray-800">${generateOptions(MINUTE_OPTIONS, eM)}</select>
             </div>
         </div>
         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
