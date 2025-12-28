@@ -1,13 +1,14 @@
 /**
  * 認証関連のUI・ロジック制御
  */
-import { 
+import {
     signInWithEmailAndPassword,
     signOut,
-    updatePassword
+    updatePassword,
+    signInAnonymously
 } from "../core/firebase-sdk.js";
-import { auth, isFirebaseInitialized } from '../core/firebase.js'; 
-import { showMessageModal } from './components.js'; 
+import { auth, isFirebaseInitialized } from '../core/firebase.js';
+import { showMessageModal } from './components.js';
 
 let currentUserId = null;
 
@@ -20,7 +21,7 @@ export function getCurrentUserId() {
  */
 export async function loginWithEmail(email, password) {
     if (!isFirebaseInitialized) throw new Error("Firebaseが初期化されていないぞ。");
-    
+
     try {
         return await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
@@ -51,7 +52,7 @@ export async function logout() {
 export async function updateUserPassword(newPassword) {
     const user = auth.currentUser;
     if (!user) throw new Error("認証されていないぞ。");
-    
+
     try {
         await updatePassword(user, newPassword);
         showMessageModal({ message: "パスワードを変更したぞ", type: 'success' });
@@ -72,62 +73,78 @@ export function setupAuthHandlers() {
     const loginBtn = document.getElementById('email-login-btn');
     const emailInput = document.getElementById('email-input');
     const passInput = document.getElementById('password-input');
+    const guestBtn = document.getElementById('guest-login-btn');
 
-    if (!loginBtn || !emailInput || !passInput) return;
+    // Email Login
+    if (loginBtn && emailInput && passInput) {
+        const handleLogin = async () => {
+            const email = emailInput.value.trim();
+            const pass = passInput.value.trim();
 
-    const handleLogin = async () => {
-        const email = emailInput.value.trim();
-        const pass = passInput.value.trim();
-        
-        if (!email || !pass) {
-            return showMessageModal({ message: "メールアドレスとパスワードを入力してくれ。", type: 'error' });
-        }
-        
-        try {
-            await loginWithEmail(email, pass);
-        } catch (e) {
-            showMessageModal({ message: e.message, type: 'error' });
-        }
-    };
+            if (!email || !pass) {
+                return showMessageModal({ message: "メールアドレスとパスワードを入力してくれ。", type: 'error' });
+            }
 
-    loginBtn.onclick = handleLogin;
+            try {
+                await loginWithEmail(email, pass);
+            } catch (e) {
+                showMessageModal({ message: e.message, type: 'error' });
+            }
+        };
 
-    passInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.isComposing) handleLogin();
-    });
+        loginBtn.onclick = handleLogin;
+
+        passInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.isComposing) handleLogin();
+        });
+    }
+
+    // Guest Login
+    if (guestBtn) {
+        guestBtn.onclick = async () => {
+            try {
+                await signInAnonymously(auth);
+                showMessageModal({ message: "ゲストとしてログインしたぞ。データは一時的に保持される。", type: 'success' });
+            } catch (error) {
+                console.error(error);
+                showMessageModal({ message: "ゲストログインに失敗した: " + error.message, type: 'error' });
+            }
+        };
+    }
 }
 
 /**
  * 認証状態のUI同期
  */
 export function updateAuthUI(user) {
-    const elements = {
-        loginForm: document.getElementById('login-form-container'),
-        userInfo: document.getElementById('user-info'),
-        userEmailDisplay: document.getElementById('user-email-display'),
-        emailInput: document.getElementById('email-input'),
-        passInput: document.getElementById('password-input')
-    };
+    // 要素が存在しない場合でもエラーにならないようガード
+    const loginForm = document.getElementById('login-form-container') || document.getElementById('login-container-wrapper');
+    const userInfo = document.getElementById('user-info');
+    const userEmailDisplay = document.getElementById('user-email-display');
+    const emailInput = document.getElementById('email-input');
+    const passInput = document.getElementById('password-input');
 
-    if (!elements.loginForm || !elements.userInfo) return;
-
-    if (user) {
-        currentUserId = user.uid;
-        elements.loginForm.classList.add('hidden');
-        elements.userInfo.classList.remove('hidden');
-        elements.userInfo.classList.add('flex');
-        
-        if (elements.userEmailDisplay) {
-            elements.userEmailDisplay.textContent = user.email || 'ユーザー';
-        }
-    } else {
+    if (!user) {
         currentUserId = null;
-        elements.loginForm.classList.remove('hidden');
-        elements.userInfo.classList.add('hidden');
-        elements.userInfo.classList.remove('flex');
-        
-        if (elements.emailInput) elements.emailInput.value = '';
-        if (elements.passInput) elements.passInput.value = '';
-        if (elements.userEmailDisplay) elements.userEmailDisplay.textContent = '';
+        if (loginForm) loginForm.classList.remove('hidden');
+        if (userInfo) {
+            userInfo.classList.add('hidden');
+            userInfo.classList.remove('flex');
+        }
+
+        if (emailInput) emailInput.value = '';
+        if (passInput) passInput.value = '';
+        if (userEmailDisplay) userEmailDisplay.textContent = '';
+    } else {
+        currentUserId = user.uid;
+        if (loginForm) loginForm.classList.add('hidden');
+        if (userInfo) {
+            userInfo.classList.remove('hidden');
+            userInfo.classList.add('flex');
+        }
+
+        if (userEmailDisplay) {
+            userEmailDisplay.textContent = user.isAnonymous ? 'ゲストユーザー' : (user.email || 'ユーザー');
+        }
     }
 }

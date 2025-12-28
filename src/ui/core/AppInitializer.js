@@ -95,4 +95,7 @@ function handleUserLogout() {
     // ワークスペース購読も止めるため true を指定
     stopDataSync(true);
     renderLoginState();
+
+    // ログインフォーム再描画後にイベントリスナーを再設定
+    setupAuthHandlers();
 }
