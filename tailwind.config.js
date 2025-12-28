@@ -11,9 +11,11 @@ module.exports = {
         sans: ['"M PLUS 2"', 'Inter', 'system-ui', 'sans-serif'],
       },
       fontSize: {
-        'app-sm': ['0.875rem', { lineHeight: '1.25rem' }],
+        'app-sm': ['0.8125rem', { lineHeight: '1.25rem' }],
+        'app-base': ['0.9375rem', { lineHeight: '1.375rem' }],
         'app-md': ['1rem', { lineHeight: '1.5rem' }],
         'app-lg': ['1.125rem', { lineHeight: '1.75rem' }],
+        'app-xl': ['1.25rem', { lineHeight: '1.75rem' }],
       },
       colors: {
         primary: {

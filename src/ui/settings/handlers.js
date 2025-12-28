@@ -27,9 +27,9 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
         applyBackground();
     });
 
-    // 文字サイズ設定 (Tailwind configの app-sm/md/lg に対応)
+    // 文字サイズ設定 (Tailwind configの app-sm/md/lg/xl... に対応)
     setupRadioGroupHandler('font-size', 'fontSize', (val) => {
-        const sizeClasses = ['font-app-sm', 'font-app-md', 'font-app-lg'];
+        const sizeClasses = ['font-app-sm', 'font-app-base', 'font-app-md', 'font-app-lg', 'font-app-xl'];
         document.body.classList.remove(...sizeClasses);
         document.body.classList.add(`font-app-${val}`);
     });
@@ -43,14 +43,6 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
         window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { compact: isCompact } }));
     });
 
-    setupRadioGroupHandler('sidebar-density', SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, (val) => {
-        const isCompact = val === 'compact';
-        window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { compact: isCompact } }));
-    });
-
-    // ... code ...
-    setupSettingsSectionToggles(modalOverlay);
-
     setupFontHandlers();
     setupExportHandler();
     setupImportHandler();
@@ -58,16 +50,7 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
     setupLogoutHandler(closeModal);
 }
 
-function setupSettingsSectionToggles(modal) {
-    const details = modal.querySelectorAll('.settings-section');
-    details.forEach(detail => {
-        detail.addEventListener('toggle', () => {
-            const id = detail.dataset.id;
-            const isOpen = detail.open;
-            localStorage.setItem(`settings_section_open_${id}`, isOpen);
-        });
-    });
-}
+// ... helper functions ...
 
 function setupRadioGroupHandler(name, storageKey, onUpdate) {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
@@ -87,10 +70,10 @@ function setupRadioGroupHandler(name, storageKey, onUpdate) {
         radios.forEach(radio => {
             radio.checked = (radio.value === savedValue);
         });
-        onUpdate(savedValue);
+        // 既存のクラス削除のため一度実行しても良いが、ちらつき防止のためここではUI反映のみ
     } else {
         const checked = Array.from(radios).find(r => r.checked);
-        if (checked) onUpdate(checked.value);
+        if (checked) localStorage.setItem(storageKey, checked.value); // 初期値を保存
     }
 }
 
@@ -116,12 +99,12 @@ function setupExportHandler() {
     if (!btn) return;
 
     btn.onclick = async () => {
-        const label = btn.querySelector('div.font-medium');
-        const originalText = label.textContent;
+        const label = btn.querySelector('span.font-bold'); // Updated selector
+        const originalText = label ? label.textContent : 'バックアップを作成';
 
         btn.disabled = true;
         btn.classList.add('opacity-70', 'cursor-wait');
-        label.textContent = "バックアップ作成中...";
+        if (label) label.textContent = "バックアップ作成中...";
 
         try {
             const data = await createBackupData();
@@ -142,7 +125,7 @@ function setupExportHandler() {
         } finally {
             btn.disabled = false;
             btn.classList.remove('opacity-70', 'cursor-wait');
-            label.textContent = originalText;
+            if (label) label.textContent = originalText;
         }
     };
 }
@@ -173,8 +156,6 @@ function setupImportHandler() {
 
                 btn.disabled = true;
                 btn.classList.add('opacity-70', 'cursor-wait');
-                const originalText = btn.innerHTML; // アイコンなど含むのでHTML保存
-                btn.querySelector('div.font-medium').textContent = "インポート中...";
 
                 const result = await importBackupData(json);
 
@@ -192,7 +173,6 @@ function setupImportHandler() {
             } finally {
                 btn.disabled = false;
                 btn.classList.remove('opacity-70', 'cursor-wait');
-                // テキスト戻すのはリロードするなら不要だが念のため
             }
         };
         reader.readAsText(file);
@@ -211,6 +191,7 @@ function setupPasswordHandler() {
         try {
             await updateUserPassword(pass);
             input.value = '';
+            showMessageModal({ message: "パスワードを変更しました", type: 'success' });
         } catch (err) {
             // エラー表示は auth.js 側で行われる
         }

@@ -66,31 +66,27 @@ export async function saveAllAndClose(btn, closeFn) {
         }
     }
 
-    // 2. Overlap Validation (Internal)
-    for (let i = 0; i < dataList.length; i++) {
-        const a = dataList[i];
-        const aStart = timeToMinutes(a.start);
-        const aEnd = timeToMinutes(a.end);
-
-        for (let j = i + 1; j < dataList.length; j++) {
-            const b = dataList[j];
-            const bStart = timeToMinutes(b.start);
-            const bEnd = timeToMinutes(b.end);
-
-            if (Math.max(aStart, bStart) < Math.min(aEnd, bEnd)) {
-                return showMessageModal({ message: `時間帯が重複しています:\n${a.start}~${a.end} と ${b.start}~${b.end}`, type: 'error' });
-            }
-        }
-    }
+    // 重複チェックは削除しました
 
     // Execution
     btn.disabled = true;
     const originalText = btn.textContent;
     btn.textContent = '保存中...';
 
+    // 昇順に並べ替え（開始時刻順）
+    dataList.sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+
+    // Order値を更新するためにインデックスを付与して保存
     try {
-        const promises = dataList.map(data =>
-            saveTimeBlock({ id: data.id, name: `${data.start}-${data.end}`, start: data.start, end: data.end, color: data.color })
+        const promises = dataList.map((data, index) =>
+            saveTimeBlock({
+                id: data.id,
+                name: `${data.start}-${data.end}`,
+                start: data.start,
+                end: data.end,
+                color: data.color,
+                order: index // 順番を保存
+            })
         );
 
         await Promise.all(promises);

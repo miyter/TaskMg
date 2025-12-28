@@ -53,7 +53,7 @@ export function renderTimeBlocks() {
     list.innerHTML = '';
 
     const fragment = document.createDocumentFragment();
-    const blocks = getTimeBlocks();
+    const blocks = getTimeBlocks().sort((a, b) => (a.order || 0) - (b.order || 0));
     const tasks = getTasks();
 
     blocks.forEach(block => {
