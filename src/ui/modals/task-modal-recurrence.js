@@ -33,9 +33,9 @@ export function setupRecurrenceControls() {
     select.addEventListener('change', (e) => {
         const type = e.target.value;
         const isWeekly = type === 'weekly';
-        
+
         daysContainer.classList.toggle('hidden', !isWeekly);
-        
+
         if (type !== 'none') {
             const checkedDays = isWeekly ? getCheckedDays() : [];
             updateDate(type, checkedDays);

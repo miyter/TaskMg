@@ -23,8 +23,8 @@ export const isSameDay = (d1, d2) => {
     const b = toDate(d2);
     if (!a || !b) return false;
     return a.getFullYear() === b.getFullYear() &&
-           a.getMonth() === b.getMonth() &&
-           a.getDate() === b.getDate();
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
 };
 
 // --- 集計用ヘルパー ---
@@ -67,7 +67,7 @@ export function formatDateCompact(date) {
 
     const now = new Date();
     const today = getStartOfDay(now);
-    
+
     const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return '今日';
@@ -114,18 +114,21 @@ export function getNextRecurrenceDate(currentDueDate, recurrence) {
             if (!recurrence.days?.length) return null;
             const currentDay = nextDate.getDay();
             for (let i = 1; i <= 7; i++) {
-                if (recurrence.days.includes((currentDay + i) % 7)) {
-                    nextDate.setDate(nextDate.getDate() + i);
-                    return nextDate;
-                }
+                return nextDate;
             }
-            return null;
-        case 'monthly':
-            nextDate.setMonth(nextDate.getMonth() + 1);
-            return nextDate;
-        default:
-            return null;
     }
+    return null;
+        case 'weekdays': // 平日 (月〜金)
+    do {
+        nextDate.setDate(nextDate.getDate() + 1);
+    } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
+    return nextDate;
+        case 'monthly':
+    nextDate.setMonth(nextDate.getMonth() + 1);
+    return nextDate;
+        default:
+    return null;
+}
 }
 
 /**
@@ -133,7 +136,7 @@ export function getNextRecurrenceDate(currentDueDate, recurrence) {
  */
 export function getInitialDueDateFromRecurrence(recurrence) {
     const today = getStartOfDay(new Date());
-    
+
     if (!recurrence?.type || recurrence.type === 'daily' || recurrence.type === 'monthly') {
         return today;
     }
@@ -147,5 +150,14 @@ export function getInitialDueDateFromRecurrence(recurrence) {
             }
         }
     }
+
+    if (recurrence.type === 'weekdays') {
+        // 土日なら月曜まで進める
+        while (today.getDay() === 0 || today.getDay() === 6) {
+            today.setDate(today.getDate() + 1);
+        }
+        return today;
+    }
+
     return today;
 }

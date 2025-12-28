@@ -149,6 +149,7 @@ export function buildModalHTML(task) {
                                             <option value="none" ${recurrence.type === 'none' ? 'selected' : ''}>なし</option>
                                             <option value="daily" ${recurrence.type === 'daily' ? 'selected' : ''}>毎日</option>
                                             <option value="weekly" ${recurrence.type === 'weekly' ? 'selected' : ''}>毎週</option>
+                                            <option value="weekdays" ${recurrence.type === 'weekdays' ? 'selected' : ''}>平日 (月〜金)</option>
                                             <option value="monthly" ${recurrence.type === 'monthly' ? 'selected' : ''}>毎月</option>
                                         </select>
                                     </div>
