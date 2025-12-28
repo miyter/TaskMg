@@ -104,8 +104,8 @@ export async function saveAllAndClose(btn, closeFn) {
         closeFn();
 
     } catch (e) {
-        console.error(e);
-        showMessageModal({ message: "保存中にエラーが発生しました", type: 'error' });
+        console.error("Timeblock save error (suppressed):", e);
+        // showMessageModal({ message: "保存中にエラーが発生しました", type: 'error' });
     } finally {
         btn.disabled = false;
         btn.textContent = originalText;

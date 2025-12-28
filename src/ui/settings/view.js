@@ -50,6 +50,16 @@ function getFontSettingsHTML() {
 }
 
 
+function createRadioOption(name, value, label, isChecked, icon = '') {
+    return `
+        <label class="flex items-center justify-center gap-2 cursor-pointer p-3 border ${isChecked ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-600 dark:text-gray-300'} rounded-lg transition-all duration-200">
+            <input type="radio" name="${name}" value="${value}" class="hidden" ${isChecked ? 'checked' : ''}>
+            ${icon}
+            <span class="text-sm font-medium">${label}</span>
+        </label>
+    `;
+}
+
 function createAccordionSection(id, title, icon, content, isOpen = false) {
     return `
         <div class="settings-accordion border-b border-gray-100 dark:border-gray-700 last:border-0" data-section="${id}">
