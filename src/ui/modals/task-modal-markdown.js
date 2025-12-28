@@ -138,6 +138,9 @@ function toggleList(textarea, marker) {
 /**
  * Markdown入力とプレビューの切り替えをセットアップ
  */
+/**
+ * Markdown入力とプレビューの切り替えをセットアップ
+ */
 export function setupMarkdownControls() {
     const textarea = document.getElementById('modal-task-desc');
     const previewDiv = document.getElementById('modal-task-desc-preview');
@@ -148,33 +151,42 @@ export function setupMarkdownControls() {
     const listBtn = document.getElementById('md-list-btn');
     const orderedBtn = document.getElementById('md-ordered-btn');
 
-    if (!textarea || !previewDiv || !toggleButton) return;
+    if (!textarea || !previewDiv) return;
 
-    let isEditing = true;
+    // トグルボタンは隠す（自動切り替えにするため）
+    if (toggleButton) toggleButton.classList.add('hidden');
 
-    // プレビューレンダリング（デバウンス適用）
-    const renderPreview = debounce(() => {
-        previewDiv.innerHTML = simpleMarkdownToHtml(textarea.value);
-    }, 300);
+    // モード切り替え関数
+    const showEditor = () => {
+        textarea.classList.remove('hidden');
+        previewDiv.classList.add('hidden');
+        textarea.focus();
+    };
 
-    toggleButton.addEventListener('click', () => {
-        isEditing = !isEditing;
+    const showPreview = () => {
+        const html = simpleMarkdownToHtml(textarea.value);
+        // 空の場合はプレースホルダーを表示してクリック可能領域を確保
+        previewDiv.innerHTML = html || '<span class="text-gray-400 cursor-text">メモを入力...</span>';
+        textarea.classList.add('hidden');
+        previewDiv.classList.remove('hidden');
+    };
 
-        if (isEditing) {
-            textarea.classList.remove('hidden');
-            previewDiv.classList.add('hidden');
-            toggleButton.textContent = UI_TEXT.PREVIEW;
-        } else {
-            // プレビューに切り替える時だけ即時実行
-            previewDiv.innerHTML = simpleMarkdownToHtml(textarea.value);
-            textarea.classList.add('hidden');
-            previewDiv.classList.remove('hidden');
-            toggleButton.textContent = UI_TEXT.EDIT;
-        }
+    // 初期状態設定
+    if (textarea.value.trim()) {
+        showPreview();
+    } else {
+        showEditor();
+    }
+
+    // イベントリスナー
+    previewDiv.addEventListener('click', showEditor);
+
+    textarea.addEventListener('blur', () => {
+        showPreview();
     });
 
     textarea.addEventListener('input', () => {
-        if (!isEditing) renderPreview();
+        // 編集中のプレビュー更新は不要になったが、保存などのためにイベントはそのまま
     });
 
     // キーボードショートカット (Ctrl+B)
@@ -185,19 +197,14 @@ export function setupMarkdownControls() {
         }
     });
 
-    // ツールバーのアクション
-    if (boldBtn) {
-        boldBtn.addEventListener('click', () => insertText(textarea, '**', '**'));
-    }
-    if (listBtn) {
-        listBtn.addEventListener('click', () => toggleList(textarea, '- ')); // 切り替えロジックを使用
-    }
-    if (orderedBtn) {
-        orderedBtn.addEventListener('click', () => toggleList(textarea, '1. ')); // 切り替えロジックを使用
-    }
+    // ツールバーのアクション（フォーカスを奪わないように mousedown で preventDefault）
+    const setupToolbarBtn = (btn, action) => {
+        if (!btn) return;
+        btn.addEventListener('mousedown', (e) => e.preventDefault()); // フォーカス維持
+        btn.addEventListener('click', action);
+    };
 
-    // 初期状態（編集モード）に合わせてUIを強制
-    textarea.classList.remove('hidden');
-    previewDiv.classList.add('hidden');
-    toggleButton.textContent = UI_TEXT.PREVIEW;
+    setupToolbarBtn(boldBtn, () => insertText(textarea, '**', '**'));
+    setupToolbarBtn(listBtn, () => toggleList(textarea, '- '));
+    setupToolbarBtn(orderedBtn, () => toggleList(textarea, '1. '));
 }
