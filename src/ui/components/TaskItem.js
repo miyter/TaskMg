@@ -44,18 +44,14 @@ export function createTaskItem(task) {
                 ${isRecurring ? `<div class="text-blue-500 dark:text-blue-400 flex-shrink-0" title="繰り返し">🔁</div>` : ''}
                 ${isOneTime ? `<div class="text-gray-400 dark:text-gray-500 flex-shrink-0" title="期限あり">▶️</div>` : ''}
                 
-                ${timeBlock ? `
-                    <div class="flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[140px]" title="${timeBlock.start} - ${timeBlock.end}">
-                        <span class="w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style="background-color: ${timeBlock.color}"></span>
-                        <span class="truncate font-mono text-[11px]">${timeBlock.start} - ${timeBlock.end}</span>
-                    </div>
-                ` : ''}
+                <div class="flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[140px]" title="${timeBlock ? `${timeBlock.start} - ${timeBlock.end}` : '時間帯未定'}">
+                    <span class="w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style="background-color: ${timeBlock ? timeBlock.color : '#cbd5e1'}"></span>
+                    <span class="truncate font-mono text-[11px]">${timeBlock ? `${timeBlock.start} - ${timeBlock.end}` : '未定'}</span>
+                </div>
 
-                ${task.duration ? `
-                    <div class="flex items-center text-gray-500 dark:text-gray-400 whitespace-nowrap" title="所要時間: ${task.duration}分">
-                        <span class="mr-0.5 text-[10px]">⏱️</span>${task.duration}m
-                    </div>
-                ` : ''}
+                <div class="flex items-center text-gray-500 dark:text-gray-400 whitespace-nowrap" title="所要時間: ${task.duration || 0}分">
+                    <span class="mr-0.5 text-[10px]">⏱️</span>${task.duration || 0}m
+                </div>
 
                 ${dateText ? `<div class="flex items-center ${dateColorClass} bg-gray-50 dark:bg-gray-800/50 px-1.5 py-0.5 rounded flex-shrink-0">${dateText}</div>` : ''}
             </div>

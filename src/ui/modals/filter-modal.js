@@ -19,7 +19,7 @@ export function showFilterModal(filterToEdit = null) {
     const timeBlocks = getTimeBlocks();
     const durations = [30, 45, 60, 75, 90];
     const dateOptions = [
-        { id: 'today', name: '今日 (過去含む)' },
+        { id: 'today', name: '今日' },
         { id: 'tomorrow', name: '明日' },
         { id: 'week', name: '今週' },
         { id: 'next-week', name: '来週' }
@@ -31,7 +31,7 @@ export function showFilterModal(filterToEdit = null) {
     modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fade-in';
 
     modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]" role="dialog" aria-modal="true">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl overflow-hidden flex flex-col max-h-[90vh]" role="dialog" aria-modal="true">
             <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                 <h3 class="text-base font-bold text-gray-800 dark:text-white">${isEditMode ? 'フィルター編集' : 'フィルター作成'}</h3>
                 <button id="close-filter-modal" class="text-gray-400 hover:text-gray-700 transition">
@@ -44,7 +44,7 @@ export function showFilterModal(filterToEdit = null) {
                     <input type="text" id="filter-name" value="${filterToEdit?.name || ''}" 
                            class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     ${createSelectionBox('プロジェクト', projects, state.project, 'filter-project-checkbox')}
                     ${createTimeBlockBox(timeBlocks, state.timeblock)}
                     ${createSelectionBox('所要時間', durations, state.duration, 'filter-duration-checkbox', d => `${d} min`)}
