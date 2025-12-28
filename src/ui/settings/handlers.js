@@ -37,10 +37,13 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
     // 背景パターン
     setupRadioGroupHandler('bg-pattern', 'background', () => applyBackground());
 
-    // サイドバー密度 - SIDEBAR_CONFIG の定数を使用するように修正
-    setupRadioGroupHandler('sidebar-density', SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, (val) => {
-        const isCompact = val === 'compact';
-        window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { compact: isCompact } }));
+    // サイドバー密度 (4 levels)
+    setupRadioGroupHandler('sidebar-density', SIDEBAR_CONFIG.STORAGE_KEYS.DENSITY, (val) => {
+        // Legacy support: also update compact key for fallback
+        if (val === 'compact') localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, 'true');
+        else localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, 'false');
+
+        window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { density: val } }));
     });
 
     setupFontHandlers();

@@ -20,6 +20,11 @@
 
     /* 文字サイズ設定: Tailwind Configの値(@apply)を参照して一元化 */
     /* !important を付与して、サイドバーや他のコンポーネントのデフォルトスタイルを確実に上書きする */
+    body.font-app-xl {
+        font-size: 1.25rem !important;
+        line-height: 1.75rem !important;
+    }
+
     body.font-app-lg {
         font-size: 1.125rem !important;
         line-height: 1.75rem !important;
@@ -30,8 +35,13 @@
         line-height: 1.5rem !important;
     }
 
+    body.font-app-base {
+        font-size: 0.9375rem !important;
+        line-height: 1.375rem !important;
+    }
+
     body.font-app-sm {
-        font-size: 0.875rem !important;
+        font-size: 0.8125rem !important;
         line-height: 1.25rem !important;
     }
 }

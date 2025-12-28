@@ -14,13 +14,17 @@ import { showWorkspaceModal } from '../../modals/workspace-modal.js';
  * リストアイテム要素を作成
  * 毎回 localStorage を見ないよう isCompact を引数で受け取る
  */
-export function createSidebarItem(name, type, id, meta = {}, count = 0, isCompact = false) {
+export function createSidebarItem(name, type, id, meta = {}, count = 0, densityLevel = 'normal') {
     const item = document.createElement('li');
-    const { CLASSES, COLORS } = SIDEBAR_CONFIG;
+    const { DENSITY_CLASSES, COLORS } = SIDEBAR_CONFIG;
 
     item.dataset.type = type;
     item.dataset.id = id;
-    item.className = `group flex items-center justify-between px-3 ${isCompact ? CLASSES.COMPACT_PY : CLASSES.NORMAL_PY} font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors sidebar-item-row select-none`;
+
+    // Resolve padding class based on density level
+    const pyClass = DENSITY_CLASSES[densityLevel] || DENSITY_CLASSES.normal;
+
+    item.className = `group flex items-center justify-between px-3 ${pyClass} font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors sidebar-item-row select-none`;
 
     const iconMap = {
         project: `<svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>`,

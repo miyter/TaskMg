@@ -71,10 +71,25 @@ export function getStoredBool(key, defaultValue = false) {
 }
 
 /**
- * サイドバーが現在コンパクトモードかどうかを判定
+ * サイドバーの密度レベルを取得
+ */
+export function getSidebarDensity() {
+    // 1. New density key
+    const density = localStorage.getItem(SIDEBAR_CONFIG.STORAGE_KEYS.DENSITY);
+    if (density && Object.values(SIDEBAR_CONFIG.DENSITY_LEVELS).includes(density)) {
+        return density;
+    }
+
+    // 2. Fallback to legacy 'compact' boolean
+    const isCompact = getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
+    return isCompact ? SIDEBAR_CONFIG.DENSITY_LEVELS.COMPACT : SIDEBAR_CONFIG.DENSITY_LEVELS.NORMAL;
+}
+
+/**
+ * サイドバーが現在コンパクトモードかどうかを判定 (Deprecated)
  */
 export function isSidebarCompact() {
-    return getStoredBool(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, false);
+    return getSidebarDensity() === SIDEBAR_CONFIG.DENSITY_LEVELS.COMPACT;
 }
 
 /**

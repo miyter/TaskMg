@@ -6,9 +6,22 @@ export const SIDEBAR_CONFIG = {
     MAX_WIDTH: 500,
     DEFAULT_WIDTH: 280,
     BREAKPOINT_MD: 768,
+    // Density Levels
+    DENSITY_LEVELS: {
+        COMPACT: 'compact',
+        NORMAL: 'normal',
+        COMFORTABLE: 'comfortable',
+        SPACIOUS: 'spacious'
+    },
+    // Map levels to utility classes (Sidebar items padding)
+    DENSITY_CLASSES: {
+        'compact': 'py-0.5',
+        'normal': 'py-1.5',
+        'comfortable': 'py-2.5',
+        'spacious': 'py-3.5'
+    },
     CLASSES: {
-        COMPACT_PY: 'py-0.5',
-        NORMAL_PY: 'py-1.5',
+        // Deprecated: COMPACT_PY, NORMAL_PY (use DENSITY_CLASSES)
         CLOSED: 'sidebar-closed',
         HIDDEN: 'hidden',
         DRAG_OVER: ['bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400']
@@ -18,7 +31,8 @@ export const SIDEBAR_CONFIG = {
     },
     STORAGE_KEYS: {
         WIDTH: 'sidebarWidth',
-        COMPACT: 'sidebar_compact',
+        DENSITY: 'sidebar_density', // New key
+        COMPACT: 'sidebar_compact', // Legacy key (migration needed if we care)
         SECTION_PREFIX: 'sidebar-section:',
         SECTION_ORDER: 'sidebar_section_order'
     },

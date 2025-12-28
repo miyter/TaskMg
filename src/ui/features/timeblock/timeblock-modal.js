@@ -7,7 +7,7 @@ import { buildModalSkeletonHTML, buildRowHTML } from './timeblock-modal-dom.js';
 import { updateAddButtonUI, MAX_BLOCKS } from './timeblock-modal-utils.js';
 import { initColorPicker, openColorPicker, closeColorPicker } from './timeblock-modal-color-picker.js';
 import { saveAllAndClose, handleDelete } from './timeblock-modal-logic.js';
-import Sortable from 'https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js'; // Use CDN or local lib
+import Sortable from 'sortablejs';
 
 const DEFAULT_ROW_DATA = { id: null, start: '09:00', end: '10:00', color: '#3B82F6' };
 

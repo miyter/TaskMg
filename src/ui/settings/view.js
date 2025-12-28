@@ -66,6 +66,7 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
     const currentFontSize = localStorage.getItem('fontSize') || FONT_SIZES.MEDIUM;
     const currentBg = localStorage.getItem('background') || BACKGROUND_PATTERNS.NONE;
     const safeInitial = userInitial || '?';
+    const currentDensity = localStorage.getItem('sidebar_density') || (isCompact ? 'compact' : 'normal');
 
     // 2-column layout sections with Icons
     const leftColumn = `
@@ -93,10 +94,12 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
                 </div>
 
                 <div>
-                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">サイドバーとUI密度</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">サイドバーとUI密度</label>
                     <div class="grid grid-cols-2 gap-3">
-                        ${createRadioOption('sidebar-density', 'normal', '通常', !isCompact)}
-                        ${createRadioOption('sidebar-density', 'compact', 'コンパクト', isCompact)}
+                        ${createRadioOption('sidebar-density', 'compact', 'Compact', currentDensity === 'compact')}
+                        ${createRadioOption('sidebar-density', 'normal', 'Standard', currentDensity === 'normal')}
+                        ${createRadioOption('sidebar-density', 'comfortable', 'Comfortable', currentDensity === 'comfortable')}
+                        ${createRadioOption('sidebar-density', 'spacious', 'Spacious', currentDensity === 'spacious')}
                     </div>
                 </div>
             </div>
