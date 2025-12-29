@@ -126,7 +126,8 @@ export function renderTaskView(tasks, allProjects, allLabels = [], context = {})
     // visibleCount * rowHeight
 
     const maxHeight = visibleCount * rowHeight;
-    listContainer.style.maxHeight = `${maxHeight}px`;
+    // 高さ固定（可変にしない）
+    listContainer.style.height = `${maxHeight}px`;
 
     // flex-1 を flex-none にし、overflow-y-auto でスクロールさせる
     listContainer.className = `w-full flex-none overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth border-b border-gray-100 dark:border-gray-800`;
@@ -139,7 +140,8 @@ export function renderTaskView(tasks, allProjects, allLabels = [], context = {})
     // 2. 統計エリア (時間帯 or 一般)
     const statsContainer = document.createElement('div');
     statsContainer.id = 'stats-container';
-    statsContainer.className = 'flex-none mb-0 animate-fade-in transition-all duration-300';
+    // mt-auto で下寄せ（タスク作成ボタンの直上）
+    statsContainer.className = 'flex-none mb-0 animate-fade-in transition-all duration-300 mt-auto';
     contentWrapper.appendChild(statsContainer);
     renderTimeBlockStats(statsContainer, tasks, timeBlockId);
 
