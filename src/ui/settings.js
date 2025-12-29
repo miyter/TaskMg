@@ -52,7 +52,7 @@ export function showSettingsModal() {
 
     const overlay = document.createElement('div');
     overlay.id = SIDEBAR_CONFIG.MODAL_IDS.SETTINGS;
-    overlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in';
+    overlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in';
 
     overlay.innerHTML = getSettingsModalHTML(initial, email, isCompact);
     document.body.appendChild(overlay);

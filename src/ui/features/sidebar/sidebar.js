@@ -117,6 +117,12 @@ function setupSidebarEvents() {
 
         if (link) {
             e.preventDefault();
+
+            // モバイルならサイドバーを閉じる
+            if (!isDesktop()) {
+                toggleSidebar(false);
+            }
+
             const id = link.id;
             if (id === 'nav-dashboard') dispatch('dashboard');
             if (id === 'nav-inbox') dispatch('inbox');

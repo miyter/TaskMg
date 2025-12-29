@@ -70,7 +70,7 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
         showView(UI.dashboard, allViewElements.filter(v => v !== UI.dashboard));
         UI.dashboard.innerHTML = buildDashboardViewHTML();
         renderDashboard(allTasks, allProjects);
-        updateFooterVisibility(false);
+        updateFooterVisibility(true);
         return;
     }
 
@@ -87,7 +87,7 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
         if (UI.wizard) {
             showView(UI.wizard, allViewElements.filter(v => v !== UI.wizard));
             renderWizard(UI.wizard);
-            updateFooterVisibility(false);
+            updateFooterVisibility(true);
         }
         return;
     }
@@ -96,7 +96,7 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
         if (UI.targetDashboard) {
             showView(UI.targetDashboard, allViewElements.filter(v => v !== UI.targetDashboard));
             renderTargetDashboard(UI.targetDashboard);
-            updateFooterVisibility(false);
+            updateFooterVisibility(true);
         }
         return;
     }
@@ -105,7 +105,7 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
         if (UI.wiki) {
             showView(UI.wiki, allViewElements.filter(v => v !== UI.wiki));
             renderWiki(UI.wiki);
-            updateFooterVisibility(false);
+            updateFooterVisibility(true);
         }
         return;
     }

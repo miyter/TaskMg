@@ -98,12 +98,10 @@ export function renderInlineInput(container, projectId, labelId, options = {}) {
  */
 export function renderFixedAddTaskBar(footerContainer, inputContainer, projectId, labelId) {
     footerContainer.innerHTML = `
-        <div id="fixed-add-task-btn" class="w-full h-full flex items-center justify-center px-4 cursor-pointer border border-indigo-200 dark:border-indigo-800/30 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all group rounded-lg mx-2 my-1">
-            <div class="w-6 h-6 mr-3 rounded-full text-indigo-500 dark:text-indigo-400 flex items-center justify-center transition-transform group-hover:scale-110">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            </div>
-            <span class="text-sm font-medium text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">タスクを追加</span>
-        </div>
+        <button id="fixed-add-task-btn" class="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-full px-6 py-2 shadow-lg hover:shadow-xl transition-all active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span class="font-bold text-sm">タスクを追加</span>
+        </button>
     `;
 
     // ボタンクリックでタスクモーダルを開く
