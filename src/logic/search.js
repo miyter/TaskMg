@@ -30,7 +30,7 @@ export function filterTasks(tasks, criteria) {
         // 2. プロジェクト
         if (projectId) {
             if (projectId === 'unassigned') {
-                if (task.projectId) return false;
+                if (task.projectId && task.projectId !== 'unassigned' && task.projectId !== 'null') return false;
             } else if (task.projectId !== projectId) {
                 return false;
             }
