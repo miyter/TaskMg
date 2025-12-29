@@ -1,4 +1,8 @@
 export function renderWoopView(data) {
+    if (!data || !data.obstacles) {
+        return '<div class="p-4 text-center text-gray-500">データ読み込みエラー</div>';
+    }
+
     return `
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
             <!-- Wish & Outcome -->

@@ -1,4 +1,8 @@
 export function renderOkrView(data) {
+    if (!data || !data.keyResults) {
+        return '<div class="p-4 text-center text-gray-500">データ読み込みエラー</div>';
+    }
+
     const getConfidenceColor = (conf) => {
         if (conf === 'high') return 'bg-emerald-500';
         if (conf === 'medium') return 'bg-amber-500';
