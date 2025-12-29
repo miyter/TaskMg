@@ -107,6 +107,7 @@ export function onUISettingsChange(callback) {
     callback();
 }
 
+
 /**
  * UI設定変更イベントを発火
  */

@@ -56,6 +56,8 @@ function notifyUpdate(eventType) {
 /**
  * 同期開始
  */
+
+
 export function startAllSubscriptions(userId) {
     if (!auth?.currentUser) {
         console.warn('[DataSync] No authenticated user. Cannot start subscriptions.');

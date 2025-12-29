@@ -9,7 +9,6 @@ import { setCurrentFilter } from '../layout/ui-view-manager.js';
 import { startAllSubscriptions, stopDataSync, updateUI } from './DataSyncManager.js';
 import { setupCustomSortDropdown } from '../components/SortDropdown.js';
 import { isWindowMode, getInitialViewMode } from './window-manager.js';
-
 /**
  * デバウンス関数（高頻度イベントの間引き）
  */
@@ -60,8 +59,7 @@ export function setupGlobalEventListeners() {
                     }
                 }
             } else {
-                // ワークスペース切り替え時はインボックスにリセット（ウィンドウモードでも切り替え時は一旦Homeに戻す運用とするか、あるいは維持するか。ここではシンプルにリセット）
-                // ただしウィンドウモードの場合はパラメータを維持したいかもしれないが、ワークスペースまたぐのは稀なので一旦Homeへ
+                // ワークスペース切り替え時はインボックスにリセット
                 setCurrentFilter({ type: 'inbox', id: null });
             }
 

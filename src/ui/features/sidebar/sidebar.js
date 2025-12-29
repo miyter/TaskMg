@@ -15,6 +15,7 @@ import { showSettingsModal } from '../../settings.js';
 import { openInNewWindow } from '../../core/window-manager.js';
 import { showCustomContextMenu } from './sidebar-components.js';
 
+
 // 同期取得関数
 // 同期取得関数
 // import { getProjects } from '../../../store/projects.js';
