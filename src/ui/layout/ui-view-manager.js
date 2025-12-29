@@ -162,6 +162,19 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
         title: resolveTitle()
     };
 
+    // Saved Filterに時間帯が含まれている場合、timeBlockIdを設定してプログレスバーを表示させる (ユーザー要望対応)
+    if (config.savedFilter && !config.timeBlockId) {
+        const query = config.savedFilter.query || '';
+        const match = query.match(/timeblock:([^ ]+)/);
+        if (match) {
+            const ids = match[1].split(',');
+            // 先頭の有効なIDを使用
+            if (ids.length > 0 && ids[0] !== 'null' && ids[0] !== 'none') {
+                config.timeBlockId = ids[0];
+            }
+        }
+    }
+
     const processedTasks = getProcessedTasks(allTasks, config);
     // 第4引数に丸ごとコンテキストを渡す
     renderTaskView(processedTasks, allProjects, allLabels, config);
