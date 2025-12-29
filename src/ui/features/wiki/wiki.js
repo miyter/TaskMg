@@ -76,7 +76,7 @@ function showFrameworkModal(framework) {
                     </div>
 
                     <!-- 使用例 -->
-                    ${framework.useCases && framework.useCases.length > 0 ? `
+                    ${Array.isArray(framework.useCases) && framework.useCases.length > 0 ? `
                         <div class="mb-6">
                             <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">使用例</h3>
                             <div class="space-y-4">

@@ -1,67 +1,59 @@
 /**
- * 更新日: 2025-12-27
- * 内容: 動的アイテムのレンダリング後に applyCompactMode を再実行するよう修正
- * これにより、データ同期後もコンパクト表示の設定が正しく反映される
+ * サイドバーの初期化および統合管理モジュール
+ * 機能ごとのロジックは以下のモジュールに分割されています：
+ * - sidebar-state.js: DOM要素のキャッシュ管理
+ * - sidebar-view.js: 表示制御、密度設定、ハンバーガーメニュー
+ * - sidebar-events.js: クリック、右クリックイベントのハンドリング
  */
-import { SIDEBAR_CONFIG } from './sidebar-constants.js';
-import { setupResizer, isDesktop, getStoredBool, getSidebarDensity } from './sidebar-utils.js';
+import { setupResizer, getSidebarDensity } from './sidebar-utils.js';
 import { buildSidebarHTML, setupSidebarToggles, setupSectionDragAndDrop } from './sidebar-structure.js';
 import { setupDropZone } from './sidebar-drag-drop.js';
-import { showFilterModal } from '../../modals/filter-modal.js';
-import { showTimeBlockModal } from '../timeblock/timeblock-modal.js';
 import { initSidebarProjects, updateSidebarProjects } from './SidebarProjects.js';
 import { renderSidebarItems, updateInboxCount } from './sidebar-renderer.js';
-import { showSettingsModal } from '../../settings.js';
-import { openInNewWindow } from '../../core/window-manager.js';
-import { showCustomContextMenu } from './sidebar-components.js';
 
 import { APP_EVENTS } from '../../../core/event-constants.js';
 
+// 分割したモジュールのインポート
+import { cacheSidebarElements } from './sidebar-state.js';
+import {
+    initializeSidebarToggles,
+    updateSidebarVisibility,
+    applyDensityMode,
+    setupDensityModeListener
+} from './sidebar-view.js';
+import { setupSidebarEvents } from './sidebar-events.js';
 
-// 同期取得関数
-// 同期取得関数
-// import { getProjects } from '../../../store/projects.js';
-// import { getFilters } from '../../../store/filters.js';
-
+// 外部公開用エイリアス
 export { updateSidebarProjects as renderProjects, updateInboxCount };
 
-// キャッシュ
+// イベントハンドラキャッシュ
 let refreshSidebarHandler = null;
 let resizeHandler = null;
-let UI = {};
-
-function cacheElements() {
-    UI = {
-        container: document.getElementById('sidebar-content'),
-        sidebar: document.getElementById('sidebar'),
-        resizer: document.getElementById('sidebar-resizer'),
-        openBtn: document.getElementById('sidebar-open-btn'),
-        closeBtn: document.getElementById('sidebar-close-btn'),
-        inbox: document.getElementById('nav-inbox')
-    };
-}
 
 /**
  * サイドバー初期化
  */
 export function initSidebar() {
-    cacheElements();
+    // 初回キャッシュ
+    let UI = cacheSidebarElements();
     if (!UI.container) return;
 
     // HTML構築
     UI.container.innerHTML = buildSidebarHTML();
 
-    // 再キャッシュ
-    cacheElements();
+    // HTML更新後に再キャッシュ（重要）
+    UI = cacheSidebarElements();
 
+    // ユーティリティセットアップ
     setupResizer(UI.sidebar, UI.resizer);
-    setupSidebarEvents();
-    setupSidebarToggles();
-    setupSectionDragAndDrop(); // ドラッグ&ドロップのセットアップ
+    setupSidebarEvents(); // イベントリスナー登録
+    setupSidebarToggles(); // セクションアコーディオンのセットアップ
+    setupSectionDragAndDrop();
     setupDataEventListeners();
 
     if (UI.inbox) setupDropZone(UI.inbox, 'inbox');
 
+    // プロジェクト一覧の初期化
     initSidebarProjects(UI.container);
 
     // リサイズ監視（既存があれば解除）
@@ -69,13 +61,16 @@ export function initSidebar() {
     resizeHandler = () => updateSidebarVisibility();
     window.addEventListener('resize', resizeHandler);
 
+    // 初期表示状態の適用
     updateSidebarVisibility();
 
-    // 初期化時の適用
+    // 密度設定の適用
     const density = getSidebarDensity();
     applyDensityMode(density);
     setupDensityModeListener();
 
+    // ハンバーガーメニューの初期化（DOM待機ロジック付き）
+    initializeSidebarToggles();
 
     // 初回描画を強制実行
     if (refreshSidebarHandler) refreshSidebarHandler();
@@ -94,176 +89,13 @@ function setupDataEventListeners() {
         updateEvents.forEach(ev => document.removeEventListener(ev, refreshSidebarHandler));
     }
 
-
     refreshSidebarHandler = () => {
         renderSidebarItems();
 
-        // 【修正】動的アイテム描画後に密度設定を再適用
+        // 動的アイテム描画後に密度設定を再適用
         const density = getSidebarDensity();
         applyDensityMode(density);
     };
 
     updateEvents.forEach(ev => document.addEventListener(ev, refreshSidebarHandler));
-}
-
-function setupSidebarEvents() {
-    const dispatch = (page, id = null) =>
-        document.dispatchEvent(new CustomEvent(APP_EVENTS.ROUTE_CHANGE, { detail: { page, id } }));
-
-    // イベント委譲の統合
-    UI.container.addEventListener('click', (e) => {
-        const link = e.target.closest('a');
-        const btn = e.target.closest('button');
-
-        if (link) {
-            e.preventDefault();
-
-            const id = link.id;
-
-            // 設定モーダルの場合、モバイルではサイドバーが閉じてから表示する（重なり防止）
-            if (id === 'nav-settings') {
-                if (!isDesktop()) {
-                    toggleSidebar(false);
-                    // サイドバーのアニメーション(300ms)完了を待つ
-                    setTimeout(() => showSettingsModal(), 300);
-                } else {
-                    showSettingsModal();
-                }
-                return;
-            }
-
-            // モバイルならサイドバーを閉じる（その他のリンク）
-            if (!isDesktop()) {
-                toggleSidebar(false);
-            }
-
-            if (id === 'nav-dashboard') dispatch('dashboard');
-            if (id === 'nav-inbox') dispatch('inbox');
-            if (id === 'nav-search') dispatch('search');
-
-            // Target Tools
-            if (id === 'nav-wizard') dispatch('wizard');
-            if (id === 'nav-target-dashboard') dispatch('target-dashboard');
-            if (id === 'nav-wiki') dispatch('wiki');
-            return;
-        }
-
-        if (btn) {
-            const id = btn.id;
-            if (id === 'add-filter-btn') showFilterModal();
-            if (id === 'edit-timeblocks-btn') showTimeBlockModal();
-        }
-    });
-
-
-
-    // 右クリックで別ウィンドウで開く（全てのナビゲーション項目に対応）
-    UI.container.addEventListener('contextmenu', (e) => {
-        const link = e.target.closest('a');
-        if (!link) return;
-
-        const id = link.id;
-
-        // 全てのビューマッピング
-        const viewMap = {
-            // 基本項目
-            'nav-dashboard': 'dashboard',
-            'nav-inbox': 'inbox',
-            'nav-search': 'search',
-            // 目標設計ツール
-            'nav-wizard': 'wizard',
-            'nav-target-dashboard': 'target-dashboard',
-            'nav-wiki': 'wiki'
-        };
-
-        // プロジェクトやフィルターの動的項目も対応
-        let viewType = viewMap[id];
-        let itemId = null;
-
-        if (!viewType) {
-            // プロジェクト項目の場合
-            if (link.dataset.projectId) {
-                viewType = 'project';
-                itemId = link.dataset.projectId;
-            }
-            // フィルター項目の場合
-            else if (link.dataset.filterId) {
-                viewType = 'filter';
-                itemId = link.dataset.filterId;
-            }
-            // ラベル項目の場合
-            else if (link.dataset.labelId) {
-                viewType = 'label';
-                itemId = link.dataset.labelId;
-            }
-        }
-
-        if (viewType) {
-            showCustomContextMenu(e, [
-                {
-                    label: '新しいウィンドウで開く',
-                    action: () => openInNewWindow(viewType, itemId)
-                }
-            ]);
-        }
-    });
-
-    UI.openBtn?.addEventListener('click', () => toggleSidebar(true));
-    UI.closeBtn?.addEventListener('click', () => toggleSidebar(false));
-}
-
-function applyDensityMode(density) {
-    const items = document.querySelectorAll('.sidebar-item-row');
-    const densityClasses = Object.values(SIDEBAR_CONFIG.DENSITY_CLASSES);
-    const targetClass = SIDEBAR_CONFIG.DENSITY_CLASSES[density] || SIDEBAR_CONFIG.DENSITY_CLASSES.normal;
-
-    items.forEach(item => {
-        item.classList.remove(...densityClasses);
-        item.classList.add(targetClass);
-    });
-}
-
-function toggleSidebar(open) {
-    const { sidebar, resizer } = UI;
-    const { CLOSED, HIDDEN } = SIDEBAR_CONFIG.CLASSES;
-
-    if (!sidebar) return;
-
-    sidebar.classList.toggle(CLOSED, !open);
-    sidebar.classList.toggle(HIDDEN, !open);
-
-    if (isDesktop()) {
-        if (resizer) resizer.classList.toggle(HIDDEN, !open);
-        if (open) {
-            const w = localStorage.getItem(SIDEBAR_CONFIG.STORAGE_KEYS.WIDTH) || SIDEBAR_CONFIG.DEFAULT_WIDTH;
-            sidebar.style.width = `${w}px`;
-        } else {
-            sidebar.style.width = '0';
-        }
-    }
-    updateSidebarVisibility();
-}
-
-function updateSidebarVisibility() {
-    const { sidebar, openBtn, closeBtn } = UI;
-    const { CLOSED, HIDDEN } = SIDEBAR_CONFIG.CLASSES;
-    if (!sidebar || !openBtn || !closeBtn) return;
-
-    const isClosed = sidebar.classList.contains(CLOSED) || sidebar.classList.contains(HIDDEN);
-
-    if (isDesktop()) {
-        openBtn.classList.toggle(HIDDEN, !isClosed);
-        closeBtn.classList.toggle(HIDDEN, isClosed);
-        if (!isClosed) sidebar.classList.remove(HIDDEN);
-    } else {
-        openBtn.classList.remove(HIDDEN);
-        closeBtn.classList.remove(HIDDEN);
-        sidebar.classList.remove(HIDDEN);
-    }
-}
-
-function setupDensityModeListener() {
-    window.addEventListener(APP_EVENTS.SIDEBAR_SETTINGS_UPDATED, (e) => {
-        applyDensityMode(e.detail.density);
-    });
 }
