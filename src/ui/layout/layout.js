@@ -57,6 +57,13 @@ const createHeaderHTML = () => `
     </header>
 `;
 
+const createFooterHTML = () => `
+    <footer class="h-12 flex items-center justify-center px-4 border-t border-white/20 dark:border-gray-800/50 flex-shrink-0 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md z-[${Z_INDEX.HEADER}] relative">
+        <div id="footer-add-btn-container" class="w-full h-full"></div>
+        <div id="footer-input-form-container" class="hidden"></div>
+    </footer>
+`;
+
 export function renderLayout() {
     const app = document.getElementById('app');
     if (!app) return;
@@ -74,14 +81,9 @@ export function renderLayout() {
                         <div id="target-dashboard-view" class="hidden w-full h-full animate-fade-in overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8"></div>
                         <div id="wizard-view" class="hidden w-full h-full animate-fade-in overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8"></div>
                         <div id="wiki-view" class="hidden w-full h-full animate-fade-in overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8"></div>
-                        
-                        <!-- Persistent Add Task Footer -->
-                        <div id="global-footer" class="w-full h-12 flex-none mt-auto bg-white/70 dark:bg-gray-900/60 backdrop-blur-md border-t border-white/20 dark:border-gray-800/50 z-20 transition-all duration-300">
-                             <div id="footer-add-btn-container" class="h-full"></div>
-                             <div id="footer-input-form-container" class="hidden"></div>
-                        </div>
                     </div>
                 </div>
+                ${createFooterHTML()}
             </main>
         </div>
         <div id="modal-container" class="z-[${Z_INDEX.MODAL}] relative"></div>
