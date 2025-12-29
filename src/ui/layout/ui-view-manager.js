@@ -125,14 +125,19 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
     // 第4引数に丸ごとコンテキストを渡す
     renderTaskView(processedTasks, allProjects, allLabels, config);
 
-    // フッターのタスク追加ボタンを更新 (常に表示)
+    // フッターのタスク追加ボタンを更新 (ダッシュボード以外で表示)
     const footerBtnContainer = document.getElementById('footer-add-btn-container');
     const footerFormContainer = document.getElementById('footer-input-form-container');
-    if (footerBtnContainer && footerFormContainer) {
-        footerBtnContainer.classList.remove('hidden');
-        footerFormContainer.classList.add('hidden');
-        footerFormContainer.innerHTML = '';
 
-        renderFixedAddTaskBar(footerBtnContainer, footerFormContainer, config.projectId, config.labelId);
+    if (footerBtnContainer && footerFormContainer) {
+        if (currentFilter.type === 'dashboard') {
+            footerBtnContainer.classList.add('hidden');
+            footerFormContainer.classList.add('hidden');
+        } else {
+            footerBtnContainer.classList.remove('hidden');
+            footerFormContainer.classList.add('hidden');
+            footerFormContainer.innerHTML = '';
+            renderFixedAddTaskBar(footerBtnContainer, footerFormContainer, config.projectId, config.labelId);
+        }
     }
 }
