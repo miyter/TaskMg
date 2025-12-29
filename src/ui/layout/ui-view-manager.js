@@ -188,12 +188,25 @@ function updateFooterVisibility(show, projectId = null, labelId = null) {
 
     if (footerBtnContainer && footerFormContainer) {
         if (!show) {
+            // 完全に非表示にする（高さも0に）
             footerBtnContainer.classList.add('hidden');
+            footerBtnContainer.style.height = '0';
+            footerBtnContainer.style.minHeight = '0';
+            footerBtnContainer.innerHTML = '';
+
             footerFormContainer.classList.add('hidden');
+            footerFormContainer.style.height = '0';
+            footerFormContainer.style.minHeight = '0';
+            footerFormContainer.innerHTML = '';
         } else {
+            // 表示する
             footerBtnContainer.classList.remove('hidden');
+            footerBtnContainer.style.height = '';
+            footerBtnContainer.style.minHeight = '';
+
             footerFormContainer.classList.add('hidden');
             footerFormContainer.innerHTML = '';
+
             renderFixedAddTaskBar(footerBtnContainer, footerFormContainer, projectId, labelId);
         }
     }
