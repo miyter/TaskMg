@@ -97,12 +97,12 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
                     <span class="${UI_STYLES.STATS_BAR.LABEL}">Count</span>
                     <span class="${UI_STYLES.STATS_BAR.VALUE}">${count}<span class="text-xs font-normal ml-0.5 text-gray-400">件</span></span>
                 </div>
-                <div class="w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
+                <div class="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
                 <div class="${UI_STYLES.STATS_BAR.ITEM}">
                     <span class="${UI_STYLES.STATS_BAR.LABEL}">Total</span>
                     <span class="${UI_STYLES.STATS_BAR.VALUE} ${UI_STYLES.STATS_BAR.HIGHLIGHT}">${totalTimeText}</span>
                 </div>
-                <div class="w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
+                <div class="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
                 <div class="${UI_STYLES.STATS_BAR.ITEM}">
                     <span class="${UI_STYLES.STATS_BAR.LABEL}">Avg</span>
                     <span class="font-medium text-sm">${avgMinutes}<span class="text-xs ml-0.5">min/件</span></span>

@@ -82,7 +82,7 @@ export function buildModalHTML(task) {
                         <!-- 左カラム (8/12): メモ -->
                         <div class="md:col-span-8 flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
                             <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
+                                <label for="modal-task-desc" class="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                     メモ (Markdown)
                                 </label>
@@ -162,7 +162,7 @@ export function buildModalHTML(task) {
                                     </div>
 
                                     <div id="recurrence-days-container" class="${recurrence.type !== 'weekly' ? 'hidden' : ''} pt-2 border-t border-gray-100 dark:border-gray-700">
-                                        <label id="recurrence-days-label" class="block text-xs font-semibold text-gray-500 mb-2 uppercase">繰り返す曜日</label>
+                                        <span id="recurrence-days-label" class="block text-xs font-semibold text-gray-500 mb-2 uppercase">繰り返す曜日</span>
                                         <div id="recurrence-days-checkboxes" class="flex flex-wrap gap-4">
                                             ${createDaysCheckboxesHTML(recurrence.days)}
                                         </div>

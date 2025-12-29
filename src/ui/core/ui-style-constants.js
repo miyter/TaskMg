@@ -50,13 +50,13 @@ export const UI_STYLES = {
         TEXT: 'ml-2 text-sm text-gray-700 dark:text-gray-300 truncate'
     },
 
-    // 統計サマリーバー
+    // 統計サマリーバー (時間帯バーとデザイン統一: 高さ削減、横並び)
     STATS_BAR: {
-        CONTAINER: 'mt-2 mb-2 py-3 px-6 bg-gray-50/80 dark:bg-[#1e1e1e]/60 rounded-lg flex items-center justify-around text-sm border border-gray-100 dark:border-gray-800/50 backdrop-blur-sm',
-        ITEM: 'flex flex-col items-center gap-1',
-        LABEL: 'text-[10px] text-gray-400 uppercase tracking-wider',
-        VALUE: 'font-bold text-base',
-        HIGHLIGHT: 'text-blue-500 dark:text-blue-400'
+        CONTAINER: 'mt-2 mb-2 py-2 px-4 bg-gray-50/80 dark:bg-[#1e1e1e]/50 rounded-lg flex items-center justify-evenly text-sm border border-gray-100 dark:border-gray-800/50 backdrop-blur-sm',
+        ITEM: 'flex flex-row items-baseline gap-2',
+        LABEL: 'text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold',
+        VALUE: 'font-bold text-sm text-gray-700 dark:text-gray-200',
+        HIGHLIGHT: 'text-blue-600 dark:text-blue-400'
     },
 
     // モーダル
