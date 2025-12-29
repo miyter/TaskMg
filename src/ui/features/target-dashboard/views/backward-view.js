@@ -1,4 +1,8 @@
 export function renderBackwardView(data) {
+    if (!data || !data.milestones) {
+        return '<div class="p-4 text-center text-gray-500">データ読み込みエラー</div>';
+    }
+
     return `
         <div class="max-w-4xl mx-auto relative pl-6">
             <!-- Vertical Line -->
