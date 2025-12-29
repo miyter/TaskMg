@@ -1,7 +1,66 @@
 import { UI_CONFIG, SIDEBAR_TYPE } from './ui-view-constants.js';
-import { getTimeBlockById } from '../../store/timeblocks.js';
+import { getTimeBlockById, getTimeBlocks } from '../../store/timeblocks.js';
+import { getFilters } from '../../store/filters.js';
 
 const { CLASSES, HEADER_IDS, DATA_ATTRS } = UI_CONFIG;
+
+// ... (showView, clearSidebarHighlight, highlightSidebarItem remain unchanged) ...
+
+/**
+ * フィルターに応じたヘッダータイトルの更新
+ */
+export function updateHeaderTitleByFilter(filter, allProjects = [], allLabels = []) {
+    const elTitle = document.getElementById(HEADER_IDS.TITLE);
+    const elCount = document.getElementById(HEADER_IDS.COUNT);
+    if (!elTitle) return;
+
+    // ストアからデータを補完してタイトル解決（updateView以外からの呼び出しに対応）
+    const allTimeBlocks = getTimeBlocks();
+    const allFilters = getFilters();
+
+    const title = resolveTitleText(filter, allProjects, allLabels, allTimeBlocks, allFilters);
+
+    elTitle.textContent = title;
+
+    if (elCount && ['dashboard', 'search'].includes(filter.type)) {
+        elCount.textContent = '';
+    }
+}
+
+/**
+ * フィルター情報からタイトルテキストを解決する（純粋関数）
+ */
+export function resolveTitleText(filter, allProjects = [], allLabels = [], allTimeBlocks = [], allFilters = []) {
+    const { type, id, name } = filter;
+    if (name) return name;
+
+    switch (type) {
+        case 'inbox': return 'インボックス';
+        case 'project': return allProjects.find(p => p.id === id)?.name || 'プロジェクト';
+        case 'label': {
+            const l = allLabels.find(l => l.id === id);
+            return l ? `ラベル: ${l.name}` : 'ラベル';
+        }
+        case 'timeblock':
+            if (id === 'unassigned' || id === 'none') return '時間帯: 未定';
+            const b = allTimeBlocks.find(block => block.id === id);
+            return b ? `時間帯: ${b.start} - ${b.end}` : '時間帯';
+        case 'duration': return `所要時間: ${id}分`;
+        case 'filter':
+        case 'custom':
+            return allFilters.find(f => f.id === id)?.name || 'フィルター';
+        case 'today': return '今日';
+        case 'upcoming': return '今後';
+        case 'wizard': return '目標設計ウィザード';
+        case 'target-dashboard': return '目標ダッシュボード';
+        case 'wiki': return 'フレームワークWiki';
+        case 'search': return 'タスク検索';
+        case 'dashboard': return 'ダッシュボード';
+        default:
+            if (id) return id;
+            return 'タスク';
+    }
+}
 
 /**
  * 更新日: 2025-12-27
@@ -79,53 +138,7 @@ function getSidebarTarget(filter) {
     return document.querySelector(`.sidebar-item-row[data-type="${typeAttr}"][data-id="${id}"]`);
 }
 
-/**
- * フィルターに応じたヘッダータイトルの更新
- */
-export function updateHeaderTitleByFilter(filter, allProjects = [], allLabels = []) {
-    const elTitle = document.getElementById(HEADER_IDS.TITLE);
-    const elCount = document.getElementById(HEADER_IDS.COUNT);
-    if (!elTitle) return;
 
-    let title = 'インボックス';
-    const { type, id, name } = filter;
-
-    if (name) {
-        title = name;
-    } else {
-        switch (type) {
-            case SIDEBAR_TYPE.PROJECT:
-                title = allProjects.find(x => x.id === id)?.name || 'プロジェクト';
-                break;
-            case SIDEBAR_TYPE.LABEL:
-                const l = allLabels.find(x => x.id === id);
-                title = l ? `ラベル: ${l.name}` : 'ラベル';
-                break;
-            case SIDEBAR_TYPE.TIMEBLOCK:
-                if (id === 'unassigned') {
-                    title = '時間帯: 未定';
-                } else {
-                    const b = getTimeBlockById(id);
-                    title = b ? `時間帯: ${b.start} - ${b.end}` : '時間帯';
-                }
-                break;
-            case SIDEBAR_TYPE.DURATION:
-                title = `所要時間: ${id}分`;
-                break;
-            case 'search':
-                title = 'タスク検索';
-                break;
-            case 'dashboard':
-                title = 'ダッシュボード';
-                break;
-        }
-    }
-
-    elTitle.textContent = title;
-    if (elCount && ['dashboard', 'search'].includes(type)) {
-        elCount.textContent = '';
-    }
-}
 
 /**
  * 未ログイン時の表示状態をレンダリング

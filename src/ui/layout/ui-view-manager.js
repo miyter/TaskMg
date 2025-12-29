@@ -3,7 +3,7 @@ import { renderDashboard } from '../features/dashboard/dashboard.js';
 import { renderTaskView } from '../task-view.js';
 import { getProcessedTasks } from '../../logic/search.js';
 import { buildDashboardViewHTML } from '../ui-dom-utils.js';
-import { showView, highlightSidebarItem, updateHeaderTitleByFilter } from './ui-view-utils.js';
+import { showView, highlightSidebarItem, updateHeaderTitleByFilter, resolveTitleText } from './ui-view-utils.js';
 import { renderSearchPage } from '../search-view-ctrl.js';
 import { showSettingsModal } from '../settings.js';
 import { renderWizard } from '../features/wizard/wizard.js';
@@ -117,37 +117,6 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
     const toggleBtn = document.getElementById(CONTROL_IDS.COMPLETED_TOGGLE);
     const showCompleted = toggleBtn ? toggleBtn.classList.contains('text-blue-500') : false;
 
-    // ヘッダータイトルの解決
-    const resolveTitle = () => {
-        switch (currentFilter.type) {
-            case 'inbox':
-                return 'インボックス';
-            case 'project':
-                return allProjects.find(p => p.id === currentFilter.id)?.name || 'プロジェクト';
-            case 'label':
-                return allLabels.find(l => l.id === currentFilter.id)?.name || 'ラベル';
-            case 'timeblock':
-                if (currentFilter.id === 'unassigned' || currentFilter.id === 'none') return '未定';
-                return allTimeBlocks.find(b => b.id === currentFilter.id)?.name || '時間帯';
-            case 'duration':
-                return `${currentFilter.id}分`;
-            case 'filter':
-            case 'custom': // sidebar sends 'custom'
-                return allFilters.find(f => f.id === currentFilter.id)?.name || 'フィルター';
-            case 'today': return '今日';
-            case 'upcoming': return '今後';
-            // New titles
-            case 'wizard': return '目標設計ウィザード';
-            case 'target-dashboard': return '目標ダッシュボード';
-            case 'wiki': return 'フレームワークWiki';
-
-            default:
-                // サイドバークリック時のフォールバック
-                if (currentFilter.id) return currentFilter.id;
-                return 'タスク';
-        }
-    };
-
     const config = {
         keyword: '',
         showCompleted,
@@ -159,7 +128,7 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
             ? allFilters.find(f => f.id === currentFilter.id)
             : null,
         sortCriteria,
-        title: resolveTitle()
+        title: resolveTitleText(currentFilter, allProjects, allLabels, allTimeBlocks, allFilters)
     };
 
     // Saved Filterに時間帯が含まれている場合、timeBlockIdを設定してプログレスバーを表示させる (ユーザー要望対応)
