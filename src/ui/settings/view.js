@@ -1,7 +1,7 @@
 /**
  * 設定モーダルのUIコンポーネント (エントリポイント)
  */
-import { UI_STYLES } from '../../core/ui-style-constants.js';
+import { UI_STYLES } from '../core/ui-style-constants.js';
 import { createAccordionSection } from './views/components.js';
 import { getAppearanceContent, BACKGROUND_PATTERNS } from './views/appearance.js';
 import { getTypographyContent, getFontSizeContent, FONT_SIZES } from './views/typography.js';

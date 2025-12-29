@@ -13,6 +13,7 @@ import { initSidebarProjects, updateSidebarProjects } from './SidebarProjects.js
 import { renderSidebarItems, updateInboxCount } from './sidebar-renderer.js';
 import { showSettingsModal } from '../../settings.js';
 import { openInNewWindow } from '../../core/window-manager.js';
+import { showCustomContextMenu } from './sidebar-components.js';
 
 // 同期取得関数
 // 同期取得関数
@@ -149,14 +150,12 @@ function setupSidebarEvents() {
         };
 
         if (viewMap[id]) {
-            import('./sidebar-components.js').then(({ showCustomContextMenu }) => {
-                showCustomContextMenu(e, [
-                    {
-                        label: '新しいウィンドウで開く',
-                        action: () => openInNewWindow(viewMap[id])
-                    }
-                ]);
-            });
+            showCustomContextMenu(e, [
+                {
+                    label: '新しいウィンドウで開く',
+                    action: () => openInNewWindow(viewMap[id])
+                }
+            ]);
         }
     });
 
