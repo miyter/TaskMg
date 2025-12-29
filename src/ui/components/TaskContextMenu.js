@@ -4,8 +4,9 @@
 import { deleteTask, updateTask } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { getStartOfDay } from '../../utils/date.js';
-import { selectionState, toggleSelectionMode } from '../state/ui-state.js';
+import { updateUI } from '../core/DataSyncManager.js';
 
+// ... (existing imports)
 
 /**
  * 汎用的なコンテキストメニュー表示
@@ -13,6 +14,26 @@ import { selectionState, toggleSelectionMode } from '../state/ui-state.js';
  * @param {number} x - 表示位置X
  * @param {number} y - 表示位置Y
  */
+
+// ... (existing code)
+
+function triggerSortChange(value) {
+    // 既存のソートドロップダウンのオプションをクリックすることで、
+    // ラベルの更新とデータ更新の両方をトリガーする
+    const options = document.querySelectorAll('.sort-option');
+    const target = Array.from(options).find(opt => opt.dataset.value === value);
+
+    if (target) {
+        target.click();
+    } else {
+        // オプションが見つからない場合のフォールバック (直接更新)
+        const sortTrigger = document.getElementById('sort-trigger');
+        if (sortTrigger) {
+            sortTrigger.dataset.value = value;
+            updateUI();
+        }
+    }
+}
 
 export function showTaskContextMenu(task, x, y) {
     document.getElementById('task-context-menu')?.remove();
@@ -186,20 +207,3 @@ export function showTaskContextMenu(task, x, y) {
     setTimeout(() => document.addEventListener('click', dismissMenu), 0);
 }
 
-function triggerSortChange(value) {
-    // 既存のソートドロップダウンのオプションをクリックすることで、
-    // ラベルの更新とデータ更新の両方をトリガーする
-    const options = document.querySelectorAll('.sort-option');
-    const target = Array.from(options).find(opt => opt.dataset.value === value);
-
-    if (target) {
-        target.click();
-    } else {
-        // オプションが見つからない場合のフォールバック (直接更新)
-        const sortTrigger = document.getElementById('sort-trigger');
-        if (sortTrigger) {
-            sortTrigger.dataset.value = value;
-            import('../core/DataSyncManager.js').then(m => m.updateUI());
-        }
-    }
-}
