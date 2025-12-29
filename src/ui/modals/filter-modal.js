@@ -102,7 +102,8 @@ function createSelectionBox(title, items, initials, className, labelFn = (i) => 
 }
 
 function createTimeBlockBox(blocks, initials) {
-    const items = [{ id: UNASSIGNED_ID, name: '未定' }, ...blocks];
+    // 未定を最後に配置
+    const items = [...blocks, { id: UNASSIGNED_ID, name: '未定' }];
     return createSelectionBox('時間帯', items, initials, 'filter-timeblock-checkbox', b =>
         b.id === UNASSIGNED_ID ? b.name : `${b.start}-${b.end}`
     );

@@ -8,11 +8,16 @@ import { getTimeBlocks } from '../../store/timeblocks.js';
 import { openTaskEditModal } from '../modals/task-modal.js';
 import { showTaskContextMenu } from './TaskContextMenu.js';
 import { simpleMarkdownToHtml } from '../../utils/markdown.js';
+import { toggleTaskSelection } from '../state/ui-state.js';
 
-export function createTaskItem(task) {
+export function createTaskItem(task, allProjects, selectionState = { isSelectionMode: false, selectedIds: new Set() }) {
+    const { isSelectionMode, selectedIds } = selectionState;
+    const isSelected = selectedIds.has(task.id);
+
     const li = document.createElement('li');
     li.setAttribute('data-id', task.id);
-    li.setAttribute('draggable', 'true');
+    // 選択モード以外はドラッグ可能
+    li.setAttribute('draggable', isSelectionMode ? 'false' : 'true');
 
     const isCompleted = task.status === 'completed';
     const dateText = formatDateCompact(task.dueDate);
@@ -23,24 +28,59 @@ export function createTaskItem(task) {
     const timeBlocks = getTimeBlocks();
     const timeBlock = task.timeBlockId ? timeBlocks.find(tb => tb.id === task.timeBlockId) : null;
 
-    li.className = `group flex items-start gap-2 sm:gap-3 py-2 px-2 rounded -mx-2 transition-all duration-200 cursor-default border border-transparent ${isCompleted ? 'opacity-60 bg-gray-50 dark:bg-gray-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-gray-100 dark:hover:border-gray-700'}`;
+    // スタイル調整
+    let baseClass = "group flex items-start gap-2 sm:gap-3 py-2 px-2 rounded -mx-2 transition-all duration-200 border border-transparent";
+    let stateClass = "";
 
+    if (isSelectionMode) {
+        if (isSelected) {
+            stateClass = "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 cursor-pointer";
+        } else {
+            stateClass = "hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-gray-100 dark:hover:border-gray-700 cursor-pointer";
+        }
+    } else {
+        // 通常モード
+        if (isCompleted) {
+            stateClass = "opacity-60 bg-gray-50 dark:bg-gray-900/50 cursor-grab active:cursor-grabbing";
+        } else {
+            stateClass = "hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-gray-100 dark:hover:border-gray-700 cursor-grab active:cursor-grabbing";
+        }
+    }
+
+    li.className = `${baseClass} ${stateClass}`;
+
+    // チェックボックスの見た目
+    let checkboxClass = "";
+    let checkboxContent = "";
+
+    if (isSelectionMode) {
+        checkboxClass = isSelected
+            ? 'bg-blue-600 border-blue-600 text-white'
+            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-transparent hover:border-blue-500';
+        checkboxContent = '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+        if (!isSelected) {
+            checkboxClass += " text-transparent";
+        }
+    } else {
+        checkboxClass = isCompleted
+            ? 'bg-blue-500 border-blue-500 text-white'
+            : 'border-gray-400 dark:border-gray-500 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-transparent text-transparent hover:text-blue-500 cursor-pointer';
+        checkboxContent = '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+    }
+
+    // ハンバーガーアイコンを削除し、全体をドラッグハンドル化
     li.innerHTML = `
-        <div class="task-drag-handle mt-1 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing hidden sm:block mr-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
-        </div>
-
-        <div class="task-checkbox mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors z-10 cursor-pointer ${isCompleted ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-400 dark:border-gray-500 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-transparent text-transparent hover:text-blue-500'}">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+        <div class="task-checkbox mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors z-10 ${checkboxClass}">
+            ${checkboxContent}
         </div>
         
-        <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 items-center">
-            <div class="col-span-1 sm:col-span-7 flex flex-col justify-center">
-                <div class="leading-snug truncate font-medium transition-colors ${isCompleted ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}">${task.title}</div>
+        <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 items-center pointer-events-none">
+            <div class="col-span-1 sm:col-span-7 flex flex-col justify-center pointer-events-auto">
+                <div class="leading-snug truncate font-medium transition-colors ${isCompleted && !isSelectionMode ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}">${task.title}</div>
                 ${task.description ? `<div class="text-xs text-gray-400 mt-0.5 font-light truncate markdown-summary">${simpleMarkdownToHtml(task.description.split('\n')[0]).replace(/<\/?p[^>]*>/g, '')}</div>` : ''}
             </div>
             
-            <div class="col-span-1 sm:col-span-5 flex items-center sm:justify-end space-x-2 text-xs h-full mt-1 sm:mt-0 overflow-hidden">
+            <div class="col-span-1 sm:col-span-5 flex items-center sm:justify-end space-x-2 text-xs h-full mt-1 sm:mt-0 overflow-hidden pointer-events-auto">
                 ${isRecurring ? `<div class="text-blue-500 dark:text-blue-400 flex-shrink-0" title="繰り返し">🔁</div>` : ''}
                 ${isOneTime ? `<div class="text-gray-400 dark:text-gray-500 flex-shrink-0" title="期限あり">▶️</div>` : ''}
                 
@@ -59,22 +99,41 @@ export function createTaskItem(task) {
     `;
 
     // ドラッグイベント
-    li.addEventListener('dragstart', (e) => {
-        li.classList.add('opacity-50');
-        e.dataTransfer.setData('text/plain', task.id);
-        e.dataTransfer.effectAllowed = 'move';
-    });
-    li.addEventListener('dragend', () => li.classList.remove('opacity-50'));
+    if (!isSelectionMode) {
+        li.addEventListener('dragstart', (e) => {
+            // チェックボックス等の上ではドラッグ開始しないように制御が必要かもしれないが、
+            // 標準動作ではインタラクティブ要素以外をつかめばドラッグできる。
+            // 明示的にチェックボックスを除外
+            if (e.target.closest('.task-checkbox')) {
+                e.preventDefault();
+                return;
+            }
 
-    // チェックボックス
-    li.querySelector('.task-checkbox').addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await updateTaskStatus(task.id, isCompleted ? 'todo' : 'completed');
+            li.classList.add('opacity-50');
+            e.dataTransfer.setData('text/plain', task.id);
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        li.addEventListener('dragend', () => li.classList.remove('opacity-50'));
+    }
+
+    // チェックボックスクリック時の動作
+    const cb = li.querySelector('.task-checkbox');
+    cb.addEventListener('click', async (e) => {
+        e.stopPropagation(); // ドラッグや行クリックの伝播を止める
+        if (isSelectionMode) {
+            toggleTaskSelection(task.id);
+        } else {
+            await updateTaskStatus(task.id, isCompleted ? 'todo' : 'completed');
+        }
     });
 
-    // 編集モーダル
+    // 行クリック時の動作
     li.addEventListener('click', (e) => {
-        if (!e.target.closest('.task-checkbox') && !e.target.closest('.task-drag-handle')) {
+        if (e.target.closest('.task-checkbox')) return;
+
+        if (isSelectionMode) {
+            toggleTaskSelection(task.id);
+        } else {
             openTaskEditModal(task);
         }
     });
@@ -83,6 +142,11 @@ export function createTaskItem(task) {
     li.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (isSelectionMode && !isSelected) {
+            toggleTaskSelection(task.id);
+        }
+
         showTaskContextMenu(task, e.clientX, e.clientY);
     });
 

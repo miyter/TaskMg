@@ -1,16 +1,56 @@
 // @ts-nocheck
 /**
- * 更新日: 2025-12-21
- * 内容: ヘッダータイトルの具体化、ソートロジックの改善（Grok指摘対応）
+ * 更新日: 2025-12-29
+ * 内容: コンテキストメニューからのソート変更、複数選択モード対応、レイアウトの高さ調整
  */
 
 import { renderTaskList } from './task-list.js';
 import { renderInlineInput, renderFixedAddTaskBar } from './task-input.js';
 import { sortTasks } from '../logic/sort.js';
 import { renderTimeBlockStats } from './components/TimeBlockStats.js';
+import { selectionState, subscribeToSelectionChange } from './state/ui-state.js';
 
 // main.js 等で利用するために再エクスポート
 export { renderTaskList };
+
+// 再描画用に直前の引数を保持
+let lastRenderArgs = null;
+
+// コンテキストメニューからのソート要求を処理
+document.addEventListener('request-sort-change', (e) => {
+    const { sort } = e.detail;
+    // セレクトボックスがあれば更新
+    const sortSelect = document.getElementById('sort-select');
+    if (sortSelect) {
+        sortSelect.value = sort;
+    }
+    // トリガーデータがあれば更新
+    const sortTrigger = document.getElementById('sort-trigger');
+    if (sortTrigger) {
+        sortTrigger.dataset.value = sort;
+        // 表示ラベルの更新ロジックが必要だが、ここでは再描画で反映させる
+        const label = document.getElementById('sort-label');
+        if (label) {
+            if (sort === 'title_asc') label.textContent = '名前順';
+            if (sort === 'dueDate_asc') label.textContent = '日付順';
+        }
+    }
+
+    // 再描画
+    if (lastRenderArgs) {
+        renderTaskView(...lastRenderArgs);
+    }
+});
+
+// 選択モードの変化を監視して再描画（カレントのリストを維持）
+subscribeToSelectionChange(() => {
+    if (lastRenderArgs) {
+        // ちらつき防止のため、コンテンツ差分更新が理想だが、
+        // 簡易的に全体再描画を行う。スクロール位置は維持したい場合はtask-list側で制御が必要。
+        // ここでは単純再描画。
+        renderTaskView(...lastRenderArgs);
+    }
+});
 
 /**
  * タスクビュー全体（リスト＋入力欄）を描画
@@ -22,6 +62,9 @@ export { renderTaskList };
  * @param {string|null} timeBlockId - TimeBlock ID for stats
  */
 export function renderTaskView(tasks, allProjects, allLabels = [], projectId = null, labelId = null, timeBlockId = null) {
+    // 引数をキャッシュ
+    lastRenderArgs = [tasks, allProjects, allLabels, projectId, labelId, timeBlockId];
+
     const container = document.getElementById('task-view');
     if (!container) return;
 
@@ -41,22 +84,23 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
     const sortedTasks = sortTasks(tasks, sortValue);
 
     container.innerHTML = '';
-    // レイアウト設定: 画面全体を使うが、コンテンツは高さ固定のリストを含む
-    container.className = 'flex flex-col h-full bg-transparent overflow-y-hidden';
+    // レイアウト設定: 画面全体を使う。
+    container.className = 'flex flex-col h-full bg-transparent overflow-hidden';
 
     // メインコンテンツラッパー (全体レイアウト制御)
     const contentWrapper = document.createElement('div');
     contentWrapper.className = 'w-full max-w-3xl mx-auto h-full flex flex-col pt-2'; // 中央寄せ
     container.appendChild(contentWrapper);
 
-    // 1. タスクリスト表示エリア (高さ固定・内部スクロール)
-    // タスク12件分程度の高さを確保 (約520px)
+    // 1. タスクリスト表示エリア
+    // flex-1 を指定し、残りの高さを全て使う。これにより入力欄が下部に固定される。
     const listContainer = document.createElement('div');
     listContainer.id = 'task-list-container';
-    listContainer.className = 'flex-none h-[520px] overflow-y-auto custom-scrollbar pr-2 mb-4 scroll-smooth';
+    // overflow-y-auto でここだけスクロールさせる
+    listContainer.className = 'flex-1 overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth min-h-0';
     contentWrapper.appendChild(listContainer);
 
-    renderTaskList(listContainer, sortedTasks, allProjects);
+    renderTaskList(listContainer, sortedTasks, allProjects, selectionState);
 
     // 2. 時間帯別工数統計 (リストの直下、スクロール外の固定位置)
     if (timeBlockId) {
@@ -70,7 +114,8 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
     // 3. タスク追加エリア (その下、固定位置)
     const inputContainer = document.createElement('div');
     inputContainer.id = 'inline-input-container';
-    inputContainer.className = 'flex-none pb-10'; // 下部に余白
+    // 下部に適度な余白
+    inputContainer.className = 'flex-none pb-6';
     contentWrapper.appendChild(inputContainer);
 
     // 固定追加バーとして描画 (フッターではなく、静的配置)
