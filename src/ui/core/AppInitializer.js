@@ -10,7 +10,7 @@ import { onAuthStateChanged } from '../../core/firebase-sdk.js';
 import { initializeFirebase, auth } from '../../core/firebase.js';
 import { updateAuthUI, setupAuthHandlers } from '../auth.js';
 import { renderLayout } from '../layout/layout.js';
-import { initTheme } from '../layout/theme.js';
+import { initTheme, applyBackground } from '../layout/theme.js';
 import { initTaskModal } from '../modals/task-modal.js';
 import { initSidebar } from '../features/sidebar/sidebar.js';
 import { initSettings } from '../settings.js';
@@ -39,7 +39,7 @@ export function runInitialization() {
     renderLayout();
 
     // レイアウト生成後に背景を適用（要素が存在することを確認してから）
-    import('../layout/theme.js').then(({ applyBackground }) => applyBackground());
+    applyBackground();
 
     initSettings();
     initTaskModal();

@@ -6,6 +6,7 @@ import { getProjects } from '../store/projects.js';
 import { getTimeBlocks } from '../store/timeblocks.js';
 import { createGlassCard } from './components/glass-card.js';
 import { showMessageModal } from './components.js';
+import { UI_STYLES } from './core/ui-style-constants.js';
 
 /**
  * スタンドアロン入力フォーム (検索/ダッシュボード用)
@@ -20,18 +21,18 @@ export function renderTaskInput() {
     const html = `
         <form id="task-form" class="flex flex-col gap-3">
             <input type="text" id="task-title-input" 
-                class="bg-transparent text-lg font-medium placeholder-gray-400 text-gray-800 dark:text-white border-none outline-none focus:ring-0"
+                class="${UI_STYLES.INPUT.GLASSCARD_TITLE}"
                 placeholder="新しいタスクを追加..." autocomplete="off">
             
             <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-gray-700/50">
                 <div class="flex items-center gap-2">
-                    <select id="task-project-input" class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-xs rounded-md py-1.5 px-2 cursor-pointer">
+                    <select id="task-project-input" class="${UI_STYLES.SELECT.DEFAULT}">
                         <option value="">インボックス</option>
                         ${projectOptions}
                     </select>
-                    <input type="date" id="task-due-date-input" class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-xs rounded-md py-1 px-2 cursor-pointer">
+                    <input type="date" id="task-due-date-input" class="${UI_STYLES.SELECT.DEFAULT.replace('py-1.5', 'py-1')}">
                 </div>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-lg transition-all active:scale-95">追加</button>
+                <button type="submit" class="${UI_STYLES.BUTTON.PRIMARY}">追加</button>
             </div>
         </form>
     `;
@@ -40,9 +41,6 @@ export function renderTaskInput() {
     setupStandaloneEvents();
 }
 
-/**
- * インライン入力フォーム (タスクリスト下部)
- */
 /**
  * インライン入力フォーム (タスクリスト下部)
  * @param {HTMLElement} container 
@@ -75,17 +73,17 @@ export function renderInlineInput(container, projectId, labelId, options = {}) {
 
     const html = `
         <div class="flex flex-col gap-2">
-            <input type="text" id="inline-title-input" placeholder="タスク名" class="w-full text-sm font-semibold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100">
-            <textarea id="inline-desc-input" placeholder="詳細メモ" rows="2" class="w-full text-xs bg-transparent border-none outline-none text-gray-600 dark:text-gray-300 resize-none"></textarea>
+            <input type="text" id="inline-title-input" placeholder="タスク名" class="${UI_STYLES.INPUT.MINIMAL_TEXT}">
+            <textarea id="inline-desc-input" placeholder="詳細メモ" rows="2" class="${UI_STYLES.INPUT.MINIMAL_TEXTAREA}"></textarea>
             
             <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3">
-                <select id="inline-timeblock-select" class="bg-transparent text-xs text-gray-500 border border-gray-200 dark:border-gray-600/50 rounded px-2 py-1 cursor-pointer">
+                <select id="inline-timeblock-select" class="${UI_STYLES.SELECT.TRANSPARENT}">
                     <option value="">時間帯 (未定)</option>
                     ${timeBlockOptions}
                 </select>
                 <div class="flex gap-2">
-                    <button id="cancel-input-btn" class="text-xs text-gray-500 px-3 py-1.5 hover:text-gray-800 transition">キャンセル</button>
-                    <button id="submit-task-btn" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-1.5 rounded transition-colors shadow-sm">タスクを追加</button>
+                    <button id="cancel-input-btn" class="${UI_STYLES.BUTTON.CANCEL}">キャンセル</button>
+                    <button id="submit-task-btn" class="${UI_STYLES.BUTTON.DANGER}">タスクを追加</button>
                 </div>
             </div>
         </div>

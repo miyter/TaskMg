@@ -90,11 +90,11 @@ export function renderTaskView(tasks, allProjects, allLabels = [], context = {})
     container.appendChild(contentWrapper);
 
     // 1. タスクリスト表示エリア
-    // flex-1 を指定し、残りの高さを全て使う。これにより入力欄が下部に固定される。
+    // 高さ固定 (約10タスク分)
     const listContainer = document.createElement('div');
     listContainer.id = 'task-list-container';
-    // overflow-y-auto でここだけスクロールさせる
-    listContainer.className = 'flex-1 overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth min-h-0';
+    // flex-1 を廃止し、高さ固定 (例: 560px = 56px * 10)
+    listContainer.className = 'w-full h-[560px] flex-none overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth border-b border-gray-100 dark:border-gray-800';
     contentWrapper.appendChild(listContainer);
 
     renderTaskList(listContainer, sortedTasks, allProjects, selectionState, context);

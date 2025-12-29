@@ -3,6 +3,7 @@ import { getTimeBlocks } from '../../store/timeblocks.js';
 import { addFilter, updateFilter } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { MODAL_CLASSES } from '../core/ui-modal-constants.js';
+import { UI_STYLES } from '../core/ui-style-constants.js';
 
 const UNASSIGNED_ID = 'none';
 const MESSAGES = {
@@ -43,9 +44,9 @@ export function showFilterModal(filterToEdit = null) {
             <div class="${MODAL_CLASSES.BODY}">
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">フィルター名</label>
+                        <label class="${UI_STYLES.TEXT.LABEL}">フィルター名</label>
                         <input type="text" id="filter-name" value="${filterToEdit?.name || ''}" 
-                               class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+                               class="${UI_STYLES.INPUT.DEFAULT}">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                         ${createSelectionBox('プロジェクト', projects, state.project, 'filter-project-checkbox')}
@@ -56,8 +57,8 @@ export function showFilterModal(filterToEdit = null) {
                 </div>
             </div>
             <div class="${MODAL_CLASSES.FOOTER}">
-                <button id="cancel-filter-btn" class="text-sm font-medium text-gray-500 hover:text-gray-800 transition mr-auto">キャンセル</button>
-                <button id="save-filter-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-md transition-all active:scale-95">
+                <button id="cancel-filter-btn" class="${UI_STYLES.BUTTON.SECONDARY} mr-auto">キャンセル</button>
+                <button id="save-filter-btn" class="${UI_STYLES.BUTTON.PRIMARY}">
                     ${isEditMode ? '変更を保存' : '作成'}
                 </button>
             </div>
