@@ -1,4 +1,4 @@
-import { getTimeBlocks } from '../../../store/timeblocks.js';
+﻿import { getTimeBlocks } from '../../../store/timeblocks';
 import { buildRowHTML } from './timeblock-modal-dom.js';
 import { updateAddButtonUI } from './timeblock-modal-utils.js';
 import { handleDelete } from './timeblock-modal-logic.js';

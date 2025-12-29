@@ -1,7 +1,7 @@
 /**
  * メモ欄のMarkdownプレビュー制御
  */
-import { simpleMarkdownToHtml } from '../../utils/markdown.js';
+import { simpleMarkdownToHtml } from '../../utils/markdown';
 
 const UI_TEXT = {
     EDIT: '編集',

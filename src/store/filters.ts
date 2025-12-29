@@ -1,18 +1,26 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
  * 内容: subscribeToFilters の引数シグネチャを (workspaceId, onUpdate) に統一
+ * TypeScript化: 2025-12-29
  */
 
-import { db, auth } from '../core/firebase.js';
-import { 
-    collection, addDoc, deleteDoc, updateDoc, doc, query, onSnapshot, serverTimestamp 
-} from "../core/firebase-sdk.js";
-import { paths } from '../utils/paths.js';
+import { auth, db } from '../core/firebase';
+import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    onSnapshot,
+    query,
+    serverTimestamp, Unsubscribe,
+    updateDoc
+} from "../core/firebase-sdk";
+import { paths } from '../utils/paths';
+import { Filter } from './schema';
 
-let _cachedFilters = [];
+let _cachedFilters: Filter[] = [];
 
-export function getFilters() {
+export function getFilters(): Filter[] {
     return _cachedFilters;
 }
 
@@ -23,21 +31,21 @@ export function clearFiltersCache() {
 /**
  * フィルターのリアルタイム購読
  */
-export function subscribeToFilters(workspaceId, onUpdate) {
+export function subscribeToFilters(workspaceId: string | ((filters: Filter[]) => void), onUpdate?: (filters: Filter[]) => void): Unsubscribe {
     const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
     const userId = auth.currentUser?.uid;
 
     if (!userId || typeof callback !== 'function') {
         _cachedFilters = [];
         if (typeof callback === 'function') callback([]);
-        return () => {};
+        return () => { };
     }
 
     const path = paths.filters(userId);
-    const q = query(collection(db, path)); 
+    const q = query(collection(db, path));
 
     return onSnapshot(q, (snapshot) => {
-        const filters = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const filters = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Filter[];
         _cachedFilters = filters;
         callback(filters);
     }, (error) => {
@@ -50,9 +58,12 @@ export function subscribeToFilters(workspaceId, onUpdate) {
 /**
  * フィルターを追加
  */
-export async function addFilter(filterData) {
+export async function addFilter(filterData: Partial<Filter>) {
     const userId = auth.currentUser?.uid;
     if (!userId) throw new Error("Authentication required");
+
+    // Validation
+    // FilterSchema.parse(filterData); // id is optional in schema, created at optional
 
     const path = paths.filters(userId);
     const { id, ...data } = filterData;
@@ -67,7 +78,7 @@ export async function addFilter(filterData) {
 /**
  * フィルターを更新
  */
-export async function updateFilter(filterId, filterData) {
+export async function updateFilter(filterId: string, filterData: Partial<Filter>) {
     const userId = auth.currentUser?.uid;
     if (!userId) throw new Error("Authentication required");
 
@@ -83,7 +94,7 @@ export async function updateFilter(filterId, filterData) {
 /**
  * フィルターを削除
  */
-export async function deleteFilter(filterId) {
+export async function deleteFilter(filterId: string) {
     const userId = auth.currentUser?.uid;
     if (!userId) throw new Error("Authentication required");
 

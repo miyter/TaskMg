@@ -1,19 +1,21 @@
-// @ts-nocheck
-/**
+﻿/**
  * 更新日: 2025-12-21
  * 内容: subscribeToLabels の引数シグネチャを (workspaceId, onUpdate) に統一
+ * TypeScript化: 2025-12-29
  */
 
-import { auth } from '../core/firebase.js';
-import { showMessageModal } from '../ui/components.js';
+import { auth } from '../core/firebase';
+import { showMessageModal } from '../ui/components';
 
+import { Unsubscribe } from '../core/firebase-sdk';
 import {
-    subscribeToLabelsRaw,
     addLabelRaw,
-    updateLabelRaw,
     deleteLabelRaw,
-    getLabels as getLabelsRaw
-} from './labels-raw.js';
+    getLabels as getLabelsRaw,
+    subscribeToLabelsRaw,
+    updateLabelRaw
+} from './labels-raw';
+import { Label } from './schema';
 
 export const getLabels = getLabelsRaw;
 
@@ -23,6 +25,7 @@ export const getLabels = getLabelsRaw;
 function requireAuth() {
     const userId = auth.currentUser?.uid;
     if (!userId) {
+        // @ts-ignore
         showMessageModal("操作にはログインが必要です。", "error");
         throw new Error('Authentication required.');
     }
@@ -33,7 +36,7 @@ function requireAuth() {
  * ラベルのリアルタイム購読
  * Note: ラベルは全WS共通だが DataSyncManager の呼び出し規約に合わせる
  */
-export function subscribeToLabels(workspaceId, onUpdate) {
+export function subscribeToLabels(workspaceId: string | ((labels: Label[]) => void), onUpdate?: (labels: Label[]) => void): Unsubscribe {
     const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
     const userId = auth.currentUser?.uid;
 
@@ -48,7 +51,7 @@ export function subscribeToLabels(workspaceId, onUpdate) {
 /**
  * 新しいラベルを追加する
  */
-export async function addLabel(name, color) {
+export async function addLabel(name: string, color: string) {
     const userId = requireAuth();
     return addLabelRaw(userId, name, color);
 }
@@ -56,7 +59,7 @@ export async function addLabel(name, color) {
 /**
  * ラベルを更新する
  */
-export async function updateLabel(labelId, updates) {
+export async function updateLabel(labelId: string, updates: Partial<Label>) {
     const userId = requireAuth();
     return updateLabelRaw(userId, labelId, updates);
 }
@@ -64,7 +67,7 @@ export async function updateLabel(labelId, updates) {
 /**
  * ラベルを削除する
  */
-export async function deleteLabel(labelId) {
+export async function deleteLabel(labelId: string) {
     const userId = requireAuth();
     return deleteLabelRaw(userId, labelId);
 }

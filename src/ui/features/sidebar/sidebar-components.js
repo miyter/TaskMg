@@ -1,12 +1,12 @@
-/**
+﻿/**
  * サイドバーの共有コンポーネント
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
-import { deleteProject } from '../../../store/projects.js';
-import { deleteFilter } from '../../../store/filters.js';
-import { deleteWorkspace, getWorkspaces, setCurrentWorkspaceId } from '../../../store/workspace.js';
+import { deleteProject } from '../../../store/projects';
+import { deleteFilter } from '../../../store/filters';
+import { deleteWorkspace, getWorkspaces, setCurrentWorkspaceId } from '../../../store/workspace';
 import { showFilterModal } from '../../modals/filter-modal.js';
-import { showMessageModal } from '../../components.js';
+import { showMessageModal } from '../../components';
 import { showProjectModal } from '../../modals/project-modal.js';
 import { showWorkspaceModal } from '../../modals/workspace-modal.js';
 
@@ -118,7 +118,7 @@ export function showCustomContextMenu(e, items) {
 }
 
 
-import { APP_EVENTS } from '../../../core/event-constants.js';
+import { APP_EVENTS } from '../../../core/event-constants';
 
 function dispatchRoute(page, id = null) {
     document.dispatchEvent(new CustomEvent(APP_EVENTS.ROUTE_CHANGE, { detail: { page, id } }));

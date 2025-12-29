@@ -1,4 +1,4 @@
-import { createRadioOption, createSelectOption } from './components.js';
+﻿import { createRadioOption, createSelectOption } from './components';
 import { FONT_OPTIONS, getCurrentFonts } from '../../layout/fonts.js';
 
 export const FONT_SIZES = {

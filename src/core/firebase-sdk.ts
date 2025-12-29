@@ -1,0 +1,21 @@
+// @miyter:20251221
+// Firebase SDK Wrapper
+// インポート元をこのファイルに集約し、プロジェクト内でのバージョン不整合や二重ロードを防止
+// TypeScript化に伴い、CDN importを廃止してnpmパッケージを使用
+
+// --- Authentication ---
+export {
+    getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, signOut, updatePassword,
+    type User
+} from "firebase/auth";
+
+// --- Firestore ---
+export {
+    addDoc, collection, deleteDoc, doc, getDoc,
+    getDocs, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch,
+    type Unsubscribe
+} from "firebase/firestore";
+
+// --- App ---
+export { initializeApp } from "firebase/app";
+

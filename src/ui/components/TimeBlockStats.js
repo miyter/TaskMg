@@ -1,10 +1,10 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /**
  * 時間帯フィルタ時の工数サマリーコンポーネント
  * 改修: 時間帯外（一般ビュー）での集計表示に対応
  */
-import { getTimeBlockById } from '../../store/timeblocks.js';
-import { UI_STYLES } from '../core/ui-style-constants.js';
+import { getTimeBlockById } from '../../store/timeblocks';
+import { UI_STYLES } from '../core/ui-style-constants';
 
 export function renderTimeBlockStats(container, tasks, timeBlockId) {
     // 既存のコンテナ内をクリア

@@ -1,9 +1,9 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // @miyter:20251221
 // ラベル作成・編集モーダルの制御
 
-import { addLabel, updateLabel, deleteLabel } from '../../store/labels.js';
-import { showMessageModal } from '../components.js';
+import { addLabel, updateLabel, deleteLabel } from '../../store/labels';
+import { showMessageModal } from '../components';
 import { buildLabelModalHTML } from './label-modal-dom.js';
 
 /**

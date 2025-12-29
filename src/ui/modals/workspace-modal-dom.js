@@ -1,4 +1,4 @@
-import { UI_STYLES } from '../core/ui-style-constants.js';
+﻿import { UI_STYLES } from '../core/ui-style-constants';
 
 /**
  * ワークスペースモーダルのテンプレート

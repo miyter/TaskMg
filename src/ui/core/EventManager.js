@@ -1,15 +1,15 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /**
  * 更新日: 2025-12-27
  * 内容: 存在しない toggle-completed-btn のリスナーを削除（ランタイムエラー修正）
  */
 
-import { auth } from '../../core/firebase.js';
+import { auth } from '../../core/firebase';
 import { setCurrentFilter } from '../layout/ui-view-manager.js';
 import { startAllSubscriptions, stopDataSync, updateUI } from './DataSyncManager.js';
 import { setupCustomSortDropdown } from '../components/SortDropdown.js';
 import { isWindowMode, getInitialViewMode } from './window-manager.js';
-import { APP_EVENTS } from '../../core/event-constants.js';
+import { APP_EVENTS } from '../../core/event-constants';
 
 /**
  * デバウンス関数（高頻度イベントの間引き）

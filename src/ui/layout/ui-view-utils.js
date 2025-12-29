@@ -1,6 +1,6 @@
-import { UI_CONFIG, SIDEBAR_TYPE } from './ui-view-constants.js';
-import { getTimeBlockById, getTimeBlocks } from '../../store/timeblocks.js';
-import { getFilters } from '../../store/filters.js';
+﻿import { UI_CONFIG, SIDEBAR_TYPE } from './ui-view-constants.js';
+import { getTimeBlockById, getTimeBlocks } from '../../store/timeblocks';
+import { getFilters } from '../../store/filters';
 
 const { CLASSES, HEADER_IDS, DATA_ATTRS } = UI_CONFIG;
 

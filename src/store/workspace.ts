@@ -1,38 +1,48 @@
-// @ts-nocheck
-/**
+﻿/**
  * 更新日: 2025-12-27
  * 内容: ワークスペースが0個の場合の処理を修正
  *      - ensureDefaultWorkspace() を呼び出す前に onUpdate([]) を呼び出すように変更
  *      - onSnapshot コールバックから async を削除（SDK互換性のため）
  *      - onUpdate を関数内で強制的に正規化（safeOnUpdate）し、Minifyエラーを根絶
+ * TypeScript化: 2025-12-29
  */
 
 import {
-    collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs, limit, where
-} from "../core/firebase-sdk.js";
+    addDoc,
+    collection,
+    deleteDoc, doc,
+    getDocs, limit,
+    onSnapshot,
+    orderBy,
+    query,
+    serverTimestamp,
+    Unsubscribe,
+    updateDoc,
+    where
+} from "../core/firebase-sdk";
 
-import { db, auth } from "../core/firebase.js";
-import { paths } from '../utils/paths.js';
-import { showMessageModal } from '../ui/components.js';
+import { auth, db } from "../core/firebase";
+import { showMessageModal } from '../ui/components';
+import { paths } from '../utils/paths';
 
-import { APP_EVENTS } from '../core/event-constants.js';
+import { APP_EVENTS } from '../core/event-constants';
+
+import { Workspace, WorkspaceSchema } from './schema';
 
 const STORAGE_KEY = 'currentWorkspaceId';
 const CHANGE_EVENT = APP_EVENTS.WORKSPACE_CHANGED;
 
-let unsubscribe = null;
-let _workspaces = [];
+let unsubscribe: Unsubscribe | null = null;
+let _workspaces: Workspace[] = [];
 
-export function getWorkspaces() {
+export function getWorkspaces(): Workspace[] {
     return _workspaces;
 }
 
 /**
  * ワークスペース一覧をリアルタイム購読
- * @param {string} userId
- * @param {function} onUpdate
  */
-export function subscribeToWorkspaces(userId, onUpdate) {
+export function subscribeToWorkspaces(userId: string, onUpdate: (workspaces: Workspace[]) => void): Unsubscribe {
     // コールバックの安全な正規化（nullやundefined対策の決定版）
     const safeOnUpdate = typeof onUpdate === 'function' ? onUpdate : () => { };
 
@@ -48,7 +58,8 @@ export function subscribeToWorkspaces(userId, onUpdate) {
 
 
     unsubscribe = onSnapshot(q, (snapshot) => {
-        const items = snapshot.docs.map(doc => ({
+        // @ts-ignore: Firestore data to Zod schema validation could be added here
+        const items: Workspace[] = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
@@ -87,22 +98,22 @@ async function ensureDefaultWorkspace() {
     }
 }
 
-function validateCurrentWorkspace(items) {
+function validateCurrentWorkspace(items: Workspace[]): string | null {
     if (items.length === 0) return null;
     let currentId = getCurrentWorkspaceId();
-    const exists = items.some(w => w.id === currentId);
+    const exists = currentId ? items.some(w => w.id === currentId) : false;
     if (!currentId || !exists) {
-        currentId = items[0].id;
+        currentId = items[0].id!;
         localStorage.setItem(STORAGE_KEY, currentId);
     }
     return currentId;
 }
 
-export function getCurrentWorkspaceId() {
+export function getCurrentWorkspaceId(): string | null {
     return localStorage.getItem(STORAGE_KEY);
 }
 
-export function setCurrentWorkspaceId(id) {
+export function setCurrentWorkspaceId(id: string) {
     if (!id) return;
     const oldId = localStorage.getItem(STORAGE_KEY);
     if (oldId === id) return;
@@ -110,18 +121,23 @@ export function setCurrentWorkspaceId(id) {
     dispatchWorkspaceEvent(id, _workspaces);
 }
 
-function dispatchWorkspaceEvent(id, workspaces) {
+function dispatchWorkspaceEvent(id: string | null, workspaces: Workspace[]) {
+    // @ts-ignore
     const event = new CustomEvent(CHANGE_EVENT, {
         detail: { workspaceId: id, workspaces: workspaces }
     });
     document.dispatchEvent(event);
 }
 
-export async function addWorkspace(name) {
+export async function addWorkspace(name: string): Promise<{ id: string, name: string }> {
     try {
+        // Validation
+        WorkspaceSchema.pick({ name: true }).parse({ name });
+
         const user = auth.currentUser;
         if (!user) throw new Error('Authentication required');
         const path = paths.workspaces(user.uid);
+
         const docRef = await addDoc(collection(db, path), {
             name: name,
             createdAt: serverTimestamp()
@@ -134,7 +150,7 @@ export async function addWorkspace(name) {
     }
 }
 
-export async function isWorkspaceNameDuplicate(name, excludeId = null) {
+export async function isWorkspaceNameDuplicate(name: string, excludeId: string | null = null): Promise<boolean> {
     const user = auth.currentUser;
     if (!user) return false;
     const path = paths.workspaces(user.uid);
@@ -143,7 +159,7 @@ export async function isWorkspaceNameDuplicate(name, excludeId = null) {
     return snapshot.docs.some(doc => doc.id !== excludeId);
 }
 
-export async function updateWorkspaceName(id, newName) {
+export async function updateWorkspaceName(id: string, newName: string): Promise<void> {
     try {
         const user = auth.currentUser;
         if (!user) throw new Error('Authentication required');
@@ -155,7 +171,7 @@ export async function updateWorkspaceName(id, newName) {
     }
 }
 
-export async function deleteWorkspace(id) {
+export async function deleteWorkspace(id: string): Promise<void> {
     try {
         const user = auth.currentUser;
         if (!user) throw new Error('Authentication required');

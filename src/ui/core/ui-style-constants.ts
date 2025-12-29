@@ -71,4 +71,4 @@ export const UI_STYLES = {
         GLASS: 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-lg',
         SOLID: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm'
     }
-};
+} as const;

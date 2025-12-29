@@ -1,19 +1,19 @@
-import Chart from 'chart.js/auto';
-import { buildDashboardViewHTML } from '../../ui-dom-utils.js';
+﻿import Chart from 'chart.js/auto';
+import { buildDashboardViewHTML } from '../../ui-dom-utils';
 import { DASHBOARD_CONFIG } from './dashboard-constants.js';
-import * as DateUtils from '../../../utils/date.js';
+import * as DateUtils from '../../../utils/date';
 
-// チャートインスタンスの管理（メモリリーク防止）
+// チャートインスタンスの管琁E��メモリリーク防止�E�E
 const chartInstances = new WeakMap();
 
 /**
- * ダッシュボードの描画実行
+ * ダチE��ュボ�Eド�E描画実衁E
  */
 export function renderDashboard(tasks) {
     const view = document.getElementById('dashboard-view');
     if (!tasks || !view) return;
 
-    // 基本構造の構築
+    // 基本構造の構篁E
     view.innerHTML = buildDashboardViewHTML();
 
     const completed = tasks.filter(t => t.status === 'completed' && t.completedAt);
@@ -101,12 +101,12 @@ function syncChart(id, labels, data, color) {
     let chart = chartInstances.get(canvas);
 
     if (chart) {
-        // 差分更新
+        // 差刁E��新
         chart.data.labels = labels;
         chart.data.datasets[0].data = data;
         chart.update();
     } else {
-        // 新規生成
+        // 新規生戁E
         chart = new Chart(canvas.getContext('2d'), {
             type: 'bar',
             data: {

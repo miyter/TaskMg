@@ -1,8 +1,8 @@
-/**
+﻿/**
  * モーダルおよびコンテキストメニューの共通ヘルパー
  */
-import { updateTask } from '../../store/store.js';
-import { showMessageModal } from '../../ui/components.js';
+import { updateTask } from '../../store/store';
+import { showMessageModal } from '../../ui/components';
 
 const INBOX_LABEL = '📥 インボックス';
 

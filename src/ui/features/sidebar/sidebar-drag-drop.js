@@ -1,9 +1,9 @@
-/**
+﻿/**
  * サイドバーへのドラッグ&ドロップ制御
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
-import { updateTask } from '../../../store/store.js';
-import { showMessageModal } from '../../components.js';
+import { updateTask } from '../../../store/store';
+import { showMessageModal } from '../../components';
 
 export function setupDropZone(element, type, value = null) {
     if (!element) return;

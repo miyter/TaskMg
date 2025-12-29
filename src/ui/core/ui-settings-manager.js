@@ -1,10 +1,10 @@
-/**
+﻿/**
  * UI設定の一元管理モジュール（リファクタリング版）
  * 各画面セグメント（サイドバー、メインカラム、モーダル、ダッシュボード）への設定適用を統括
  */
 
 import { SIDEBAR_CONFIG } from '../features/sidebar/sidebar-constants.js';
-import { APP_EVENTS } from '../../core/event-constants.js';
+import { APP_EVENTS } from '../../core/event-constants';
 
 // ========================================
 // 定数定義

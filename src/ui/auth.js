@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 認証関連のUI・ロジック制御
  */
 import {
@@ -6,9 +6,9 @@ import {
     signOut,
     updatePassword,
     signInAnonymously
-} from "../core/firebase-sdk.js";
-import { auth, isFirebaseInitialized } from '../core/firebase.js';
-import { showMessageModal } from './components.js';
+} from "../core/firebase-sdk";
+import { auth, isFirebaseInitialized } from '../core/firebase';
+import { showMessageModal } from './components';
 
 let currentUserId = null;
 

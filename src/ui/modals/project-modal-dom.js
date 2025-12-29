@@ -1,8 +1,8 @@
-/**
+﻿/**
  * プロジェクト作成・編集モーダルのHTML構造生成
  */
 
-import { UI_STYLES } from '../core/ui-style-constants.js';
+import { UI_STYLES } from '../core/ui-style-constants';
 
 export function buildProjectModalHTML(project = null) {
     const isEdit = !!project;

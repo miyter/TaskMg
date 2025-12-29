@@ -1,11 +1,21 @@
 /**
  * 共通UIコンポーネント
+ * TypeScript化: 2025-12-29
  */
+
+interface MessageModalConfig {
+    title?: string;
+    message: string;
+    type?: 'info' | 'error' | 'success' | 'confirm';
+    onConfirm?: (() => void) | null;
+    cancelText?: string;
+    okText?: string;
+}
 
 /**
  * モーダルのHTML骨格を生成
  */
-function buildModalSkeleton(config, okBtnClass, showCancel) {
+function buildModalSkeleton(config: MessageModalConfig, okBtnClass: string, showCancel: boolean): string {
     return `
         <div id="message-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4" role="dialog" aria-modal="true">
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-sm w-full transform transition-all scale-100 border border-gray-100 dark:border-gray-700">
@@ -30,25 +40,25 @@ function buildModalSkeleton(config, okBtnClass, showCancel) {
 /**
  * 内部レンダリング処理
  */
-function _renderMessageModal(config) {
+function _renderMessageModal(config: MessageModalConfig): void {
     document.getElementById('message-modal')?.remove();
 
     let okBtnClass = 'bg-blue-600 hover:bg-blue-700';
     if (!config.title) {
         switch (config.type) {
-            case 'error': 
-                config.title = 'エラー'; 
+            case 'error':
+                config.title = 'エラー';
                 okBtnClass = 'bg-red-600 hover:bg-red-700';
                 break;
-            case 'success': 
-                config.title = '成功'; 
+            case 'success':
+                config.title = '成功';
                 okBtnClass = 'bg-green-600 hover:bg-green-700';
                 break;
-            case 'confirm': 
-                config.title = '確認'; 
+            case 'confirm':
+                config.title = '確認';
                 okBtnClass = 'bg-red-600 hover:bg-red-700';
                 break;
-            default: 
+            default:
                 config.title = '通知';
                 break;
         }
@@ -59,14 +69,14 @@ function _renderMessageModal(config) {
 
     document.body.insertAdjacentHTML('beforeend', buildModalSkeleton(config, okBtnClass, showCancel));
 
-    const modal = document.getElementById('message-modal');
-    const titleEl = document.getElementById('msg-modal-title');
-    const bodyEl = document.getElementById('msg-modal-body');
-    const okBtn = document.getElementById('msg-modal-ok');
+    const modal = document.getElementById('message-modal') as HTMLElement;
+    const titleEl = document.getElementById('msg-modal-title') as HTMLElement;
+    const bodyEl = document.getElementById('msg-modal-body') as HTMLElement;
+    const okBtn = document.getElementById('msg-modal-ok') as HTMLElement;
     const cancelBtn = document.getElementById('msg-modal-cancel');
 
     // 安全なテキスト挿入（XSS対策）
-    titleEl.textContent = config.title;
+    titleEl.textContent = config.title || '';
     bodyEl.textContent = config.message;
 
     const close = () => {
@@ -75,7 +85,7 @@ function _renderMessageModal(config) {
         setTimeout(() => modal.remove(), 200);
     };
 
-    const handleKeydown = (e) => {
+    const handleKeydown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') close();
         if (e.key === 'Enter' && !showCancel) close();
     };
@@ -88,11 +98,11 @@ function _renderMessageModal(config) {
     };
 
     if (cancelBtn) cancelBtn.onclick = close;
-    
-    modal.onclick = (e) => { 
+
+    modal.onclick = (e: MouseEvent) => {
         if (e.target === modal && !showCancel) close();
     };
-    
+
     okBtn.focus();
 }
 
@@ -100,8 +110,8 @@ function _renderMessageModal(config) {
  * 汎用メッセージモーダルを表示
  * インターフェースを正規化し、後方互換性を維持
  */
-export function showMessageModal(messageOrOptions, arg2 = null) {
-    let config = {
+export function showMessageModal(messageOrOptions: string | Partial<MessageModalConfig>, arg2: string | (() => void) | null = null): void {
+    let config: MessageModalConfig = {
         title: '',
         message: '',
         type: 'info',
@@ -118,9 +128,10 @@ export function showMessageModal(messageOrOptions, arg2 = null) {
             config.type = 'confirm';
             config.onConfirm = arg2;
         } else if (typeof arg2 === 'string') {
+            // @ts-ignore
             config.type = arg2;
         }
     }
 
-    return _renderMessageModal(config);
+    _renderMessageModal(config);
 }

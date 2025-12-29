@@ -1,8 +1,8 @@
-/**
+﻿/**
  * 設定モーダルのUIコンポーネント (エントリポイント)
  */
-import { UI_STYLES } from '../core/ui-style-constants.js';
-import { createAccordionSection } from './views/components.js';
+import { UI_STYLES } from '../core/ui-style-constants';
+import { createAccordionSection } from './views/components';
 import { getAppearanceContent, BACKGROUND_PATTERNS } from './views/appearance.js';
 import { getTypographyContent, getFontSizeContent, FONT_SIZES } from './views/typography.js';
 import { getDataContent } from './views/data.js';
@@ -11,7 +11,7 @@ import { getAccountContent } from './views/account.js';
 import { getLanguageContent } from './views/language.js';
 
 // エクスポート: 定数はここから再エクスポート
-export { BACKGROUND_PATTERNS } from './views/components.js';
+export { BACKGROUND_PATTERNS } from './views/components';
 export { FONT_SIZES } from './views/typography.js';
 
 export function getSettingsModalHTML(userInitial, userEmail, isCompact) {

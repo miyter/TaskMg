@@ -1,9 +1,9 @@
-/**
+﻿/**
  * プロジェクト作成・編集モーダル
  */
-import { addProject, updateProject, deleteProject } from '../../store/projects.js';
-import { getCurrentWorkspaceId } from '../../store/workspace.js';
-import { showMessageModal } from '../components.js';
+import { addProject, updateProject, deleteProject } from '../../store/projects';
+import { getCurrentWorkspaceId } from '../../store/workspace';
+import { showMessageModal } from '../components';
 import { buildProjectModalHTML } from './project-modal-dom.js';
 import { initializeModal } from './modal-common.js';
 

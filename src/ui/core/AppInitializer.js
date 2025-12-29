@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 更新日: 2025-12-27
  * 内容: ワークスペース読み込みタイミングの修正
  *      - subscribeToWorkspaces のコールバック内で startAllSubscriptions を呼び出さないように変更
@@ -6,8 +6,8 @@
  *      - ページ状態の復元処理を EventManager.js に移動
  */
 
-import { onAuthStateChanged } from '../../core/firebase-sdk.js';
-import { initializeFirebase, auth } from '../../core/firebase.js';
+import { onAuthStateChanged } from '../../core/firebase-sdk';
+import { initializeFirebase, auth } from '../../core/firebase';
 import { updateAuthUI, setupAuthHandlers } from '../auth.js';
 import { renderLayout } from '../layout/layout.js';
 import { initTheme, applyBackground } from '../layout/theme.js';
@@ -22,7 +22,7 @@ import {
     setWorkspaceUnsubscribe
 } from './DataSyncManager.js';
 import { setupGlobalEventListeners } from './EventManager.js';
-import { subscribeToWorkspaces } from '../../store/workspace.js';
+import { subscribeToWorkspaces } from '../../store/workspace';
 import { applyAllUISettings } from './ui-settings-manager.js';
 
 /**

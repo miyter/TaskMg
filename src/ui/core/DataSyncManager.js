@@ -1,16 +1,16 @@
-/**
+﻿/**
  * 更新日: 2025-12-27
  * 内容: ReferenceError対策のため変数をトップレベルで確実に定義し、
  * データ同期ロジックを再構築
  */
 
-import { auth } from '../../core/firebase.js';
-import { subscribeToTasks } from '../../store/store.js';
-import { subscribeToProjects } from '../../store/projects.js';
-import { subscribeToLabels } from '../../store/labels.js';
-import { subscribeToTimeBlocks, clearTimeBlocksCache } from '../../store/timeblocks.js';
-import { subscribeToFilters, clearFiltersCache } from '../../store/filters.js';
-import { getCurrentWorkspaceId } from '../../store/workspace.js';
+import { auth } from '../../core/firebase';
+import { subscribeToTasks } from '../../store/store';
+import { subscribeToProjects } from '../../store/projects';
+import { subscribeToLabels } from '../../store/labels';
+import { subscribeToTimeBlocks, clearTimeBlocksCache } from '../../store/timeblocks';
+import { subscribeToFilters, clearFiltersCache } from '../../store/filters';
+import { getCurrentWorkspaceId } from '../../store/workspace';
 import { updateView } from '../layout/ui-view-manager.js';
 
 // 変数宣言（巻き上げ対策として const/let を明示的にトップレベル配置）
@@ -57,7 +57,7 @@ function notifyUpdate(eventType) {
  * 同期開始
  */
 
-import { APP_EVENTS } from '../../core/event-constants.js';
+import { APP_EVENTS } from '../../core/event-constants';
 
 export function startAllSubscriptions(userId) {
     if (!auth?.currentUser) {
@@ -114,8 +114,8 @@ export function stopDataSync(stopWorkspaceSync = false) {
 import { getTasks } from '../../store/store-raw.js';
 import { getProjects } from '../../store/projects-raw.js';
 import { getLabels } from '../../store/labels-raw.js';
-import { getTimeBlocks } from '../../store/timeblocks.js';
-import { getFilters } from '../../store/filters.js';
+import { getTimeBlocks } from '../../store/timeblocks';
+import { getFilters } from '../../store/filters';
 
 export const getData = {
     tasks: getTasks,

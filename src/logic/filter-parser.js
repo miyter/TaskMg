@@ -1,12 +1,12 @@
 // @ts-nocheck
 // @miyter:20251221
-// カスタムフィルターのクエリ文字列解析ロジック
-import { getStartOfDay, getEndOfDay, getStartOfWeek, toDate } from '../utils/date.js';
+// カスタムフィルターのクエリ斁E���E解析ロジチE��
+import { getStartOfDay, getEndOfDay, getStartOfWeek, toDate } from '../utils/date';
 
 /**
- * クエリ文字列からフィルタリング関数を生成
- * 形式: "project:A,B timeblock:C,null keyword"
- * カテゴリ間: AND, カテゴリ内(カンマ区切り): OR
+ * クエリ斁E���Eからフィルタリング関数を生戁E
+ * 形弁E "project:A,B timeblock:C,null keyword"
+ * カチE��リ閁E AND, カチE��リ冁Eカンマ区刁E��): OR
  */
 export function createFilter(queryString) {
     if (!queryString?.trim()) return () => true;
@@ -14,22 +14,22 @@ export function createFilter(queryString) {
     const conditions = parseQuery(queryString);
 
     return (task) => {
-        // 1. プロジェクト判定 (OR)
+        // 1. プロジェクト判宁E(OR)
         if (conditions.projectIds && !conditions.projectIds.has(task.projectId)) return false;
 
-        // 2. 時間帯判定 (OR)
+        // 2. 時間帯判宁E(OR)
         if (conditions.timeBlockIds) {
             const taskTbId = (task.timeBlockId === null || task.timeBlockId === 'null') ? 'null' : String(task.timeBlockId);
             if (!conditions.timeBlockIds.has(taskTbId)) return false;
         }
 
-        // 3. 所要時間判定 (OR)
+        // 3. 所要時間判宁E(OR)
         if (conditions.durations) {
             const taskDuration = task.duration ? Number(task.duration) : 0;
             if (!conditions.durations.has(taskDuration)) return false;
         }
 
-        // 4. 日付判定 (OR)
+        // 4. 日付判宁E(OR)
         if (conditions.dates && conditions.dates.size > 0) {
             const dueDate = task.dueDate ? toDate(task.dueDate) : null;
             if (!dueDate) return false;
@@ -37,10 +37,10 @@ export function createFilter(queryString) {
             const now = new Date();
             const todayStart = getStartOfDay(now);
 
-            // 条件のいずれかに一致すればOK
+            // 条件のぁE��れかに一致すればOK
             let dateMatch = false;
             if (conditions.dates.has('today')) {
-                // 今日 (過去含む) = 期限が今日の終わり以前
+                // 今日 (過去含む) = 期限が今日の終わり以剁E
                 if (dueDate <= getEndOfDay(now)) dateMatch = true;
             }
             if (!dateMatch && conditions.dates.has('tomorrow')) {
@@ -50,8 +50,8 @@ export function createFilter(queryString) {
                 if (dueDate >= tomorrowStart && dueDate <= tomorrowEnd) dateMatch = true;
             }
             if (!dateMatch && conditions.dates.has('week')) {
-                // 今週 (週の始まり〜終わり)
-                // getStartOfWeekは月曜始まりを想定
+                // 今週 (週の始まり〜終わめE
+                // getStartOfWeekは月曜始まりを想宁E
                 const weekStart = getStartOfWeek(now);
                 const weekEnd = new Date(weekStart);
                 weekEnd.setDate(weekEnd.getDate() + 6);
@@ -71,7 +71,7 @@ export function createFilter(queryString) {
             if (!dateMatch) return false;
         }
 
-        // 5. キーワード判定 (AND)
+        // 5. キーワード判宁E(AND)
         if (conditions.keywords.length > 0) {
             const searchTarget = `${task.title} ${task.description || ''}`.toLowerCase();
             if (!conditions.keywords.every(kw => searchTarget.includes(kw))) return false;
@@ -82,7 +82,7 @@ export function createFilter(queryString) {
 }
 
 /**
- * 文字列を解析して内部的な条件オブジェクトに変換
+ * 斁E���Eを解析して冁E��皁E��条件オブジェクトに変換
  */
 function parseQuery(queryString) {
     const conditions = {
@@ -114,7 +114,7 @@ function parseQuery(queryString) {
                     conditions.dates = new Set(values);
                     break;
                 default:
-                    // 未知のタグはキーワードとして扱う
+                    // 未知のタグはキーワードとして扱ぁE
                     conditions.keywords.push(part.toLowerCase());
             }
         } else {

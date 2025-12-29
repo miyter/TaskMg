@@ -1,8 +1,8 @@
-/**
+﻿/**
  * タスク編集モーダルのメインコントローラー
  */
-import { updateTask, deleteTask } from '../../store/store.js';
-import { showMessageModal } from '../components.js';
+import { updateTask, deleteTask } from '../../store/store';
+import { showMessageModal } from '../components';
 import { setupMarkdownControls } from './task-modal-markdown.js';
 import { setupRecurrenceControls } from './task-modal-recurrence.js';
 

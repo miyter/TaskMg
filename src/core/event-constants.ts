@@ -1,11 +1,8 @@
-/** @typedef {'workspace-changed' | 'route-change' | 'tasks-updated' | 'projects-updated' | 'labels-updated' | 'timeblocks-updated' | 'filters-updated' | 'sidebar-settings-updated' | 'ui-settings-changed' | 'ui-updated' | 'theme-changed'} AppEventName */
-
 /**
  * アプリケーション全体で使用するイベント名の定数定義
  * Store層とUI層の両方から参照されるため、src/core/に配置して依存関係を整理する。
- * @type {Object.<string, AppEventName>}
  */
-export const APP_EVENTS = Object.freeze({
+export const APP_EVENTS = {
     // ワークスペース
     WORKSPACE_CHANGED: 'workspace-changed',
 
@@ -26,16 +23,26 @@ export const APP_EVENTS = Object.freeze({
     // その他UIイベント
     UI_UPDATED: 'ui-updated',
     THEME_CHANGED: 'theme-changed'
-});
+} as const;
+
+export type AppEventName = typeof APP_EVENTS[keyof typeof APP_EVENTS];
 
 /**
  * @typedef {object} WorkspaceChangedDetail
  * @property {string} workspaceId
  * @property {Array<object>} [workspaces]
  */
+export interface WorkspaceChangedDetail {
+    workspaceId: string;
+    workspaces?: any[]; // 具体的な型は後ほど定義
+}
 
 /**
  * @typedef {object} RouteChangeDetail
  * @property {string} page
  * @property {string|null} [id]
  */
+export interface RouteChangeDetail {
+    page: string;
+    id?: string | null;
+}

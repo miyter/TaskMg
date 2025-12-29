@@ -1,20 +1,20 @@
-/**
+﻿/**
  * サイドバーの各項目レンダリング制御
  */
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { countActiveTasks, getSidebarDensity } from './sidebar-utils.js';
 import { setupDropZone } from './sidebar-drag-drop.js';
-import { createSidebarItem, showItemContextMenu } from './sidebar-components.js';
-import { getTimeBlocks } from '../../../store/timeblocks.js';
+import { createSidebarItem, showItemContextMenu } from './sidebar-components';
+import { getTimeBlocks } from '../../../store/timeblocks';
 import { showTimeBlockModal } from '../timeblock/timeblock-modal.js';
 import { updateSidebarProjects } from './SidebarProjects.js';
 import { filterTasks } from '../../../logic/search.js';
-import { showMessageModal } from '../../components.js';
+import { showMessageModal } from '../../components';
 
 import { getTasks } from '../../../store/store-raw.js';
 import { getProjects } from '../../../store/projects-raw.js';
 import { getLabels } from '../../../store/labels-raw.js';
-import { getFilters } from '../../../store/filters.js';
+import { getFilters } from '../../../store/filters';
 
 /**
  * 更新日: 2025-12-27

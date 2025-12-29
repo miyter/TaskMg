@@ -1,20 +1,30 @@
-// @ts-nocheck
-/**
+﻿/**
  * 更新日: 2025-12-21
  * 内容: 引数シグネチャの修正 (workspaceId, callback)
+ * TypeScript化: 2025-12-29
  */
 
 import {
-    collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, writeBatch
-} from "../core/firebase-sdk.js";
+    collection,
+    deleteDoc,
+    doc,
+    onSnapshot,
+    orderBy,
+    query,
+    serverTimestamp,
+    setDoc,
+    Unsubscribe,
+    writeBatch
+} from "../core/firebase-sdk";
 
-import { auth, db } from "../core/firebase.js";
-import { showMessageModal } from '../ui/components.js';
-import { paths } from '../utils/paths.js';
+import { auth, db } from "../core/firebase";
+import { showMessageModal } from '../ui/components';
+import { paths } from '../utils/paths';
+import { TimeBlock } from './schema';
 
-let timeBlocks = [];
+let timeBlocks: TimeBlock[] = [];
 
-const defaultTimeBlocks = [
+const defaultTimeBlocks: TimeBlock[] = [
     { id: 'tb_morning', name: '06:00 - 09:00', start: '06:00', end: '09:00', color: '#EF4444', order: 0 },
     { id: 'tb_afternoon', name: '13:00 - 17:00', start: '13:00', end: '17:00', color: '#3B82F6', order: 1 },
     { id: 'tb_night', name: '20:00 - 22:00', start: '20:00', end: '22:00', color: '#8B5CF6', order: 2 }
@@ -23,9 +33,9 @@ const defaultTimeBlocks = [
 /**
  * タイムブロックの購読
  * @param {string} workspaceId - DataSyncManagerから渡されるID
- * @param {function} callback 
+ * @param {function} callback
  */
-export function subscribeToTimeBlocks(workspaceId, callback) {
+export function subscribeToTimeBlocks(workspaceId: string, callback: (blocks: TimeBlock[]) => void): Unsubscribe {
     const userId = auth.currentUser?.uid;
 
     if (!userId) {
@@ -38,21 +48,23 @@ export function subscribeToTimeBlocks(workspaceId, callback) {
     const q = query(collection(db, path), orderBy('order', 'asc'));
 
     return onSnapshot(q, (snapshot) => {
+        // Validation could be added here
         timeBlocks = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-        }));
+        })) as TimeBlock[];
+
         if (typeof callback === 'function') callback(timeBlocks);
     }, (error) => {
         console.error("[TimeBlocks] Subscription error:", error);
     });
 }
 
-export function getTimeBlocks() {
+export function getTimeBlocks(): TimeBlock[] {
     return [...timeBlocks];
 }
 
-export function getTimeBlockById(id) {
+export function getTimeBlockById(id: string): TimeBlock | undefined {
     return timeBlocks.find(b => b.id === id);
 }
 
@@ -60,19 +72,23 @@ export function clearTimeBlocksCache() {
     timeBlocks = [];
 }
 
-export async function saveTimeBlock(block) {
+export async function saveTimeBlock(block: Partial<TimeBlock>): Promise<boolean | undefined> {
     const userId = auth.currentUser?.uid;
     if (!userId) {
+        // @ts-ignore
         showMessageModal("ログインが必要です");
         return;
     }
 
     try {
+        // Validate partial block if needed, but for now we trust mostly
+        // TimeBlockSchema.partial().parse(block);
+
         const path = paths.timeblocks(userId);
         const id = block.id || crypto.randomUUID();
         const nextOrder = block.order !== undefined
             ? block.order
-            : Math.max(...timeBlocks.map(b => b.order), -1) + 1;
+            : Math.max(...timeBlocks.map(b => b.order || 0), -1) + 1;
 
         const dataToSave = {
             name: block.name,
@@ -83,6 +99,8 @@ export async function saveTimeBlock(block) {
             updatedAt: serverTimestamp()
         };
 
+        // Validate dataToSave against schema parts except serverTimestamp
+
         await setDoc(doc(db, path, id), dataToSave, { merge: true });
         return true;
     } catch (e) {
@@ -91,7 +109,7 @@ export async function saveTimeBlock(block) {
     }
 }
 
-export async function deleteTimeBlock(id) {
+export async function deleteTimeBlock(id: string): Promise<boolean | undefined> {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
     try {
@@ -103,7 +121,7 @@ export async function deleteTimeBlock(id) {
     }
 }
 
-export async function updateTimeBlockOrder(orderedIds) {
+export async function updateTimeBlockOrder(orderedIds: string[]) {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
     try {

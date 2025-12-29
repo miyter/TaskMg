@@ -1,0 +1,88 @@
+/**
+ * 共有スキーマ定義
+ * Zodを使用してランタイムバリデーションと型定義を両立させる
+ */
+import { Timestamp } from 'firebase/firestore';
+import { z } from 'zod';
+
+// --- Base Types ---
+
+/**
+ * FirestoreのTimestampまたはDateを受け入れるスキーマ
+ * 最終的にDateオブジェクトに変換することを想定
+ */
+const DateLikeSchema = z.union([z.date(), z.instanceof(Timestamp), z.string()]).nullable().optional();
+
+// --- Schemas ---
+
+export const RecurrenceSchema = z.object({
+    type: z.enum(['daily', 'weekly', 'weekdays', 'monthly']).nullable(),
+    days: z.array(z.number()).optional(), // 0-6 for Sunday-Saturday
+}).nullable().optional();
+
+export const TaskSchema = z.object({
+    id: z.string().optional(), // Firestore ID
+    title: z.string().min(1, "Title is required"),
+    description: z.string().nullable().optional(),
+    status: z.enum(['todo', 'completed', 'archived']).default('todo'),
+    dueDate: DateLikeSchema,
+    completedAt: DateLikeSchema,
+    createdAt: DateLikeSchema,
+
+    // Relations
+    ownerId: z.string(),
+    projectId: z.string().nullable().optional(),
+    labelIds: z.array(z.string()).optional(),
+    timeBlockId: z.string().nullable().optional(),
+
+    // Metadata
+    duration: z.number().optional(), // minutes
+    recurrence: RecurrenceSchema,
+});
+
+export const ProjectSchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(1, "Project name is required"),
+    ownerId: z.string(),
+    createdAt: DateLikeSchema,
+});
+
+export const LabelSchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(1, "Label name is required"),
+    color: z.string().optional(),
+    ownerId: z.string(),
+    createdAt: DateLikeSchema,
+});
+
+export const WorkspaceSchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(1, "Workspace name is required"),
+    createdAt: DateLikeSchema,
+});
+
+export const FilterSchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(1),
+    query: z.string(), // Filter expression
+    createdAt: DateLikeSchema,
+});
+
+export const TimeBlockSchema = z.object({
+    id: z.string().optional(),
+    name: z.string(), // Display name
+    start: z.string(), // "HH:mm"
+    end: z.string(),   // "HH:mm"
+    color: z.string().optional(),
+    order: z.number().optional(),
+});
+
+// --- Type Exports ---
+
+export type Recurrence = z.infer<typeof RecurrenceSchema>;
+export type Task = z.infer<typeof TaskSchema>;
+export type Project = z.infer<typeof ProjectSchema>;
+export type Label = z.infer<typeof LabelSchema>;
+export type Workspace = z.infer<typeof WorkspaceSchema>;
+export type Filter = z.infer<typeof FilterSchema>;
+export type TimeBlock = z.infer<typeof TimeBlockSchema>;

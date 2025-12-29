@@ -1,13 +1,13 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /**
  * 更新日: 2025-12-21
  * 内容: XSS対策(textContent採用)、冪等性の確保、イベントデータの直接利用によるレースコンディション回避
  */
 
-import { setCurrentWorkspaceId, getCurrentWorkspaceId, getWorkspaces } from '../../store/workspace.js';
+import { setCurrentWorkspaceId, getCurrentWorkspaceId, getWorkspaces } from '../../store/workspace';
 import { showSettingsModal } from '../settings.js';
 import { showWorkspaceModal } from '../modals/workspace-modal.js';
-import { showItemContextMenu } from '../features/sidebar/sidebar-components.js';
+import { showItemContextMenu } from '../features/sidebar/sidebar-components';
 
 const CLASSES = {
     MENU_VISIBLE: ['opacity-100', 'visible', 'scale-100', 'pointer-events-auto'],

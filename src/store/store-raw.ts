@@ -1,41 +1,57 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
  * 内容: 防御的なプログラミングの強化（コールバックの型チェック、recurrenceの安全な扱い）
+ * TypeScript化: 2025-12-29
  */
 
+import { db } from '../core/firebase';
 import {
-    collection, addDoc, updateDoc, deleteDoc, doc, query, onSnapshot, getDoc, getDocs, Timestamp, serverTimestamp
-} from "../core/firebase-sdk.js";
-import { db } from '../core/firebase.js';
-import { paths } from '../utils/paths.js';
+    addDoc,
+    collection,
+    deleteDoc, doc,
+    getDoc, getDocs,
+    onSnapshot,
+    query,
+    serverTimestamp,
+    Timestamp,
+    Unsubscribe,
+    updateDoc
+} from "../core/firebase-sdk";
+import { paths } from '../utils/paths';
+import { Task } from './schema';
 
-const toJSDate = (val) => (val instanceof Timestamp) ? val.toDate() : val;
-const toFirestoreDate = (val) => (val instanceof Date) ? Timestamp.fromDate(val) : val;
+const toJSDate = (val: any): Date | undefined => (val instanceof Timestamp) ? val.toDate() : (val instanceof Date ? val : undefined);
+const toFirestoreDate = (val: any): Timestamp | Date | undefined => (val instanceof Date) ? Timestamp.fromDate(val) : val;
 
-function deserializeTask(id, data) {
+function deserializeTask(id: string, data: any): Task {
+    // データを安全に Task 型に整形
+    // Note: Zodでparseするのも手だが、ここではパフォーマンス重視で手動マッピング＋キャストでいく
+    const recurrence = data.recurrence || null;
+
     return {
         id,
         ...data,
-        createdAt: toJSDate(data.createdAt) || null,
-        dueDate: toJSDate(data.dueDate) || null,
-        recurrence: data.recurrence ?? null, // undefined を null に正規化
-        completedAt: toJSDate(data.completedAt) || null,
-    };
+        createdAt: toJSDate(data.createdAt) || undefined,
+        dueDate: toJSDate(data.dueDate) || undefined,
+        recurrence: recurrence,
+        completedAt: toJSDate(data.completedAt) || undefined,
+        ownerId: data.ownerId || '', // 必須フィールド
+        title: data.title || '' // 必須フィールド
+    } as Task;
 }
 
 // ==========================================================
 // ★ RAW FUNCTIONS (userId必須)
 // ==========================================================
 
-let _cachedTasks = [];
+let _cachedTasks: Task[] = [];
 
-export function getTasks() {
+export function getTasks(): Task[] {
     return _cachedTasks;
 }
 
-export function subscribeToTasksRaw(userId, workspaceId, onUpdate) {
-    const safeUpdate = (data) => {
+export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void): Unsubscribe {
+    const safeUpdate = (data: Task[]) => {
         if (typeof onUpdate === 'function') onUpdate(data);
     };
 
@@ -62,7 +78,7 @@ export function subscribeToTasksRaw(userId, workspaceId, onUpdate) {
  * バックアップデータの生成
  * 注: ラベルはユーザー単位、タスク・プロジェクトはワークスペース単位で抽出
  */
-export async function createBackupDataRaw(userId, workspaceId) {
+export async function createBackupDataRaw(userId: string, workspaceId: string) {
     if (!userId || !workspaceId) throw new Error("Missing parameters for backup.");
 
     const tasksRef = collection(db, paths.tasks(userId, workspaceId));
@@ -75,9 +91,9 @@ export async function createBackupDataRaw(userId, workspaceId) {
         getDocs(labelsRef)
     ]);
 
-    const serializeData = (snap) => snap.docs.map(d => {
+    const serializeData = (snap: any) => snap.docs.map((d: any) => {
         const data = d.data();
-        const serialized = { id: d.id };
+        const serialized: any = { id: d.id };
         for (const key in data) {
             serialized[key] = (data[key] instanceof Timestamp)
                 ? data[key].toDate().toISOString()
@@ -98,10 +114,14 @@ export async function createBackupDataRaw(userId, workspaceId) {
 }
 
 // 他の関数（addTaskRaw, updateTaskRawなど）は既存ロジックを維持
-export async function addTaskRaw(userId, workspaceId, taskData) {
+export async function addTaskRaw(userId: string, workspaceId: string, taskData: Partial<Task>) {
     const path = paths.tasks(userId, workspaceId);
-    const safeData = { ...taskData };
+    const safeData: any = { ...taskData };
     if (safeData.dueDate) safeData.dueDate = toFirestoreDate(safeData.dueDate);
+
+    // Zodバリデーションをここで挟むのがベストだが、既存ロジックを優先
+    delete safeData.id;
+
     return await addDoc(collection(db, path), {
         ...safeData,
         ownerId: userId,
@@ -110,9 +130,9 @@ export async function addTaskRaw(userId, workspaceId, taskData) {
     });
 }
 
-export async function updateTaskStatusRaw(userId, workspaceId, taskId, status) {
+export async function updateTaskStatusRaw(userId: string, workspaceId: string, taskId: string, status: string) {
     const path = paths.tasks(userId, workspaceId);
-    const updates = { status };
+    const updates: any = { status };
     if (status === 'completed') {
         updates.completedAt = serverTimestamp();
     } else {
@@ -121,19 +141,19 @@ export async function updateTaskStatusRaw(userId, workspaceId, taskId, status) {
     await updateDoc(doc(db, path, taskId), updates);
 }
 
-export async function updateTaskRaw(userId, workspaceId, taskId, updates) {
+export async function updateTaskRaw(userId: string, workspaceId: string, taskId: string, updates: Partial<Task>) {
     const path = paths.tasks(userId, workspaceId);
-    const safeUpdates = { ...updates };
+    const safeUpdates: any = { ...updates };
     if (safeUpdates.dueDate !== undefined) safeUpdates.dueDate = toFirestoreDate(safeUpdates.dueDate);
     await updateDoc(doc(db, path, taskId), safeUpdates);
 }
 
-export async function deleteTaskRaw(userId, workspaceId, taskId) {
+export async function deleteTaskRaw(userId: string, workspaceId: string, taskId: string) {
     const path = paths.tasks(userId, workspaceId);
     await deleteDoc(doc(db, path, taskId));
 }
 
-export async function getTaskByIdRaw(userId, workspaceId, taskId) {
+export async function getTaskByIdRaw(userId: string, workspaceId: string, taskId: string): Promise<Task | null> {
     const path = paths.tasks(userId, workspaceId);
     const docSnap = await getDoc(doc(db, path, taskId));
     return docSnap.exists() ? deserializeTask(docSnap.id, docSnap.data()) : null;
@@ -143,7 +163,7 @@ export async function getTaskByIdRaw(userId, workspaceId, taskId) {
  * データのインポート処理
  * 関係性（プロジェクトID、ラベルID）を維持しながら新規データとして作成する
  */
-export async function importBackupDataRaw(userId, workspaceId, backupData) {
+export async function importBackupDataRaw(userId: string, workspaceId: string, backupData: any) {
     if (!userId || !workspaceId || !backupData) throw new Error("Invalid import parameters.");
 
     const { tasks = [], projects = [], labels = [] } = backupData;
@@ -186,7 +206,7 @@ export async function importBackupDataRaw(userId, workspaceId, backupData) {
     }
 
     // 3. タスクのインポート
-    const tasksPromises = tasks.map(async (task) => {
+    const tasksPromises = tasks.map(async (task: any) => {
         const newTaskData = { ...task };
         delete newTaskData.id;
 
@@ -205,8 +225,8 @@ export async function importBackupDataRaw(userId, workspaceId, backupData) {
 
         if (Array.isArray(newTaskData.labelIds)) {
             newTaskData.labelIds = newTaskData.labelIds
-                .map(oldId => labelMap.get(oldId))
-                .filter(newId => newId); // マッピングできたものだけ残す
+                .map((oldId: string) => labelMap.get(oldId))
+                .filter((newId: string) => newId); // マッピングできたものだけ残す
         }
 
         // ワークスペースID等はパスで決まるためデータには含めなくて良いが、念のためクリーンアップ

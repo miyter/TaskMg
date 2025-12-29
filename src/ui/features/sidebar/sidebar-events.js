@@ -1,11 +1,11 @@
-import { APP_EVENTS } from '../../../core/event-constants.js';
+﻿import { APP_EVENTS } from '../../../core/event-constants';
 import { getSidebarUI } from './sidebar-state.js';
 import { isDesktop } from './sidebar-utils.js';
 import { toggleSidebar } from './sidebar-view.js';
 import { showSettingsModal } from '../../settings.js';
 import { showFilterModal } from '../../modals/filter-modal.js';
 import { showTimeBlockModal } from '../timeblock/timeblock-modal.js';
-import { showCustomContextMenu } from './sidebar-components.js';
+import { showCustomContextMenu } from './sidebar-components';
 import { openInNewWindow } from '../../core/window-manager.js';
 
 export function setupSidebarEvents() {

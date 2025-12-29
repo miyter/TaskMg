@@ -1,8 +1,8 @@
-import { UI_CONFIG } from './ui-view-constants.js';
+﻿import { UI_CONFIG } from './ui-view-constants.js';
 import { renderDashboard } from '../features/dashboard/dashboard.js';
 import { renderTaskView } from '../task-view.js';
 import { getProcessedTasks } from '../../logic/search.js';
-import { buildDashboardViewHTML } from '../ui-dom-utils.js';
+import { buildDashboardViewHTML } from '../ui-dom-utils';
 import { showView, highlightSidebarItem, updateHeaderTitleByFilter, resolveTitleText } from './ui-view-utils.js';
 import { renderSearchPage } from '../search-view-ctrl.js';
 import { showSettingsModal } from '../settings.js';

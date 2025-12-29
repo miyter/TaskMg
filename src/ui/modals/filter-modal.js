@@ -1,9 +1,9 @@
-import { getProjects } from '../../store/projects.js';
-import { getTimeBlocks } from '../../store/timeblocks.js';
-import { addFilter, updateFilter } from '../../store/store.js';
-import { showMessageModal } from '../components.js';
+﻿import { getProjects } from '../../store/projects';
+import { getTimeBlocks } from '../../store/timeblocks';
+import { addFilter, updateFilter } from '../../store/store';
+import { showMessageModal } from '../components';
 import { MODAL_CLASSES } from '../core/ui-modal-constants.js';
-import { UI_STYLES } from '../core/ui-style-constants.js';
+import { UI_STYLES } from '../core/ui-style-constants';
 
 const UNASSIGNED_ID = 'none';
 const MESSAGES = {

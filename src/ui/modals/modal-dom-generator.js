@@ -1,11 +1,11 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // @miyter:20251221
 // タスクモーダル用のHTML構造を生成
 
-import { formatDateForInput } from './modal-helpers.js';
-import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
-import { getTimeBlocks } from '../../store/timeblocks.js';
+import { getTimeBlocks } from '../../store/timeblocks';
+import { getInitialDueDateFromRecurrence } from '../../utils/date';
 import { MODAL_CLASSES } from '../core/ui-modal-constants.js';
+import { formatDateForInput } from './modal-helpers.js';
 
 const STORAGE_KEY_SCHEDULE_OPEN = 'task_modal_schedule_open';
 

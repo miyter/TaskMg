@@ -30,4 +30,4 @@ export const DASHBOARD_CONFIG = {
             legend: { display: false }
         }
     }
-};
+} as const;

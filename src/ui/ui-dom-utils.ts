@@ -1,29 +1,32 @@
 /**
  * 更新日: 2025-12-21
  * 内容: 検索ステート表示関数のエクスポート、ビルドエラーの解消
+ * TypeScript化: 2025-12-29
  */
-import { createGlassCard } from './components/glass-card.js';
-import { DASHBOARD_CONFIG } from './features/dashboard/dashboard-constants.js';
+import { Project } from '../store/schema'; // Project型インポート
+import { createGlassCard } from './components/glass-card';
+import { DASHBOARD_CONFIG } from './features/dashboard/dashboard-constants';
 
 /**
  * 簡易HTMLエスケープ
  */
-function escapeHTML(str) {
-    if (!str) return '';
-    const map = {
+function escapeHTML(str: string | number | null | undefined): string {
+    if (str == null) return ''; // null or undefined check
+    const s = String(str);
+    const map: Record<string, string> = {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
         "'": '&#39;'
     };
-    return str.replace(/[&<>"']/g, (m) => map[m]);
+    return s.replace(/[&<>"']/g, (m) => map[m]);
 }
 
 /**
  * KPI（重要指標）アイテムのHTMLを生成
  */
-export function renderKPIItem(label, value, id, colorClass) {
+export function renderKPIItem(label: string, value: string | number, id: string, colorClass: string): string {
     return createGlassCard(`
         <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">${escapeHTML(label)}</span>
         <span id="${id}" class="text-2xl font-bold ${colorClass} dark:text-white font-mono tracking-tight">${escapeHTML(value)}</span>
@@ -33,7 +36,7 @@ export function renderKPIItem(label, value, id, colorClass) {
 /**
  * ダッシュボード画面のHTML構造を生成
  */
-export function buildDashboardViewHTML() {
+export function buildDashboardViewHTML(): string {
     return `
         <div class="max-w-6xl mx-auto px-4 h-full max-h-[700px] flex flex-col overflow-hidden">
             <div class="flex-shrink-0 mb-4">
@@ -61,7 +64,7 @@ export function buildDashboardViewHTML() {
 /**
  * 検索画面のHTML構造を生成
  */
-export function buildSearchViewHTML(projects = []) {
+export function buildSearchViewHTML(projects: Project[] = []): string {
     const safeProjects = Array.isArray(projects) ? projects : [];
     const options = safeProjects.map(p => `<option value="${escapeHTML(p.id)}">${escapeHTML(p.name)}</option>`).join('');
 
@@ -103,7 +106,7 @@ export function buildSearchViewHTML(projects = []) {
 /**
  * 検索画面：キーワード未入力時の空状態HTML
  */
-export function buildSearchEmptyStateHTML() {
+export function buildSearchEmptyStateHTML(): string {
     return `
         <div class="text-center text-gray-400 py-16 flex flex-col items-center">
             <svg class="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +120,7 @@ export function buildSearchEmptyStateHTML() {
 /**
  * 検索画面：結果ゼロ時のHTML
  */
-export function buildSearchNoResultsHTML() {
+export function buildSearchNoResultsHTML(): string {
     return `
         <div class="text-center text-gray-400 py-12 flex flex-col items-center">
             <span class="text-sm">一致するタスクが見つかりませんでした</span>
@@ -128,6 +131,6 @@ export function buildSearchNoResultsHTML() {
 /**
  * 廃止済みの設定ビュー生成（互換性維持のため空文字を返す）
  */
-export function buildSettingsViewHTML() {
+export function buildSettingsViewHTML(): string {
     return '';
 }

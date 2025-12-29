@@ -1,14 +1,14 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /**
  * 更新日: 2025-12-21
  * 内容: ヘッダー位置のずれを修正。sidebar-structure.js の共通ヘッダーに統合。
  */
 
 import { showProjectModal } from '../../modals/project-modal.js';
-import { createSidebarItem, showItemContextMenu } from './sidebar-components.js';
+import { createSidebarItem, showItemContextMenu } from './sidebar-components';
 import { setupDropZone } from './sidebar-drag-drop.js';
 
-// import { getTasks } from '../../../store/index.js'; // 循環参照回避のため削除
+// import { getTasks } from '../../../store/index'; // 循環参照回避のため削除
 
 /**
  * プロジェクトセクションのイベント初期化

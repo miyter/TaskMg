@@ -1,10 +1,10 @@
 /**
- * モーダル内の繰り返し設定UI制御
+ * モーダル冁E�E繰り返し設定UI制御
  */
-import { getInitialDueDateFromRecurrence } from '../../utils/date.js';
+import { getInitialDueDateFromRecurrence } from '../../utils/date';
 
 /**
- * 繰り返し設定の表示切り替えと日付連動をセットアップ
+ * 繰り返し設定�E表示刁E��替えと日付連動をセチE��アチE�E
  */
 export function setupRecurrenceControls() {
     const select = document.getElementById('modal-task-recurrence');
@@ -13,11 +13,11 @@ export function setupRecurrenceControls() {
 
     if (!select || !daysContainer || !dateInput) return;
 
-    // 要素内キャッシュ
+    // 要素冁E��ャチE��ュ
     const daysCheckboxes = daysContainer.querySelectorAll('input[type="checkbox"]');
 
     const updateDate = (type, days = []) => {
-        // 曜日が空の週次の場合は日付更新をスキップ（クリアはせず現在の値を維持）
+        // 曜日が空の週次の場合�E日付更新をスキチE�E�E�クリアはせず現在の値を維持E��E
         if (type === 'weekly' && days.length === 0) return;
 
         const newDate = getInitialDueDateFromRecurrence({ type, days });
@@ -42,7 +42,7 @@ export function setupRecurrenceControls() {
         }
     });
 
-    // 曜日チェックボックスのイベント
+    // 曜日チェチE��ボックスのイベンチE
     daysCheckboxes.forEach(cb => {
         cb.addEventListener('change', () => {
             const days = getCheckedDays();

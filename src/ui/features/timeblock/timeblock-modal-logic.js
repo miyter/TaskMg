@@ -1,8 +1,8 @@
-/**
+﻿/**
  * 時間帯設定モーダルのビジネスロジック（保存、削除、バリデーション）
  */
-import { saveTimeBlock, deleteTimeBlock, getTimeBlocks } from '../../../store/timeblocks.js';
-import { showMessageModal } from '../../components.js';
+import { saveTimeBlock, deleteTimeBlock, getTimeBlocks } from '../../../store/timeblocks';
+import { showMessageModal } from '../../components';
 import { timeToMinutes, updateAddButtonUI } from './timeblock-modal-utils.js';
 
 /**

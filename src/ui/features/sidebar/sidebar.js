@@ -1,4 +1,4 @@
-/**
+﻿/**
  * サイドバーの初期化および統合管理モジュール
  * 機能ごとのロジックは以下のモジュールに分割されています：
  * - sidebar-state.js: DOM要素のキャッシュ管理
@@ -11,7 +11,7 @@ import { setupDropZone } from './sidebar-drag-drop.js';
 import { initSidebarProjects, updateSidebarProjects } from './SidebarProjects.js';
 import { renderSidebarItems, updateInboxCount } from './sidebar-renderer.js';
 
-import { APP_EVENTS } from '../../../core/event-constants.js';
+import { APP_EVENTS } from '../../../core/event-constants';
 
 // 分割したモジュールのインポート
 import { cacheSidebarElements } from './sidebar-state.js';

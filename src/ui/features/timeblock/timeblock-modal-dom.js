@@ -1,4 +1,4 @@
-/**
+﻿/**
  * モーダルおよび行要素のHTML構造生成
  * @update 2025-12-28 Custom Selects & Global Color Picker support for Premium Design
  */
@@ -7,7 +7,7 @@
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTE_OPTIONS = ['00', '15', '30', '45'];
 
-import { UI_STYLES } from '../../core/ui-style-constants.js';
+import { UI_STYLES } from '../../core/ui-style-constants';
 
 const generateOptions = (options, selected) =>
     options.map(val => `<option value="${val}" ${val === selected ? 'selected' : ''}>${val}</option>`).join('');

@@ -1,12 +1,12 @@
-/**
+﻿/**
  * タスク入力フォーム (スタンドアロンおよびインライン)
  */
-import { addTaskCompatibility } from '../store/store.js';
-import { getProjects } from '../store/projects.js';
-import { getTimeBlocks } from '../store/timeblocks.js';
-import { createGlassCard } from './components/glass-card.js';
-import { showMessageModal } from './components.js';
-import { UI_STYLES } from './core/ui-style-constants.js';
+import { addTaskCompatibility } from '../store/store';
+import { getProjects } from '../store/projects';
+import { getTimeBlocks } from '../store/timeblocks';
+import { createGlassCard } from './components/glass-card';
+import { showMessageModal } from './components';
+import { UI_STYLES } from './core/ui-style-constants';
 
 /**
  * スタンドアロン入力フォーム (検索/ダッシュボード用)

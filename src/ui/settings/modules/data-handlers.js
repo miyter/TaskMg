@@ -1,5 +1,5 @@
-import { createBackupData, importBackupData } from '../../../store/store.js';
-import { showMessageModal } from '../../components.js';
+﻿import { createBackupData, importBackupData } from '../../../store/store';
+import { showMessageModal } from '../../components';
 
 export function setupExportHandler() {
     const btn = document.getElementById('export-data-btn-new');

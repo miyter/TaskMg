@@ -1,7 +1,7 @@
-import { SIDEBAR_CONFIG } from './sidebar-constants.js';
+﻿import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { isDesktop, getSidebarDensity } from './sidebar-utils.js';
 import { getSidebarUI, cacheSidebarElements } from './sidebar-state.js';
-import { APP_EVENTS } from '../../../core/event-constants.js';
+import { APP_EVENTS } from '../../../core/event-constants';
 import { showSettingsModal } from '../../settings.js';
 
 /**

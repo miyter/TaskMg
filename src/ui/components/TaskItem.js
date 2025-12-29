@@ -1,14 +1,14 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // @miyter:20251221
 // タスク単体（1行分）の描画とイベント
 
-import { updateTaskStatus } from '../../store/store.js';
-import { getTaskDateColor, formatDateCompact } from '../../utils/date.js';
-import { getTimeBlocks } from '../../store/timeblocks.js';
+import { updateTaskStatus } from '../../store/store';
+import { getTimeBlocks } from '../../store/timeblocks';
+import { formatDateCompact, getTaskDateColor } from '../../utils/date';
+import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { openTaskEditModal } from '../modals/task-modal.js';
-import { showTaskContextMenu } from './TaskContextMenu.js';
-import { simpleMarkdownToHtml } from '../../utils/markdown.js';
 import { toggleTaskSelection } from '../state/ui-state.js';
+import { showTaskContextMenu } from './TaskContextMenu.js';
 
 export function createTaskItem(task, allProjects, selectionState = { isSelectionMode: false, selectedIds: new Set() }, context = {}) {
     const { isSelectionMode, selectedIds } = selectionState;
@@ -55,7 +55,7 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
         }
     }
 
-    li.className = `${baseClass} ${stateClass}`;
+    li.className = `${baseClass} ${stateClass} `;
 
     // チェックボックスの見た目
     let checkboxClass = "";
@@ -78,33 +78,33 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
 
     // ハンバーガーアイコンを削除し、全体をドラッグハンドル化
     li.innerHTML = `
-        <div class="task-checkbox mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors z-10 ${checkboxClass}">
-            ${checkboxContent}
+    < div class="task-checkbox mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors z-10 ${checkboxClass}" >
+        ${checkboxContent}
+        </div >
+
+    <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 items-center pointer-events-none">
+        <div class="col-span-1 sm:col-span-8 flex flex-wrap sm:flex-nowrap items-baseline gap-x-2 gap-y-0.5 pointer-events-auto min-w-0 pr-1">
+            <div class="leading-snug truncate font-medium transition-colors ${isCompleted && !isSelectionMode ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'} flex-shrink-0 max-w-full">${task.title}</div>
+            ${task.description ? `<div class="text-xs text-gray-400 font-light truncate max-w-[180px] sm:max-w-[240px]">${simpleMarkdownToHtml(task.description.split('\n')[0]).replace(/<\/?p[^>]*>/g, '')}</div>` : ''}
         </div>
-        
-        <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 items-center pointer-events-none">
-            <div class="col-span-1 sm:col-span-8 flex flex-wrap sm:flex-nowrap items-baseline gap-x-2 gap-y-0.5 pointer-events-auto min-w-0 pr-1">
-                <div class="leading-snug truncate font-medium transition-colors ${isCompleted && !isSelectionMode ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'} flex-shrink-0 max-w-full">${task.title}</div>
-                ${task.description ? `<div class="text-xs text-gray-400 font-light truncate max-w-[180px] sm:max-w-[240px]">${simpleMarkdownToHtml(task.description.split('\n')[0]).replace(/<\/?p[^>]*>/g, '')}</div>` : ''}
-            </div>
-            
-            <div class="col-span-1 sm:col-span-4 flex items-center sm:justify-end gap-1.5 text-xs h-full mt-1 sm:mt-0 overflow-hidden pointer-events-auto">
-                ${isRecurring ? `<div class="text-blue-500 dark:text-blue-400 flex-shrink-0" title="繰り返し">🔁</div>` : ''}
-                ${isOneTime ? `<div class="text-gray-400 dark:text-gray-500 flex-shrink-0" title="期限あり">▶️</div>` : ''}
-                
-                ${showTimeBlock ? `<div class="flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[140px]" title="${timeBlock ? `${timeBlock.start} - ${timeBlock.end}` : '時間帯未定'}">
+
+        <div class="col-span-1 sm:col-span-4 flex items-center sm:justify-end gap-1.5 text-xs h-full mt-1 sm:mt-0 overflow-hidden pointer-events-auto">
+            ${isRecurring ? `<div class="text-blue-500 dark:text-blue-400 flex-shrink-0" title="繰り返し">🔁</div>` : ''}
+            ${isOneTime ? `<div class="text-gray-400 dark:text-gray-500 flex-shrink-0" title="期限あり">▶️</div>` : ''}
+
+            ${showTimeBlock ? `<div class="flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[140px]" title="${timeBlock ? `${timeBlock.start} - ${timeBlock.end}` : '時間帯未定'}">
                     <span class="w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style="background-color: ${timeBlock ? timeBlock.color : '#cbd5e1'}"></span>
                     <span class="truncate font-mono text-[11px]">${timeBlock ? `${timeBlock.start} - ${timeBlock.end}` : '未定'}</span>
                 </div>` : ''}
 
-                ${showDuration ? `<div class="flex items-center text-gray-500 dark:text-gray-400 whitespace-nowrap" title="所要時間: ${task.duration || 0}分">
+            ${showDuration ? `<div class="flex items-center text-gray-500 dark:text-gray-400 whitespace-nowrap" title="所要時間: ${task.duration || 0}分">
                     <span class="mr-0.5 text-[10px]">⏱️</span>${task.duration || 0}m
                 </div>` : ''}
 
-                ${dateText ? `<div class="flex items-center ${dateColorClass} bg-gray-50 dark:bg-gray-800/50 px-1.5 py-0.5 rounded flex-shrink-0">${dateText}</div>` : ''}
-            </div>
+            ${dateText ? `<div class="flex items-center ${dateColorClass} bg-gray-50 dark:bg-gray-800/50 px-1.5 py-0.5 rounded flex-shrink-0">${dateText}</div>` : ''}
         </div>
-    `;
+    </div>
+`;
 
     // ドラッグイベント
     if (!isSelectionMode && !isDurationView) {

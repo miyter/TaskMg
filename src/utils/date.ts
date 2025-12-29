@@ -1,24 +1,32 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
  * 内容: 集計ヘルパーの統合、toDateの堅牢化、繰り返し計算ロジック保持
+ * TypeScript化: 2025-12-29
  */
+
+import { Timestamp } from "firebase/firestore";
+
+interface RecurrenceConfig {
+    type: 'daily' | 'weekly' | 'weekdays' | 'monthly' | null;
+    days?: number[];
+}
 
 /**
  * 入力値をDateオブジェクトに安全に変換する (Firestore Timestamp対応)
  */
-export function toDate(val) {
+export function toDate(val: Date | Timestamp | string | number | null | undefined): Date | null {
     if (!val) return null;
-    if (val.toDate && typeof val.toDate === 'function') return val.toDate();
     if (val instanceof Date) return val;
-    const d = new Date(val);
+    // @ts-ignore: Timestamp型のチェックを動的に行う
+    if (val.toDate && typeof val.toDate === 'function') return (val as Timestamp).toDate();
+    const d = new Date(val as string | number);
     return isNaN(d.getTime()) ? null : d;
 }
 
 /**
  * 2つの日付が同じ日かどうかを判定する
  */
-export const isSameDay = (d1, d2) => {
+export const isSameDay = (d1: Date | Timestamp | string | number | null, d2: Date | Timestamp | string | number | null): boolean => {
     const a = toDate(d1);
     const b = toDate(d2);
     if (!a || !b) return false;
@@ -29,29 +37,30 @@ export const isSameDay = (d1, d2) => {
 
 // --- 集計用ヘルパー ---
 
-export function getStartOfDay(date = new Date()) {
+export function getStartOfDay(date: Date | Timestamp | string | number | null = new Date()): Date {
     const d = toDate(date) || new Date();
     const res = new Date(d);
     res.setHours(0, 0, 0, 0);
     return res;
 }
 
-export function getEndOfDay(date = new Date()) {
+export function getEndOfDay(date: Date | Timestamp | string | number | null = new Date()): Date {
     const d = toDate(date) || new Date();
     const res = new Date(d);
     res.setHours(23, 59, 59, 999);
     return res;
 }
 
-export function getStartOfWeek(date = new Date()) {
+export function getStartOfWeek(date: Date | Timestamp | string | number | null = new Date()): Date {
     const d = toDate(date) || new Date();
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1); // 月曜始まり
-    const start = new Date(d.setDate(diff));
+    const start = new Date(d);
+    start.setDate(diff); // ここは setDate で変異させてから新しい Date を作るか、コピーに対して操作する
     return getStartOfDay(start);
 }
 
-export function getStartOfMonth(date = new Date()) {
+export function getStartOfMonth(date: Date | Timestamp | string | number | null = new Date()): Date {
     const d = toDate(date) || new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
 }
@@ -61,7 +70,7 @@ export function getStartOfMonth(date = new Date()) {
 /**
  * 日付をコンパクトにフォーマット (今日/明日/昨日 または mm/dd)
  */
-export function formatDateCompact(date) {
+export function formatDateCompact(date: Date | Timestamp | string | number | null): string {
     const target = toDate(date);
     if (!target) return '';
 
@@ -84,7 +93,7 @@ export function formatDateCompact(date) {
 /**
  * 期限日に基づくTailwindカラークラスを取得
  */
-export function getTaskDateColor(date) {
+export function getTaskDateColor(date: Date | Timestamp | string | number | null): string {
     const target = toDate(date);
     if (!target) return 'text-gray-500';
 
@@ -102,16 +111,16 @@ export function getTaskDateColor(date) {
 /**
  * 次回の繰り返し期限日を計算
  */
-export function getNextRecurrenceDate(currentDueDate, recurrence) {
+export function getNextRecurrenceDate(currentDueDate: Date | Timestamp | string | number | null, recurrence: RecurrenceConfig): Date | null {
     if (!currentDueDate || !recurrence?.type) return null;
-    const nextDate = new Date(toDate(currentDueDate));
+    const nextDate = new Date(toDate(currentDueDate)!);
 
     switch (recurrence.type) {
         case 'daily':
             nextDate.setDate(nextDate.getDate() + 1);
             return nextDate;
 
-        case 'weekly':
+        case 'weekly': {
             if (!recurrence.days?.length) return null;
             const currentDay = nextDate.getDay();
             for (let i = 1; i <= 7; i++) {
@@ -121,6 +130,7 @@ export function getNextRecurrenceDate(currentDueDate, recurrence) {
                 }
             }
             return null;
+        }
 
         case 'weekdays': // 平日 (月〜金)
             do {
@@ -140,14 +150,14 @@ export function getNextRecurrenceDate(currentDueDate, recurrence) {
 /**
  * 繰り返し設定から初期の期限日を決定
  */
-export function getInitialDueDateFromRecurrence(recurrence) {
+export function getInitialDueDateFromRecurrence(recurrence: RecurrenceConfig): Date {
     const today = getStartOfDay(new Date());
 
     if (!recurrence?.type || recurrence.type === 'daily' || recurrence.type === 'monthly') {
         return today;
     }
 
-    if (recurrence.type === 'weekly' && recurrence.days?.length > 0) {
+    if (recurrence.type === 'weekly' && recurrence.days && recurrence.days.length > 0) {
         const currentDay = today.getDay();
         for (let i = 0; i <= 6; i++) {
             if (recurrence.days.includes((currentDay + i) % 7)) {

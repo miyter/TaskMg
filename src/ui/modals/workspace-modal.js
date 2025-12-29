@@ -1,8 +1,8 @@
-/**
+﻿/**
  * ワークスペースモーダルの制御ロジック
  */
-import { addWorkspace, updateWorkspaceName, setCurrentWorkspaceId, getWorkspaces } from '../../store/workspace.js';
-import { showMessageModal } from '../components.js';
+import { addWorkspace, updateWorkspaceName, setCurrentWorkspaceId, getWorkspaces } from '../../store/workspace';
+import { showMessageModal } from '../components';
 import { buildWorkspaceModalHTML } from './workspace-modal-dom.js';
 
 /**

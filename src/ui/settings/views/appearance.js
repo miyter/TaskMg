@@ -1,4 +1,4 @@
-import { createRadioOption, createSelectOption } from './components.js';
+﻿import { createRadioOption, createSelectOption } from './components';
 
 export const BACKGROUND_PATTERNS = {
     NONE: 'none',

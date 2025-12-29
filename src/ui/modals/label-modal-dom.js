@@ -1,8 +1,8 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // @miyter:20251221
 // ラベル作成・編集モーダルのHTML生成
 
-import { UI_STYLES } from '../core/ui-style-constants.js';
+import { UI_STYLES } from '../core/ui-style-constants';
 
 /**
  * ラベルモーダルのテンプレートを生成

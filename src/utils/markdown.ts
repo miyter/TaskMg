@@ -1,25 +1,32 @@
-// @ts-nocheck
-// @miyter:20251221
-// 軽量Markdownパーサー
+/**
+ * @miyter:20251221
+ * 軽量Markdownパーサー
+ * TypeScript化: 2025-12-29
+ */
 
 /**
  * HTMLエスケープ（簡易版）
  */
-function escapeHtml(str) {
-    return str.replace(/[&<>"']/g, m => ({
+function escapeHtml(str: string): string {
+    return str.replace(/[&<>"']/g, (m) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[m]);
+    })[m as keyof typeof map] || m);
 }
+
+// 型定義のためのマップ
+const map = {
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+};
 
 /**
  * MarkdownをHTMLに変換 (箇条書き・リンク・改行に対応)
  */
-export function simpleMarkdownToHtml(markdownText) {
+export function simpleMarkdownToHtml(markdownText: string | null | undefined): string {
     if (!markdownText) return '';
 
     const lines = markdownText.split('\n');
-    let htmlResult = [];
-    let listType = null; // 'ul', 'ol', or null
+    let htmlResult: string[] = [];
+    let listType: 'ul' | 'ol' | null = null;
 
     lines.forEach(line => {
         const trimmed = line.trimStart();
@@ -80,7 +87,7 @@ export function simpleMarkdownToHtml(markdownText) {
 /**
  * インライン要素（リンク）の処理
  */
-function processInline(text) {
+function processInline(text: string): string {
     // まずリンク以外のHTMLタグを無効化
     let safeText = escapeHtml(text);
 

@@ -1,15 +1,26 @@
 // @ts-nocheck
 /**
- * 更新日: 2025-12-21
- * 内容: Config取得ロジックの強化（注入されたGlobal変数を最優先かつログ出力強化）
+ * 更新日: 2025-12-29
+ * 内容: TypeScript化
  */
 
-import { initializeApp, getAuth, getFirestore } from './firebase-sdk.js';
+import { FirebaseApp } from 'firebase/app';
+import { Auth } from 'firebase/auth';
+import { Firestore } from 'firebase/firestore';
+import { getAuth, getFirestore, initializeApp } from './firebase-sdk';
 
-export let app;
-export let auth;
-export let db;
+export let app: FirebaseApp;
+export let auth: Auth;
+export let db: Firestore;
 export let isFirebaseInitialized = false;
+
+// グローバル定数の型定義
+declare global {
+    interface Window {
+        GLOBAL_FIREBASE_CONFIG?: any;
+    }
+    const __firebase_config: string | object | undefined;
+}
 
 /**
  * アプリ起動時に呼び出し、Firebase接続を確立する
@@ -72,16 +83,19 @@ function getConfiguration() {
     }
 
     // 3. レガシー注入変数 (__firebase_config)
+    // @ts-ignore
     if (typeof __firebase_config !== 'undefined') {
         try {
+            // @ts-ignore
             if (typeof __firebase_config === 'object') return __firebase_config;
+            // @ts-ignore
             return JSON.parse(__firebase_config);
         } catch (e) {
             console.error("[Firebase] Config parse failed (legacy):", e);
             return null;
         }
     }
-    
+
     console.error("[Firebase] All config sources failed. Check index.html injection.");
     return null;
 }

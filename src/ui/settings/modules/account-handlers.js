@@ -1,7 +1,7 @@
-import { auth } from '../../../core/firebase.js';
+﻿import { auth } from '../../../core/firebase';
 import { updateUserPassword } from '../../auth.js';
-import { signOut } from '../../../core/firebase-sdk.js'; // 修正: firebase-sdk から signOut を取得
-import { showMessageModal } from '../../components.js';
+import { signOut } from '../../../core/firebase-sdk'; // 修正: firebase-sdk から signOut を取得
+import { showMessageModal } from '../../components';
 
 export function setupPasswordHandler() {
     const btn = document.getElementById('update-password-btn-new');
