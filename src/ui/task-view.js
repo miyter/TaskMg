@@ -49,6 +49,13 @@ subscribeToSelectionChange(() => {
     }
 });
 
+// 表示件数変更の監視
+window.addEventListener('visible-task-count-updated', () => {
+    if (lastRenderArgs) {
+        renderTaskView(...lastRenderArgs);
+    }
+});
+
 /**
  * タスクビュー全体（リスト＋入力欄）を描画
  * @param {Array} tasks - 表示するタスクの配列
@@ -90,11 +97,16 @@ export function renderTaskView(tasks, allProjects, allLabels = [], context = {})
     container.appendChild(contentWrapper);
 
     // 1. タスクリスト表示エリア
-    // 高さ固定 (約10タスク分)
+    // 高さ固定 (設定値に基づいて計算)
+    const visibleCount = parseInt(localStorage.getItem('visible_task_count') || '10', 10);
+    const rowHeight = 56; // 1行あたりの概算高さ(px)
+    const listHeight = visibleCount * rowHeight;
+
     const listContainer = document.createElement('div');
     listContainer.id = 'task-list-container';
-    // flex-1 を廃止し、高さ固定 (例: 560px = 56px * 10)
-    listContainer.className = 'w-full h-[560px] flex-none overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth border-b border-gray-100 dark:border-gray-800';
+    // flex-1 を廃止し、高さ固定
+    listContainer.className = `w-full flex-none overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth border-b border-gray-100 dark:border-gray-800`;
+    listContainer.style.height = `${listHeight}px`;
     contentWrapper.appendChild(listContainer);
 
     renderTaskList(listContainer, sortedTasks, allProjects, selectionState, context);

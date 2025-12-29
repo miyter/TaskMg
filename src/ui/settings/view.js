@@ -145,6 +145,22 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
                     ${createRadioOption('sidebar-density', 'spacious', 'Spacious', currentDensity === 'spacious')}
                 </div>
             </div>
+            <div>
+                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">タスク一覧の表示数</label>
+                 <div class="relative">
+                     ${(() => {
+            const currentVisibleTasks = localStorage.getItem('visible_task_count') || '10';
+            return `
+                     <select name="visible-task-count" class="w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer transition-shadow">
+                        ${[7, 8, 9, 10, 11, 12].map(num => `<option value="${num}" ${String(num) === currentVisibleTasks ? 'selected' : ''}>${num}件</option>`).join('')}
+                     </select>
+                        `;
+        })()}
+                     <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                     </div>
+                 </div>
+            </div>
         </div>
     `;
 

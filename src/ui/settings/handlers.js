@@ -52,6 +52,7 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
         window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { density: val } }));
     });
 
+    setupVisibleTaskCountHandler();
     setupFontHandlers();
     setupTimezoneHandler();
     setupExportHandler();
@@ -163,6 +164,17 @@ function setupRadioGroupHandler(name, storageKey, onUpdate) {
     } else {
         const checked = Array.from(radios).find(r => r.checked);
         if (checked) localStorage.setItem(storageKey, checked.value);
+    }
+}
+
+
+function setupVisibleTaskCountHandler() {
+    const select = document.querySelector('select[name="visible-task-count"]');
+    if (select) {
+        select.addEventListener('change', (e) => {
+            localStorage.setItem('visible_task_count', e.target.value);
+            window.dispatchEvent(new CustomEvent('visible-task-count-updated', { detail: { count: Number(e.target.value) } }));
+        });
     }
 }
 
