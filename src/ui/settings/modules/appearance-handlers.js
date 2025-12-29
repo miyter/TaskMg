@@ -1,5 +1,5 @@
-import { setupRadioGroupHandler } from './common-handlers.js';
-import { applyBackground } from '../../layout/theme.js';
+﻿import { setupRadioGroupHandler } from './common-handlers.js';
+import { applyBackground } from '../../layout/theme';
 
 export function setupAppearanceHandlers() {
     // テーマ設定

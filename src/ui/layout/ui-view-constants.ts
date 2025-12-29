@@ -1,14 +1,15 @@
 /**
  * UI関連の定数管理
+ * TypeScript化: 2025-12-29
  */
 
 export const ASSETS = {
     FAVICON: '/images/favicon-96x96.png'
-};
+} as const;
 
 export const DOM_IDS = {
     CRITICAL_ERROR_OVERLAY: 'critical-error-overlay'
-};
+} as const;
 
 /**
  * サイドバーのアイテム種別定義
@@ -19,11 +20,10 @@ export const SIDEBAR_TYPE = {
     TIMEBLOCK: 'timeblock',
     DURATION: 'duration',
     FILTER: 'filter'
-};
+} as const;
 
 /**
  * UI全体で使用する定数定義
- * Note: ui-view-utils.js で UI_CONFIG としてインポートされるため名称を統一
  */
 export const UI_CONFIG = {
     VIEW_IDS: {
@@ -48,4 +48,6 @@ export const UI_CONFIG = {
     DATA_ATTRS: {
         DEFAULT_COLOR: 'data-default-color'
     }
-};
+} as const;
+
+export type SidebarType = typeof SIDEBAR_TYPE[keyof typeof SIDEBAR_TYPE];

@@ -11,7 +11,7 @@ import { subscribeToLabels } from '../../store/labels';
 import { subscribeToTimeBlocks, clearTimeBlocksCache } from '../../store/timeblocks';
 import { subscribeToFilters, clearFiltersCache } from '../../store/filters';
 import { getCurrentWorkspaceId } from '../../store/workspace';
-import { updateView } from '../layout/ui-view-manager.js';
+import { updateView } from '../layout/ui-view-manager';
 
 // 変数宣言（巻き上げ対策として const/let を明示的にトップレベル配置）
 const subscriptions = {

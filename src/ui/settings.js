@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 設定画面の制御
  */
 import { auth } from '../core/firebase.js';
@@ -6,7 +6,7 @@ import { getSettingsModalHTML } from './settings/view.js';
 import { setupSettingsEvents } from './settings/handlers.js';
 import { SIDEBAR_CONFIG } from './features/sidebar/sidebar-constants.js';
 import { isSidebarCompact } from './features/sidebar/sidebar-utils.js';
-import { applyFonts, applyFontSize } from './layout/fonts.js';
+import { applyFonts, applyFontSize } from './layout/fonts';
 
 let isInitialized = false;
 

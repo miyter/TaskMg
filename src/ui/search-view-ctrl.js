@@ -4,7 +4,7 @@
 import { buildSearchViewHTML, buildSearchEmptyStateHTML, buildSearchNoResultsHTML } from './ui-dom-utils';
 import { filterTasks } from '../logic/search.js';
 import { renderTaskList } from './task-list.js';
-import { clearSidebarHighlight, updateHeaderTitleByFilter, showView } from './layout/ui-view-utils.js';
+import { clearSidebarHighlight, updateHeaderTitleByFilter, showView } from './layout/ui-view-utils';
 
 let UI = {};
 

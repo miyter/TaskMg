@@ -1,14 +1,15 @@
 /**
  * レイアウト構造の構築と基本操作
+ * TypeScript化: 2025-12-29
  */
-import { LAYOUT_CONFIG } from './layout-constants.js';
+import { initWorkspaceDropdown } from '../components/WorkspaceDropdown';
 import { SIDEBAR_CONFIG } from '../features/sidebar/sidebar-constants.js';
-import { setupResizer } from '../features/sidebar/sidebar-utils.js';
-import { initWorkspaceDropdown } from '../components/WorkspaceDropdown.js';
+import { setupResizer } from '../features/sidebar/sidebar-utils';
+import { LAYOUT_CONFIG } from './layout-constants';
 
 const { Z_INDEX } = LAYOUT_CONFIG;
 
-const createSidebarHTML = () => `
+const createSidebarHTML = (): string => `
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-[${Z_INDEX.OVERLAY}] hidden md:hidden transition-opacity duration-300"></div>
     <aside id="sidebar" class="flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 group z-[${Z_INDEX.SIDEBAR}] fixed md:relative h-full md:translate-x-0 -translate-x-full shadow-xl md:shadow-none" style="width: ${SIDEBAR_CONFIG.DEFAULT_WIDTH}px;">
         ${renderSidebarHeader()}
@@ -17,7 +18,7 @@ const createSidebarHTML = () => `
     </aside>
 `;
 
-const renderSidebarHeader = () => `
+const renderSidebarHeader = (): string => `
     <div class="h-12 flex items-center px-4 flex-shrink-0 justify-between">
         <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition select-none">
             <img src="/images/web-app-manifest-512x512.png" alt="Logo" class="h-9 w-9 rounded-lg shadow-sm">
@@ -29,7 +30,7 @@ const renderSidebarHeader = () => `
     </div>
 `;
 
-const createHeaderHTML = () => `
+const createHeaderHTML = (): string => `
     <header class="h-12 flex items-center justify-between px-4 border-b border-white/20 dark:border-gray-800/50 flex-shrink-0 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md z-[${Z_INDEX.HEADER}] relative">
         <div class="flex items-center min-w-0 flex-1 mr-4">
             <button id="sidebar-open-btn" class="mr-2 text-gray-500 hover:text-gray-700 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
@@ -57,8 +58,8 @@ const createHeaderHTML = () => `
     </header>
 `;
 
-const createFooterHTML = () => `
-    <footer class="h-12 flex items-center justify-center px-4 border-t border-white/20 dark:border-gray-800/50 flex-shrink-0 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md z-[${Z_INDEX.HEADER}] relative">
+const createFooterHTML = (): string => `
+    <footer id="global-footer" class="h-12 flex items-center justify-center px-4 border-t border-white/20 dark:border-gray-800/50 flex-shrink-0 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md z-[${Z_INDEX.HEADER}] relative">
         <div id="footer-add-btn-container" class="w-full h-full"></div>
         <div id="footer-input-form-container" class="hidden"></div>
     </footer>
@@ -90,7 +91,6 @@ export function renderLayout() {
     `;
 
     requestAnimationFrame(() => {
-        // 未使用の main 引数を削除
         setupResizer(document.getElementById('sidebar'), document.getElementById('sidebar-resizer'));
         initWorkspaceDropdown();
         setupGlobalShortcuts();
@@ -98,8 +98,9 @@ export function renderLayout() {
 }
 
 function setupGlobalShortcuts() {
-    document.addEventListener('keydown', (e) => {
-        const isInput = ['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.closest('[contenteditable]');
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+        const target = e.target as HTMLElement;
+        const isInput = ['INPUT', 'TEXTAREA'].includes(target.tagName) || target.closest('[contenteditable]');
         const hasModal = document.querySelector('[role="dialog"]');
 
         if (e.key === '/' && !isInput && !hasModal) {

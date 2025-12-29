@@ -1,6 +1,6 @@
-import '../index.css';
+﻿import '../index.css';
 import { initializeApp } from './app.js';
-import { ASSETS, DOM_IDS } from './layout/ui-view-constants.js';
+import { ASSETS, DOM_IDS } from './layout/ui-view-constants';
 
 /**
  * モジュールスコープで初期化状態を管理

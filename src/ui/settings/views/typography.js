@@ -1,5 +1,5 @@
 ﻿import { createRadioOption, createSelectOption } from './components';
-import { FONT_OPTIONS, getCurrentFonts } from '../../layout/fonts.js';
+import { FONT_OPTIONS, getCurrentFonts } from '../../layout/fonts';
 
 export const FONT_SIZES = {
     SMALL: 'sm',

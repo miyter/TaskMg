@@ -1,13 +1,13 @@
-// @ts-nocheck
 /**
  * 更新日: 2025-12-21
  * 内容: 背景設定のライトモード対応、未使用引数の削除（Grok指摘対応）
+ * TypeScript化: 2025-12-29
  */
 
 /**
  * アプリのテーマと文字サイズ、背景設定を初期化・適用する
  */
-export function initTheme() {
+export function initTheme(): void {
     // 1. テーマ (システム設定またはLocalStorage)
     const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.classList.toggle('dark', isDark);
@@ -24,7 +24,7 @@ export function initTheme() {
 /**
  * テーマの切り替えを実行
  */
-export function toggleTheme() {
+export function toggleTheme(): void {
     const isDark = document.documentElement.classList.toggle('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     applyBackground();
@@ -33,25 +33,19 @@ export function toggleTheme() {
 /**
  * 背景設定をメインコンテンツに適用する
  */
-export function applyBackground() {
+export function applyBackground(): void {
     const mainContent = document.getElementById('main-content');
     if (!mainContent) return;
 
     const bgType = localStorage.getItem('background') || 'none';
-    
+
     // リセット
     mainContent.style.backgroundImage = '';
-    
+
     if (bgType === 'none') return;
 
     // 背景パターンの適用 (ライト/ダーク両対応)
     if (bgType === 'haikei') {
-        // 画像パスは適宜調整。ダーク/ライトで画像を切り替える場合はここで分岐可能
-        const imageUrl = document.documentElement.classList.contains('dark') 
-            ? "/images/haikei_black_1.jpg" 
-            : "/images/haikei_white_1.jpg"; // ライト用画像があれば切り替え
-
-        // 現状は共通画像またはダーク用のものを適用
         Object.assign(mainContent.style, {
             backgroundImage: "url('/images/haikei_black_1.jpg')",
             backgroundSize: 'cover',

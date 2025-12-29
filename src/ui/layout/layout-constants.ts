@@ -1,8 +1,8 @@
 /**
  * レイアウトに関する定数の一元管理
+ * TypeScript化: 2025-12-29
  */
 export const LAYOUT_CONFIG = {
-    // SIDEBAR_WIDTH は sidebar-constants.js に集約したため削除
     Z_INDEX: {
         HEADER: 10,
         OVERLAY: 20,
@@ -10,5 +10,6 @@ export const LAYOUT_CONFIG = {
         DROPDOWN: 40,
         MODAL: 50
     }
-    // 未使用の SELECTORS は削除
-};
+} as const;
+
+export type LayoutConfig = typeof LAYOUT_CONFIG;

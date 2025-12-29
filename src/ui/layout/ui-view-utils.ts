@@ -1,22 +1,32 @@
-﻿import { UI_CONFIG, SIDEBAR_TYPE } from './ui-view-constants.js';
-import { getTimeBlockById, getTimeBlocks } from '../../store/timeblocks';
+/**
+ * UIビュー関連のユーティリティ
+ * TypeScript化: 2025-12-29
+ */
 import { getFilters } from '../../store/filters';
+import { Filter, Label, Project, TimeBlock } from '../../store/schema';
+import { getTimeBlocks } from '../../store/timeblocks';
+import { SIDEBAR_TYPE, UI_CONFIG } from './ui-view-constants';
 
 const { CLASSES, HEADER_IDS, DATA_ATTRS } = UI_CONFIG;
 
-// ... (showView, clearSidebarHighlight, highlightSidebarItem remain unchanged) ...
+export interface ViewFilter {
+    type: string;
+    id?: string | null;
+    name?: string;
+}
 
 /**
  * フィルターに応じたヘッダータイトルの更新
  */
-export function updateHeaderTitleByFilter(filter, allProjects = [], allLabels = []) {
+export function updateHeaderTitleByFilter(filter: ViewFilter, allProjects: Project[] = [], allLabels: Label[] = []) {
     const elTitle = document.getElementById(HEADER_IDS.TITLE);
     const elCount = document.getElementById(HEADER_IDS.COUNT);
     if (!elTitle) return;
 
-    // ストアからデータを補完してタイトル解決（updateView以外からの呼び出しに対応）
-    const allTimeBlocks = getTimeBlocks();
-    const allFilters = getFilters();
+    // @ts-ignore
+    const allTimeBlocks = getTimeBlocks() as TimeBlock[];
+    // @ts-ignore
+    const allFilters = getFilters() as Filter[];
 
     const title = resolveTitleText(filter, allProjects, allLabels, allTimeBlocks, allFilters);
 
@@ -30,7 +40,7 @@ export function updateHeaderTitleByFilter(filter, allProjects = [], allLabels = 
 /**
  * フィルター情報からタイトルテキストを解決する（純粋関数）
  */
-export function resolveTitleText(filter, allProjects = [], allLabels = [], allTimeBlocks = [], allFilters = []) {
+export function resolveTitleText(filter: ViewFilter, allProjects: Project[] = [], allLabels: Label[] = [], allTimeBlocks: TimeBlock[] = [], allFilters: Filter[] = []): string {
     const { type, id, name } = filter;
     if (name) return name;
 
@@ -57,19 +67,17 @@ export function resolveTitleText(filter, allProjects = [], allLabels = [], allTi
         case 'search': return 'タスク検索';
         case 'dashboard': return 'ダッシュボード';
         default:
-            if (id) return id;
+            if (id) return String(id);
             return 'タスク';
     }
 }
 
 /**
- * 更新日: 2025-12-27
- * 内容: showView を完全に null-safe 化。Optional Chaining を導入し classList の参照エラーを封殺。
+ * ビューの表示切り替え
  */
-export function showView(activeView, otherViews) {
+export function showView(activeView: HTMLElement | null, otherViews: (HTMLElement | null)[]) {
     if (Array.isArray(otherViews)) {
         otherViews.forEach(v => {
-            // 要素が存在し、かつ classList を持っている場合のみ操作
             v?.classList?.add(CLASSES.HIDDEN);
             v?.classList?.remove(CLASSES.FADE_IN);
         });
@@ -105,7 +113,7 @@ export function clearSidebarHighlight() {
 /**
  * サイドバーのハイライトを更新
  */
-export function highlightSidebarItem(filter) {
+export function highlightSidebarItem(filter: ViewFilter) {
     clearSidebarHighlight();
 
     const target = getSidebarTarget(filter);
@@ -125,7 +133,7 @@ export function highlightSidebarItem(filter) {
 /**
  * フィルター情報からサイドバーのターゲット要素を取得
  */
-function getSidebarTarget(filter) {
+function getSidebarTarget(filter: ViewFilter): HTMLElement | null {
     if (!filter) return null;
     const { type, id } = filter;
 
@@ -138,11 +146,6 @@ function getSidebarTarget(filter) {
     return document.querySelector(`.sidebar-item-row[data-type="${typeAttr}"][data-id="${id}"]`);
 }
 
-
-
-/**
- * 未ログイン時の表示状態をレンダリング
- */
 /**
  * 未ログイン時の表示状態をレンダリング（ログインフォーム表示）
  */
@@ -198,7 +201,6 @@ export function renderLoginState() {
                 </div>
             </div>
             
-            <!-- ユーザー情報表示用（ロジック互換性のため残す、実際はヘッダー等で管理推奨） -->
             <div id="user-info" class="hidden">
                  <span id="user-email-display"></span>
             </div>

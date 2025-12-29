@@ -9,12 +9,12 @@
 import { onAuthStateChanged } from '../../core/firebase-sdk';
 import { initializeFirebase, auth } from '../../core/firebase';
 import { updateAuthUI, setupAuthHandlers } from '../auth.js';
-import { renderLayout } from '../layout/layout.js';
-import { initTheme, applyBackground } from '../layout/theme.js';
+import { renderLayout } from '../layout/layout';
+import { initTheme, applyBackground } from '../layout/theme';
 import { initTaskModal } from '../modals/task-modal';
 import { initSidebar } from '../features/sidebar/sidebar.js';
 import { initSettings } from '../settings.js';
-import { renderLoginState } from '../layout/ui-view-utils.js';
+import { renderLoginState } from '../layout/ui-view-utils';
 import { initWorkspaceDropdown, updateWorkspaceDropdownUI } from '../components/WorkspaceDropdown.js';
 import {
     stopDataSync,
