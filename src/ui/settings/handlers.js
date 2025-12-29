@@ -3,6 +3,7 @@
  */
 import { setupDensityHandler, setupFontHandlers, setupVisibleTaskCountHandler, setupTimezoneHandler } from './modules/ui-handlers.js';
 import { setupAppearanceHandlers } from './modules/appearance-handlers.js';
+import { setupLanguageHandler } from './modules/language-handlers.js';
 import { setupExportHandler, setupImportHandler } from './modules/data-handlers.js';
 import { setupPasswordHandler, setupLogoutHandler } from './modules/account-handlers.js';
 import { setupAccordionHandlers } from './modules/common-handlers.js';
@@ -22,6 +23,8 @@ export function setupSettingsEvents(modalOverlay, closeModal) {
     setupVisibleTaskCountHandler();
     setupFontHandlers();
     setupTimezoneHandler();
+
+    setupLanguageHandler();
 
     setupExportHandler();
     setupImportHandler();

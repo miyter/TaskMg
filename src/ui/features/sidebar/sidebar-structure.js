@@ -22,7 +22,7 @@ const SECTION_METADATA = {
         }
     },
     'targets': {
-        title: 'Target Tools',
+        title: '目標設計',
         listId: SIDEBAR_CONFIG.LIST_IDS.TARGETS,
         renderContent: (listId) => {
             return `
