@@ -47,6 +47,10 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
 
         const isExceeded = rawPercent > 100;
         const barClass = isExceeded ? UI_STYLES.PROGRESS_BAR.OVER : UI_STYLES.PROGRESS_BAR.FILLED;
+        const barWidth = isExceeded ? '100%' : `${progressPercent}%`;
+
+        const diffColorClass = isOver ? 'text-red-500' : 'text-green-500';
+        const diffLabel = isOver ? '超過' : '残り';
 
         // プログレスバー付きUI (1行レイアウト改善版)
         html = `
