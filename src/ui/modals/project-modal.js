@@ -5,34 +5,33 @@ import { addProject, updateProject, deleteProject } from '../../store/projects.j
 import { getCurrentWorkspaceId } from '../../store/workspace.js';
 import { showMessageModal } from '../components.js';
 import { buildProjectModalHTML } from './project-modal-dom.js';
+import { initializeModal } from './modal-common.js';
 
 /**
  * プロジェクトモーダルを表示
  */
 export function showProjectModal(project = null) {
     const modalId = 'project-modal';
-    document.getElementById(modalId)?.remove();
+    const htmlContent = buildProjectModalHTML(project);
 
-    const overlay = document.createElement('div');
-    overlay.id = modalId;
-    overlay.innerHTML = buildProjectModalHTML(project);
-    document.body.appendChild(overlay);
+    const { overlay, close } = initializeModal(modalId, htmlContent, {
+        focusSelector: '#modal-project-name',
+        selectText: !!project
+    });
 
-    setupEvents(overlay, project);
+    setupEvents(overlay, project, close);
 }
 
 /**
  * イベントリスナーのセットアップ
  */
-function setupEvents(overlay, project) {
-    const close = () => overlay.remove();
+function setupEvents(overlay, project, close) {
     const nameInput = overlay.querySelector('#modal-project-name');
     const saveBtn = overlay.querySelector('#save-project-btn');
     const deleteBtn = overlay.querySelector('#delete-project-btn');
     const cancelBtn = overlay.querySelector('#cancel-modal-btn');
 
     if (cancelBtn) cancelBtn.onclick = close;
-    overlay.onclick = (e) => { if (e.target === overlay) close(); };
 
     const handleSave = async () => {
         const name = nameInput?.value.trim();
@@ -44,7 +43,7 @@ function setupEvents(overlay, project) {
             } else {
                 const workspaceId = getCurrentWorkspaceId();
                 if (!workspaceId) throw new Error("ワークスペースが選択されていないぞ");
-                
+
                 await addProject(name, workspaceId);
                 // 成功ポップアップはUX向上のため削除
             }
@@ -56,8 +55,8 @@ function setupEvents(overlay, project) {
 
     if (saveBtn) saveBtn.onclick = handleSave;
     if (nameInput) {
-        nameInput.onkeydown = (e) => { 
-            if (e.key === 'Enter' && !e.isComposing) handleSave(); 
+        nameInput.onkeydown = (e) => {
+            if (e.key === 'Enter' && !e.isComposing) handleSave();
         };
     }
 

@@ -1,26 +1,15 @@
-import { setFont } from '../../layout/fonts.js';
-import { SIDEBAR_CONFIG } from '../../features/sidebar/sidebar-constants.js';
+import { setFont, setFontSize, setDensity } from '../../core/ui-settings-manager.js';
 import { setupRadioGroupHandler } from './common-handlers.js';
 
 export function setupDensityHandler() {
-    setupRadioGroupHandler('sidebar-density', SIDEBAR_CONFIG.STORAGE_KEYS.DENSITY, (val) => {
-        if (val === 'compact') localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, 'true');
-        else localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.COMPACT, 'false');
-
-        const densities = ['compact', 'normal', 'comfortable', 'spacious'];
-        const classes = densities.map(d => `app-density-${d}`);
-        document.body.classList.remove(...classes);
-        document.body.classList.add(`app-density-${val}`);
-
-        window.dispatchEvent(new CustomEvent('sidebar-settings-updated', { detail: { density: val } }));
+    setupRadioGroupHandler('sidebar-density', 'sidebar_density', (val) => {
+        setDensity(val);
     });
 }
 
 export function setupFontHandlers() {
     setupRadioGroupHandler('font-size', 'fontSize', (val) => {
-        const sizeClasses = ['font-app-sm', 'font-app-base', 'font-app-md', 'font-app-lg', 'font-app-xl'];
-        document.body.classList.remove(...sizeClasses);
-        document.body.classList.add(`font-app-${val}`);
+        setFontSize(val);
     });
 
     const enSelect = document.querySelector('select[name="font-en-select"]');

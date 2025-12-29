@@ -23,6 +23,7 @@ import {
 } from './DataSyncManager.js';
 import { setupGlobalEventListeners } from './EventManager.js';
 import { subscribeToWorkspaces } from '../../store/workspace.js';
+import { applyAllUISettings } from './ui-settings-manager.js';
 
 /**
  * 起動シーケンス
@@ -40,6 +41,9 @@ export function runInitialization() {
 
     // レイアウト生成後に背景を適用（要素が存在することを確認してから）
     applyBackground();
+
+    // UI設定（フォント、フォントサイズ、密度）を適用
+    applyAllUISettings();
 
     initSettings();
     initTaskModal();
