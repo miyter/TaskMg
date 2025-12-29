@@ -1,9 +1,11 @@
-﻿import { UI_STYLES } from '../core/ui-style-constants';
-
 /**
  * ワークスペースモーダルのテンプレート
+ * TypeScript化: 2025-12-29
  */
-export function buildWorkspaceModalHTML(workspaceData = null) {
+import { Workspace } from '../../store/schema'; // Workspace型インポート
+import { UI_STYLES } from '../core/ui-style-constants';
+
+export function buildWorkspaceModalHTML(workspaceData: Workspace | null = null): string {
     const isEdit = !!workspaceData;
     const config = {
         title: isEdit ? 'ワークスペース名の変更' : '新規ワークスペース',

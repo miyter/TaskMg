@@ -1,13 +1,14 @@
-﻿// @ts-nocheck
 // @miyter:20251221
 // ラベル作成・編集モーダルのHTML生成
+// TypeScript化: 2025-12-29
 
+import { Label } from '../../store/schema'; // Label型インポート
 import { UI_STYLES } from '../core/ui-style-constants';
 
 /**
  * ラベルモーダルのテンプレートを生成
  */
-export function buildLabelModalHTML(label = null) {
+export function buildLabelModalHTML(label: Label | null = null): string {
     const isEdit = !!label;
     const config = {
         title: label?.name || '',

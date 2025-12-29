@@ -1,6 +1,9 @@
-﻿/**
+/**
  * モーダルおよびコンテキストメニューの共通ヘルパー
+ * TypeScript化: 2025-12-29
  */
+import { Timestamp } from 'firebase/firestore';
+import { Project, Task } from '../../store/schema';
 import { updateTask } from '../../store/store';
 import { showMessageModal } from '../../ui/components';
 
@@ -9,9 +12,10 @@ const INBOX_LABEL = '📥 インボックス';
 /**
  * Dateオブジェクトを YYYY-MM-DD 形式に変換（Firebase Timestamp対応）
  */
-export function formatDateForInput(date) {
+export function formatDateForInput(date: Date | Timestamp | string | number | null | undefined): string {
     if (!date) return '';
-    const d = date.toDate ? date.toDate() : new Date(date);
+    // @ts-ignore
+    const d = typeof date.toDate === 'function' ? date.toDate() : new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -21,7 +25,7 @@ export function formatDateForInput(date) {
 /**
  * タスクの移動用コンテキストメニューを表示
  */
-export function showTaskMoveMenu(task, allProjects, x, y) {
+export function showTaskMoveMenu(task: Task, allProjects: Project[], x: number, y: number) {
     document.getElementById('task-move-menu')?.remove();
 
     const menu = document.createElement('div');
@@ -36,14 +40,15 @@ export function showTaskMoveMenu(task, allProjects, x, y) {
     const inboxItem = createMenuItem(INBOX_LABEL, null, isInbox);
 
     const projectItems = allProjects.length > 0
-        ? allProjects.map(p => createMenuItem(p.name, p.id, task.projectId === p.id)).join('')
+        ? allProjects.map(p => createMenuItem(p.name, p.id || null, task.projectId === p.id)).join('')
         : `<div class="px-3 py-2 text-gray-400 italic text-xs text-center">プロジェクトなし</div>`;
 
     menu.innerHTML = header + inboxItem + projectItems;
     document.body.appendChild(menu);
 
     menu.onclick = async (e) => {
-        const btn = e.target.closest('button[data-project-id]');
+        const target = e.target as HTMLElement;
+        const btn = target.closest('button[data-project-id]') as HTMLElement;
         if (!btn) return;
 
         const rawId = btn.dataset.projectId;
@@ -51,9 +56,10 @@ export function showTaskMoveMenu(task, allProjects, x, y) {
 
         if (newProjectId !== task.projectId) {
             try {
-                await updateTask(task.id, { projectId: newProjectId });
+                // @ts-ignore: updateTask accepts Partial<Task>
+                await updateTask(task.id!, { projectId: newProjectId });
                 const name = newProjectId ? allProjects.find(p => p.id === newProjectId)?.name : 'インボックス';
-                showMessageModal({ message: `「${name}」へ移動したぞ`, type: 'success' });
+                showMessageModal({ message: `「${name || 'プロジェクト'}」へ移動したぞ`, type: 'success' });
             } catch (err) {
                 showMessageModal({ message: "移動に失敗した", type: "error" });
             }
@@ -61,8 +67,8 @@ export function showTaskMoveMenu(task, allProjects, x, y) {
         menu.remove();
     };
 
-    const close = (e) => {
-        if (!menu.contains(e.target)) {
+    const close = (e: MouseEvent) => {
+        if (!menu.contains(e.target as Node)) {
             menu.remove();
             document.removeEventListener('click', close);
         }
@@ -70,7 +76,7 @@ export function showTaskMoveMenu(task, allProjects, x, y) {
     setTimeout(() => document.addEventListener('click', close), 0);
 }
 
-function createMenuItem(name, id, isActive) {
+function createMenuItem(name: string, id: string | null, isActive: boolean) {
     const activeClass = isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-700 dark:text-gray-200';
     return `
         <button data-project-id="${id || 'null'}" 

@@ -2,18 +2,21 @@
  * 更新日: 2025-12-27
  * 内容: countActiveTasks をエクスポートに追加（ビルドエラー修正）
  * これにより src/ui/sidebar-renderer.js でのインポート失敗を解消
+ * TypeScript化: 2025-12-29
  */
+import { getLabels } from '../../../store/labels-raw.js';
+import { Label, Task } from '../../../store/schema';
 import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 
 /**
  * サイドバーのリサイズ（ドラッグ）設定
  */
-export function setupResizer(sidebar, resizer) {
+export function setupResizer(sidebar: HTMLElement | null, resizer: HTMLElement | null) {
     if (!resizer || !sidebar) return;
 
     let isResizing = false;
-    let pendingWidth = null;
-    let requestId = null;
+    let pendingWidth: number | null = null;
+    let requestId: number | null = null;
 
     const applyPendingWidth = () => {
         if (pendingWidth !== null && sidebar) {
@@ -22,7 +25,7 @@ export function setupResizer(sidebar, resizer) {
         requestId = null;
     };
 
-    const resize = (e) => {
+    const resize = (e: MouseEvent) => {
         if (!isResizing) return;
         const { MIN_WIDTH, MAX_WIDTH } = SIDEBAR_CONFIG;
         pendingWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, e.clientX));
@@ -39,7 +42,7 @@ export function setupResizer(sidebar, resizer) {
         if (requestId) cancelAnimationFrame(requestId);
         requestId = null;
         applyPendingWidth();
-        localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.WIDTH, sidebar.offsetWidth);
+        localStorage.setItem(SIDEBAR_CONFIG.STORAGE_KEYS.WIDTH, String(sidebar.offsetWidth));
         document.removeEventListener('mousemove', resize);
         document.removeEventListener('mouseup', stopResize);
     };
@@ -57,14 +60,14 @@ export function setupResizer(sidebar, resizer) {
 /**
  * デスクトップ表示（MDブレイクポイント以上）かどうかを判定
  */
-export function isDesktop() {
+export function isDesktop(): boolean {
     return window.innerWidth >= 768;
 }
 
 /**
  * localStorage から boolean 値を取得
  */
-export function getStoredBool(key, defaultValue = false) {
+export function getStoredBool(key: string, defaultValue = false): boolean {
     const val = localStorage.getItem(key);
     if (val === null) return defaultValue;
     return val === 'true' || val === 'compact';
@@ -73,7 +76,7 @@ export function getStoredBool(key, defaultValue = false) {
 /**
  * サイドバーの密度レベルを取得
  */
-export function getSidebarDensity() {
+export function getSidebarDensity(): string {
     // 1. New density key
     const density = localStorage.getItem(SIDEBAR_CONFIG.STORAGE_KEYS.DENSITY);
     if (density && Object.values(SIDEBAR_CONFIG.DENSITY_LEVELS).includes(density)) {
@@ -88,7 +91,7 @@ export function getSidebarDensity() {
 /**
  * サイドバーが現在コンパクトモードかどうかを判定 (Deprecated)
  */
-export function isSidebarCompact() {
+export function isSidebarCompact(): boolean {
     return getSidebarDensity() === SIDEBAR_CONFIG.DENSITY_LEVELS.COMPACT;
 }
 
@@ -97,7 +100,16 @@ export function isSidebarCompact() {
  * @param {Array} tasks - タスク配列
  * @param {Function} predicate - フィルタ条件関数
  */
-export function countActiveTasks(tasks, predicate) {
+export function countActiveTasks(tasks: Task[], predicate: (task: Task) => boolean): number {
     if (!Array.isArray(tasks)) return 0;
     return tasks.filter(task => task.status !== 'completed' && predicate(task)).length;
+}
+
+/**
+ * ラベル詳細を取得 (task-modal-labelsで使用)
+ */
+export function getLabelDetails(labelId: string): Label | undefined {
+    // @ts-ignore
+    const labels = getLabels() as Label[];
+    return labels.find(l => l.id === labelId);
 }

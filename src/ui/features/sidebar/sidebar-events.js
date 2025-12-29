@@ -3,7 +3,7 @@ import { getSidebarUI } from './sidebar-state.js';
 import { isDesktop } from './sidebar-utils.js';
 import { toggleSidebar } from './sidebar-view.js';
 import { showSettingsModal } from '../../settings.js';
-import { showFilterModal } from '../../modals/filter-modal.js';
+import { showFilterModal } from '../../modals/filter-modal';
 import { showTimeBlockModal } from '../timeblock/timeblock-modal.js';
 import { showCustomContextMenu } from './sidebar-components';
 import { openInNewWindow } from '../../core/window-manager.js';

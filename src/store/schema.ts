@@ -16,7 +16,7 @@ const DateLikeSchema = z.union([z.date(), z.instanceof(Timestamp), z.string()]).
 // --- Schemas ---
 
 export const RecurrenceSchema = z.object({
-    type: z.enum(['daily', 'weekly', 'weekdays', 'monthly']).nullable(),
+    type: z.enum(['none', 'daily', 'weekly', 'weekdays', 'monthly']).nullable(),
     days: z.array(z.number()).optional(), // 0-6 for Sunday-Saturday
 }).nullable().optional();
 

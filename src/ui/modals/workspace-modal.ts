@@ -1,14 +1,16 @@
-﻿/**
+/**
  * ワークスペースモーダルの制御ロジック
+ * TypeScript化: 2025-12-29
  */
-import { addWorkspace, updateWorkspaceName, setCurrentWorkspaceId, getWorkspaces } from '../../store/workspace';
+import { Workspace } from '../../store/schema';
+import { addWorkspace, getWorkspaces, setCurrentWorkspaceId, updateWorkspaceName } from '../../store/workspace';
 import { showMessageModal } from '../components';
-import { buildWorkspaceModalHTML } from './workspace-modal-dom.js';
+import { buildWorkspaceModalHTML } from './workspace-modal-dom';
 
 /**
  * ワークスペースモーダルを表示
  */
-export function showWorkspaceModal(workspaceData = null) {
+export function showWorkspaceModal(workspaceData: Workspace | null = null) {
     const modalId = 'workspace-modal-root';
     document.getElementById(modalId)?.remove();
 
@@ -23,27 +25,29 @@ export function showWorkspaceModal(workspaceData = null) {
 /**
  * イベントリスナーの設定
  */
-function setupEvents(overlay, workspaceData) {
-    const saveBtn = overlay.querySelector('#save-workspace-btn');
-    const nameInput = overlay.querySelector('#modal-workspace-name');
-    const cancelBtn = overlay.querySelector('#cancel-modal-btn');
-    const actualOverlay = overlay.querySelector('#workspace-modal-overlay');
+function setupEvents(overlay: HTMLElement, workspaceData: Workspace | null) {
+    const saveBtn = overlay.querySelector('#save-workspace-btn') as HTMLButtonElement;
+    const nameInput = overlay.querySelector('#modal-workspace-name') as HTMLInputElement;
+    const cancelBtn = overlay.querySelector('#cancel-modal-btn') as HTMLButtonElement | null;
+    const actualOverlay = overlay.querySelector('#workspace-modal-overlay') as HTMLElement;
 
     const close = () => {
         document.removeEventListener('keydown', escHandler);
         overlay.remove();
     };
 
-    const escHandler = (e) => {
+    const escHandler = (e: KeyboardEvent) => {
         if (e.key === 'Escape') close();
     };
 
     // リスナー登録
     document.addEventListener('keydown', escHandler);
 
-    actualOverlay.onclick = (e) => {
-        if (e.target === actualOverlay) close();
-    };
+    if (actualOverlay) {
+        actualOverlay.onclick = (e) => {
+            if (e.target === actualOverlay) close();
+        };
+    }
 
     if (cancelBtn) cancelBtn.onclick = close;
 
@@ -53,7 +57,8 @@ function setupEvents(overlay, workspaceData) {
         const name = nameInput?.value.trim();
         if (!name) return showMessageModal({ message: 'ワークスペース名を入力してくれ', type: 'error' });
 
-        const isDuplicate = getWorkspaces().some(ws => ws.name === name && ws.id !== workspaceData?.id);
+        // @ts-ignore: getWorkspaces return type check
+        const isDuplicate = getWorkspaces().some((ws: Workspace) => ws.name === name && ws.id !== workspaceData?.id);
         if (isDuplicate) return showMessageModal({ message: 'その名前は既に使われているぞ', type: 'error' });
 
         saveBtn.disabled = true;
@@ -61,13 +66,13 @@ function setupEvents(overlay, workspaceData) {
 
         try {
             if (workspaceData) {
-                await updateWorkspaceName(workspaceData.id, name);
+                await updateWorkspaceName(workspaceData.id!, name);
             } else {
                 const newWs = await addWorkspace(name);
-                setCurrentWorkspaceId(newWs.id);
+                setCurrentWorkspaceId(newWs.id!);
             }
             close();
-        } catch (error) {
+        } catch (error: any) {
             saveBtn.disabled = false;
             saveBtn.textContent = workspaceData ? '保存' : '作成';
             showMessageModal({ message: `失敗した: ${error.message}`, type: 'error' });

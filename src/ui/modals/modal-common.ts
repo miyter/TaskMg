@@ -1,9 +1,16 @@
 /**
  * モーダル共通処理モジュール
  * すべてのモーダルで共通して使用する初期化処理を提供
+ * TypeScript化: 2025-12-29
  */
 
-import { applyUISettingsToModal } from '../core/ui-settings-manager.js';
+import { applyUISettingsToModal } from '../core/ui-settings-manager';
+
+export interface ModalInitOptions {
+    focusSelector?: string | null;
+    selectText?: boolean;
+    onClose?: (() => void) | null;
+}
 
 /**
  * モーダルオーバーレイを作成し、UI設定を適用
@@ -11,7 +18,7 @@ import { applyUISettingsToModal } from '../core/ui-settings-manager.js';
  * @param {string} htmlContent - モーダルのHTMLコンテンツ
  * @returns {HTMLElement} 作成されたオーバーレイ要素
  */
-export function createModalOverlay(modalId, htmlContent) {
+export function createModalOverlay(modalId: string, htmlContent: string): HTMLElement {
     // 既存のモーダルを削除
     document.getElementById(modalId)?.remove();
 
@@ -33,7 +40,7 @@ export function createModalOverlay(modalId, htmlContent) {
  * @param {Function} onClose - クローズ時のコールバック（オプション）
  * @returns {Function} クローズ関数
  */
-export function setupModalClose(overlay, onClose = null) {
+export function setupModalClose(overlay: HTMLElement, onClose: (() => void) | null = null): () => void {
     const close = () => {
         overlay.remove();
         if (onClose) onClose();
@@ -45,7 +52,7 @@ export function setupModalClose(overlay, onClose = null) {
     });
 
     // Escキーでクローズ
-    const handleEscape = (e) => {
+    const handleEscape = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
             close();
             document.removeEventListener('keydown', handleEscape);
@@ -62,9 +69,9 @@ export function setupModalClose(overlay, onClose = null) {
  * @param {string} focusSelector - フォーカスする要素のセレクタ
  * @param {boolean} selectText - テキストを選択するか（デフォルト: false）
  */
-export function setupModalFocus(overlay, focusSelector, selectText = false) {
+export function setupModalFocus(overlay: HTMLElement, focusSelector: string, selectText: boolean = false) {
     requestAnimationFrame(() => {
-        const element = overlay.querySelector(focusSelector);
+        const element = overlay.querySelector(focusSelector) as HTMLInputElement | HTMLTextAreaElement | null;
         if (element) {
             element.focus();
             if (selectText && typeof element.select === 'function') {
@@ -79,12 +86,9 @@ export function setupModalFocus(overlay, focusSelector, selectText = false) {
  * @param {string} modalId - モーダルのID
  * @param {string} htmlContent - モーダルのHTMLコンテンツ
  * @param {Object} options - オプション設定
- * @param {string} options.focusSelector - フォーカスする要素のセレクタ
- * @param {boolean} options.selectText - テキストを選択するか
- * @param {Function} options.onClose - クローズ時のコールバック
  * @returns {Object} { overlay, close } - オーバーレイ要素とクローズ関数
  */
-export function initializeModal(modalId, htmlContent, options = {}) {
+export function initializeModal(modalId: string, htmlContent: string, options: ModalInitOptions = {}) {
     const {
         focusSelector = null,
         selectText = false,

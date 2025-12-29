@@ -6,7 +6,7 @@
 
 import { setCurrentWorkspaceId, getCurrentWorkspaceId, getWorkspaces } from '../../store/workspace';
 import { showSettingsModal } from '../settings.js';
-import { showWorkspaceModal } from '../modals/workspace-modal.js';
+import { showWorkspaceModal } from '../modals/workspace-modal';
 import { showItemContextMenu } from '../features/sidebar/sidebar-components';
 
 const CLASSES = {

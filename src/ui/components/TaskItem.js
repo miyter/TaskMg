@@ -6,7 +6,7 @@ import { updateTaskStatus } from '../../store/store';
 import { getTimeBlocks } from '../../store/timeblocks';
 import { formatDateCompact, getTaskDateColor } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
-import { openTaskEditModal } from '../modals/task-modal.js';
+import { openTaskEditModal } from '../modals/task-modal';
 import { toggleTaskSelection } from '../state/ui-state.js';
 import { showTaskContextMenu } from './TaskContextMenu.js';
 

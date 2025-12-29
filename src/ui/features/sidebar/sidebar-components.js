@@ -5,10 +5,10 @@ import { SIDEBAR_CONFIG } from './sidebar-constants.js';
 import { deleteProject } from '../../../store/projects';
 import { deleteFilter } from '../../../store/filters';
 import { deleteWorkspace, getWorkspaces, setCurrentWorkspaceId } from '../../../store/workspace';
-import { showFilterModal } from '../../modals/filter-modal.js';
+import { showFilterModal } from '../../modals/filter-modal';
 import { showMessageModal } from '../../components';
-import { showProjectModal } from '../../modals/project-modal.js';
-import { showWorkspaceModal } from '../../modals/workspace-modal.js';
+import { showProjectModal } from '../../modals/project-modal';
+import { showWorkspaceModal } from '../../modals/workspace-modal';
 
 /**
  * リストアイテム要素を作成

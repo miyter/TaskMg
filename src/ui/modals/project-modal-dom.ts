@@ -1,10 +1,12 @@
-﻿/**
+/**
  * プロジェクト作成・編集モーダルのHTML構造生成
+ * TypeScript化: 2025-12-29
  */
 
+import { Project } from '../../store/schema'; // Project型インポート
 import { UI_STYLES } from '../core/ui-style-constants';
 
-export function buildProjectModalHTML(project = null) {
+export function buildProjectModalHTML(project: Project | null = null): string {
     const isEdit = !!project;
     const config = {
         title: project?.name || '',

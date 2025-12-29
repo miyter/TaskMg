@@ -53,7 +53,7 @@ export function renderFixedAddTaskBar(footerContainer, inputContainer, projectId
     // ボタンクリックでタスクモーダルを開く
     footerContainer.querySelector('#fixed-add-task-btn').onclick = () => {
         // タスクモーダルを開く（新規作成モード）
-        import('./modals/task-modal.js').then(({ showTaskModal }) => {
+        import('./modals/task-modal').then(({ showTaskModal }) => {
             showTaskModal(null, {
                 projectId: projectId || null,
                 labelIds: labelId ? [labelId] : []

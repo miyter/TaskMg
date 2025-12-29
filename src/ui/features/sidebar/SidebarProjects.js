@@ -4,7 +4,7 @@
  * 内容: ヘッダー位置のずれを修正。sidebar-structure.js の共通ヘッダーに統合。
  */
 
-import { showProjectModal } from '../../modals/project-modal.js';
+import { showProjectModal } from '../../modals/project-modal';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components';
 import { setupDropZone } from './sidebar-drag-drop.js';
 

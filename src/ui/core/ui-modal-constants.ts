@@ -1,5 +1,6 @@
 /**
  * モーダル関連の共通定数クラス
+ * TypeScript化: 2025-12-29
  */
 export const MODAL_CLASSES = {
     // オーバーレイ・コンテナ
@@ -24,4 +25,4 @@ export const MODAL_CLASSES = {
     TITLE: 'text-lg font-bold text-gray-800 dark:text-white',
     CLOSE_BUTTON: 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700',
     CHECKBOX: 'appearance-none w-4 h-4 border-2 border-gray-400 dark:border-gray-500 rounded cursor-pointer relative checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition-all'
-};
+} as const;

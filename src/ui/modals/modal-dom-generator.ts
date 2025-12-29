@@ -1,18 +1,20 @@
-﻿// @ts-nocheck
-// @miyter:20251221
-// タスクモーダル用のHTML構造を生成
+/**
+ * タスクモーダル用のHTML構造を生成
+ * TypeScript化: 2025-12-29
+ */
 
+import { Recurrence, Task, TimeBlock } from '../../store/schema'; // 型インポート
 import { getTimeBlocks } from '../../store/timeblocks';
 import { getInitialDueDateFromRecurrence } from '../../utils/date';
-import { MODAL_CLASSES } from '../core/ui-modal-constants.js';
-import { formatDateForInput } from './modal-helpers.js';
+import { MODAL_CLASSES } from '../core/ui-modal-constants';
+import { formatDateForInput } from './modal-helpers';
 
 const STORAGE_KEY_SCHEDULE_OPEN = 'task_modal_schedule_open';
 
 /**
  * 繰り返し設定の曜日チェックボックスHTMLを生成
  */
-function createDaysCheckboxesHTML(recurrenceDays = []) {
+function createDaysCheckboxesHTML(recurrenceDays: number[] = []): string {
     const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
     return dayLabels.map((day, index) => `
         <label class="flex items-center space-x-1 cursor-pointer select-none">
@@ -26,34 +28,48 @@ function createDaysCheckboxesHTML(recurrenceDays = []) {
 /**
  * セレクトボックスのオプションを生成
  */
-function createSelectOptions(items, selectedId, labelFn) {
-    return items.map(item => `
-        <option value="${item.id || item}" ${(item.id || item) == selectedId ? 'selected' : ''}>
+function createSelectOptions<T>(items: T[], selectedId: string | number | null | undefined, labelFn: (item: T) => string): string {
+    return items.map(item => {
+        // @ts-ignore
+        const val = item.id !== undefined ? item.id : item; // idプロパティがあれば使う、なければそのまま (数値配列など)
+        return `
+        <option value="${val}" ${val == selectedId ? 'selected' : ''}>
             ${labelFn(item)}
         </option>
-    `).join('');
+    `}).join('');
 }
 
 /**
  * タスク編集モーダル全体のHTMLを生成
  */
-export function buildModalHTML(task) {
-    let dueDate = task.dueDate;
-    const recurrence = task.recurrence || { type: 'none', days: [] };
+export function buildModalHTML(task: Partial<Task>): string {
+    let dueDate: any = task.dueDate;
+    const recurrence: Recurrence = task.recurrence || { type: 'none', days: [] };
 
     // 繰り返し設定時の初期日付補完
-    if (recurrence.type !== 'none' && !dueDate) {
+    if (recurrence?.type && recurrence.type !== 'none' && !dueDate) {
         dueDate = getInitialDueDateFromRecurrence(recurrence);
     }
 
-    const dueDateValue = dueDate ? formatDateForInput(dueDate.toDate ? dueDate.toDate() : new Date(dueDate)) : '';
+    // Timestamp型かDate型か判定してフォーマット
+    let dueDateValue = '';
+    if (dueDate) {
+        if (typeof dueDate.toDate === 'function') {
+            dueDateValue = formatDateForInput(dueDate.toDate());
+        } else if (dueDate instanceof Date) {
+            dueDateValue = formatDateForInput(dueDate);
+        } else {
+            // string or other
+            dueDateValue = formatDateForInput(new Date(dueDate));
+        }
+    }
 
     // オプション生成
-    const timeBlockOptions = createSelectOptions(getTimeBlocks(), task.timeBlockId, tb => `${tb.start} - ${tb.end}`);
+    const timeBlockOptions = createSelectOptions(getTimeBlocks(), task.timeBlockId, (tb: TimeBlock) => `${tb.start} - ${tb.end}`);
     const durationOptions = createSelectOptions([30, 45, 60, 75, 90], task.duration, d => `${d} min`);
 
     // アコーディオンの初期状態判定
-    const hasScheduleData = dueDateValue || recurrence.type !== 'none' || task.timeBlockId || task.duration;
+    const hasScheduleData = !!(dueDateValue || recurrence.type !== 'none' || task.timeBlockId || task.duration);
     const storedState = localStorage.getItem(STORAGE_KEY_SCHEDULE_OPEN);
     let isOpen = hasScheduleData;
     if (storedState !== null) {
@@ -68,7 +84,7 @@ export function buildModalHTML(task) {
                 
                 <!-- ヘッダー（タイトル入力） -->
                 <div class="${MODAL_CLASSES.HEADER}">
-                    <input type="text" id="modal-task-title" value="${task.title}" placeholder="タスクのタイトル"
+                    <input type="text" id="modal-task-title" value="${task.title || ''}" placeholder="タスクのタイトル"
                         class="w-full text-xl font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100">
                     <button id="close-modal-btn" class="${MODAL_CLASSES.CLOSE_BUTTON}">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>

@@ -1,17 +1,47 @@
-﻿/**
+/**
  * タスク編集モーダルのメインコントローラー
+ * TypeScript化: 2025-12-29
  */
-import { updateTask, deleteTask } from '../../store/store';
+import { Timestamp } from 'firebase/firestore';
+import { Recurrence, Task } from '../../store/schema';
+import { deleteTask, updateTask } from '../../store/store';
 import { showMessageModal } from '../components';
-import { setupMarkdownControls } from './task-modal-markdown.js';
-import { setupRecurrenceControls } from './task-modal-recurrence.js';
+import { setupMarkdownControls } from './task-modal-markdown';
+import { setupRecurrenceControls } from './task-modal-recurrence';
 
-let modalElements = {};
+interface ModalElements {
+    title: HTMLInputElement | null;
+    desc: HTMLTextAreaElement | null;
+    date: HTMLInputElement | null;
+    recurrence: HTMLSelectElement | null;
+    timeblock: HTMLSelectElement | null;
+    duration: HTMLSelectElement | null;
+    saveBtn: HTMLButtonElement | null;
+    deleteBtn: HTMLButtonElement | null;
+    closeBtn: HTMLButtonElement | null;
+    cancelBtn: HTMLButtonElement | null;
+    overlay: HTMLDivElement | null;
+    [key: string]: HTMLElement | null; // インデックスシグネチャ
+}
+
+let modalElements: ModalElements = {
+    title: null,
+    desc: null,
+    date: null,
+    recurrence: null,
+    timeblock: null,
+    duration: null,
+    saveBtn: null,
+    deleteBtn: null,
+    closeBtn: null,
+    cancelBtn: null,
+    overlay: null
+};
 
 /**
  * モーダル内の要素をキャッシュ
  */
-function cacheElements(container) {
+function cacheElements(container: HTMLElement) {
     modalElements = {
         title: container.querySelector('#modal-task-title'),
         desc: container.querySelector('#modal-task-desc'),
@@ -30,7 +60,7 @@ function cacheElements(container) {
 /**
  * モーダル内のイベントリスナーを設定
  */
-export function setupTaskModalEvents(container, currentTask, onClose) {
+export function setupTaskModalEvents(container: HTMLElement, currentTask: Task, onClose: () => void) {
     cacheElements(container);
 
     const { closeBtn, cancelBtn, overlay, saveBtn, deleteBtn } = modalElements;
@@ -42,10 +72,10 @@ export function setupTaskModalEvents(container, currentTask, onClose) {
     });
 
     // スケジュール設定の開閉状態を保存
-    const scheduleDetails = container.querySelector('#modal-task-schedule-details');
+    const scheduleDetails = container.querySelector('#modal-task-schedule-details') as HTMLDetailsElement;
     if (scheduleDetails) {
         scheduleDetails.addEventListener('toggle', () => {
-            localStorage.setItem('task_modal_schedule_open', scheduleDetails.open);
+            localStorage.setItem('task_modal_schedule_open', String(scheduleDetails.open));
         });
     }
 
@@ -60,7 +90,7 @@ export function setupTaskModalEvents(container, currentTask, onClose) {
             type: 'confirm',
             onConfirm: async () => {
                 try {
-                    await deleteTask(currentTask.id);
+                    await deleteTask(currentTask.id!);
                     onClose();
                 } catch (e) {
                     showMessageModal({ message: "削除に失敗した", type: 'error' });
@@ -92,7 +122,7 @@ export function setupTaskModalEvents(container, currentTask, onClose) {
 /**
  * データの収集と保存処理
  */
-async function handleSaveTask(currentTask, onClose) {
+async function handleSaveTask(currentTask: Task, onClose: () => void) {
     const title = modalElements.title?.value?.trim();
     if (!title) {
         showMessageModal({ message: "タイトルを入力してくれ", type: 'error' });
@@ -102,18 +132,26 @@ async function handleSaveTask(currentTask, onClose) {
     // 日付バリデーション
     const dateStr = modalElements.date?.value;
     const dueDate = dateStr ? new Date(dateStr) : null;
-    if (dateStr && isNaN(dueDate.getTime())) {
+    if (dateStr && dueDate && isNaN(dueDate.getTime())) {
         showMessageModal({ message: "無効な日付だ", type: 'error' });
         return;
     }
+    // Firebase用のTimestampに変換が必要な場合は呼び出し元かstoreで処理されるべきだが、
+    // Dateオブジェクトのまま渡すルールになっていると仮定
 
     // 繰り返しデータの取得
     const recurrenceType = modalElements.recurrence?.value;
-    let recurrence = null;
-    if (recurrenceType !== 'none') {
-        recurrence = { type: recurrenceType };
+    let recurrence: Recurrence = null;
+
+    // 'none' も型定義に含まれるようになったが、保存時には null にするのが適切か、あるいは { type: 'none' } にするか。
+    // 従来のロジックでは 'none' の場合は null (または undefined) としていたようなのでそれに従う。
+    if (recurrenceType && recurrenceType !== 'none') {
+        // 部分的に構築
+        const tempRecurrence: any = { type: recurrenceType };
+
         if (recurrenceType === 'weekly') {
             const days = Array.from(document.querySelectorAll('#recurrence-days-checkboxes input:checked'))
+                // @ts-ignore
                 .map(cb => parseInt(cb.dataset.dayIndex ?? '', 10))
                 .filter(n => !isNaN(n))
                 .sort((a, b) => a - b);
@@ -122,25 +160,27 @@ async function handleSaveTask(currentTask, onClose) {
                 showMessageModal({ message: "曜日を選択してくれ", type: 'error' });
                 return;
             }
-            recurrence.days = days;
+            tempRecurrence.days = days;
         }
+        recurrence = tempRecurrence as Recurrence;
     }
 
     // 所要時間の取得（NaNチェック）
-    const durVal = parseInt(modalElements.duration?.value, 10);
-    const duration = isNaN(durVal) ? null : durVal;
+    const durVal = parseInt(modalElements.duration?.value || '', 10);
+    const duration = isNaN(durVal) ? undefined : durVal; // schemaはoptional(number | undefined)なのでnullは不可
 
     const updates = {
         title,
         description: modalElements.desc?.value?.trim() || '',
-        dueDate,
+        dueDate: dueDate ? Timestamp.fromDate(dueDate) : null, // Timestamp変換
         recurrence,
         timeBlockId: modalElements.timeblock?.value || null,
-        duration
+        duration,
+        updatedAt: Timestamp.now()
     };
 
     try {
-        await updateTask(currentTask.id, updates);
+        await updateTask(currentTask.id!, updates);
         onClose();
     } catch (e) {
         console.error("Failed to update task:", e);

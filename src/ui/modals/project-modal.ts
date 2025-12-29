@@ -1,16 +1,18 @@
-﻿/**
+/**
  * プロジェクト作成・編集モーダル
+ * TypeScript化: 2025-12-29
  */
-import { addProject, updateProject, deleteProject } from '../../store/projects';
+import { addProject, deleteProject, updateProject } from '../../store/projects';
+import { Project } from '../../store/schema';
 import { getCurrentWorkspaceId } from '../../store/workspace';
 import { showMessageModal } from '../components';
-import { buildProjectModalHTML } from './project-modal-dom.js';
-import { initializeModal } from './modal-common.js';
+import { initializeModal } from './modal-common';
+import { buildProjectModalHTML } from './project-modal-dom';
 
 /**
  * プロジェクトモーダルを表示
  */
-export function showProjectModal(project = null) {
+export function showProjectModal(project: Project | null = null) {
     const modalId = 'project-modal';
     const htmlContent = buildProjectModalHTML(project);
 
@@ -25,11 +27,11 @@ export function showProjectModal(project = null) {
 /**
  * イベントリスナーのセットアップ
  */
-function setupEvents(overlay, project, close) {
-    const nameInput = overlay.querySelector('#modal-project-name');
-    const saveBtn = overlay.querySelector('#save-project-btn');
-    const deleteBtn = overlay.querySelector('#delete-project-btn');
-    const cancelBtn = overlay.querySelector('#cancel-modal-btn');
+function setupEvents(overlay: HTMLElement, project: Project | null, close: () => void) {
+    const nameInput = overlay.querySelector('#modal-project-name') as HTMLInputElement | null;
+    const saveBtn = overlay.querySelector('#save-project-btn') as HTMLElement;
+    const deleteBtn = overlay.querySelector('#delete-project-btn') as HTMLElement;
+    const cancelBtn = overlay.querySelector('#cancel-modal-btn') as HTMLElement;
 
     if (cancelBtn) cancelBtn.onclick = close;
 
@@ -39,7 +41,7 @@ function setupEvents(overlay, project, close) {
 
         try {
             if (project) {
-                await updateProject(project.id, { name });
+                await updateProject(project.id!, { name });
             } else {
                 const workspaceId = getCurrentWorkspaceId();
                 if (!workspaceId) throw new Error("ワークスペースが選択されていないぞ");
@@ -48,7 +50,7 @@ function setupEvents(overlay, project, close) {
                 // 成功ポップアップはUX向上のため削除
             }
             close();
-        } catch (err) {
+        } catch (err: any) {
             showMessageModal({ message: '保存に失敗した: ' + err.message, type: 'error' });
         }
     };
@@ -67,7 +69,7 @@ function setupEvents(overlay, project, close) {
                 type: 'confirm',
                 onConfirm: async () => {
                     try {
-                        await deleteProject(project.id);
+                        await deleteProject(project.id!);
                         close();
                     } catch (err) {
                         showMessageModal({ message: '削除に失敗した', type: 'error' });

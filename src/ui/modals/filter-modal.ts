@@ -1,8 +1,9 @@
-﻿import { getProjects } from '../../store/projects';
-import { getTimeBlocks } from '../../store/timeblocks';
+import { getProjects } from '../../store/projects';
+import { Filter, TimeBlock } from '../../store/schema';
 import { addFilter, updateFilter } from '../../store/store';
+import { getTimeBlocks } from '../../store/timeblocks';
 import { showMessageModal } from '../components';
-import { MODAL_CLASSES } from '../core/ui-modal-constants.js';
+import { MODAL_CLASSES } from '../core/ui-modal-constants';
 import { UI_STYLES } from '../core/ui-style-constants';
 
 const UNASSIGNED_ID = 'none';
@@ -12,15 +13,23 @@ const MESSAGES = {
     SAVE_ERROR: '保存に失敗したぞ: '
 };
 
+interface FilterState {
+    project: string[];
+    timeblock: string[];
+    duration: string[];
+    date: string[];
+}
+
 /**
  * フィルター作成・編集モーダルを表示
  */
-export function showFilterModal(filterToEdit = null) {
+export function showFilterModal(filterToEdit: Filter | null = null) {
     const isEditMode = !!filterToEdit;
     const projects = getProjects();
     const timeBlocks = getTimeBlocks();
     const durations = [30, 45, 60, 75, 90];
-    const dateOptions = [
+    // @ts-ignore
+    const dateOptions: { id: string, name: string }[] = [
         { id: 'today', name: '今日' },
         { id: 'tomorrow', name: '明日' },
         { id: 'week', name: '今週' },
@@ -50,7 +59,7 @@ export function showFilterModal(filterToEdit = null) {
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                         ${createSelectionBox('プロジェクト', projects, state.project, 'filter-project-checkbox')}
                         ${createTimeBlockBox(timeBlocks, state.timeblock)}
-                        ${createSelectionBox('所要時間', durations, state.duration, 'filter-duration-checkbox', d => `${d} min`)}
+                        ${createSelectionBox('所要時間', durations, state.duration, 'filter-duration-checkbox', (d: any) => `${d} min`)}
                         ${createSelectionBox('日付', dateOptions, state.date, 'filter-date-checkbox')}
                     </div>
                 </div>
@@ -71,36 +80,40 @@ export function showFilterModal(filterToEdit = null) {
 /**
  * クエリ文字列をモーダルの状態に変換
  */
-function parseFilterQuery(query) {
-    const result = { project: [], timeblock: [], duration: [], date: [] };
+function parseFilterQuery(query: string): FilterState {
+    // @ts-ignore
+    const result: FilterState = { project: [], timeblock: [], duration: [], date: [] };
     if (!query) return result;
 
     query.split(/\s+/).forEach(part => {
         if (!part.includes(':')) return;
         const [key, val] = part.split(':');
+        // @ts-ignore
         if (result[key]) {
             const values = val.split(',').map(v => {
                 if (key === 'timeblock' && (v === 'null' || v === 'none')) return UNASSIGNED_ID;
                 return v;
             });
+            // @ts-ignore
             result[key] = [...result[key], ...values];
         }
     });
     return result;
 }
 
-function createSelectionBox(title, items, initials, className, labelFn = (i) => i.name || i) {
+function createSelectionBox<T>(title: string, items: T[], initials: string[], className: string, labelFn: (i: T) => string = (i: any) => i.name || String(i)): string {
     const initialSet = new Set(initials.map(String));
-    
+
     return `
         <div class="flex flex-col h-64 border border-gray-100 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
             <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700 text-xs font-bold text-gray-500">${title}</div>
             <div class="p-2 overflow-y-auto space-y-1 custom-scrollbar">
                 ${items.map((item, idx) => {
-                    const id = String(item.id || item);
-                    const isChecked = initialSet.has(id);
-                    const checkboxId = `cb-${className}-${idx}-${id}`;
-                    return `
+        // @ts-ignore
+        const id = String(item.id !== undefined ? item.id : item);
+        const isChecked = initialSet.has(id);
+        const checkboxId = `cb-${className}-${idx}-${id}`;
+        return `
                         <div class="flex items-center px-2 py-1.5 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
                             <input type="checkbox" id="${checkboxId}" name="${className}" value="${id}" ${isChecked ? 'checked' : ''} 
                                    class="${className} ${MODAL_CLASSES.CHECKBOX} cursor-pointer">
@@ -109,48 +122,47 @@ function createSelectionBox(title, items, initials, className, labelFn = (i) => 
                             </label>
                         </div>
                     `;
-                }).join('')}
+    }).join('')}
             </div>
         </div>
     `;
 }
 
-function createTimeBlockBox(blocks, initials) {
-    const items = [...blocks, { id: UNASSIGNED_ID, name: '未定' }];
+function createTimeBlockBox(blocks: TimeBlock[], initials: string[]): string {
+    const items = [...blocks, { id: UNASSIGNED_ID, name: '未定' }] as any[]; // 簡易型アサーション
     return createSelectionBox('時間帯', items, initials, 'filter-timeblock-checkbox', b =>
         b.id === UNASSIGNED_ID ? b.name : `${b.start}-${b.end}`
     );
 }
 
-function setupEvents(modal, filterToEdit) {
+function setupEvents(modal: HTMLElement, filterToEdit: Filter | null) {
     const cleanup = () => {
         document.removeEventListener('keydown', onEsc);
         modal.remove();
     };
 
-    const onEsc = (e) => e.key === 'Escape' && cleanup();
+    const onEsc = (e: KeyboardEvent) => e.key === 'Escape' && cleanup();
     document.addEventListener('keydown', onEsc);
 
-    modal.querySelector('#close-filter-modal').onclick = cleanup;
-    modal.querySelector('#cancel-filter-btn').onclick = cleanup;
-    
-    // 背景クリックで閉じる処理（バブル防止のため target 判定を厳密に）
+    (modal.querySelector('#close-filter-modal') as HTMLElement).onclick = cleanup;
+    (modal.querySelector('#cancel-filter-btn') as HTMLElement).onclick = cleanup;
+
+    // 背景クリックで閉じる処理
     modal.onclick = (e) => {
         if (e.target === modal) cleanup();
     };
 
-    modal.querySelector('#save-filter-btn').onclick = async (e) => {
-        e.preventDefault(); // 念のためデフォルト動作防止
-        
-        const nameInput = modal.querySelector('#filter-name');
+    (modal.querySelector('#save-filter-btn') as HTMLElement).onclick = async (e) => {
+        e.preventDefault();
+
+        const nameInput = modal.querySelector('#filter-name') as HTMLInputElement;
         const name = nameInput.value.trim();
         if (!name) {
             return showMessageModal({ message: MESSAGES.NAME_REQUIRED, type: 'error' });
         }
 
-        const getVals = (cls) => {
-            // querySelectorAll で確実に現在の DOM 状態を取得
-            const checkboxes = modal.querySelectorAll(`input.${cls}`);
+        const getVals = (cls: string): string[] => {
+            const checkboxes = modal.querySelectorAll(`input.${cls}`) as NodeListOf<HTMLInputElement>;
             return Array.from(checkboxes)
                 .filter(cb => cb.checked)
                 .map(cb => cb.value);
@@ -174,15 +186,15 @@ function setupEvents(modal, filterToEdit) {
         const queryStr = queryParts.join(' ');
 
         try {
-            const data = { name, query: queryStr, type: 'custom' };
+            const data: any = { name, query: queryStr, type: 'custom' };
             if (filterToEdit) {
-                await updateFilter(filterToEdit.id, data);
+                await updateFilter(filterToEdit.id!, data);
             } else {
                 await addFilter(data);
             }
             document.dispatchEvent(new CustomEvent('filters-updated'));
             cleanup();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             showMessageModal({ message: MESSAGES.SAVE_ERROR + err.message, type: 'error' });
         }

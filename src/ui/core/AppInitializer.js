@@ -11,7 +11,7 @@ import { initializeFirebase, auth } from '../../core/firebase';
 import { updateAuthUI, setupAuthHandlers } from '../auth.js';
 import { renderLayout } from '../layout/layout.js';
 import { initTheme, applyBackground } from '../layout/theme.js';
-import { initTaskModal } from '../modals/task-modal.js';
+import { initTaskModal } from '../modals/task-modal';
 import { initSidebar } from '../features/sidebar/sidebar.js';
 import { initSettings } from '../settings.js';
 import { renderLoginState } from '../layout/ui-view-utils.js';
