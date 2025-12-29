@@ -5,6 +5,7 @@ import { deleteTask, updateTask } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { getStartOfDay } from '../../utils/date.js';
 import { selectionState, toggleSelectionMode } from '../state/ui-state.js';
+import { updateUI } from '../core/DataSyncManager.js';
 
 /**
  * 汎用的なコンテキストメニュー表示
@@ -198,7 +199,7 @@ function triggerSortChange(value) {
         const sortTrigger = document.getElementById('sort-trigger');
         if (sortTrigger) {
             sortTrigger.dataset.value = value;
-            import('../core/DataSyncManager.js').then(m => m.updateUI());
+            updateUI();
         }
     }
 }
