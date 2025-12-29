@@ -94,11 +94,11 @@ export function renderInlineInput(container, projectId, labelId, options = {}) {
 }
 
 /**
- * 画面下部固定のタスク追加バーを描画
+ * 画面下部固定のタスク追加バーを描画（ボタンのみ）
  */
 export function renderFixedAddTaskBar(footerContainer, inputContainer, projectId, labelId) {
     footerContainer.innerHTML = `
-        <div id="fixed-add-task-btn" class="w-full h-full flex items-center px-4 cursor-pointer border border-indigo-200 dark:border-indigo-800/30 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all group rounded-lg mx-2 my-1">
+        <div id="fixed-add-task-btn" class="w-full h-full flex items-center justify-center px-4 cursor-pointer border border-indigo-200 dark:border-indigo-800/30 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all group rounded-lg mx-2 my-1">
             <div class="w-6 h-6 mr-3 rounded-full text-indigo-500 dark:text-indigo-400 flex items-center justify-center transition-transform group-hover:scale-110">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             </div>
@@ -106,26 +106,15 @@ export function renderFixedAddTaskBar(footerContainer, inputContainer, projectId
         </div>
     `;
 
+    // ボタンクリックでタスクモーダルを開く
     footerContainer.querySelector('#fixed-add-task-btn').onclick = () => {
-        // フッターを隠す
-        footerContainer.classList.add('hidden');
-
-        // フォームを表示
-        inputContainer.innerHTML = '';
-        inputContainer.classList.remove('hidden');
-        renderInlineInput(inputContainer, projectId, labelId, {
-            forceExpand: true,
-            onClose: () => {
-                inputContainer.innerHTML = ''; // フォーム消去
-                inputContainer.classList.add('hidden'); // コンテナ隠す
-                footerContainer.classList.remove('hidden'); // フッター復帰
-            }
+        // タスクモーダルを開く（新規作成モード）
+        import('./modals/task-modal.js').then(({ showTaskModal }) => {
+            showTaskModal(null, {
+                projectId: projectId || null,
+                labelIds: labelId ? [labelId] : []
+            });
         });
-
-        // フォームへスクロール
-        setTimeout(() => {
-            inputContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
     };
 }
 
