@@ -1,4 +1,4 @@
-export function renderHeader(kgi) {
+export function renderHeader(kgi, currentTab) {
     const statusColors = {
         good: 'text-emerald-500',
         warning: 'text-amber-500',
@@ -13,55 +13,75 @@ export function renderHeader(kgi) {
     const statusColor = statusColors[kgi.status];
     const barColor = progressColor[kgi.status];
 
+    const tabs = [
+        { id: 'backward', label: 'Backward Map', icon: '🗺️' },
+        { id: 'woop', label: 'WOOP Board', icon: '✨' },
+        { id: 'okr', label: 'OKR Tree', icon: '🎯' }
+    ];
+
     return `
-        <div class="mb-8">
-            <div class="flex justify-between items-end mb-2">
-                <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight max-w-4xl">
-                    ${kgi.title}
-                </h1>
-                <div class="text-right flex-shrink-0 ml-6">
-                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">残り日数</div>
-                    <div class="text-4xl font-black ${statusColor} tabular-nums">${kgi.daysLeft}<span class="text-base font-medium ml-1 text-gray-400">Days</span></div>
+        <!-- コンパクトヘッダー: 1行レイアウト + タブ統合 -->
+        <div id="dashboard-header" class="mb-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 mx-4 mt-4">
+            <!-- メインヘッダー行 -->
+            <div class="px-6 py-4 flex items-center justify-between gap-6">
+                <!-- 左: 目標タイトル（省略可能） -->
+                <div class="flex-1 min-w-0">
+                    <h1 id="header-title" class="font-bold text-gray-900 dark:text-white truncate transition-all duration-300">
+                        ${kgi.title}
+                    </h1>
                 </div>
-            </div>
-            
-            <div class="relative pt-1">
-                <div class="flex mb-2 items-center justify-between">
-                    <div>
-                        <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${kgi.status === 'good' ? 'text-emerald-600 bg-emerald-200' : 'text-amber-600 bg-amber-200'}">
-                            Current Progress
-                        </span>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-2xl font-bold inline-block ${statusColor}">
+
+                <!-- 中央: 進捗バー -->
+                <div class="flex-1 max-w-md">
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1">
+                            <div class="h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                                <div style="width:${kgi.progress}%" class="h-full ${barColor} transition-all duration-1000 ease-out rounded-full"></div>
+                            </div>
+                        </div>
+                        <span class="font-black ${statusColor} tabular-nums text-sm whitespace-nowrap">
                             ${kgi.progress}%
                         </span>
                     </div>
                 </div>
-                <div class="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-gray-200 dark:bg-gray-700">
-                    <div style="width:${kgi.progress}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${barColor} transition-all duration-1000 ease-out"></div>
+
+                <!-- 右: 残り日数 + タブ + トグル -->
+                <div class="flex items-center gap-6 flex-shrink-0">
+                    <!-- 残り日数 -->
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">残り</div>
+                        <div class="font-black ${statusColor} tabular-nums">
+                            ${kgi.daysLeft}<span class="text-xs font-medium ml-0.5 text-gray-400">日</span>
+                        </div>
+                    </div>
+
+                    <!-- タブ（コンパクト版） -->
+                    <div class="flex gap-1 bg-gray-100 dark:bg-gray-900/50 p-1 rounded-lg">
+                        ${tabs.map(tab => `
+                            <button 
+                                class="tab-btn group px-3 py-1.5 rounded-md text-xs font-bold transition-all ${currentTab === tab.id ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}"
+                                data-tab="${tab.id}"
+                                title="${tab.label}">
+                                <span class="hidden sm:inline">${tab.label}</span>
+                                <span class="sm:hidden">${tab.icon}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+
+                    <!-- トグルボタン -->
+                    <button id="header-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="ヘッダーを折りたたむ">
+                        <svg id="toggle-icon" class="w-4 h-4 text-gray-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
     `;
 }
 
+// タブレンダリング関数は不要になったため削除
 export function renderTabs(currentTab) {
-    const tabs = [
-        { id: 'backward', label: 'Backward Map' },
-        { id: 'woop', label: 'WOOP Board' },
-        { id: 'okr', label: 'OKR Tree' }
-    ];
-
-    return `
-        <div class="flex space-x-1 bg-gray-200 dark:bg-gray-800 p-1 rounded-xl inline-flex mb-6">
-            ${tabs.map(tab => `
-                <button 
-                    class="tab-btn px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${currentTab === tab.id ? 'bg-white dark:bg-gray-700 shadow-md text-gray-900 dark:text-white transform scale-105' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}"
-                    data-tab="${tab.id}">
-                    ${tab.label}
-                </button>
-            `).join('')}
-        </div>
-    `;
+    // 後方互換性のため空文字列を返す
+    return '';
 }
