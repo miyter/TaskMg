@@ -1,43 +1,44 @@
+import { WIKI_DATA } from './wiki-data.js';
+import { WikiRenderer } from './components/wiki-renderer.js';
+
 export function renderWiki(container) {
     if (!container) return;
-    container.innerHTML = `
-        <div class="max-w-4xl mx-auto py-6">
-            <h2 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Framework Wiki</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border border-gray-100 dark:border-gray-700">
-                    <h3 class="text-xl font-bold mb-2 text-blue-600 dark:text-blue-400">GTD (Getting Things Done)</h3>
-                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">
-                        「頭の中を空っぽにする」ストレスフリーの仕事術。全ての気になることを収集し、処理し、整理するプロセス。
-                    </p>
-                    <ul class="list-disc list-inside text-sm text-gray-500 space-y-1">
-                        <li>Capture (収集)</li>
-                        <li>Clarify (明確化)</li>
-                        <li>Organize (整理)</li>
-                        <li>Reflect (見直し)</li>
-                        <li>Engage (実行)</li>
-                    </ul>
-                </div>
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border border-gray-100 dark:border-gray-700">
-                    <h3 class="text-xl font-bold mb-2 text-green-600 dark:text-green-400">WOOP</h3>
-                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">
-                        願望を実現するためのメンタル・コントラスティング戦略。
-                    </p>
-                    <ul class="list-disc list-inside text-sm text-gray-500 space-y-1">
-                        <li>Wish (願い)</li>
-                        <li>Outcome (結果)</li>
-                        <li>Obstacle (障害)</li>
-                        <li>Plan (計画) - If/Thenプランニング</li>
-                    </ul>
-                </div>
-                 <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border border-gray-100 dark:border-gray-700">
-                    <h3 class="text-xl font-bold mb-2 text-purple-600 dark:text-purple-400">OKR</h3>
-                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">
-                         Objectives and Key Results. 野心的な目標と測定可能な成果指標を設定する。
-                    </p>
+    // Apply Callback: Fire a custom event that the application can listen to
+    const handleApply = (modeId) => {
+        console.log(`Applying framework mode: ${modeId}`);
+
+        // Custom event for navigation
+        const event = new CustomEvent('navigate-to-wizard', {
+            detail: { mode: modeId },
+            bubbles: true,
+            composed: true
+        });
+        container.dispatchEvent(event);
+
+        // Fallback/Direct interaction (Assuming global access or simple implementation for now)
+        // In a real app, strict event handling at the root level is preferred.
+        // For this demo, let's show visual feedback.
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-8 right-8 bg-gray-900 text-white px-6 py-4 rounded-lg shadow-2xl z-50 animate-fade-in-up';
+        toast.innerHTML = `
+            <div class="flex items-center gap-3">
+                <span class="text-green-400 text-xl">✓</span>
+                <div>
+                    <h4 class="font-bold">Wikiから反映しました</h4>
+                    <p class="text-xs text-gray-400">ウィザードで「${modeId.toUpperCase()}」モードを開始します...</p>
                 </div>
             </div>
-        </div>
-    `;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.remove();
+            // Here we would ideally trigger the view change.
+            // Dispatching to global window for easier catching in main loop if needed
+            window.dispatchEvent(new CustomEvent('change-view', { detail: { view: 'wizard', mode: modeId } }));
+        }, 1500);
+    };
+
+    const renderer = new WikiRenderer(WIKI_DATA, handleApply);
+    renderer.render(container);
 }
