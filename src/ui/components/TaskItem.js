@@ -118,7 +118,8 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
             }
 
             li.classList.add('opacity-50');
-            e.dataTransfer.setData('text/plain', task.id);
+            e.dataTransfer.setData('text/plain', task.id); // フォールバック
+            e.dataTransfer.setData('application/x-taskmg-id', task.id); // 識別用
             e.dataTransfer.effectAllowed = 'move';
         });
         li.addEventListener('dragend', () => li.classList.remove('opacity-50'));

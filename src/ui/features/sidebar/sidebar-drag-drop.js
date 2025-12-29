@@ -38,7 +38,9 @@ export function setupDropZone(element, type, value = null) {
         enterCount = 0;
         element.classList.remove(...classes);
 
-        const taskId = e.dataTransfer.getData('text/plain');
+        const taskId = e.dataTransfer.getData('application/x-taskmg-id');
+        // テキスト選択ドラッグなどで text/plain が入ってくる場合があるため、
+        // 独自のデータ型のみを信頼して処理する
         if (!taskId) return;
 
         await handleTaskDrop(taskId, type, value);
