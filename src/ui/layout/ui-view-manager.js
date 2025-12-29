@@ -6,6 +6,9 @@ import { buildDashboardViewHTML } from '../ui-dom-utils.js';
 import { showView, highlightSidebarItem, updateHeaderTitleByFilter } from './ui-view-utils.js';
 import { renderSearchPage } from '../search-view-ctrl.js';
 import { showSettingsModal } from '../settings.js';
+import { renderWizard } from '../features/wizard/wizard.js';
+import { renderTargetDashboard } from '../features/target-dashboard/target-dashboard.js';
+import { renderWiki } from '../features/wiki/wiki.js';
 
 let currentFilter = { type: 'inbox', id: null };
 let UI = null;
@@ -28,7 +31,10 @@ function ensureUICache() {
         task: document.getElementById(VIEW_IDS.TASK),
         dashboard: document.getElementById(VIEW_IDS.DASHBOARD),
         search: document.getElementById(VIEW_IDS.SEARCH),
-        settings: document.getElementById(VIEW_IDS.SETTINGS)
+        settings: document.getElementById(VIEW_IDS.SETTINGS),
+        wizard: document.getElementById(VIEW_IDS.WIZARD),
+        targetDashboard: document.getElementById(VIEW_IDS.TARGET_DASHBOARD),
+        wiki: document.getElementById(VIEW_IDS.WIKI)
     };
 }
 
@@ -53,17 +59,18 @@ export function getCurrentFilter() {
  */
 export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [], allFilters = []) {
     ensureUICache();
-    if (!UI.task || !UI.dashboard || !UI.search) return;
+    if (!UI.task) return;
 
     const sortTrigger = document.getElementById(CONTROL_IDS.SORT);
     const sortCriteria = sortTrigger?.dataset.value || 'createdAt_desc';
-    const allViewElements = [UI.task, UI.dashboard, UI.search, UI.settings];
+    const allViewElements = Object.values(UI).filter(el => el); // すべてのビュー要素（null除く）
 
     // 1. ダッシュボード
     if (currentFilter.type === 'dashboard') {
         showView(UI.dashboard, allViewElements.filter(v => v !== UI.dashboard));
         UI.dashboard.innerHTML = buildDashboardViewHTML();
         renderDashboard(allTasks, allProjects);
+        updateFooterVisibility(false);
         return;
     }
 
@@ -71,10 +78,39 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
     if (currentFilter.type === 'search') {
         showView(UI.search, allViewElements.filter(v => v !== UI.search));
         renderSearchPage(UI.search, allTasks, allProjects, currentFilter);
+        updateFooterVisibility(true, null, null);
         return;
     }
 
-    // 3. タスクリスト
+    // 3. New Views
+    if (currentFilter.type === 'wizard') {
+        if (UI.wizard) {
+            showView(UI.wizard, allViewElements.filter(v => v !== UI.wizard));
+            renderWizard(UI.wizard);
+            updateFooterVisibility(false);
+        }
+        return;
+    }
+
+    if (currentFilter.type === 'target-dashboard') {
+        if (UI.targetDashboard) {
+            showView(UI.targetDashboard, allViewElements.filter(v => v !== UI.targetDashboard));
+            renderTargetDashboard(UI.targetDashboard);
+            updateFooterVisibility(false);
+        }
+        return;
+    }
+
+    if (currentFilter.type === 'wiki') {
+        if (UI.wiki) {
+            showView(UI.wiki, allViewElements.filter(v => v !== UI.wiki));
+            renderWiki(UI.wiki);
+            updateFooterVisibility(false);
+        }
+        return;
+    }
+
+    // 4. タスクリスト (Default)
     showView(UI.task, allViewElements.filter(v => v !== UI.task));
 
     // 安全なボタン参照（存在しない場合はデフォルト false）
@@ -100,6 +136,11 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
                 return allFilters.find(f => f.id === currentFilter.id)?.name || 'フィルター';
             case 'today': return '今日';
             case 'upcoming': return '今後';
+            // New titles
+            case 'wizard': return '目標設計ウィザード';
+            case 'target-dashboard': return '目標ダッシュボード';
+            case 'wiki': return 'フレームワークWiki';
+
             default:
                 // サイドバークリック時のフォールバック
                 if (currentFilter.id) return currentFilter.id;
@@ -125,19 +166,22 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
     // 第4引数に丸ごとコンテキストを渡す
     renderTaskView(processedTasks, allProjects, allLabels, config);
 
-    // フッターのタスク追加ボタンを更新 (ダッシュボード以外で表示)
+    updateFooterVisibility(true, config.projectId, config.labelId);
+}
+
+function updateFooterVisibility(show, projectId = null, labelId = null) {
     const footerBtnContainer = document.getElementById('footer-add-btn-container');
     const footerFormContainer = document.getElementById('footer-input-form-container');
 
     if (footerBtnContainer && footerFormContainer) {
-        if (currentFilter.type === 'dashboard') {
+        if (!show) {
             footerBtnContainer.classList.add('hidden');
             footerFormContainer.classList.add('hidden');
         } else {
             footerBtnContainer.classList.remove('hidden');
             footerFormContainer.classList.add('hidden');
             footerFormContainer.innerHTML = '';
-            renderFixedAddTaskBar(footerBtnContainer, footerFormContainer, config.projectId, config.labelId);
+            renderFixedAddTaskBar(footerBtnContainer, footerFormContainer, projectId, labelId);
         }
     }
 }

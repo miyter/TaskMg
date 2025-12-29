@@ -30,7 +30,10 @@ export const UI_CONFIG = {
         TASK: 'task-view',
         DASHBOARD: 'dashboard-view',
         SEARCH: 'search-view',
-        SETTINGS: 'settings-view'
+        SETTINGS: 'settings-view',
+        WIZARD: 'wizard-view',
+        TARGET_DASHBOARD: 'target-dashboard-view',
+        WIKI: 'wiki-view'
     },
     HEADER_IDS: {
         TITLE: 'header-title',

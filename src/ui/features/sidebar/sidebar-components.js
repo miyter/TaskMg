@@ -61,6 +61,62 @@ export function showItemContextMenu(e, type, itemData) {
     setupMenuEvents(menu, config);
 }
 
+/**
+ * 汎用的なコンテキストメニューを表示
+ * @param {Event} e - event
+ * @param {Array<{label: string, icon?: string, action: Function, danger?: boolean}>} items - menu items
+ */
+export function showCustomContextMenu(e, items) {
+    e.preventDefault();
+    document.querySelectorAll('.app-context-menu, #sidebar-context-menu').forEach(el => el.remove());
+
+    const menu = document.createElement('div');
+    menu.className = 'app-context-menu fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-lg py-1 z-[100] animate-fade-in text-sm min-w-[180px]';
+
+    items.forEach((item, index) => {
+        if (index > 0 && item.separator) {
+            const sep = document.createElement('div');
+            sep.className = 'border-t border-gray-100 dark:border-gray-700 my-1';
+            menu.appendChild(sep);
+        }
+
+        const btn = document.createElement('button');
+        const colorClass = item.danger ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700';
+        btn.className = `flex w-full items-center px-4 py-2 text-left transition ${colorClass}`;
+
+        // アイコンがあれば追加（簡易的）
+        let iconHtml = '';
+        if (item.icon) {
+            iconHtml = `<span class="mr-2 w-4 h-4">${item.icon}</span>`;
+        } else if (item.label.includes('ウィンドウ')) {
+            // デフォルトアイコン
+            iconHtml = `<svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>`;
+        }
+
+        btn.innerHTML = `${iconHtml}${item.label}`;
+        btn.onclick = (ev) => {
+            ev.stopPropagation();
+            menu.remove();
+            item.action();
+        };
+        menu.appendChild(btn);
+    });
+
+    document.body.appendChild(menu);
+    adjustMenuPosition(menu, e);
+
+    const cleanup = () => {
+        menu.remove();
+        document.removeEventListener('click', cleanup);
+        document.removeEventListener('contextmenu', cleanup);
+    };
+    // contextmenuイベント直後にclickが発火することへの対策でsetTimeout
+    setTimeout(() => {
+        document.addEventListener('click', cleanup);
+        document.addEventListener('contextmenu', cleanup); // 他の場所で右クリックしたら閉じる
+    }, 50);
+}
+
 function dispatchRoute(page, id = null) {
     document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
 }

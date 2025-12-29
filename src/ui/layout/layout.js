@@ -71,6 +71,9 @@ export function renderLayout() {
                         <div id="task-view" class="w-full h-full animate-fade-in transition-opacity duration-150 flex flex-col"></div>
                         <div id="search-view" class="hidden w-full h-full animate-fade-in overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8"></div>
                         <div id="dashboard-view" class="hidden w-full h-full animate-fade-in overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8"></div>
+                        <div id="target-dashboard-view" class="hidden w-full h-full animate-fade-in overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8"></div>
+                        <div id="wizard-view" class="hidden w-full h-full animate-fade-in overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8"></div>
+                        <div id="wiki-view" class="hidden w-full h-full animate-fade-in overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8"></div>
                         
                         <!-- Persistent Add Task Footer -->
                         <div id="global-footer" class="w-full flex-none mt-auto pb-6 pt-2 px-4 bg-white dark:bg-gray-900 z-20 transition-all duration-300">

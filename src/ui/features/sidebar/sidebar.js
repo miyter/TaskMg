@@ -12,6 +12,7 @@ import { showTimeBlockModal } from '../timeblock/timeblock-modal.js';
 import { initSidebarProjects, updateSidebarProjects } from './SidebarProjects.js';
 import { renderSidebarItems, updateInboxCount } from './sidebar-renderer.js';
 import { showSettingsModal } from '../../settings.js';
+import { openInNewWindow } from '../../core/window-manager.js';
 
 // 同期取得関数
 // 同期取得関数
@@ -117,6 +118,11 @@ function setupSidebarEvents() {
             if (id === 'nav-inbox') dispatch('inbox');
             if (id === 'nav-search') dispatch('search');
             if (id === 'nav-settings') showSettingsModal();
+
+            // Target Tools
+            if (id === 'nav-wizard') dispatch('wizard');
+            if (id === 'nav-target-dashboard') dispatch('target-dashboard');
+            if (id === 'nav-wiki') dispatch('wiki');
             return;
         }
 
@@ -124,6 +130,33 @@ function setupSidebarEvents() {
             const id = btn.id;
             if (id === 'add-filter-btn') showFilterModal();
             if (id === 'edit-timeblocks-btn') showTimeBlockModal();
+        }
+    });
+
+
+
+    // 右クリックで別ウィンドウで開く
+    UI.container.addEventListener('contextmenu', (e) => {
+        const link = e.target.closest('a');
+        if (!link) return;
+
+        const id = link.id;
+        const viewMap = {
+            'nav-wizard': 'wizard',
+            'nav-target-dashboard': 'target-dashboard',
+            'nav-wiki': 'wiki',
+            'nav-dashboard': 'dashboard'
+        };
+
+        if (viewMap[id]) {
+            import('./sidebar-components.js').then(({ showCustomContextMenu }) => {
+                showCustomContextMenu(e, [
+                    {
+                        label: '新しいウィンドウで開く',
+                        action: () => openInNewWindow(viewMap[id])
+                    }
+                ]);
+            });
         }
     });
 

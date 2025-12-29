@@ -8,6 +8,7 @@ import { auth } from '../../core/firebase.js';
 import { setCurrentFilter } from '../layout/ui-view-manager.js';
 import { startAllSubscriptions, stopDataSync, updateUI } from './DataSyncManager.js';
 import { setupCustomSortDropdown } from '../components/SortDropdown.js';
+import { isWindowMode, getInitialViewMode } from './window-manager.js';
 
 /**
  * デバウンス関数（高頻度イベントの間引き）
@@ -36,22 +37,31 @@ export function setupGlobalEventListeners() {
         if (headerTitle) headerTitle.textContent = '読み込み中...';
 
         if (auth?.currentUser) {
-            // 初回ログイン時は保存されたページ状態を復元、それ以外はインボックスにリセット
+            // 初回ログイン時はwindowモードまたは保存されたページ状態を確認
             if (isFirstWorkspaceLoad) {
                 isFirstWorkspaceLoad = false;
-                try {
-                    const saved = JSON.parse(localStorage.getItem('lastPage'));
-                    // 設定画面は自動で開かないようにする
-                    if (saved && saved.page === 'settings') {
-                        setCurrentFilter({ type: 'inbox' });
-                    } else {
-                        setCurrentFilter(saved ? { type: saved.page, id: saved.id || null } : { type: 'inbox' });
+
+                if (isWindowMode()) {
+                    const initialView = getInitialViewMode();
+                    if (initialView) {
+                        setCurrentFilter({ type: initialView });
                     }
-                } catch (e) {
-                    setCurrentFilter({ type: 'inbox' });
+                } else {
+                    try {
+                        const saved = JSON.parse(localStorage.getItem('lastPage'));
+                        // 設定画面は自動で開かないようにする
+                        if (saved && saved.page === 'settings') {
+                            setCurrentFilter({ type: 'inbox' });
+                        } else {
+                            setCurrentFilter(saved ? { type: saved.page, id: saved.id || null } : { type: 'inbox' });
+                        }
+                    } catch (e) {
+                        setCurrentFilter({ type: 'inbox' });
+                    }
                 }
             } else {
-                // ワークスペース切り替え時はインボックスにリセット
+                // ワークスペース切り替え時はインボックスにリセット（ウィンドウモードでも切り替え時は一旦Homeに戻す運用とするか、あるいは維持するか。ここではシンプルにリセット）
+                // ただしウィンドウモードの場合はパラメータを維持したいかもしれないが、ワークスペースまたぐのは稀なので一旦Homeへ
                 setCurrentFilter({ type: 'inbox', id: null });
             }
 

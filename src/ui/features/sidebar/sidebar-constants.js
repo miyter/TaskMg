@@ -42,6 +42,7 @@ export const SIDEBAR_CONFIG = {
         TIMEBLOCKS: 'timeblock-list',
         DURATIONS: 'duration-list',
         FILTERS: 'filter-list',
+        TARGETS: 'target-tool-list',
         BASIC: 'basic-list'
     },
     MODAL_IDS: {
