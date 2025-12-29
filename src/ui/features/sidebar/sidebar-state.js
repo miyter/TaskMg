@@ -9,7 +9,8 @@ export function cacheSidebarElements() {
         resizer: document.getElementById('sidebar-resizer'),
         openBtn: document.getElementById('sidebar-open-btn'),
         closeBtn: document.getElementById('sidebar-close-btn'),
-        inbox: document.getElementById('nav-inbox')
+        inbox: document.getElementById('nav-inbox'),
+        overlay: document.getElementById('sidebar-overlay')
     };
     return UI;
 }

@@ -32,13 +32,18 @@ export function setupDensityModeListener() {
  */
 export function toggleSidebar(open) {
     const UI = getSidebarUI();
-    const { sidebar, resizer } = UI;
+    const { sidebar, resizer, overlay } = UI;
     const { CLOSED, HIDDEN } = SIDEBAR_CONFIG.CLASSES;
 
     if (!sidebar) return;
 
     sidebar.classList.toggle(CLOSED, !open);
     sidebar.classList.toggle(HIDDEN, !open);
+
+    // オーバーレイの制御 (モバイル用)
+    if (overlay) {
+        overlay.classList.toggle(HIDDEN, !open);
+    }
 
     if (isDesktop()) {
         if (resizer) resizer.classList.toggle(HIDDEN, !open);
@@ -94,9 +99,15 @@ export function initializeSidebarToggles() {
 
     // キャッシュ更新（重要）
     const UI = cacheSidebarElements();
+    const { overlay } = UI;
 
     openBtn.onclick = () => toggleSidebar(true);
     if (closeBtn) closeBtn.onclick = () => toggleSidebar(false);
+
+    // オーバーレイのクリックで閉じる
+    if (overlay) {
+        overlay.onclick = () => toggleSidebar(false);
+    }
 
     // 初期状態の反映
     updateSidebarVisibility();

@@ -22,7 +22,7 @@ export const SIDEBAR_CONFIG = {
     },
     CLASSES: {
         // Deprecated: COMPACT_PY, NORMAL_PY (use DENSITY_CLASSES)
-        CLOSED: 'sidebar-closed',
+        CLOSED: '-translate-x-full',
         HIDDEN: 'hidden',
         DRAG_OVER: ['bg-blue-100', 'dark:bg-blue-900', 'ring-2', 'ring-blue-400']
     },

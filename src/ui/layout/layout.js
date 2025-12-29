@@ -94,27 +94,7 @@ export function renderLayout() {
         setupResizer(document.getElementById('sidebar'), document.getElementById('sidebar-resizer'));
         initWorkspaceDropdown();
         setupGlobalShortcuts();
-        setupSidebarToggles();
     });
-}
-
-function setupSidebarToggles() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const closeBtn = document.getElementById('sidebar-close-btn');
-    const openBtn = document.getElementById('sidebar-open-btn');
-
-    const toggle = (force) => {
-        const isCurrentlyClosed = sidebar.classList.contains('-translate-x-full');
-        const willBeClosed = force ?? !isCurrentlyClosed;
-
-        sidebar.classList.toggle('-translate-x-full', willBeClosed);
-        overlay?.classList.toggle('hidden', willBeClosed);
-    };
-
-    closeBtn?.addEventListener('click', () => toggle(true));
-    openBtn?.addEventListener('click', () => toggle(false));
-    overlay?.addEventListener('click', () => toggle(true));
 }
 
 function setupGlobalShortcuts() {
