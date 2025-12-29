@@ -15,10 +15,10 @@ const STORAGE_KEY_SCHEDULE_OPEN = 'task_modal_schedule_open';
 function createDaysCheckboxesHTML(recurrenceDays = []) {
     const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
     return dayLabels.map((day, index) => `
-        <label class="flex items-center space-x-1 cursor-pointer">
-            <input type="checkbox" data-day-index="${index}" ${recurrenceDays.includes(index) ? 'checked' : ''} 
+        <label class="flex items-center space-x-1 cursor-pointer select-none">
+            <input type="checkbox" name="recurrence_days" id="recurrence-day-${index}" value="${index}" data-day-index="${index}" ${recurrenceDays.includes(index) ? 'checked' : ''} 
                    class="${MODAL_CLASSES.CHECKBOX}">
-            <span class="text-xs text-gray-700 dark:text-gray-300 pointer-events-none relative z-10">${day}</span>
+            <span class="text-xs text-gray-700 dark:text-gray-300 relative z-10">${day}</span>
         </label>
     `).join('');
 }
@@ -124,7 +124,7 @@ export function buildModalHTML(task) {
                                 
                                 <div class="p-4 flex flex-col gap-4">
                                     <div>
-                                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">期限日</label>
+                                        <label for="modal-task-date" class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">期限日</label>
                                         <div class="relative">
                                             <input type="date" id="modal-task-date" value="${dueDateValue}"
                                                 class="w-full pl-3 pr-10 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:justify-end [&::-webkit-calendar-picker-indicator]:cursor-pointer">
@@ -135,7 +135,7 @@ export function buildModalHTML(task) {
                                     </div>
                                     
                                     <div>
-                                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">繰り返し</label>
+                                        <label for="modal-task-recurrence" class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">繰り返し</label>
                                         <select id="modal-task-recurrence" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer">
                                             <option value="none" ${recurrence.type === 'none' ? 'selected' : ''}>なし</option>
                                             <option value="daily" ${recurrence.type === 'daily' ? 'selected' : ''}>毎日</option>
@@ -146,7 +146,7 @@ export function buildModalHTML(task) {
                                     </div>
 
                                     <div>
-                                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">時間帯</label>
+                                        <label for="modal-task-timeblock" class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">時間帯</label>
                                         <select id="modal-task-timeblock" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer">
                                             <option value="">未定</option>
                                             ${timeBlockOptions}
@@ -154,7 +154,7 @@ export function buildModalHTML(task) {
                                     </div>
 
                                     <div>
-                                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">所要時間</label>
+                                        <label for="modal-task-duration" class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">所要時間</label>
                                         <select id="modal-task-duration" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer">
                                             <option value="">指定なし</option>
                                             ${durationOptions}
@@ -162,7 +162,7 @@ export function buildModalHTML(task) {
                                     </div>
 
                                     <div id="recurrence-days-container" class="${recurrence.type !== 'weekly' ? 'hidden' : ''} pt-2 border-t border-gray-100 dark:border-gray-700">
-                                        <label class="block text-xs font-semibold text-gray-500 mb-2 uppercase">繰り返す曜日</label>
+                                        <label id="recurrence-days-label" class="block text-xs font-semibold text-gray-500 mb-2 uppercase">繰り返す曜日</label>
                                         <div id="recurrence-days-checkboxes" class="flex flex-wrap gap-4">
                                             ${createDaysCheckboxesHTML(recurrence.days)}
                                         </div>
