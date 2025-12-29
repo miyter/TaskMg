@@ -183,12 +183,18 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
 }
 
 function updateFooterVisibility(show, projectId = null, labelId = null) {
+    const globalFooter = document.getElementById('global-footer');
     const footerBtnContainer = document.getElementById('footer-add-btn-container');
     const footerFormContainer = document.getElementById('footer-input-form-container');
 
-    if (footerBtnContainer && footerFormContainer) {
+    if (globalFooter && footerBtnContainer && footerFormContainer) {
         if (!show) {
-            // 完全に非表示にする（高さも0に）
+            // フッター全体を完全に非表示にする
+            globalFooter.style.display = 'none';
+            globalFooter.style.height = '0';
+            globalFooter.style.padding = '0';
+            globalFooter.style.margin = '0';
+
             footerBtnContainer.classList.add('hidden');
             footerBtnContainer.style.height = '0';
             footerBtnContainer.style.minHeight = '0';
@@ -199,7 +205,12 @@ function updateFooterVisibility(show, projectId = null, labelId = null) {
             footerFormContainer.style.minHeight = '0';
             footerFormContainer.innerHTML = '';
         } else {
-            // 表示する
+            // フッター全体を表示する
+            globalFooter.style.display = '';
+            globalFooter.style.height = '';
+            globalFooter.style.padding = '';
+            globalFooter.style.margin = '';
+
             footerBtnContainer.classList.remove('hidden');
             footerBtnContainer.style.height = '';
             footerBtnContainer.style.minHeight = '';

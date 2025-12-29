@@ -9,8 +9,8 @@ export class WikiRenderer {
         container.innerHTML = `
             <div class="max-w-5xl mx-auto py-8">
                 <header class="mb-10 text-center">
-                    <h2 class="text-4xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">Framework Wiki</h2>
-                    <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto text-lg">
+                    <h2 class="font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">Framework Wiki</h2>
+                    <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
                         目標達成のための「思考の型」。あなたの状況に最適なフレームワークを見つけ、そのまま設計に活かしましょう。
                     </p>
                 </header>
@@ -61,7 +61,7 @@ export class WikiRenderer {
                             ${item.icon}
                         </div>
                         <div>
-                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-3">
+                            <h3 class="font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-3">
                                 ${item.title}
                                 <span class="hidden md:inline-flex px-3 py-1 rounded-full text-xs font-bold ${c.bg} ${c.text} uppercase tracking-wider">
                                     Framework
@@ -84,7 +84,7 @@ export class WikiRenderer {
                     ${this._renderAccordionSection(
             'Concept',
             '基本概念',
-            `<p class="font-bold text-lg mb-2 text-gray-800 dark:text-gray-200">${item.concept.summary}</p>
+            `<p class="font-bold mb-2 text-gray-800 dark:text-gray-200">${item.concept.summary}</p>
                          <p class="text-gray-600 dark:text-gray-400 leading-relaxed">${item.concept.detail}</p>`,
             item.color,
             true // Open by default

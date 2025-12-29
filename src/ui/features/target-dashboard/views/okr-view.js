@@ -12,7 +12,7 @@ export function renderOkrView(data) {
                 <div class="absolute top-[-15px] left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-md">
                     Objective
                 </div>
-                <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 leading-tight">
+                <h2 class="font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 leading-tight">
                     "${data.objective}"
                 </h2>
                 

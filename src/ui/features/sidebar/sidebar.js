@@ -139,24 +139,52 @@ function setupSidebarEvents() {
 
 
 
-    // 右クリックで別ウィンドウで開く
+    // 右クリックで別ウィンドウで開く（全てのナビゲーション項目に対応）
     UI.container.addEventListener('contextmenu', (e) => {
         const link = e.target.closest('a');
         if (!link) return;
 
         const id = link.id;
+
+        // 全てのビューマッピング
         const viewMap = {
+            // 基本項目
+            'nav-dashboard': 'dashboard',
+            'nav-inbox': 'inbox',
+            'nav-search': 'search',
+            // 目標設計ツール
             'nav-wizard': 'wizard',
             'nav-target-dashboard': 'target-dashboard',
-            'nav-wiki': 'wiki',
-            'nav-dashboard': 'dashboard'
+            'nav-wiki': 'wiki'
         };
 
-        if (viewMap[id]) {
+        // プロジェクトやフィルターの動的項目も対応
+        let viewType = viewMap[id];
+        let itemId = null;
+
+        if (!viewType) {
+            // プロジェクト項目の場合
+            if (link.dataset.projectId) {
+                viewType = 'project';
+                itemId = link.dataset.projectId;
+            }
+            // フィルター項目の場合
+            else if (link.dataset.filterId) {
+                viewType = 'filter';
+                itemId = link.dataset.filterId;
+            }
+            // ラベル項目の場合
+            else if (link.dataset.labelId) {
+                viewType = 'label';
+                itemId = link.dataset.labelId;
+            }
+        }
+
+        if (viewType) {
             showCustomContextMenu(e, [
                 {
                     label: '新しいウィンドウで開く',
-                    action: () => openInNewWindow(viewMap[id])
+                    action: () => openInNewWindow(viewType, itemId)
                 }
             ]);
         }

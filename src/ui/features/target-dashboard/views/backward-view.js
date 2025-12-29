@@ -36,7 +36,7 @@ export function renderBackwardView(data) {
                                 <span class="text-xs font-bold uppercase tracking-wider ${isCurrent ? 'text-blue-600' : 'text-gray-500'}">${item.date}</span>
                                 ${isGoal ? '<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-bold">TARGET</span>' : ''}
                             </div>
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">${item.title}</h3>
+                            <h3 class="font-bold text-gray-900 dark:text-white">${item.title}</h3>
                         </div>
                         ${isCurrent ? `<div class="absolute left-[-4rem] top-1/2 transform -translate-y-1/2 text-xs font-bold text-blue-500 animate-bounce hidden md:block">YOU ARE HERE →</div>` : ''}
                     </div>

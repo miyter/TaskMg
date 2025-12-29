@@ -5,12 +5,12 @@ export function renderWoopView(data) {
             <div class="space-y-6">
                 <div class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-800">
                     <h3 class="text-sm font-bold text-indigo-500 uppercase mb-2">Wish (願望)</h3>
-                    <p class="text-xl font-bold text-gray-900 dark:text-white leading-relaxed">"${data.wish}"</p>
+                    <p class="font-bold text-gray-900 dark:text-white leading-relaxed">"${data.wish}"</p>
                 </div>
                 
                 <div class="bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/30 dark:to-rose-900/30 p-6 rounded-2xl border border-pink-100 dark:border-pink-800">
                     <h3 class="text-sm font-bold text-pink-500 uppercase mb-2">Outcome (最高の結果)</h3>
-                    <p class="text-xl font-bold text-gray-900 dark:text-white leading-relaxed">"${data.outcome}"</p>
+                    <p class="font-bold text-gray-900 dark:text-white leading-relaxed">"${data.outcome}"</p>
                 </div>
             </div>
 
