@@ -83,7 +83,7 @@ export function updateView(allTasks: Task[], allProjects: Project[], allLabels: 
     if (currentFilter.type === 'dashboard') {
         showView(UI.dashboard, allViewElements.filter(v => v !== UI!.dashboard));
         if (UI.dashboard) UI.dashboard.innerHTML = buildDashboardViewHTML();
-        renderDashboard(allTasks, allProjects);
+        renderDashboard(allTasks);
         updateFooterVisibility(true);
         return;
     }
