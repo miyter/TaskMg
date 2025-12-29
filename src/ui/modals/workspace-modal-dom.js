@@ -1,3 +1,5 @@
+import { UI_STYLES } from '../core/ui-style-constants.js';
+
 /**
  * ワークスペースモーダルのテンプレート
  */
@@ -8,14 +10,14 @@ export function buildWorkspaceModalHTML(workspaceData = null) {
         btnText: isEdit ? '保存' : '作成',
         // 編集時もプレースホルダーを表示してUXを維持
         placeholder: 'ワークスペース名を入力...',
-        description: isEdit 
-            ? 'ワークスペースの名前を変更します。' 
+        description: isEdit
+            ? 'ワークスペースの名前を変更します。'
             : '新しいワークスペースを作成します。プロジェクトやタスクを個別に管理できるようになります。'
     };
 
     return `
         <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in" id="workspace-modal-overlay">
-            <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-xl shadow-2xl overflow-hidden flex flex-col transform transition-all" role="dialog">
+            <div class="bg-white dark:bg-gray-800 ${UI_STYLES.MODAL.WIDTH.DEFAULT} rounded-xl shadow-2xl overflow-hidden flex flex-col transform transition-all" role="dialog">
                 
                 <!-- ヘッダー -->
                 <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">

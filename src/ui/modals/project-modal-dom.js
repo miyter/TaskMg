@@ -2,6 +2,8 @@
  * プロジェクト作成・編集モーダルのHTML構造生成
  */
 
+import { UI_STYLES } from '../core/ui-style-constants.js';
+
 export function buildProjectModalHTML(project = null) {
     const isEdit = !!project;
     const config = {
@@ -20,7 +22,7 @@ export function buildProjectModalHTML(project = null) {
 
     return `
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-            <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col" role="dialog">
+            <div class="bg-white dark:bg-gray-800 ${UI_STYLES.MODAL.WIDTH.DEFAULT} rounded-xl shadow-2xl overflow-hidden flex flex-col" role="dialog">
                 
                 <!-- ヘッダー（タイトル入力） -->
                 <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-gray-700">

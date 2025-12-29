@@ -7,12 +7,14 @@
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTE_OPTIONS = ['00', '15', '30', '45'];
 
+import { UI_STYLES } from '../../core/ui-style-constants.js';
+
 const generateOptions = (options, selected) =>
     options.map(val => `<option value="${val}" ${val === selected ? 'selected' : ''}>${val}</option>`).join('');
 
 export function buildModalSkeletonHTML() {
     return `
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] relative animate-fade-in-up">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl ${UI_STYLES.MODAL.WIDTH.DEFAULT} overflow-hidden flex flex-col max-h-[90vh] relative animate-fade-in-up">
             <div class="px-8 py-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800">
                 <h3 class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">時間帯設定</h3>
                 <button id="close-tb-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition duration-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">

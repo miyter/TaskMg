@@ -10,9 +10,9 @@ export const MODAL_CLASSES = {
 
     // 幅のバリエーション（基本はDEFAULTを使用）
     WIDTH: {
-        DEFAULT: 'max-w-4xl', // タスク編集モーダルと統一
-        LARGE: 'max-w-6xl',
-        SMALL: 'max-w-xl'
+        DEFAULT: 'max-w-5xl w-full', // 設定モーダルと統一（標準）
+        LARGE: 'max-w-6xl w-full',
+        SMALL: 'max-w-xl w-full'
     },
 
     // 内部セクション

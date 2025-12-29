@@ -27,6 +27,7 @@ export const TIMEZONE_OPTIONS = [
 ];
 
 import { FONT_OPTIONS, getCurrentFonts } from '../layout/fonts.js';
+import { UI_STYLES } from '../core/ui-style-constants.js';
 
 function createSelectOption(label, options, selectedValue, name) {
     const optionsHtml = options.map(opt =>
@@ -221,7 +222,7 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
 
     // --- Accordion Assembly (2 Column) ---
     const html = `
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh] h-full sm:h-auto animate-fade-in-up">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl ${UI_STYLES.MODAL.WIDTH.DEFAULT} overflow-hidden flex flex-col max-h-[90vh] h-full sm:h-auto animate-fade-in-up">
             <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800 z-10 sticky top-0">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Settings</h3>
                 <button id="close-settings-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>

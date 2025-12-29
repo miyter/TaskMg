@@ -63,7 +63,7 @@ export const UI_STYLES = {
     MODAL: {
         CONTAINER: 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm',
         DIALOG: 'bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden',
-        WIDTH: { DEFAULT: 'max-w-2xl w-full', WIDE: 'max-w-4xl w-full' }
+        WIDTH: { DEFAULT: 'max-w-5xl w-full', WIDE: 'max-w-6xl w-full', SMALL: 'max-w-xl w-full' }
     },
 
     // カード
