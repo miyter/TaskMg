@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * 更新日: 2025-12-29
- * 内容: コンテキストメニューからのソート変更、複数選択モード対応、レイアウトの高さ調整
+ * 内容: コンテキストメニューからのソート変更、複数選択モード対応、レイアウトの高さ調整、ヘッダータイトルの動的反映
  */
 
 import { renderTaskList } from './task-list.js';
@@ -45,9 +45,6 @@ document.addEventListener('request-sort-change', (e) => {
 // 選択モードの変化を監視して再描画（カレントのリストを維持）
 subscribeToSelectionChange(() => {
     if (lastRenderArgs) {
-        // ちらつき防止のため、コンテンツ差分更新が理想だが、
-        // 簡易的に全体再描画を行う。スクロール位置は維持したい場合はtask-list側で制御が必要。
-        // ここでは単純再描画。
         renderTaskView(...lastRenderArgs);
     }
 });
@@ -57,19 +54,19 @@ subscribeToSelectionChange(() => {
  * @param {Array} tasks - 表示するタスクの配列
  * @param {Array} allProjects - 全プロジェクトの配列
  * @param {Array} allLabels - 全ラベルの配列 (追加)
- * @param {string|null} projectId - 現在のプロジェクトID
- * @param {string|null} labelId - 現在のラベルID
- * @param {string|null} timeBlockId - TimeBlock ID for stats
+ * @param {Object} context - コンテキスト情報 (projectId, labelId, timeBlockId, title等)
  */
-export function renderTaskView(tasks, allProjects, allLabels = [], projectId = null, labelId = null, timeBlockId = null) {
+export function renderTaskView(tasks, allProjects, allLabels = [], context = {}) {
+    const { projectId = null, labelId = null, timeBlockId = null, title = '' } = context;
+
     // 引数をキャッシュ
-    lastRenderArgs = [tasks, allProjects, allLabels, projectId, labelId, timeBlockId];
+    lastRenderArgs = [tasks, allProjects, allLabels, context];
 
     const container = document.getElementById('task-view');
     if (!container) return;
 
     // ヘッダー情報の更新
-    updateHeaderInfo(tasks.length, projectId, labelId, allProjects, allLabels);
+    updateHeaderInfo(tasks.length, title);
 
     // ソート準備
     const sortSelect = document.getElementById('sort-select');
@@ -89,7 +86,7 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
 
     // メインコンテンツラッパー (全体レイアウト制御)
     const contentWrapper = document.createElement('div');
-    contentWrapper.className = 'w-full max-w-3xl mx-auto h-full flex flex-col pt-2'; // 中央寄せ
+    contentWrapper.className = 'w-full px-4 sm:px-6 h-full flex flex-col pt-2'; // 中央寄せ廃止、左詰め
     container.appendChild(contentWrapper);
 
     // 1. タスクリスト表示エリア
@@ -100,7 +97,7 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
     listContainer.className = 'flex-1 overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth min-h-0';
     contentWrapper.appendChild(listContainer);
 
-    renderTaskList(listContainer, sortedTasks, allProjects, selectionState);
+    renderTaskList(listContainer, sortedTasks, allProjects, selectionState, context);
 
     // 2. 時間帯別工数統計 (リストの直下、スクロール外の固定位置)
     if (timeBlockId) {
@@ -115,33 +112,24 @@ export function renderTaskView(tasks, allProjects, allLabels = [], projectId = n
     const inputContainer = document.createElement('div');
     inputContainer.id = 'inline-input-container';
     // 下部に適度な余白
-    inputContainer.className = 'flex-none pb-6';
+    inputContainer.className = 'flex-none pb-4';
     contentWrapper.appendChild(inputContainer);
 
     // 固定追加バーとして描画 (フッターではなく、静的配置)
     // 第1引数をコンテナ自身にして、内部で書き換えさせる
+    // contextから受け取ったprojectId, labelIdを渡す
     renderFixedAddTaskBar(inputContainer, inputContainer, projectId, labelId);
 }
 
 /**
  * ヘッダータイトルと件数の更新
  */
-function updateHeaderInfo(count, projectId, labelId, allProjects, allLabels) {
+function updateHeaderInfo(count, title) {
     const headerTitle = document.getElementById('header-title');
     const headerCount = document.getElementById('header-count');
 
     if (headerTitle) {
-        let title = "インボックス";
-
-        if (projectId) {
-            const project = allProjects.find(p => p.id === projectId);
-            title = project ? project.name : "プロジェクト";
-        } else if (labelId) {
-            const label = allLabels.find(l => l.id === labelId);
-            title = label ? `${label.name}` : "ラベル";
-        }
-
-        headerTitle.textContent = title;
+        headerTitle.textContent = title || "インボックス";
     }
 
     if (headerCount) {

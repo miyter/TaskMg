@@ -46,10 +46,10 @@ export function getCurrentFilter() {
 }
 
 /**
- * 更新日: 2025-12-27
- * 内容: toggle-completed-btn が存在しない場合の null チェックを追加（ランタイムエラー修正）
+ * 更新日: 2025-12-29
+ * 内容: ヘッダータイトルの動的解決とコンテキストオブジェクトの受け渡し
  */
-export function updateView(allTasks, allProjects, allLabels) {
+export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [], allFilters = []) {
     ensureUICache();
     if (!UI.task || !UI.dashboard || !UI.search) return;
 
@@ -79,6 +79,31 @@ export function updateView(allTasks, allProjects, allLabels) {
     const toggleBtn = document.getElementById(CONTROL_IDS.COMPLETED_TOGGLE);
     const showCompleted = toggleBtn ? toggleBtn.classList.contains('text-blue-500') : false;
 
+    // ヘッダータイトルの解決
+    const resolveTitle = () => {
+        switch (currentFilter.type) {
+            case 'inbox':
+                return 'インボックス';
+            case 'project':
+                return allProjects.find(p => p.id === currentFilter.id)?.name || 'プロジェクト';
+            case 'label':
+                return allLabels.find(l => l.id === currentFilter.id)?.name || 'ラベル';
+            case 'timeblock':
+                if (currentFilter.id === 'unassigned' || currentFilter.id === 'none') return '未定';
+                return allTimeBlocks.find(b => b.id === currentFilter.id)?.name || '時間帯';
+            case 'duration':
+                return `${currentFilter.id}分`;
+            case 'filter':
+                return allFilters.find(f => f.id === currentFilter.id)?.name || 'フィルター';
+            case 'today': return '今日';
+            case 'upcoming': return '今後';
+            default:
+                // サイドバークリック時のフォールバック
+                if (currentFilter.id) return currentFilter.id;
+                return 'タスク';
+        }
+    };
+
     const config = {
         keyword: '',
         showCompleted,
@@ -86,9 +111,11 @@ export function updateView(allTasks, allProjects, allLabels) {
         labelId: currentFilter.type === 'label' ? currentFilter.id : null,
         timeBlockId: currentFilter.type === 'timeblock' ? currentFilter.id : null,
         duration: currentFilter.type === 'duration' ? currentFilter.id : null,
-        sortCriteria
+        sortCriteria,
+        title: resolveTitle()
     };
 
     const processedTasks = getProcessedTasks(allTasks, config);
-    renderTaskView(processedTasks, allProjects, allLabels, config.projectId, config.labelId, config.timeBlockId);
+    // 第4引数に丸ごとコンテキストを渡す
+    renderTaskView(processedTasks, allProjects, allLabels, config);
 }

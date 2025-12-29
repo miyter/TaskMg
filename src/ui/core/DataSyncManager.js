@@ -37,8 +37,10 @@ export function updateUI() {
         const tasks = getData.tasks();
         const projects = getData.projects();
         const labels = getData.labels();
+        const timeBlocks = getData.timeBlocks();
+        const filters = getData.filters();
 
-        updateView(tasks, projects, labels);
+        updateView(tasks, projects, labels, timeBlocks, filters);
         updateTimer = null;
     });
 }

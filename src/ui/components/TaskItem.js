@@ -10,7 +10,7 @@ import { showTaskContextMenu } from './TaskContextMenu.js';
 import { simpleMarkdownToHtml } from '../../utils/markdown.js';
 import { toggleTaskSelection } from '../state/ui-state.js';
 
-export function createTaskItem(task, allProjects, selectionState = { isSelectionMode: false, selectedIds: new Set() }) {
+export function createTaskItem(task, allProjects, selectionState = { isSelectionMode: false, selectedIds: new Set() }, context = {}) {
     const { isSelectionMode, selectedIds } = selectionState;
     const isSelected = selectedIds.has(task.id);
 
@@ -27,6 +27,12 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
 
     const timeBlocks = getTimeBlocks();
     const timeBlock = task.timeBlockId ? timeBlocks.find(tb => tb.id === task.timeBlockId) : null;
+
+    // コンテキストに応じた表示制御
+    // 時間帯フィルタ中は時間帯バッジを非表示(unassigned時も同様だが、unassignedはリスト上でバッジが出てもいいかもしれないが、仕様通りフィルタ時は非表示とする)
+    const showTimeBlock = context.timeBlockId === null || context.timeBlockId === undefined;
+    // 所要時間フィルタ中は所要時間バッジを非表示
+    const showDuration = context.duration === null || context.duration === undefined;
 
     // スタイル調整
     let baseClass = "group flex items-start gap-2 sm:gap-3 py-2 px-2 rounded -mx-2 transition-all duration-200 border border-transparent";
@@ -84,14 +90,14 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
                 ${isRecurring ? `<div class="text-blue-500 dark:text-blue-400 flex-shrink-0" title="繰り返し">🔁</div>` : ''}
                 ${isOneTime ? `<div class="text-gray-400 dark:text-gray-500 flex-shrink-0" title="期限あり">▶️</div>` : ''}
                 
-                <div class="flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[140px]" title="${timeBlock ? `${timeBlock.start} - ${timeBlock.end}` : '時間帯未定'}">
+                ${showTimeBlock ? `<div class="flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 max-w-[140px]" title="${timeBlock ? `${timeBlock.start} - ${timeBlock.end}` : '時間帯未定'}">
                     <span class="w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style="background-color: ${timeBlock ? timeBlock.color : '#cbd5e1'}"></span>
                     <span class="truncate font-mono text-[11px]">${timeBlock ? `${timeBlock.start} - ${timeBlock.end}` : '未定'}</span>
-                </div>
+                </div>` : ''}
 
-                <div class="flex items-center text-gray-500 dark:text-gray-400 whitespace-nowrap" title="所要時間: ${task.duration || 0}分">
+                ${showDuration ? `<div class="flex items-center text-gray-500 dark:text-gray-400 whitespace-nowrap" title="所要時間: ${task.duration || 0}分">
                     <span class="mr-0.5 text-[10px]">⏱️</span>${task.duration || 0}m
-                </div>
+                </div>` : ''}
 
                 ${dateText ? `<div class="flex items-center ${dateColorClass} bg-gray-50 dark:bg-gray-800/50 px-1.5 py-0.5 rounded flex-shrink-0">${dateText}</div>` : ''}
             </div>

@@ -10,8 +10,9 @@ import { showTaskContextMenu } from './components/TaskContextMenu.js';
  * @param {Array} tasks
  * @param {Array} allProjects
  * @param {Object} selectionState - { isSelectionMode, selectedIds } from ui-state
+ * @param {Object} context - コンテキスト情報（フィルター条件等）
  */
-export function renderTaskList(container, tasks, allProjects, selectionState = { isSelectionMode: false, selectedIds: new Set() }) {
+export function renderTaskList(container, tasks, allProjects, selectionState = { isSelectionMode: false, selectedIds: new Set() }, context = {}) {
     if (!container) return;
 
     const list = document.createElement('ul');
@@ -37,7 +38,7 @@ export function renderTaskList(container, tasks, allProjects, selectionState = {
     } else {
         const fragment = document.createDocumentFragment();
         tasks.forEach(task => {
-            fragment.appendChild(createTaskItem(task, allProjects, selectionState));
+            fragment.appendChild(createTaskItem(task, allProjects, selectionState, context));
         });
         list.appendChild(fragment);
     }
