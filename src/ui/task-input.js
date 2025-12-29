@@ -16,26 +16,7 @@ export function renderTaskInput() {
     if (!container) return;
 
     const projects = getProjects();
-    const projectOptions = projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-
-    const html = `
-        <form id="task-form" class="flex flex-col gap-3">
-            <input type="text" id="task-title-input" 
-                class="${UI_STYLES.INPUT.GLASSCARD_TITLE}"
-                placeholder="新しいタスクを追加..." autocomplete="off">
-            
-            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-gray-700/50">
-                <div class="flex items-center gap-2">
-                    <select id="task-project-input" class="${UI_STYLES.SELECT.DEFAULT}">
-                        <option value="">インボックス</option>
-                        ${projectOptions}
-                    </select>
-                    <input type="date" id="task-due-date-input" class="${UI_STYLES.SELECT.DEFAULT.replace('py-1.5', 'py-1')}">
-                </div>
-                <button type="submit" class="${UI_STYLES.BUTTON.PRIMARY}">追加</button>
-            </div>
-        </form>
-    `;
+    const html = buildStandaloneFormHTML(projects);
 
     container.innerHTML = createGlassCard(html, 'p-4 mb-6');
     setupStandaloneEvents();
@@ -43,25 +24,12 @@ export function renderTaskInput() {
 
 /**
  * インライン入力フォーム (タスクリスト下部)
- * @param {HTMLElement} container 
- * @param {string} projectId 
- * @param {string} labelId 
- * @param {Object} options - { onClose: function, forceExpand: boolean }
  */
 export function renderInlineInput(container, projectId, labelId, options = {}) {
     const isExpanded = options.forceExpand || container.dataset.expanded === 'true';
 
     if (!isExpanded) {
-        // 固定フッターモードの場合は、ここは空にするか、何もしない制御が必要
-        // 既存のリスト末尾ボタンとしての動作を維持しつつ、固定フッターからも呼ばれる
-        container.innerHTML = `
-            <div id="show-input-btn" class="flex items-center text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer py-2 px-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition group select-none">
-                <div class="w-6 h-6 mr-2 rounded-full text-indigo-500 dark:text-indigo-400 flex items-center justify-center transition-transform group-hover:scale-110">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                </div>
-                <div class="text-sm font-medium">タスクを追加</div>
-            </div>
-        `;
+        container.innerHTML = buildInlineButtonHTML();
         container.querySelector('#show-input-btn').onclick = () => {
             container.dataset.expanded = 'true';
             renderInlineInput(container, projectId, labelId, options);
@@ -69,25 +37,8 @@ export function renderInlineInput(container, projectId, labelId, options = {}) {
         return;
     }
 
-    const timeBlockOptions = getTimeBlocks().map(tb => `<option value="${tb.id}">${tb.start} - ${tb.end}</option>`).join('');
-
-    const html = `
-        <div class="flex flex-col gap-2">
-            <input type="text" id="inline-title-input" placeholder="タスク名" class="${UI_STYLES.INPUT.MINIMAL_TEXT}">
-            <textarea id="inline-desc-input" placeholder="詳細メモ" rows="2" class="${UI_STYLES.INPUT.MINIMAL_TEXTAREA}"></textarea>
-            
-            <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3">
-                <select id="inline-timeblock-select" class="${UI_STYLES.SELECT.TRANSPARENT}">
-                    <option value="">時間帯 (未定)</option>
-                    ${timeBlockOptions}
-                </select>
-                <div class="flex gap-2">
-                    <button id="cancel-input-btn" class="${UI_STYLES.BUTTON.CANCEL}">キャンセル</button>
-                    <button id="submit-task-btn" class="${UI_STYLES.BUTTON.PRIMARY}">タスクを追加</button>
-                </div>
-            </div>
-        </div>
-    `;
+    const timeBlocks = getTimeBlocks();
+    const html = buildInlineFormHTML(timeBlocks);
 
     container.innerHTML = createGlassCard(html, 'p-3 animate-fade-in-down');
     setupInlineEvents(container, projectId, labelId, options);
@@ -97,12 +48,7 @@ export function renderInlineInput(container, projectId, labelId, options = {}) {
  * 画面下部固定のタスク追加バーを描画（ボタンのみ）
  */
 export function renderFixedAddTaskBar(footerContainer, inputContainer, projectId, labelId) {
-    footerContainer.innerHTML = `
-        <button id="fixed-add-task-btn" class="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-full px-6 py-2 shadow-lg hover:shadow-xl transition-all active:scale-95">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            <span class="font-bold text-sm">タスクを追加</span>
-        </button>
-    `;
+    footerContainer.innerHTML = buildFixedButtonHTML();
 
     // ボタンクリックでタスクモーダルを開く
     footerContainer.querySelector('#fixed-add-task-btn').onclick = () => {
@@ -211,4 +157,71 @@ async function handleAddTask(data) {
             type: 'error'
         });
     }
+}
+
+/**
+ * --- Helper Functions (HTML Generators) ---
+ */
+
+function buildStandaloneFormHTML(projects) {
+    const projectOptions = projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    return `
+        <form id="task-form" class="flex flex-col gap-3">
+            <input type="text" id="task-title-input" 
+                class="${UI_STYLES.INPUT.GLASSCARD_TITLE}"
+                placeholder="新しいタスクを追加..." autocomplete="off">
+            
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+                <div class="flex items-center gap-2">
+                    <select id="task-project-input" class="${UI_STYLES.SELECT.DEFAULT}">
+                        <option value="">インボックス</option>
+                        ${projectOptions}
+                    </select>
+                    <input type="date" id="task-due-date-input" class="${UI_STYLES.SELECT.DEFAULT.replace('py-1.5', 'py-1')}">
+                </div>
+                <button type="submit" class="${UI_STYLES.BUTTON.PRIMARY}">追加</button>
+            </div>
+        </form>
+    `;
+}
+
+function buildInlineButtonHTML() {
+    return `
+        <div id="show-input-btn" class="flex items-center text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer py-2 px-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition group select-none">
+            <div class="w-6 h-6 mr-2 rounded-full text-indigo-500 dark:text-indigo-400 flex items-center justify-center transition-transform group-hover:scale-110">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </div>
+            <div class="text-sm font-medium">タスクを追加</div>
+        </div>
+    `;
+}
+
+function buildInlineFormHTML(timeBlocks) {
+    const timeBlockOptions = timeBlocks.map(tb => `<option value="${tb.id}">${tb.start} - ${tb.end}</option>`).join('');
+    return `
+        <div class="flex flex-col gap-2">
+            <input type="text" id="inline-title-input" placeholder="タスク名" class="${UI_STYLES.INPUT.MINIMAL_TEXT}">
+            <textarea id="inline-desc-input" placeholder="詳細メモ" rows="2" class="${UI_STYLES.INPUT.MINIMAL_TEXTAREA}"></textarea>
+            
+            <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3">
+                <select id="inline-timeblock-select" class="${UI_STYLES.SELECT.TRANSPARENT}">
+                    <option value="">時間帯 (未定)</option>
+                    ${timeBlockOptions}
+                </select>
+                <div class="flex gap-2">
+                    <button id="cancel-input-btn" class="${UI_STYLES.BUTTON.CANCEL}">キャンセル</button>
+                    <button id="submit-task-btn" class="${UI_STYLES.BUTTON.PRIMARY}">タスクを追加</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function buildFixedButtonHTML() {
+    return `
+        <button id="fixed-add-task-btn" class="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-full px-6 py-2 shadow-lg hover:shadow-xl transition-all active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span class="font-bold text-sm">タスクを追加</span>
+        </button>
+    `;
 }
