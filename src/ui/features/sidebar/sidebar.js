@@ -118,16 +118,28 @@ function setupSidebarEvents() {
         if (link) {
             e.preventDefault();
 
-            // モバイルならサイドバーを閉じる
+            const id = link.id;
+
+            // 設定モーダルの場合、モバイルではサイドバーが閉じてから表示する（重なり防止）
+            if (id === 'nav-settings') {
+                if (!isDesktop()) {
+                    toggleSidebar(false);
+                    // サイドバーのアニメーション(300ms)完了を待つ
+                    setTimeout(() => showSettingsModal(), 300);
+                } else {
+                    showSettingsModal();
+                }
+                return;
+            }
+
+            // モバイルならサイドバーを閉じる（その他のリンク）
             if (!isDesktop()) {
                 toggleSidebar(false);
             }
 
-            const id = link.id;
             if (id === 'nav-dashboard') dispatch('dashboard');
             if (id === 'nav-inbox') dispatch('inbox');
             if (id === 'nav-search') dispatch('search');
-            if (id === 'nav-settings') showSettingsModal();
 
             // Target Tools
             if (id === 'nav-wizard') dispatch('wizard');

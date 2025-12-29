@@ -13,7 +13,7 @@ export function renderWiki(container) {
                     <div class="framework-card cursor-pointer bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 transition-all hover:border-blue-500 hover:shadow-lg hover:scale-105" data-framework-id="${framework.id}">
                         <div class="text-4xl mb-3">${framework.icon}</div>
                         <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">${framework.title}</h2>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">${framework.summary}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">${framework.concept.summary}</p>
                         <div class="mt-4 flex items-center text-xs text-blue-600 dark:text-blue-400 font-medium">
                             <span>詳細を見る</span>
                             <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,35 +66,34 @@ function showFrameworkModal(framework) {
                     <!-- 概要 -->
                     <div class="mb-6">
                         <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">概要</h3>
-                        <p class="text-base text-gray-700 dark:text-gray-300 leading-relaxed">${framework.summary}</p>
+                        <p class="text-base text-gray-700 dark:text-gray-300 leading-relaxed">${framework.concept.summary}</p>
                     </div>
 
-                    <!-- コンセプト -->
-                    ${framework.concepts.map(concept => `
-                        <div class="mb-6">
-                            <h3 class="text-base font-bold text-gray-900 dark:text-white mb-3">${concept.title}</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">${concept.description}</p>
-                            ${concept.items ? `
-                                <ul class="space-y-2">
-                                    ${concept.items.map(item => `
-                                        <li class="flex items-start gap-2">
-                                            <span class="text-blue-500 mt-1">•</span>
-                                            <div>
-                                                <strong class="text-sm font-semibold text-gray-900 dark:text-white">${item.label}:</strong>
-                                                <span class="text-sm text-gray-600 dark:text-gray-400"> ${item.description}</span>
-                                            </div>
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            ` : ''}
-                        </div>
-                    `).join('')}
+                    <!-- 詳細 -->
+                    <div class="mb-6">
+                        <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">詳細</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">${framework.concept.detail}</p>
+                    </div>
 
                     <!-- 使用例 -->
-                    ${framework.example ? `
-                        <div class="mb-6 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    ${framework.useCases && framework.useCases.length > 0 ? `
+                        <div class="mb-6">
                             <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">使用例</h3>
-                            <p class="text-sm text-gray-700 dark:text-gray-300 italic">${framework.example}</p>
+                            <div class="space-y-4">
+                                ${framework.useCases.map(uc => `
+                                    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                                        <h4 class="font-bold text-gray-800 dark:text-gray-200 mb-2">${uc.title}</h4>
+                                        <div class="mb-2">
+                                            <span class="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded mr-1">Before</span>
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">${uc.before}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded mr-1">After</span>
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">${uc.after}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                     ` : ''}
                 </div>
