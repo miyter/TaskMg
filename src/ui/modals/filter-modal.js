@@ -44,7 +44,7 @@ export function showFilterModal(filterToEdit = null) {
             <div class="${MODAL_CLASSES.BODY}">
                 <div class="space-y-6">
                     <div>
-                        <label class="${UI_STYLES.TEXT.LABEL}">フィルター名</label>
+                        <label for="filter-name" class="${UI_STYLES.TEXT.LABEL}">フィルター名</label>
                         <input type="text" id="filter-name" value="${filterToEdit?.name || ''}" 
                                class="${UI_STYLES.INPUT.DEFAULT}">
                     </div>

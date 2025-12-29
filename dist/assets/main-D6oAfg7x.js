@@ -93,10 +93,10 @@ var oh=Object.defineProperty;var rh=(e,t,n)=>t in e?oh(e,t,{enumerable:!0,config
                 </div>
             </div>
             <div>
-                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">タスク一覧の表示数</label>
+                 <label for="visible-task-count" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">タスク一覧の表示数</label>
                  <div class="relative">
                      ${(()=>{const g=localStorage.getItem("visible_task_count")||"10";return`
-                     <select name="visible-task-count" class="w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer transition-shadow">
+                     <select id="visible-task-count" name="visible-task-count" class="w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer transition-shadow">
                         ${[7,8,9,10,11,12].map(p=>`<option value="${p}" ${String(p)===g?"selected":""}>${p}件</option>`).join("")}
                      </select>
                         `})()}
@@ -941,7 +941,7 @@ var oh=Object.defineProperty;var rh=(e,t,n)=>t in e?oh(e,t,{enumerable:!0,config
             <div class="${vt.BODY}">
                 <div class="space-y-6">
                     <div>
-                        <label class="${le.TEXT.LABEL}">フィルター名</label>
+                        <label for="filter-name" class="${le.TEXT.LABEL}">フィルター名</label>
                         <input type="text" id="filter-name" value="${(e==null?void 0:e.name)||""}" 
                                class="${le.INPUT.DEFAULT}">
                     </div>

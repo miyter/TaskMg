@@ -146,12 +146,12 @@ export function getSettingsModalHTML(userInitial, userEmail, isCompact) {
                 </div>
             </div>
             <div>
-                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">タスク一覧の表示数</label>
+                 <label for="visible-task-count" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">タスク一覧の表示数</label>
                  <div class="relative">
                      ${(() => {
             const currentVisibleTasks = localStorage.getItem('visible_task_count') || '10';
             return `
-                     <select name="visible-task-count" class="w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer transition-shadow">
+                     <select id="visible-task-count" name="visible-task-count" class="w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer transition-shadow">
                         ${[7, 8, 9, 10, 11, 12].map(num => `<option value="${num}" ${String(num) === currentVisibleTasks ? 'selected' : ''}>${num}件</option>`).join('')}
                      </select>
                         `;
