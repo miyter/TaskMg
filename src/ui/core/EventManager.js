@@ -9,6 +9,8 @@ import { setCurrentFilter } from '../layout/ui-view-manager.js';
 import { startAllSubscriptions, stopDataSync, updateUI } from './DataSyncManager.js';
 import { setupCustomSortDropdown } from '../components/SortDropdown.js';
 import { isWindowMode, getInitialViewMode } from './window-manager.js';
+import { APP_EVENTS } from '../../core/event-constants.js';
+
 /**
  * デバウンス関数（高頻度イベントの間引き）
  */
@@ -28,7 +30,7 @@ export function setupGlobalEventListeners() {
     let isFirstWorkspaceLoad = true;
 
     // 1. ワークスペース切り替え
-    document.addEventListener('workspace-changed', (e) => {
+    document.addEventListener(APP_EVENTS.WORKSPACE_CHANGED, (e) => {
         const { workspaceId } = e.detail;
         console.log('[EventManager] Workspace changed to:', workspaceId);
 
@@ -73,7 +75,7 @@ export function setupGlobalEventListeners() {
     });
 
     // 2. ルーティング（サイドバー等）
-    document.addEventListener('route-change', (e) => {
+    document.addEventListener(APP_EVENTS.ROUTE_CHANGE, (e) => {
         const { page, id } = e.detail;
         setCurrentFilter({ type: page, id: id || null });
 

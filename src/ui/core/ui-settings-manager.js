@@ -95,13 +95,15 @@ export function applyUISettingsToModal(modalElement) {
     // モーダル内で .p-modal, .gap-modal などのユーティリティクラスを使用
 }
 
+import { APP_EVENTS } from '../../core/event-constants.js';
+
 /**
  * UI設定変更時のイベントリスナーを登録
  * @param {Function} callback - 設定変更時に実行するコールバック
  */
 export function onUISettingsChange(callback) {
     // カスタムイベントをリッスン
-    window.addEventListener('ui-settings-changed', callback);
+    window.addEventListener(APP_EVENTS.UI_SETTINGS_CHANGED, callback);
 
     // 初回実行
     callback();
@@ -112,7 +114,7 @@ export function onUISettingsChange(callback) {
  * UI設定変更イベントを発火
  */
 export function notifyUISettingsChange() {
-    window.dispatchEvent(new CustomEvent('ui-settings-changed', {
+    window.dispatchEvent(new CustomEvent(APP_EVENTS.UI_SETTINGS_CHANGED, {
         detail: getCurrentUISettings()
     }));
 }
@@ -157,7 +159,7 @@ export function setDensity(density) {
     notifyUISettingsChange();
 
     // サイドバー更新イベントも発火
-    window.dispatchEvent(new CustomEvent('sidebar-settings-updated', {
+    window.dispatchEvent(new CustomEvent(APP_EVENTS.SIDEBAR_SETTINGS_UPDATED, {
         detail: { density }
     }));
 }

@@ -57,6 +57,7 @@ function notifyUpdate(eventType) {
  * 同期開始
  */
 
+import { APP_EVENTS } from '../../core/event-constants.js';
 
 export function startAllSubscriptions(userId) {
     if (!auth?.currentUser) {
@@ -77,11 +78,11 @@ export function startAllSubscriptions(userId) {
 
     // データはStore側でキャッシュされるため、ここでは受け取る必要はないが
     // コールバックは更新通知のために必要
-    subscriptions.tasks = subscribeToTasks(workspaceId, () => notifyUpdate('tasks-updated'));
-    subscriptions.projects = subscribeToProjects(workspaceId, () => notifyUpdate('projects-updated'));
-    subscriptions.labels = subscribeToLabels(workspaceId, () => notifyUpdate('labels-updated'));
-    subscriptions.timeBlocks = subscribeToTimeBlocks(workspaceId, () => notifyUpdate('timeblocks-updated'));
-    subscriptions.filters = subscribeToFilters(workspaceId, () => notifyUpdate('filters-updated'));
+    subscriptions.tasks = subscribeToTasks(workspaceId, () => notifyUpdate(APP_EVENTS.TASKS_UPDATED));
+    subscriptions.projects = subscribeToProjects(workspaceId, () => notifyUpdate(APP_EVENTS.PROJECTS_UPDATED));
+    subscriptions.labels = subscribeToLabels(workspaceId, () => notifyUpdate(APP_EVENTS.LABELS_UPDATED));
+    subscriptions.timeBlocks = subscribeToTimeBlocks(workspaceId, () => notifyUpdate(APP_EVENTS.TIMEBLOCKS_UPDATED));
+    subscriptions.filters = subscribeToFilters(workspaceId, () => notifyUpdate(APP_EVENTS.FILTERS_UPDATED));
 }
 
 /**

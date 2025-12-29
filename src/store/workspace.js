@@ -15,10 +15,10 @@ import { db, auth } from "../core/firebase.js";
 import { paths } from '../utils/paths.js';
 import { showMessageModal } from '../ui/components.js';
 
-// import { APP_EVENTS } from '../ui/core/event-constants.js';
+import { APP_EVENTS } from '../core/event-constants.js';
 
 const STORAGE_KEY = 'currentWorkspaceId';
-const CHANGE_EVENT = 'workspace-changed';
+const CHANGE_EVENT = APP_EVENTS.WORKSPACE_CHANGED;
 
 let unsubscribe = null;
 let _workspaces = [];

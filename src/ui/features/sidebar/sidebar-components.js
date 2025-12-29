@@ -118,9 +118,10 @@ export function showCustomContextMenu(e, items) {
 }
 
 
+import { APP_EVENTS } from '../../../core/event-constants.js';
 
 function dispatchRoute(page, id = null) {
-    document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
+    document.dispatchEvent(new CustomEvent(APP_EVENTS.ROUTE_CHANGE, { detail: { page, id } }));
 }
 
 function getMenuConfig(type, itemData) {

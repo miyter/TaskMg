@@ -15,6 +15,8 @@ import { showSettingsModal } from '../../settings.js';
 import { openInNewWindow } from '../../core/window-manager.js';
 import { showCustomContextMenu } from './sidebar-components.js';
 
+import { APP_EVENTS } from '../../../core/event-constants.js';
+
 
 // 同期取得関数
 // 同期取得関数
@@ -84,8 +86,8 @@ export function initSidebar() {
  */
 function setupDataEventListeners() {
     const updateEvents = [
-        'timeblocks-updated', 'projects-updated', 'labels-updated',
-        'filters-updated', 'tasks-updated'
+        APP_EVENTS.TIMEBLOCKS_UPDATED, APP_EVENTS.PROJECTS_UPDATED, APP_EVENTS.LABELS_UPDATED,
+        APP_EVENTS.FILTERS_UPDATED, APP_EVENTS.TASKS_UPDATED
     ];
 
     if (refreshSidebarHandler) {
@@ -106,7 +108,7 @@ function setupDataEventListeners() {
 
 function setupSidebarEvents() {
     const dispatch = (page, id = null) =>
-        document.dispatchEvent(new CustomEvent('route-change', { detail: { page, id } }));
+        document.dispatchEvent(new CustomEvent(APP_EVENTS.ROUTE_CHANGE, { detail: { page, id } }));
 
     // イベント委譲の統合
     UI.container.addEventListener('click', (e) => {
@@ -215,7 +217,7 @@ function updateSidebarVisibility() {
 }
 
 function setupDensityModeListener() {
-    window.addEventListener('sidebar-settings-updated', (e) => {
+    window.addEventListener(APP_EVENTS.SIDEBAR_SETTINGS_UPDATED, (e) => {
         applyDensityMode(e.detail.density);
     });
 }
