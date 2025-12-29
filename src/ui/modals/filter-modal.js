@@ -75,7 +75,6 @@ function parseFilterQuery(query) {
     const result = { project: [], timeblock: [], duration: [], date: [] };
     if (!query) return result;
 
-    // スペースで区切って各タグを解析
     query.split(/\s+/).forEach(part => {
         if (!part.includes(':')) return;
         const [key, val] = part.split(':');
@@ -97,15 +96,18 @@ function createSelectionBox(title, items, initials, className, labelFn = (i) => 
         <div class="flex flex-col h-64 border border-gray-100 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
             <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700 text-xs font-bold text-gray-500">${title}</div>
             <div class="p-2 overflow-y-auto space-y-1 custom-scrollbar">
-                ${items.map(item => {
+                ${items.map((item, idx) => {
                     const id = String(item.id || item);
                     const isChecked = initialSet.has(id);
+                    const checkboxId = `cb-${className}-${idx}-${id}`;
                     return `
-                        <label class="flex items-center px-2 py-1.5 rounded cursor-pointer transition select-none hover:bg-gray-50 dark:hover:bg-gray-800 group">
-                            <input type="checkbox" name="${className}" value="${id}" ${isChecked ? 'checked' : ''} 
-                                   class="${className} ${MODAL_CLASSES.CHECKBOX} rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-gray-900 dark:group-hover:text-white">${labelFn(item)}</span>
-                        </label>
+                        <div class="flex items-center px-2 py-1.5 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
+                            <input type="checkbox" id="${checkboxId}" name="${className}" value="${id}" ${isChecked ? 'checked' : ''} 
+                                   class="${className} ${MODAL_CLASSES.CHECKBOX} cursor-pointer">
+                            <label for="${checkboxId}" class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate cursor-pointer flex-1 py-0.5">
+                                ${labelFn(item)}
+                            </label>
+                        </div>
                     `;
                 }).join('')}
             </div>
@@ -131,17 +133,27 @@ function setupEvents(modal, filterToEdit) {
 
     modal.querySelector('#close-filter-modal').onclick = cleanup;
     modal.querySelector('#cancel-filter-btn').onclick = cleanup;
-    modal.onclick = (e) => e.target === modal && cleanup();
+    
+    // 背景クリックで閉じる処理（バブル防止のため target 判定を厳密に）
+    modal.onclick = (e) => {
+        if (e.target === modal) cleanup();
+    };
 
-    modal.querySelector('#save-filter-btn').onclick = async () => {
-        const name = modal.querySelector('#filter-name').value.trim();
+    modal.querySelector('#save-filter-btn').onclick = async (e) => {
+        e.preventDefault(); // 念のためデフォルト動作防止
+        
+        const nameInput = modal.querySelector('#filter-name');
+        const name = nameInput.value.trim();
         if (!name) {
             return showMessageModal({ message: MESSAGES.NAME_REQUIRED, type: 'error' });
         }
 
         const getVals = (cls) => {
-            const checked = modal.querySelectorAll(`.${cls}:checked`);
-            return Array.from(checked).map(cb => cb.value);
+            // querySelectorAll で確実に現在の DOM 状態を取得
+            const checkboxes = modal.querySelectorAll(`input.${cls}`);
+            return Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
         };
 
         const queryMap = {
@@ -170,8 +182,9 @@ function setupEvents(modal, filterToEdit) {
             }
             document.dispatchEvent(new CustomEvent('filters-updated'));
             cleanup();
-        } catch (e) {
-            showMessageModal({ message: MESSAGES.SAVE_ERROR + e.message, type: 'error' });
+        } catch (err) {
+            console.error(err);
+            showMessageModal({ message: MESSAGES.SAVE_ERROR + err.message, type: 'error' });
         }
     };
 }
