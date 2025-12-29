@@ -4,6 +4,7 @@
  * 内容: コンテキストメニューからのソート変更、複数選択モード対応、レイアウトの高さ調整、ヘッダータイトルの動的反映
  */
 
+import { SIDEBAR_CONFIG } from './features/sidebar/sidebar-constants.js';
 import { renderTaskList } from './task-list.js';
 import { renderInlineInput, renderFixedAddTaskBar } from './task-input.js';
 import { sortTasks } from '../logic/sort.js';
@@ -56,6 +57,13 @@ window.addEventListener('visible-task-count-updated', () => {
     }
 });
 
+// UI密度変更の監視
+window.addEventListener('sidebar-settings-updated', () => {
+    if (lastRenderArgs) {
+        renderTaskView(...lastRenderArgs);
+    }
+});
+
 /**
  * タスクビュー全体（リスト＋入力欄）を描画
  * @param {Array} tasks - 表示するタスクの配列
@@ -99,11 +107,34 @@ export function renderTaskView(tasks, allProjects, allLabels = [], context = {})
     // 1. タスクリスト表示エリア
     const listContainer = document.createElement('div');
     listContainer.id = 'task-list-container';
-    // flex-1 で高さを自動調整 (スクロールはここで行う)
-    listContainer.className = `w-full flex-1 overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth border-b border-gray-100 dark:border-gray-800`;
+
+    // 表示件数設定の適用
+    const savedCount = localStorage.getItem('visible_task_count');
+    const visibleCount = savedCount ? Number(savedCount) : 10;
+    const density = localStorage.getItem(SIDEBAR_CONFIG.STORAGE_KEYS.DENSITY) || 'normal';
+
+    // 密度ごとの概算タスク行高さ (px) + マージン等
+    // Compact: py-1.5(6px*2) + text-sm(20px) + gap(8px) approx 40-45
+    const HEIGHT_MAP = {
+        'compact': 42,
+        'normal': 52,
+        'comfortable': 64,
+        'spacious': 76
+    };
+    const rowHeight = HEIGHT_MAP[density] || 52;
+    // ヘッダーやパディング誤差を考慮して少し余裕を持たせる
+    // visibleCount * rowHeight
+
+    const maxHeight = visibleCount * rowHeight;
+    listContainer.style.maxHeight = `${maxHeight}px`;
+
+    // flex-1 を flex-none にし、overflow-y-auto でスクロールさせる
+    listContainer.className = `w-full flex-none overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth border-b border-gray-100 dark:border-gray-800`;
     contentWrapper.appendChild(listContainer);
 
     renderTaskList(listContainer, sortedTasks, allProjects, selectionState, context);
+
+    // ...
 
     // 2. 統計エリア (時間帯 or 一般)
     const statsContainer = document.createElement('div');
