@@ -3,7 +3,7 @@
  */
 export function getLanguageContent(currentLang = 'ja') {
     const languages = [
-        { id: 'ja', label: '日本語 (Japanese)', flag: '🇯🇵' },
+        { id: 'ja', label: '日本語', flag: '🇯🇵' },
         { id: 'en', label: 'English', flag: '🇺🇸' }
     ];
 
