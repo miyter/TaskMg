@@ -29,7 +29,7 @@ export function updateInboxCount() {
     if (!inboxCountEl) return;
 
     const allTasks = getTasks();
-    const count = countActiveTasks(allTasks, t => !t.projectId);
+    const count = countActiveTasks(allTasks, t => !t.projectId || t.projectId === 'null' || t.projectId === 'unassigned');
     inboxCountEl.textContent = count;
     inboxCountEl.classList.toggle('hidden', count === 0);
 }
@@ -78,7 +78,7 @@ export function renderTimeBlocks() {
         fragment.appendChild(item);
     });
 
-    const unassignedCount = countActiveTasks(tasks, t => !t.timeBlockId || t.timeBlockId === 'null');
+    const unassignedCount = countActiveTasks(tasks, t => !t.timeBlockId || t.timeBlockId === 'null' || t.timeBlockId === 'unassigned');
     const unassignedItem = createSidebarItem('未定', 'timeblock', 'unassigned', { color: '#a0aec0' }, unassignedCount, density);
     unassignedItem.onclick = () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: 'unassigned' } }));
     setupDropZone(unassignedItem, 'timeblock', 'unassigned');
