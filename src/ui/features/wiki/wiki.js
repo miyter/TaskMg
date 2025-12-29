@@ -9,7 +9,7 @@ export function renderWiki(container) {
         <div class="max-w-6xl mx-auto px-4 py-6">
             <h1 class="text-xl font-bold text-gray-800 dark:text-white mb-6">フレームワークWiki</h1>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                ${WIKI_DATA.frameworks.map(framework => `
+                ${WIKI_DATA.map(framework => `
                     <div class="framework-card cursor-pointer bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 transition-all hover:border-blue-500 hover:shadow-lg hover:scale-105" data-framework-id="${framework.id}">
                         <div class="text-4xl mb-3">${framework.icon}</div>
                         <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">${framework.title}</h2>
@@ -30,7 +30,7 @@ export function renderWiki(container) {
     container.querySelectorAll('.framework-card').forEach(card => {
         card.addEventListener('click', () => {
             const frameworkId = card.dataset.frameworkId;
-            const framework = WIKI_DATA.frameworks.find(f => f.id === frameworkId);
+            const framework = WIKI_DATA.find(f => f.id === frameworkId);
             if (framework) {
                 showFrameworkModal(framework);
             }
