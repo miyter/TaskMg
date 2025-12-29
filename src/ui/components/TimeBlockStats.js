@@ -19,11 +19,9 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
         return sum + (isNaN(duration) ? 0 : duration);
     }, 0);
 
-    // 時間表示フォーマット (例: 1時間45分)
+    // 時間表示フォーマット (例: 1.50h)
     const formatTime = (mins) => {
-        const h = Math.floor(mins / 60);
-        const m = mins % 60;
-        return h > 0 ? `${h}時間${m}分` : `${m}分`;
+        return (mins / 60).toFixed(2) + 'h';
     };
 
     let html = '';
@@ -88,24 +86,25 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
         // タスク0件なら表示しない、または"0件"と出すか？ -> 情報不足解消のため出す方が親切
 
         const count = tasks.length;
-        const avgMinutes = count > 0 ? Math.round(totalTaskMinutes / count) : 0;
+        const avgMinutes = count > 0 ? (totalTaskMinutes / count) : 0;
         const totalTimeText = formatTime(totalTaskMinutes);
+        const avgTimeText = formatTime(avgMinutes);
 
         html = `
             <div class="${UI_STYLES.STATS_BAR.CONTAINER}">
                 <div class="${UI_STYLES.STATS_BAR.ITEM}">
-                    <span class="${UI_STYLES.STATS_BAR.LABEL}">Count</span>
+                    <span class="${UI_STYLES.STATS_BAR.LABEL}">COUNT</span>
                     <span class="${UI_STYLES.STATS_BAR.VALUE}">${count}<span class="text-xs font-normal ml-0.5 text-gray-400">件</span></span>
                 </div>
                 <div class="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
                 <div class="${UI_STYLES.STATS_BAR.ITEM}">
-                    <span class="${UI_STYLES.STATS_BAR.LABEL}">Total</span>
+                    <span class="${UI_STYLES.STATS_BAR.LABEL}">TOTAL</span>
                     <span class="${UI_STYLES.STATS_BAR.VALUE} ${UI_STYLES.STATS_BAR.HIGHLIGHT}">${totalTimeText}</span>
                 </div>
                 <div class="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
                 <div class="${UI_STYLES.STATS_BAR.ITEM}">
-                    <span class="${UI_STYLES.STATS_BAR.LABEL}">Avg</span>
-                    <span class="font-medium text-sm">${avgMinutes}<span class="text-xs ml-0.5">min/件</span></span>
+                    <span class="${UI_STYLES.STATS_BAR.LABEL}">AVG</span>
+                    <span class="font-medium text-sm">${avgTimeText}<span class="text-xs ml-0.5">/件</span></span>
                 </div>
             </div>
         `;
