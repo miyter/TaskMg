@@ -174,8 +174,16 @@ export class WikiRenderer {
             header.onclick = (e) => {
                 e.preventDefault(); // Prevent default if necessary
                 const item = header.closest('.accordion-item');
+                if (!item) return;
+
                 const content = item.querySelector('.accordion-content');
                 const chevron = item.querySelector('.chevron');
+
+                // Null check
+                if (!content || !chevron) {
+                    console.warn('Accordion elements not found', { content, chevron });
+                    return;
+                }
 
                 const isClosed = content.classList.contains('max-h-0');
 
