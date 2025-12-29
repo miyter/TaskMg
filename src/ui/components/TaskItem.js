@@ -16,8 +16,10 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
 
     const li = document.createElement('li');
     li.setAttribute('data-id', task.id);
-    // 選択モード以外はドラッグ可能
-    li.setAttribute('draggable', isSelectionMode ? 'false' : 'true');
+    // 選択モード以外はドラッグ可能 (所要時間フィルタ時は順序不定のため不可)
+    // context.duration != null を判定
+    const isDurationView = context.duration !== null && context.duration !== undefined;
+    li.setAttribute('draggable', (isSelectionMode || isDurationView) ? 'false' : 'true');
 
     const isCompleted = task.status === 'completed';
     const dateText = formatDateCompact(task.dueDate);
@@ -105,7 +107,7 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
     `;
 
     // ドラッグイベント
-    if (!isSelectionMode) {
+    if (!isSelectionMode && !isDurationView) {
         li.addEventListener('dragstart', (e) => {
             // チェックボックス等の上ではドラッグ開始しないように制御が必要かもしれないが、
             // 標準動作ではインタラクティブ要素以外をつかめばドラッグできる。

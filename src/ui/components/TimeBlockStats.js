@@ -51,31 +51,35 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
         const diffColorClass = isOver ? 'text-red-500' : 'text-green-500';
         const diffLabel = isOver ? '超過' : '残り';
 
-        // プログレスバー付きUI
+        // プログレスバー付きUI (1行レイアウト改善版)
         html = `
-            <div class="mt-2 mb-2 py-2 px-4 bg-gray-50/80 dark:bg-[#1e1e1e]/50 rounded-lg flex items-center justify-between gap-4 text-sm border border-gray-100 dark:border-gray-800/50 backdrop-blur-sm">
-                <div class="flex-shrink-0 text-xs text-gray-400 font-mono w-16 truncate" title="${timeBlock.name}">
+            <div class="mt-2 mb-2 py-2 px-4 bg-gray-50/80 dark:bg-[#1e1e1e]/50 rounded-lg flex items-center gap-4 text-sm border border-gray-100 dark:border-gray-800/50 backdrop-blur-sm">
+                <!-- 1. 時間帯名 (左端) -->
+                <div class="flex-shrink-0 w-24 truncate text-xs font-bold text-gray-500 dark:text-gray-400" title="${timeBlock.name}">
                     ${timeBlock.name}
                 </div>
 
-                <div class="flex-1 flex flex-col justify-center gap-1 mx-2">
-                    <div class="text-xs text-center text-gray-500 dark:text-gray-400 flex justify-between px-1">
-                        <span>${totalTaskHours}h</span>
-                        <span class="text-[10px] text-gray-400">/ ${capacityHours}h</span>
-                    </div>
-                    <div class="relative h-1.5 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden w-full">
-                         <div class="${barColorClass} h-full rounded-full transition-all duration-500 ease-out"
-                             style="width: ${barWidth}">
-                        </div>
+                <!-- 2. 進捗時間 (中央左) -->
+                <div class="flex-shrink-0 text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                    <span class="font-bold text-gray-700 dark:text-gray-300 w-[4.5ch] text-right inline-block">${totalTaskHours}h</span>
+                    <span class="text-gray-400 mx-0.5">/</span>
+                    <span class="w-[4.5ch] inline-block">${capacityHours}h</span>
+                </div>
+
+                <!-- 3. プログレスバー (可変幅) -->
+                <div class="flex-1 relative h-2 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden min-w-[100px]">
+                     <div class="${barColorClass} h-full rounded-full transition-all duration-500 ease-out"
+                         style="width: ${barWidth}">
                     </div>
                 </div>
 
-                <div class="flex-shrink-0 text-right min-w-[80px]">
-                    <div class="text-lg font-bold ${isExceeded ? 'text-red-500' : 'text-blue-500'} leading-none">
+                <!-- 4. 詳細情報 (右端) -->
+                <div class="flex-shrink-0 flex items-center justify-end gap-3 min-w-[140px]">
+                    <div class="text-lg font-bold ${isExceeded ? 'text-red-500' : 'text-blue-500'} tabular-nums text-right w-[3.5ch]">
                         ${Math.round(rawPercent)}<span class="text-xs font-normal opacity-70">%</span>
                     </div>
-                    <div class="text-[10px] font-medium ${diffColorClass} mt-0.5">
-                        ${diffLabel} ${absDiffHours}h
+                    <div class="text-xs ${diffColorClass} whitespace-nowrap text-right w-[100px]">
+                        (${diffLabel} ${absDiffHours}h)
                     </div>
                 </div>
             </div>

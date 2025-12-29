@@ -16,6 +16,8 @@ const CONTROL_IDS = {
     COMPLETED_TOGGLE: 'toggle-completed-btn'
 };
 
+import { renderFixedAddTaskBar } from '../task-input.js';
+
 /**
  * ビュー要素のキャッシュ（初回のみ実行）
  */
@@ -107,7 +109,7 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
     const config = {
         keyword: '',
         showCompleted,
-        projectId: currentFilter.type === 'inbox' ? 'unassigned' : (currentFilter.type === 'project' ? currentFilter.id : null),
+        projectId: currentFilter.type === 'inbox' ? null : (currentFilter.type === 'project' ? currentFilter.id : null),
         labelId: currentFilter.type === 'label' ? currentFilter.id : null,
         timeBlockId: currentFilter.type === 'timeblock' ? currentFilter.id : null,
         duration: currentFilter.type === 'duration' ? currentFilter.id : null,
@@ -118,4 +120,15 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
     const processedTasks = getProcessedTasks(allTasks, config);
     // 第4引数に丸ごとコンテキストを渡す
     renderTaskView(processedTasks, allProjects, allLabels, config);
+
+    // フッターのタスク追加ボタンを更新 (常に表示)
+    const footerBtnContainer = document.getElementById('footer-add-btn-container');
+    const footerFormContainer = document.getElementById('footer-input-form-container');
+    if (footerBtnContainer && footerFormContainer) {
+        footerBtnContainer.classList.remove('hidden');
+        footerFormContainer.classList.add('hidden');
+        footerFormContainer.innerHTML = '';
+
+        renderFixedAddTaskBar(footerBtnContainer, footerFormContainer, config.projectId, config.labelId);
+    }
 }

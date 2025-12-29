@@ -112,17 +112,8 @@ export function renderTaskView(tasks, allProjects, allLabels = [], context = {})
     contentWrapper.appendChild(statsContainer);
     renderTimeBlockStats(statsContainer, tasks, timeBlockId);
 
-    // 3. タスク追加エリア (その下、固定位置)
-    const inputContainer = document.createElement('div');
-    inputContainer.id = 'inline-input-container';
-    // 下部に適度な余白
-    inputContainer.className = 'flex-none pb-4';
-    contentWrapper.appendChild(inputContainer);
-
-    // 固定追加バーとして描画 (フッターではなく、静的配置)
-    // 第1引数をコンテナ自身にして、内部で書き換えさせる
-    // contextから受け取ったprojectId, labelIdを渡す
-    renderFixedAddTaskBar(inputContainer, inputContainer, projectId, labelId);
+    // 3. タスク追加エリア (役割終了のため削除し、レイアウト側の固定フッターに委譲)
+    // 以前のコンテナ生成コードは削除
 }
 
 /**
