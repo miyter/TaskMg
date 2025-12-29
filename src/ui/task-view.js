@@ -97,28 +97,20 @@ export function renderTaskView(tasks, allProjects, allLabels = [], context = {})
     container.appendChild(contentWrapper);
 
     // 1. タスクリスト表示エリア
-    // 高さ固定 (設定値に基づいて計算)
-    const visibleCount = parseInt(localStorage.getItem('visible_task_count') || '10', 10);
-    const rowHeight = 56; // 1行あたりの概算高さ(px)
-    const listHeight = visibleCount * rowHeight;
-
     const listContainer = document.createElement('div');
     listContainer.id = 'task-list-container';
-    // flex-1 を廃止し、高さ固定
-    listContainer.className = `w-full flex-none overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth border-b border-gray-100 dark:border-gray-800`;
-    listContainer.style.height = `${listHeight}px`;
+    // flex-1 で高さを自動調整 (スクロールはここで行う)
+    listContainer.className = `w-full flex-1 overflow-y-auto custom-scrollbar pr-2 mb-2 scroll-smooth border-b border-gray-100 dark:border-gray-800`;
     contentWrapper.appendChild(listContainer);
 
     renderTaskList(listContainer, sortedTasks, allProjects, selectionState, context);
 
-    // 2. 時間帯別工数統計 (リストの直下、スクロール外の固定位置)
-    if (timeBlockId) {
-        const statsContainer = document.createElement('div');
-        statsContainer.id = 'timeblock-stats-container';
-        statsContainer.className = 'flex-none mb-4 animate-fade-in';
-        contentWrapper.appendChild(statsContainer);
-        renderTimeBlockStats(statsContainer, tasks, timeBlockId);
-    }
+    // 2. 統計エリア (時間帯 or 一般)
+    const statsContainer = document.createElement('div');
+    statsContainer.id = 'stats-container';
+    statsContainer.className = 'flex-none mb-0 animate-fade-in transition-all duration-300';
+    contentWrapper.appendChild(statsContainer);
+    renderTimeBlockStats(statsContainer, tasks, timeBlockId);
 
     // 3. タスク追加エリア (その下、固定位置)
     const inputContainer = document.createElement('div');

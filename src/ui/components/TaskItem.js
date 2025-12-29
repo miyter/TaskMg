@@ -35,7 +35,7 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
     const showDuration = context.duration === null || context.duration === undefined;
 
     // スタイル調整
-    let baseClass = "group flex items-start gap-2 sm:gap-3 py-2 px-2 rounded -mx-2 transition-all duration-200 border border-transparent";
+    let baseClass = "group flex items-start gap-2 sm:gap-3 py-1.5 px-2 rounded -mx-2 transition-all duration-200 border border-transparent";
     let stateClass = "";
 
     if (isSelectionMode) {
@@ -81,12 +81,12 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
         </div>
         
         <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 items-center pointer-events-none">
-            <div class="col-span-1 sm:col-span-7 flex flex-col justify-center pointer-events-auto">
-                <div class="leading-snug truncate font-medium transition-colors ${isCompleted && !isSelectionMode ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}">${task.title}</div>
-                ${task.description ? `<div class="text-xs text-gray-400 mt-0.5 font-light truncate markdown-summary">${simpleMarkdownToHtml(task.description.split('\n')[0]).replace(/<\/?p[^>]*>/g, '')}</div>` : ''}
+            <div class="col-span-1 sm:col-span-8 flex flex-wrap sm:flex-nowrap items-baseline gap-x-2 gap-y-0.5 pointer-events-auto min-w-0 pr-1">
+                <div class="leading-snug truncate font-medium transition-colors ${isCompleted && !isSelectionMode ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'} flex-shrink-0 max-w-full">${task.title}</div>
+                ${task.description ? `<div class="text-xs text-gray-400 font-light truncate max-w-[180px] sm:max-w-[240px]">${simpleMarkdownToHtml(task.description.split('\n')[0]).replace(/<\/?p[^>]*>/g, '')}</div>` : ''}
             </div>
             
-            <div class="col-span-1 sm:col-span-5 flex items-center sm:justify-end space-x-2 text-xs h-full mt-1 sm:mt-0 overflow-hidden pointer-events-auto">
+            <div class="col-span-1 sm:col-span-4 flex items-center sm:justify-end gap-1.5 text-xs h-full mt-1 sm:mt-0 overflow-hidden pointer-events-auto">
                 ${isRecurring ? `<div class="text-blue-500 dark:text-blue-400 flex-shrink-0" title="繰り返し">🔁</div>` : ''}
                 ${isOneTime ? `<div class="text-gray-400 dark:text-gray-500 flex-shrink-0" title="期限あり">▶️</div>` : ''}
                 

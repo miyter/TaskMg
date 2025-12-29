@@ -66,11 +66,11 @@ export function renderLayout() {
             ${createSidebarHTML()}
             <main class="flex-1 flex flex-col min-w-0 bg-white dark:bg-gray-900 transition-colors duration-200 relative">
                 ${createHeaderHTML()}
-                <div id="main-content" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar scroll-smooth">
-                    <div class="w-full max-w-4xl mx-auto">
-                        <div id="task-view" class="w-full animate-fade-in transition-opacity duration-150"></div>
-                        <div id="search-view" class="hidden w-full animate-fade-in"></div>
-                        <div id="dashboard-view" class="hidden w-full animate-fade-in"></div>
+                <div id="main-content" class="flex-1 flex flex-col min-w-0 overflow-hidden">
+                    <div class="w-full max-w-4xl mx-auto h-full flex flex-col">
+                        <div id="task-view" class="w-full h-full animate-fade-in transition-opacity duration-150 flex flex-col"></div>
+                        <div id="search-view" class="hidden w-full h-full animate-fade-in overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8"></div>
+                        <div id="dashboard-view" class="hidden w-full h-full animate-fade-in overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8"></div>
                     </div>
                 </div>
             </main>

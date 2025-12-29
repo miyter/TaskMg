@@ -91,7 +91,7 @@ function createSelectionBox(title, items, initials, className, labelFn = (i) => 
                 ${items.map(item => {
         const id = String(item.id || item);
         return `
-                        <label class="flex items-center px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer transition relative">
+                        <label class="flex items-center px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer transition">
                             <input type="checkbox" name="${className}" value="${id}" ${initials.includes(id) ? 'checked' : ''} class="${className} ${MODAL_CLASSES.CHECKBOX}">
                             <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate pointer-events-none">${labelFn(item)}</span>
                         </label>
