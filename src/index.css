@@ -101,6 +101,12 @@
         @apply bg-white/70 dark:bg-gray-900/60 backdrop-blur-md border border-white/20 dark:border-gray-800/30 shadow-glass;
     }
 
+    /* カスタムチェックボックス用のチェックマーク */
+    input[type="checkbox"][class*="appearance-none"]:checked::before {
+        content: '';
+        @apply absolute inset-0 m-auto w-2 h-3 border-r-2 border-b-2 border-white rotate-45 translate-y-[-2px];
+    }
+
     /* カスタムスクロールバー */
     .custom-scrollbar {
         scrollbar-width: thin;

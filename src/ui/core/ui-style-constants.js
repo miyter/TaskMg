@@ -34,5 +34,41 @@ export const UI_STYLES = {
     TEXT: {
         LABEL: 'block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider',
         ERROR: 'text-red-500 text-xs mt-1'
+    },
+
+    // プログレスバー
+    PROGRESS_BAR: {
+        CONTAINER: 'flex-1 relative h-3 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden min-w-[100px]',
+        FILLED: 'h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-500 ease-out shadow-sm',
+        OVER: 'h-full bg-red-500 rounded-full transition-all duration-500 ease-out shadow-sm'
+    },
+
+    // チェックボックス
+    CHECKBOX: {
+        LABEL: 'flex items-center px-2 py-1.5 rounded cursor-pointer transition select-none',
+        INPUT: 'w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-400',
+        TEXT: 'ml-2 text-sm text-gray-700 dark:text-gray-300 truncate'
+    },
+
+    // 統計サマリーバー
+    STATS_BAR: {
+        CONTAINER: 'mt-2 mb-2 py-3 px-6 bg-gray-50/80 dark:bg-[#1e1e1e]/60 rounded-lg flex items-center justify-around text-sm border border-gray-100 dark:border-gray-800/50 backdrop-blur-sm',
+        ITEM: 'flex flex-col items-center gap-1',
+        LABEL: 'text-[10px] text-gray-400 uppercase tracking-wider',
+        VALUE: 'font-bold text-base',
+        HIGHLIGHT: 'text-blue-500 dark:text-blue-400'
+    },
+
+    // モーダル
+    MODAL: {
+        CONTAINER: 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm',
+        DIALOG: 'bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden',
+        WIDTH: { DEFAULT: 'max-w-2xl w-full', WIDE: 'max-w-4xl w-full' }
+    },
+
+    // カード
+    CARD: {
+        GLASS: 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-lg',
+        SOLID: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm'
     }
 };

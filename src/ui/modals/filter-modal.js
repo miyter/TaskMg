@@ -31,10 +31,10 @@ export function showFilterModal(filterToEdit = null) {
     const modal = document.createElement('div');
     modal.id = 'filter-creation-modal';
     // クラス定義は定数から使用 (idは個別識別に残すが、スタイルは共通化)
-    modal.className = MODAL_CLASSES.CONTAINER;
+    modal.className = UI_STYLES.MODAL.CONTAINER;
 
     modal.innerHTML = `
-        <div class="${MODAL_CLASSES.DIALOG} ${MODAL_CLASSES.WIDTH.DEFAULT}" role="dialog" aria-modal="true">
+            <div class="${UI_STYLES.MODAL.DIALOG} ${UI_STYLES.MODAL.WIDTH.DEFAULT}" role="dialog" aria-modal="true">
             <div class="${MODAL_CLASSES.HEADER}">
                 <h3 class="${MODAL_CLASSES.TITLE}">${isEditMode ? 'フィルター編集' : 'フィルター作成'}</h3>
                 <button id="close-filter-modal" class="${MODAL_CLASSES.CLOSE_BUTTON}">
@@ -91,11 +91,12 @@ function createSelectionBox(title, items, initials, className, labelFn = (i) => 
                 ${items.map(item => {
         const id = String(item.id || item);
         return `
-                        <label class="flex items-center px-2 py-1.5 rounded cursor-pointer transition">
-                            <input type="checkbox" name="${className}" value="${id}" ${initials.includes(id) ? 'checked' : ''} class="${className} ${MODAL_CLASSES.CHECKBOX}">
-                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate">${labelFn(item)}</span>
-                        </label>
-                    `;
+            <label class="flex items-center px-2 py-1.5 rounded cursor-pointer transition select-none">
+                <input type="checkbox" name="${className}" value="${id}" ${initials.includes(id) ? 'checked' : ''} 
+                       class="${className} ${MODAL_CLASSES.CHECKBOX}">
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate">${labelFn(item)}</span>
+            </label>
+        `;
     }).join('')}
             </div>
         </div>

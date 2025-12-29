@@ -4,6 +4,7 @@
  * 改修: 時間帯外（一般ビュー）での集計表示に対応
  */
 import { getTimeBlockById } from '../../store/timeblocks.js';
+import { UI_STYLES } from '../core/ui-style-constants.js';
 
 export function renderTimeBlockStats(container, tasks, timeBlockId) {
     // 既存のコンテナ内をクリア
@@ -45,11 +46,7 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
         const absDiffHours = (absDiffMinutes / 60).toFixed(2);
 
         const isExceeded = rawPercent > 100;
-        const barColorClass = isExceeded ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500';
-        const barWidth = isExceeded ? '100%' : `${progressPercent}%`;
-
-        const diffColorClass = isOver ? 'text-red-500' : 'text-green-500';
-        const diffLabel = isOver ? '超過' : '残り';
+        const barClass = isExceeded ? UI_STYLES.PROGRESS_BAR.OVER : UI_STYLES.PROGRESS_BAR.FILLED;
 
         // プログレスバー付きUI (1行レイアウト改善版)
         html = `
@@ -67,10 +64,8 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
                 </div>
 
                 <!-- 3. プログレスバー (可変幅) -->
-                <div class="flex-1 relative h-2 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden min-w-[100px]">
-                     <div class="${barColorClass} h-full rounded-full transition-all duration-500 ease-out"
-                         style="width: ${barWidth}">
-                    </div>
+                <div class="${UI_STYLES.PROGRESS_BAR.CONTAINER}">
+                     <div class="${barClass}" style="width: ${barWidth}"></div>
                 </div>
 
                 <!-- 4. 詳細情報 (右端) -->
@@ -93,19 +88,19 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
         const totalTimeText = formatTime(totalTaskMinutes);
 
         html = `
-            <div class="mt-2 mb-2 py-2 px-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-around text-sm text-gray-600 dark:text-gray-300">
-                <div class="flex flex-col items-center">
-                    <span class="text-[10px] text-gray-400 uppercase tracking-wider">Count</span>
-                    <span class="font-bold text-base">${count}<span class="text-xs font-normal ml-0.5 text-gray-400">件</span></span>
+            <div class="${UI_STYLES.STATS_BAR.CONTAINER}">
+                <div class="${UI_STYLES.STATS_BAR.ITEM}">
+                    <span class="${UI_STYLES.STATS_BAR.LABEL}">Count</span>
+                    <span class="${UI_STYLES.STATS_BAR.VALUE}">${count}<span class="text-xs font-normal ml-0.5 text-gray-400">件</span></span>
                 </div>
                 <div class="w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
-                <div class="flex flex-col items-center">
-                    <span class="text-[10px] text-gray-400 uppercase tracking-wider">Total</span>
-                    <span class="font-bold text-base text-blue-600 dark:text-blue-400">${totalTimeText}</span>
+                <div class="${UI_STYLES.STATS_BAR.ITEM}">
+                    <span class="${UI_STYLES.STATS_BAR.LABEL}">Total</span>
+                    <span class="${UI_STYLES.STATS_BAR.VALUE} ${UI_STYLES.STATS_BAR.HIGHLIGHT}">${totalTimeText}</span>
                 </div>
                 <div class="w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
-                <div class="flex flex-col items-center">
-                    <span class="text-[10px] text-gray-400 uppercase tracking-wider">Avg</span>
+                <div class="${UI_STYLES.STATS_BAR.ITEM}">
+                    <span class="${UI_STYLES.STATS_BAR.LABEL}">Avg</span>
                     <span class="font-medium text-sm">${avgMinutes}<span class="text-xs ml-0.5">min/件</span></span>
                 </div>
             </div>
