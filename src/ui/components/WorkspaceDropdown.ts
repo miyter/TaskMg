@@ -1,24 +1,24 @@
-﻿// @ts-nocheck
 /**
  * 更新日: 2025-12-21
  * 内容: XSS対策(textContent採用)、冪等性の確保、イベントデータの直接利用によるレースコンディション回避
+ * TypeScript化: 2025-12-29
  */
-
-import { setCurrentWorkspaceId, getCurrentWorkspaceId, getWorkspaces } from '../../store/workspace';
-import { showSettingsModal } from '../settings.js';
-import { showWorkspaceModal } from '../modals/workspace-modal';
+import { Workspace } from '../../store/schema';
+import { getCurrentWorkspaceId, setCurrentWorkspaceId } from '../../store/workspace';
 import { showItemContextMenu } from '../features/sidebar/sidebar-components';
+import { showWorkspaceModal } from '../modals/workspace-modal';
+import { showSettingsModal } from '../settings/settings.js';
 
 const CLASSES = {
     MENU_VISIBLE: ['opacity-100', 'visible', 'scale-100', 'pointer-events-auto'],
     MENU_INVISIBLE: ['opacity-0', 'invisible', 'scale-95', 'pointer-events-none']
 };
 
-let menuEl = null;
-let triggerEl = null;
+let menuEl: HTMLElement | null = null;
+let triggerEl: HTMLElement | null = null;
 let isInitialized = false;
 
-function setMenuVisible(visible) {
+function setMenuVisible(visible: boolean) {
     if (!menuEl) return;
 
     if (visible) {
@@ -32,8 +32,8 @@ function setMenuVisible(visible) {
     }
 }
 
-const handleOutsideClick = (e) => {
-    if (menuEl && !menuEl.contains(e.target) && triggerEl && !triggerEl.contains(e.target)) {
+const handleOutsideClick = (e: MouseEvent) => {
+    if (menuEl && !menuEl.contains(e.target as Node) && triggerEl && !triggerEl.contains(e.target as Node)) {
         setMenuVisible(false);
     }
 };
@@ -53,7 +53,7 @@ export function initWorkspaceDropdown() {
 
     triggerEl.onclick = (e) => {
         e.stopPropagation();
-        const isOpen = menuEl.classList.contains('opacity-100');
+        const isOpen = menuEl!.classList.contains('opacity-100');
         setMenuVisible(!isOpen);
     };
 
@@ -61,7 +61,7 @@ export function initWorkspaceDropdown() {
     if (settingsBtn) settingsBtn.onclick = () => { setMenuVisible(false); showSettingsModal(); };
 
     // ワークスペース変更イベントを購読
-    document.addEventListener('workspace-changed', (e) => {
+    document.addEventListener('workspace-changed', (e: any) => {
         const { workspaceId, workspaces } = e.detail;
         updateWorkspaceDropdownUI(workspaces, workspaceId);
     });
@@ -74,7 +74,7 @@ export function initWorkspaceDropdown() {
  * @param {Array} workspaces - 最新のリスト（イベントから渡されたもの）
  * @param {string} currentId - 選択中のID
  */
-export function updateWorkspaceDropdownUI(workspaces, currentId = getCurrentWorkspaceId()) {
+export function updateWorkspaceDropdownUI(workspaces: Workspace[], currentId: string = getCurrentWorkspaceId() || '') {
     const listContainer = document.getElementById('workspace-list');
     const label = document.getElementById('workspace-label');
 
@@ -92,7 +92,7 @@ export function updateWorkspaceDropdownUI(workspaces, currentId = getCurrentWork
 /**
  * メニュー項目のレンダリング（XSS対策済み）
  */
-function renderWorkspaceMenu(workspaces, container, currentId) {
+function renderWorkspaceMenu(workspaces: Workspace[], container: HTMLElement, currentId: string) {
     container.innerHTML = '';
 
     workspaces.forEach(ws => {
@@ -117,16 +117,19 @@ function renderWorkspaceMenu(workspaces, container, currentId) {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
             `;
-            btn.appendChild(icon.firstElementChild);
+            if (icon.firstElementChild) {
+                btn.appendChild(icon.firstElementChild);
+            }
         }
 
         btn.onclick = () => {
-            if (!isCurrent) setCurrentWorkspaceId(ws.id);
+            if (!isCurrent) setCurrentWorkspaceId(ws.id!);
             setMenuVisible(false);
         };
 
         btn.oncontextmenu = (e) => {
             e.preventDefault();
+            // @ts-ignore
             showItemContextMenu(e, 'workspace', ws);
         };
 

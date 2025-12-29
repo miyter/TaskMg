@@ -1,21 +1,31 @@
-﻿// @ts-nocheck
-// @miyter:20251221
-// タスク単体（1行分）の描画とイベント
+/**
+ * タスク単体（1行分）の描画とイベント
+ * TypeScript化: 2025-12-29
+ */
 
+import { Project, Task, TimeBlock } from '../../store/schema';
 import { updateTaskStatus } from '../../store/store';
 import { getTimeBlocks } from '../../store/timeblocks';
 import { formatDateCompact, getTaskDateColor } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { openTaskEditModal } from '../modals/task-modal';
-import { toggleTaskSelection } from '../state/ui-state.js';
-import { showTaskContextMenu } from './TaskContextMenu.js';
+import { SelectionState, toggleTaskSelection } from '../state/ui-state';
+import { showTaskContextMenu } from './TaskContextMenu';
 
-export function createTaskItem(task, allProjects, selectionState = { isSelectionMode: false, selectedIds: new Set() }, context = {}) {
+
+interface TaskItemContext {
+    timeBlockId?: string | null;
+    duration?: number | null;
+    [key: string]: any;
+}
+
+export function createTaskItem(task: Task, allProjects: Project[], selectionState: SelectionState = { isSelectionMode: false, selectedIds: new Set() }, context: TaskItemContext = {}) {
     const { isSelectionMode, selectedIds } = selectionState;
-    const isSelected = selectedIds.has(task.id);
+    const isSelected = task.id ? selectedIds.has(task.id) : false;
 
     const li = document.createElement('li');
-    li.setAttribute('data-id', task.id);
+    if (task.id) li.setAttribute('data-id', task.id);
+
     // 選択モード以外はドラッグ可能 (所要時間フィルタ時は順序不定のため不可)
     // context.duration != null を判定
     const isDurationView = context.duration !== null && context.duration !== undefined;
@@ -24,14 +34,15 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
     const isCompleted = task.status === 'completed';
     const dateText = formatDateCompact(task.dueDate);
     const dateColorClass = getTaskDateColor(task.dueDate);
-    const isRecurring = !!task.recurrence;
+    const isRecurring = !!(task.recurrence && task.recurrence.type !== 'none');
     const isOneTime = !!task.dueDate && !isRecurring;
 
-    const timeBlocks = getTimeBlocks();
+    // @ts-ignore: getTimeBlocks() returns possibly untyped
+    const timeBlocks = getTimeBlocks() as TimeBlock[];
     const timeBlock = task.timeBlockId ? timeBlocks.find(tb => tb.id === task.timeBlockId) : null;
 
     // コンテキストに応じた表示制御
-    // 時間帯フィルタ中は時間帯バッジを非表示(unassigned時も同様だが、unassignedはリスト上でバッジが出てもいいかもしれないが、仕様通りフィルタ時は非表示とする)
+    // 時間帯フィルタ中は時間帯バッジを非表示
     const showTimeBlock = context.timeBlockId === null || context.timeBlockId === undefined;
     // 所要時間フィルタ中は所要時間バッジを非表示
     const showDuration = context.duration === null || context.duration === undefined;
@@ -78,9 +89,9 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
 
     // ハンバーガーアイコンを削除し、全体をドラッグハンドル化
     li.innerHTML = `
-    < div class="task-checkbox mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors z-10 ${checkboxClass}" >
+    <div class="task-checkbox mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors z-10 ${checkboxClass}" >
         ${checkboxContent}
-        </div >
+        </div>
 
     <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 items-center pointer-events-none">
         <div class="col-span-1 sm:col-span-8 flex flex-wrap sm:flex-nowrap items-baseline gap-x-2 gap-y-0.5 pointer-events-auto min-w-0 pr-1">
@@ -109,26 +120,28 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
     // ドラッグイベント
     if (!isSelectionMode && !isDurationView) {
         li.addEventListener('dragstart', (e) => {
-            // チェックボックス等の上ではドラッグ開始しないように制御が必要かもしれないが、
-            // 標準動作ではインタラクティブ要素以外をつかめばドラッグできる。
-            // 明示的にチェックボックスを除外
-            if (e.target.closest('.task-checkbox')) {
+            // チェックボックス等の上ではドラッグ開始しないように制御
+            if (e.target instanceof HTMLElement && e.target.closest('.task-checkbox')) {
                 e.preventDefault();
                 return;
             }
 
             li.classList.add('opacity-50');
-            e.dataTransfer.setData('text/plain', task.id); // フォールバック
-            e.dataTransfer.setData('application/x-taskmg-id', task.id); // 識別用
-            e.dataTransfer.effectAllowed = 'move';
+            if (task.id) {
+                e.dataTransfer?.setData('text/plain', task.id); // フォールバック
+                e.dataTransfer?.setData('application/x-taskmg-id', task.id); // 識別用
+            }
+            if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
         });
         li.addEventListener('dragend', () => li.classList.remove('opacity-50'));
     }
 
     // チェックボックスクリック時の動作
     const cb = li.querySelector('.task-checkbox');
-    cb.addEventListener('click', async (e) => {
+    cb?.addEventListener('click', async (e) => {
         e.stopPropagation(); // ドラッグや行クリックの伝播を止める
+        if (!task.id) return;
+
         if (isSelectionMode) {
             toggleTaskSelection(task.id);
         } else {
@@ -138,7 +151,8 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
 
     // 行クリック時の動作
     li.addEventListener('click', (e) => {
-        if (e.target.closest('.task-checkbox')) return;
+        if (!task.id) return;
+        if (e.target instanceof HTMLElement && e.target.closest('.task-checkbox')) return;
 
         if (isSelectionMode) {
             toggleTaskSelection(task.id);
@@ -151,6 +165,8 @@ export function createTaskItem(task, allProjects, selectionState = { isSelection
     li.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (!task.id) return;
 
         if (isSelectionMode && !isSelected) {
             toggleTaskSelection(task.id);

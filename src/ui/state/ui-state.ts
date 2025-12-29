@@ -1,16 +1,23 @@
 
 // UI State Management
 
+export interface SelectionState {
+    isSelectionMode: boolean;
+    selectedIds: Set<string>;
+}
+
 // Selection Mode State
-export const selectionState = {
+export const selectionState: SelectionState = {
     isSelectionMode: false,
-    selectedIds: new Set(),
+    selectedIds: new Set<string>(),
 };
 
-// Listeners
-const listeners = new Set();
+type SelectionChangeCallback = (state: SelectionState) => void;
 
-export function subscribeToSelectionChange(callback) {
+// Listeners
+const listeners = new Set<SelectionChangeCallback>();
+
+export function subscribeToSelectionChange(callback: SelectionChangeCallback): () => void {
     listeners.add(callback);
     return () => listeners.delete(callback);
 }
@@ -22,7 +29,7 @@ function notifyListeners() {
     }));
 }
 
-export function toggleSelectionMode(enabled) {
+export function toggleSelectionMode(enabled: boolean) {
     selectionState.isSelectionMode = enabled;
     if (!enabled) {
         selectionState.selectedIds.clear();
@@ -30,7 +37,7 @@ export function toggleSelectionMode(enabled) {
     notifyListeners();
 }
 
-export function toggleTaskSelection(taskId) {
+export function toggleTaskSelection(taskId: string) {
     if (selectionState.selectedIds.has(taskId)) {
         selectionState.selectedIds.delete(taskId);
     } else {
@@ -39,7 +46,7 @@ export function toggleTaskSelection(taskId) {
     notifyListeners();
 }
 
-export function selectAllTasks(taskIds) {
+export function selectAllTasks(taskIds: string[]) {
     taskIds.forEach(id => selectionState.selectedIds.add(id));
     notifyListeners();
 }

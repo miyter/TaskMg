@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /**
  * 更新日: 2025-12-29
  * 内容: コンテキストメニューからのソート変更、複数選択モード対応、レイアウトの高さ調整、ヘッダータイトルの動的反映
@@ -9,7 +9,7 @@ import { renderTaskList } from './task-list.js';
 import { renderInlineInput, renderFixedAddTaskBar } from './task-input.js';
 import { sortTasks } from '../logic/sort.js';
 import { renderTimeBlockStats } from './components/TimeBlockStats.js';
-import { selectionState, subscribeToSelectionChange } from './state/ui-state.js';
+import { selectionState, subscribeToSelectionChange } from './state/ui-state';
 
 // main.js 等で利用するために再エクスポート
 export { renderTaskList };

@@ -1,8 +1,8 @@
-/**
+﻿/**
  * タスクリスト描画制御
  */
 import { createTaskItem } from './components/TaskItem.js';
-import { showTaskContextMenu } from './components/TaskContextMenu.js';
+import { showTaskContextMenu } from './components/TaskContextMenu';
 
 /**
  * タスクリストをコンテナ内に描画する

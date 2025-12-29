@@ -1,33 +1,31 @@
-﻿// @miyter:20251229
-// �^�X�N�̉E�N���b�N���j���[����
+// @miyter:20251229
+// タスクの右クリックメニュー制御
+// TypeScript化: 2025-12-29
 
+import { Task } from '../../store/schema'; // Task型インポート
 import { deleteTask, updateTask } from '../../store/store';
-import { showMessageModal } from '../components';
 import { getStartOfDay } from '../../utils/date';
+import { showMessageModal } from '../components';
 import { updateUI } from '../core/DataSyncManager.js';
-import { selectionState } from '../state/ui-state.js';
-
-// ... (existing imports)
+import { selectionState, toggleSelectionMode } from '../state/ui-state';
 
 /**
- * �ėp�I�ȃR���e�L�X�g���j���[�\��
- * @param {Object|null} task - �Ώۃ^�X�N (null�̏ꍇ�̓��X�g�S�̂̃��j���[)
- * @param {number} x - �\���ʒuX
- * @param {number} y - �\���ʒuY
+ * 汎用的なコンテキストメニュー表示
+ * @param {Task|null} task - 対象タスク (nullの場合はリスト全体のメニュー)
+ * @param {number} x - 表示位置X
+ * @param {number} y - 表示位置Y
  */
 
-// ... (existing code)
-
-function triggerSortChange(value) {
-    // �����̃\�[�g�h���b�v�_�E���̃I�v�V������N���b�N���邱�ƂŁA
-    // ���x���̍X�V�ƃf�[�^�X�V�̗�����g���K�[����
-    const options = document.querySelectorAll('.sort-option');
+function triggerSortChange(value: string) {
+    // 既存のソートドロップダウンのオプションをクリックすることで、
+    // ラベルの更新とデータ更新のロジックを再利用する
+    const options = document.querySelectorAll('.sort-option') as NodeListOf<HTMLElement>;
     const target = Array.from(options).find(opt => opt.dataset.value === value);
 
     if (target) {
         target.click();
     } else {
-        // �I�v�V������������Ȃ��ꍇ�̃t�H�[���o�b�N (���ڍX�V)
+        // オプションが見つからない場合のフォールバック（直接更新）
         const sortTrigger = document.getElementById('sort-trigger');
         if (sortTrigger) {
             sortTrigger.dataset.value = value;
@@ -36,7 +34,7 @@ function triggerSortChange(value) {
     }
 }
 
-export function showTaskContextMenu(task, x, y) {
+export function showTaskContextMenu(task: Task | null, x: number, y: number) {
     document.getElementById('task-context-menu')?.remove();
 
     const menu = document.createElement('div');
@@ -45,82 +43,82 @@ export function showTaskContextMenu(task, x, y) {
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
 
-    const closeAndExec = (cb) => {
+    const closeAndExec = (cb?: () => void) => {
         menu.remove();
         if (cb) cb();
     };
 
     const isSelectionMode = selectionState.isSelectionMode;
-    // �^�X�NID���I�����Ă��邩�`�F�b�N�Btask��null�Ȃ�I�����Ă��Ȃ�����
-    const isTargetSelected = task && selectionState.selectedIds.has(task.id);
-    // �I�𒆂̌���
+    // タスクIDが選択されているかチェック。taskがnullなら選択されていないとみなす
+    const isTargetSelected = task && task.id ? selectionState.selectedIds.has(task.id) : false;
+    // 選択数の取得
     const selectedCount = selectionState.selectedIds.size;
 
-    // �ꊇ���샂�[�h���ǂ���
+    // 一括操作モードかどうか
     const isBulk = isSelectionMode && isTargetSelected && selectedCount > 0;
 
-    // ����Ώۂ����݂��邩 (�P��^�X�N �܂��� �����I��)
+    // 操作対象が存在するか（単一タスク または 複数選択）
     const hasTarget = !!task || isBulk;
 
-    // ���ʃX�^�C��
+    // 共通スタイル
     const itemClass = "w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center justify-between group relative";
     const disabledClass = "opacity-50 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent";
 
     const chevronSvg = `<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
 
-    // ���j���[HTML�\�z
+    // メニューHTML構築
     let html = '';
 
-    // 1. ���t�ύX (�T�u���j���[)
+    // 1. 日付変更 (サブメニュー)
     html += `
         <div class="${itemClass} ${!hasTarget ? disabledClass : ''}">
-            <span>���t�ύX</span>
+            <span>日付変更</span>
             ${chevronSvg}
             ${hasTarget ? `
             <div class="absolute left-full top-0 ml-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 hidden group-hover:block min-w-[120px]">
-                <button id="ctx-date-today" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">����</button>
-                <button id="ctx-date-tomorrow" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">����</button>
-                <button id="ctx-date-next-week" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">���T</button>
+                <button id="ctx-date-today" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">今日</button>
+                <button id="ctx-date-tomorrow" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">明日</button>
+                <button id="ctx-date-next-week" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">来週</button>
             </div>
             ` : ''}
         </div>
     `;
 
-    // 2. �폜
+    // 2. 削除
     html += `
         <button id="ctx-delete" class="${itemClass} ${!hasTarget ? disabledClass : ''} text-red-600 dark:text-red-400">
-            <span>�폜</span>
+            <span>削除</span>
         </button>
     `;
 
-    // �Z�p���[�^
+    // セパレータ
     html += `<div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>`;
 
-    // 3. �^�X�N�ǉ�
+    // 3. タスク追加
     html += `
         <button id="ctx-add-task" class="${itemClass}">
-            <span>�^�X�N�ǉ�</span>
+            <span>タスク追加</span>
         </button>
     `;
 
-    // 4. ���ёւ� (�T�u���j���[)
+    // 4. 並び替え (サブメニュー)
     html += `
         <div class="${itemClass}">
-            <span>���ёւ�</span>
+            <span>並び替え</span>
             ${chevronSvg}
             <div class="absolute left-full top-0 ml-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 hidden group-hover:block min-w-[120px]">
-                <button id="ctx-sort-name" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">���O��</button>
-                <button id="ctx-sort-date" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">���t��</button>
-                <button id="ctx-sort-created" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">�쐬����</button>
+                <button id="ctx-sort-name" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">名前順</button>
+                <button id="ctx-sort-date" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">日付順</button>
+                <button id="ctx-sort-created" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">作成順</button>
             </div>
         </div>
     `;
 
-    // 5. �����I��
+    // 5. 複数選択
     html += `
         <button id="ctx-multi-select" class="${itemClass}">
             <span class="flex items-center">
-                �����I��
+                複数選択
                 ${isSelectionMode ? '<svg class="w-4 h-4 ml-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : ''}
             </span>
         </button>
@@ -129,16 +127,16 @@ export function showTaskContextMenu(task, x, y) {
     menu.innerHTML = html;
     document.body.appendChild(menu);
 
-    // --- ���W�b�N���� ---
+    // --- ロジック実装 ---
 
-    // �Ώۃ^�X�N���X�g�̓��� (�ꊇ or �P��)
-    const getTargetIds = () => {
+    // 対象タスクリストの取得（一括 or 単一）
+    const getTargetIds = (): string[] => {
         if (isBulk) return Array.from(selectionState.selectedIds);
-        if (task) return [task.id];
+        if (task && task.id) return [task.id];
         return [];
     };
 
-    const handleUpdate = async (updates) => {
+    const handleUpdate = async (updates: Partial<Task>) => {
         const ids = getTargetIds();
         if (ids.length === 0) return;
 
@@ -148,24 +146,27 @@ export function showTaskContextMenu(task, x, y) {
         });
     };
 
-    // 1. ���t�ύX�n���h��
+    // 1. 日付変更ハンドラ
     if (hasTarget) {
         menu.querySelector('#ctx-date-today')?.addEventListener('click', () => {
+            // @ts-ignore: Timestamp conversion handled in store
             handleUpdate({ dueDate: getStartOfDay(new Date()) });
         });
         menu.querySelector('#ctx-date-tomorrow')?.addEventListener('click', () => {
             const d = getStartOfDay(new Date()); d.setDate(d.getDate() + 1);
+            // @ts-ignore
             handleUpdate({ dueDate: d });
         });
         menu.querySelector('#ctx-date-next-week')?.addEventListener('click', () => {
             const d = getStartOfDay(new Date()); d.setDate(d.getDate() + (8 - d.getDay()));
+            // @ts-ignore
             handleUpdate({ dueDate: d });
         });
 
-        // 2. �폜�n���h��
+        // 2. 削除ハンドラ
         menu.querySelector('#ctx-delete')?.addEventListener('click', () => {
             const ids = getTargetIds();
-            const msg = ids.length > 1 ? `${ids.length}���̃^�X�N��폜���܂����H` : '�폜���܂����H';
+            const msg = ids.length > 1 ? `${ids.length}件のタスクを削除しますか？` : '削除しますか？';
 
             closeAndExec(() => {
                 showMessageModal(msg, async () => {
@@ -177,34 +178,33 @@ export function showTaskContextMenu(task, x, y) {
         });
     }
 
-    // 3. �^�X�N�ǉ�
+    // 3. タスク追加
     menu.querySelector('#ctx-add-task')?.addEventListener('click', () => {
         closeAndExec(() => {
-            const input = document.getElementById('task-input-fld');
+            const input = document.getElementById('task-input-fld') as HTMLInputElement;
             if (input) input.focus();
         });
     });
 
-    // 4. ���ёւ�
+    // 4. 並び替え
     menu.querySelector('#ctx-sort-name')?.addEventListener('click', () => closeAndExec(() => triggerSortChange('title_asc')));
     menu.querySelector('#ctx-sort-date')?.addEventListener('click', () => closeAndExec(() => triggerSortChange('dueDate_asc')));
     menu.querySelector('#ctx-sort-created')?.addEventListener('click', () => closeAndExec(() => triggerSortChange('createdAt_desc')));
 
-    // 5. �����I��
+    // 5. 複数選択
     menu.querySelector('#ctx-multi-select')?.addEventListener('click', () => {
         closeAndExec(() => {
             toggleSelectionMode(!isSelectionMode);
         });
     });
 
-    // ���鏈��
-    const dismissMenu = (e) => {
-        if (!menu.contains(e.target)) {
+    // 閉じる処理
+    const dismissMenu = (e: MouseEvent) => {
+        if (!menu.contains(e.target as Node)) {
             menu.remove();
             document.removeEventListener('click', dismissMenu);
         }
     };
-    // �����N���b�N�C�x���g�����΂���̂�h��
+    // 即時クリックイベント拾わないように遅延
     setTimeout(() => document.addEventListener('click', dismissMenu), 0);
 }
-

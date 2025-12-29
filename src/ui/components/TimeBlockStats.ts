@@ -1,26 +1,28 @@
-﻿// @ts-nocheck
 /**
  * 時間帯フィルタ時の工数サマリーコンポーネント
  * 改修: 時間帯外（一般ビュー）での集計表示に対応
+ * TypeScript化: 2025-12-29
  */
+import { Task, TimeBlock } from '../../store/schema';
 import { getTimeBlockById } from '../../store/timeblocks';
 import { UI_STYLES } from '../core/ui-style-constants';
 
-export function renderTimeBlockStats(container, tasks, timeBlockId) {
+export function renderTimeBlockStats(container: HTMLElement, tasks: Task[], timeBlockId: string | null) {
     // 既存のコンテナ内をクリア
     container.innerHTML = '';
 
     // 時間帯情報の取得（あれば）
-    const timeBlock = timeBlockId ? getTimeBlockById(timeBlockId) : null;
+    // @ts-ignore
+    const timeBlock: TimeBlock | null = timeBlockId ? getTimeBlockById(timeBlockId) : null;
 
     // タスク合計計算 (分)
     const totalTaskMinutes = tasks.reduce((sum, task) => {
-        const duration = parseInt(task.duration, 10);
-        return sum + (isNaN(duration) ? 0 : duration);
+        const duration = task.duration || 0; // number | undefined
+        return sum + duration;
     }, 0);
 
     // 時間表示フォーマット (例: 1.50h)
-    const formatTime = (mins) => {
+    const formatTime = (mins: number) => {
         return (mins / 60).toFixed(2) + 'h';
     };
 
@@ -83,8 +85,6 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
         `;
     } else {
         // B. 一般集計モード (タスク数・合計時間・平均)
-        // タスク0件なら表示しない、または"0件"と出すか？ -> 情報不足解消のため出す方が親切
-
         const count = tasks.length;
         const avgMinutes = count > 0 ? (totalTaskMinutes / count) : 0;
         const totalTimeText = formatTime(totalTaskMinutes);
@@ -118,7 +118,7 @@ export function renderTimeBlockStats(container, tasks, timeBlockId) {
 /**
  * "HH:MM" 形式の開始・終了時間から分数を計算
  */
-function calculateMinutes(start, end) {
+function calculateMinutes(start: string, end: string): number {
     const [startH, startM] = start.split(':').map(Number);
     const [endH, endM] = end.split(':').map(Number);
 
