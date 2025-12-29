@@ -101,10 +101,15 @@
         @apply bg-white/70 dark:bg-gray-900/60 backdrop-blur-md border border-white/20 dark:border-gray-800/30 shadow-glass;
     }
 
-    /* カスタムチェックボックス用のチェックマーク */
-    input[type="checkbox"][class*="appearance-none"]:checked::before {
+    /* カスタムチェックボックスのチェックマーク */
+    input[type="checkbox"].appearance-none:checked::before {
         content: '';
-        @apply absolute inset-0 m-auto w-2 h-3 border-r-2 border-b-2 border-white rotate-45 translate-y-[-2px];
+        @apply absolute inset-0 m-auto w-2 h-3 border-r-2 border-b-2 border-white transform rotate-45 translate-y-[-1px];
+    }
+
+    /* フォーカス時のリングを強化（任意） */
+    input[type="checkbox"].appearance-none:focus {
+        @apply ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-gray-800;
     }
 
     /* カスタムスクロールバー */
