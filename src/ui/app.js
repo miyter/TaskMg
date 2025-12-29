@@ -1,7 +1,7 @@
-/**
+﻿/**
  * アプリケーション・デリゲーター
  */
-import { runInitialization } from './core/AppInitializer.js';
+import { runInitialization } from './core/AppInitializer';
 
 /**
  * アプリケーションの初期化を開始

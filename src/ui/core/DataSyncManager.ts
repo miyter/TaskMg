@@ -1,20 +1,37 @@
-﻿/**
+/**
  * 更新日: 2025-12-27
  * 内容: ReferenceError対策のため変数をトップレベルで確実に定義し、
  * データ同期ロジックを再構築
+ * TypeScript化: 2025-12-29
  */
 
+import { APP_EVENTS } from '../../core/event-constants';
 import { auth } from '../../core/firebase';
-import { subscribeToTasks } from '../../store/store';
-import { subscribeToProjects } from '../../store/projects';
+import { clearFiltersCache, getFilters, subscribeToFilters } from '../../store/filters';
 import { subscribeToLabels } from '../../store/labels';
-import { subscribeToTimeBlocks, clearTimeBlocksCache } from '../../store/timeblocks';
-import { subscribeToFilters, clearFiltersCache } from '../../store/filters';
+import { getLabels } from '../../store/labels-raw.js';
+import { subscribeToProjects } from '../../store/projects';
+import { getProjects } from '../../store/projects-raw.js';
+import { subscribeToTasks } from '../../store/store';
+import { getTasks } from '../../store/store-raw.js';
+import { clearTimeBlocksCache, getTimeBlocks, subscribeToTimeBlocks } from '../../store/timeblocks';
 import { getCurrentWorkspaceId } from '../../store/workspace';
 import { updateView } from '../layout/ui-view-manager';
 
-// 変数宣言（巻き上げ対策として const/let を明示的にトップレベル配置）
-const subscriptions = {
+type Unsubscribe = (() => void) | null;
+
+interface Subscriptions {
+    tasks: Unsubscribe;
+    projects: Unsubscribe;
+    labels: Unsubscribe;
+    timeBlocks: Unsubscribe;
+    filters: Unsubscribe;
+    workspaces: Unsubscribe;
+    [key: string]: Unsubscribe;
+}
+
+// 変数宣言
+const subscriptions: Subscriptions = {
     tasks: null,
     projects: null,
     labels: null,
@@ -24,16 +41,15 @@ const subscriptions = {
 };
 
 let isDataSyncing = false;
-let updateTimer = null;
+let updateTimer: number | null = null;
 
 /**
  * UI全体を更新する
  */
-export function updateUI() {
+export function updateUI(): void {
     if (updateTimer) return;
 
     updateTimer = requestAnimationFrame(() => {
-        // ストアから直接最新データを取得（SSOT）
         const tasks = getData.tasks();
         const projects = getData.projects();
         const labels = getData.labels();
@@ -48,7 +64,7 @@ export function updateUI() {
 /**
  * 特定のデータ種別が更新されたことを通知
  */
-function notifyUpdate(eventType) {
+function notifyUpdate(eventType: string): void {
     document.dispatchEvent(new CustomEvent(eventType));
     updateUI();
 }
@@ -56,10 +72,7 @@ function notifyUpdate(eventType) {
 /**
  * 同期開始
  */
-
-import { APP_EVENTS } from '../../core/event-constants';
-
-export function startAllSubscriptions(userId) {
+export function startAllSubscriptions(userId?: string): void {
     if (!auth?.currentUser) {
         console.warn('[DataSync] No authenticated user. Cannot start subscriptions.');
         return;
@@ -76,8 +89,6 @@ export function startAllSubscriptions(userId) {
     isDataSyncing = true;
     console.log('[DataSync] Starting subscriptions for workspace:', workspaceId);
 
-    // データはStore側でキャッシュされるため、ここでは受け取る必要はないが
-    // コールバックは更新通知のために必要
     subscriptions.tasks = subscribeToTasks(workspaceId, () => notifyUpdate(APP_EVENTS.TASKS_UPDATED));
     subscriptions.projects = subscribeToProjects(workspaceId, () => notifyUpdate(APP_EVENTS.PROJECTS_UPDATED));
     subscriptions.labels = subscribeToLabels(workspaceId, () => notifyUpdate(APP_EVENTS.LABELS_UPDATED));
@@ -88,7 +99,7 @@ export function startAllSubscriptions(userId) {
 /**
  * 同期停止
  */
-export function stopDataSync(stopWorkspaceSync = false) {
+export function stopDataSync(stopWorkspaceSync = false): void {
     if (isDataSyncing || stopWorkspaceSync) {
         console.log('[DataSync] Stopping data sync...');
     }
@@ -96,13 +107,11 @@ export function stopDataSync(stopWorkspaceSync = false) {
     Object.keys(subscriptions).forEach(key => {
         if (key === 'workspaces' && !stopWorkspaceSync) return;
         if (typeof subscriptions[key] === 'function') {
-            subscriptions[key]();
+            subscriptions[key]!();
             subscriptions[key] = null;
         }
     });
 
-    // キャッシュクリア（Store側のキャッシュクリアメソッドを呼ぶべきだが、現状の実装ではStoreの購読解除時に空配列をコールバックしているので
-    // UI更新によって実質クリアされる。厳密にはStoreにclearCacheメソッドを作るのが良い）
     clearTimeBlocksCache();
     clearFiltersCache();
 
@@ -111,12 +120,6 @@ export function stopDataSync(stopWorkspaceSync = false) {
 }
 
 // --- Getters (Storeへのプロキシ) ---
-import { getTasks } from '../../store/store-raw.js';
-import { getProjects } from '../../store/projects-raw.js';
-import { getLabels } from '../../store/labels-raw.js';
-import { getTimeBlocks } from '../../store/timeblocks';
-import { getFilters } from '../../store/filters';
-
 export const getData = {
     tasks: getTasks,
     projects: getProjects,
@@ -126,6 +129,6 @@ export const getData = {
     workspaceId: () => getCurrentWorkspaceId()
 };
 
-export function getWorkspaceUnsubscribe() { return subscriptions.workspaces; }
-export function setWorkspaceUnsubscribe(unsub) { subscriptions.workspaces = unsub; }
-export function isSyncing() { return isDataSyncing; }
+export function getWorkspaceUnsubscribe(): Unsubscribe { return subscriptions.workspaces; }
+export function setWorkspaceUnsubscribe(unsub: Unsubscribe): void { subscriptions.workspaces = unsub; }
+export function isSyncing(): boolean { return isDataSyncing; }

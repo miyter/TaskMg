@@ -1,36 +1,36 @@
-﻿// @ts-nocheck
 /**
  * 更新日: 2025-12-27
  * 内容: 存在しない toggle-completed-btn のリスナーを削除（ランタイムエラー修正）
+ * TypeScript化: 2025-12-29
  */
 
+import { APP_EVENTS } from '../../core/event-constants';
 import { auth } from '../../core/firebase';
+import { setupCustomSortDropdown } from '../components/SortDropdown';
 import { setCurrentFilter } from '../layout/ui-view-manager';
 import { startAllSubscriptions, stopDataSync, updateUI } from './DataSyncManager.js';
-import { setupCustomSortDropdown } from '../components/SortDropdown.js';
-import { isWindowMode, getInitialViewMode } from './window-manager.js';
-import { APP_EVENTS } from '../../core/event-constants';
+import { getInitialViewMode, isWindowMode } from './window-manager';
 
 /**
  * デバウンス関数（高頻度イベントの間引き）
  */
-function debounce(func, wait) {
-    let timeout;
-    return (...args) => {
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
+    let timeout: number | undefined;
+    return (...args: Parameters<T>) => {
         clearTimeout(timeout);
-        timeout = setTimeout(() => func(...args), wait);
+        timeout = window.setTimeout(() => func(...args), wait);
     };
 }
 
 /**
  * アプリケーション全体のイベントリスナーを設定
  */
-export function setupGlobalEventListeners() {
+export function setupGlobalEventListeners(): void {
     // 初回ログインフラグ（ページ状態復元用）
     let isFirstWorkspaceLoad = true;
 
     // 1. ワークスペース切り替え
-    document.addEventListener(APP_EVENTS.WORKSPACE_CHANGED, (e) => {
+    document.addEventListener(APP_EVENTS.WORKSPACE_CHANGED, (e: any) => {
         const { workspaceId } = e.detail;
         console.log('[EventManager] Workspace changed to:', workspaceId);
 
@@ -49,7 +49,7 @@ export function setupGlobalEventListeners() {
                     }
                 } else {
                     try {
-                        const saved = JSON.parse(localStorage.getItem('lastPage'));
+                        const saved = JSON.parse(localStorage.getItem('lastPage') || 'null');
                         // 設定画面は自動で開かないようにする
                         if (saved && saved.page === 'settings') {
                             setCurrentFilter({ type: 'inbox' });
@@ -75,7 +75,7 @@ export function setupGlobalEventListeners() {
     });
 
     // 2. ルーティング（サイドバー等）
-    document.addEventListener(APP_EVENTS.ROUTE_CHANGE, (e) => {
+    document.addEventListener(APP_EVENTS.ROUTE_CHANGE, (e: any) => {
         const { page, id } = e.detail;
         setCurrentFilter({ type: page, id: id || null });
 
@@ -87,7 +87,6 @@ export function setupGlobalEventListeners() {
     });
 
     // 3. 検索・フィルタUI
-    // 検索入力は頻度が高いのでデバウンスを適用して負荷軽減
     const debouncedSearch = debounce(() => updateUI(), 300);
     document.getElementById('search-input')?.addEventListener('input', debouncedSearch);
 

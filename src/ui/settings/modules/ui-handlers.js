@@ -1,4 +1,4 @@
-import { setFont, setFontSize, setDensity } from '../../core/ui-settings-manager.js';
+﻿import { setFont, setFontSize, setDensity } from '../../core/ui-settings-manager';
 import { setupRadioGroupHandler } from './common-handlers.js';
 
 export function setupDensityHandler() {

@@ -6,7 +6,7 @@ import { showSettingsModal } from '../../settings.js';
 import { showFilterModal } from '../../modals/filter-modal';
 import { showTimeBlockModal } from '../timeblock/timeblock-modal.js';
 import { showCustomContextMenu } from './sidebar-components';
-import { openInNewWindow } from '../../core/window-manager.js';
+import { openInNewWindow } from '../../core/window-manager';
 
 export function setupSidebarEvents() {
     const UI = getSidebarUI();
