@@ -35,20 +35,24 @@ export function renderKPIItem(label, value, id, colorClass) {
  */
 export function buildDashboardViewHTML() {
     return `
-        <div class="space-y-4 animate-fade-in p-1">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white px-1 mb-2">ダッシュボード</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                ${DASHBOARD_CONFIG.KPI_ITEMS.map(item => renderKPIItem(item.label, '-', item.id, item.color)).join('')}
+        <div class="max-w-6xl mx-auto px-4 h-full max-h-[700px] flex flex-col overflow-hidden">
+            <div class="flex-shrink-0 mb-4">
+                <h2 class="font-bold text-gray-800 dark:text-white">ダッシュボード</h2>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                ${DASHBOARD_CONFIG.CHARTS.map(chart => createGlassCard(`
-                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full ${chart.dot}"></span> ${escapeHTML(chart.label)}
-                    </h3>
-                    <div class="${DASHBOARD_CONFIG.CLASSES.CHART_CONTAINER}">
-                        <canvas id="${chart.id}Chart"></canvas>
-                    </div>
-                `, `${DASHBOARD_CONFIG.CLASSES.CHART_CARD} ${chart.fullWidth ? 'md:col-span-2' : ''}`)).join('')}
+            <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 animate-fade-in">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    ${DASHBOARD_CONFIG.KPI_ITEMS.map(item => renderKPIItem(item.label, '-', item.id, item.color)).join('')}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${DASHBOARD_CONFIG.CHARTS.map(chart => createGlassCard(`
+                        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full ${chart.dot}"></span> ${escapeHTML(chart.label)}
+                        </h3>
+                        <div class="${DASHBOARD_CONFIG.CLASSES.CHART_CONTAINER}">
+                            <canvas id="${chart.id}Chart"></canvas>
+                        </div>
+                    `, `${DASHBOARD_CONFIG.CLASSES.CHART_CARD} ${chart.fullWidth ? 'md:col-span-2' : ''}`)).join('')}
+                </div>
             </div>
         </div>
     `;
@@ -81,13 +85,17 @@ export function buildSearchViewHTML(projects = []) {
     `;
 
     return `
-        <div class="max-w-3xl mx-auto mt-4">
-            <h2 class="text-xl font-bold mb-6 text-gray-800 dark:text-white flex items-center gap-2 px-1">
-                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                タスク検索
-            </h2>
-            ${createGlassCard(formHTML, 'p-8 mb-8')}
-            <div id="search-results-container"></div>
+        <div class="max-w-6xl mx-auto px-4 h-full max-h-[700px] flex flex-col">
+            <div class="flex-shrink-0 mb-4">
+                <h2 class="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    タスク検索
+                </h2>
+            </div>
+            <div class="flex-shrink-0 mb-6">
+                ${createGlassCard(formHTML, 'p-6')}
+            </div>
+            <div id="search-results-container" class="flex-1 min-h-0 overflow-y-auto custom-scrollbar"></div>
         </div>
     `;
 }

@@ -1,10 +1,11 @@
-// @miyter:20251229
+﻿// @miyter:20251229
 // タスクの右クリックメニュー制御
 
 import { deleteTask, updateTask } from '../../store/store.js';
 import { showMessageModal } from '../components.js';
 import { getStartOfDay } from '../../utils/date.js';
 import { updateUI } from '../core/DataSyncManager.js';
+import { selectionState } from '../state/ui-state.js';
 
 // ... (existing imports)
 
