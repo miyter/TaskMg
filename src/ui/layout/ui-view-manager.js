@@ -96,6 +96,7 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
             case 'duration':
                 return `${currentFilter.id}分`;
             case 'filter':
+            case 'custom': // sidebar sends 'custom'
                 return allFilters.find(f => f.id === currentFilter.id)?.name || 'フィルター';
             case 'today': return '今日';
             case 'upcoming': return '今後';
@@ -113,6 +114,9 @@ export function updateView(allTasks, allProjects, allLabels, allTimeBlocks = [],
         labelId: currentFilter.type === 'label' ? currentFilter.id : null,
         timeBlockId: currentFilter.type === 'timeblock' ? currentFilter.id : null,
         duration: currentFilter.type === 'duration' ? currentFilter.id : null,
+        savedFilter: (currentFilter.type === 'custom' || currentFilter.type === 'filter')
+            ? allFilters.find(f => f.id === currentFilter.id)
+            : null,
         sortCriteria,
         title: resolveTitle()
     };
