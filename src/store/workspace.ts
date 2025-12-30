@@ -29,25 +29,22 @@ import { APP_EVENTS } from '../core/event-constants';
 
 import { Workspace, WorkspaceSchema } from './schema';
 
-const STORAGE_KEY = 'currentWorkspaceId';
+import { useWorkspaceStore } from "./ui/workspace-store";
+
 const CHANGE_EVENT = APP_EVENTS.WORKSPACE_CHANGED;
 
 let unsubscribe: Unsubscribe | null = null;
-let _workspaces: Workspace[] = [];
 
 export function getWorkspaces(): Workspace[] {
-    return _workspaces;
+    return useWorkspaceStore.getState().workspaces;
 }
 
 /**
  * ワークスペース一覧をリアルタイム購読
  */
-export function subscribeToWorkspaces(userId: string, onUpdate: (workspaces: Workspace[]) => void): Unsubscribe {
-    // コールバックの安全な正規化（nullやundefined対策の決定版）
-    const safeOnUpdate = typeof onUpdate === 'function' ? onUpdate : () => { };
-
+export function subscribeToWorkspaces(userId: string, onUpdate?: (workspaces: Workspace[]) => void): Unsubscribe {
     if (!userId) {
-        safeOnUpdate([]);
+        if (onUpdate) onUpdate([]);
         return () => { };
     }
 
@@ -56,29 +53,28 @@ export function subscribeToWorkspaces(userId: string, onUpdate: (workspaces: Wor
     const path = paths.workspaces(userId);
     const q = query(collection(db, path), orderBy('createdAt', 'asc'));
 
+    const store = useWorkspaceStore.getState();
 
     unsubscribe = onSnapshot(q, (snapshot) => {
-        // @ts-ignore: Firestore data to Zod schema validation could be added here
         const items: Workspace[] = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
 
-        _workspaces = items;
+        store.setWorkspaces(items);
 
         if (items.length === 0 && !snapshot.metadata.hasPendingWrites) {
-            // ワークスペースが0個の場合、デフォルトを作成
-            // 作成後、再度 onSnapshot が発火して正しく処理される
-            safeOnUpdate([]);
+            if (onUpdate) onUpdate([]);
             ensureDefaultWorkspace().catch(err => console.error('[Workspace] Default creation error:', err));
         } else {
             const currentId = validateCurrentWorkspace(items);
-            safeOnUpdate(items);
+            if (onUpdate) onUpdate(items);
             dispatchWorkspaceEvent(currentId, items);
         }
     }, (error) => {
         console.error("[Workspace] Subscription error:", error);
-        safeOnUpdate([]);
+        store.setWorkspaces([]);
+        if (onUpdate) onUpdate([]);
     });
 
     return unsubscribe;
@@ -100,29 +96,30 @@ async function ensureDefaultWorkspace() {
 
 function validateCurrentWorkspace(items: Workspace[]): string | null {
     if (items.length === 0) return null;
-    let currentId = getCurrentWorkspaceId();
+    const store = useWorkspaceStore.getState();
+    let currentId = store.currentWorkspaceId;
     const exists = currentId ? items.some(w => w.id === currentId) : false;
+
     if (!currentId || !exists) {
         currentId = items[0].id!;
-        localStorage.setItem(STORAGE_KEY, currentId);
+        store.setCurrentWorkspaceId(currentId);
     }
     return currentId;
 }
 
 export function getCurrentWorkspaceId(): string | null {
-    return localStorage.getItem(STORAGE_KEY);
+    return useWorkspaceStore.getState().currentWorkspaceId;
 }
 
 export function setCurrentWorkspaceId(id: string) {
     if (!id) return;
-    const oldId = localStorage.getItem(STORAGE_KEY);
-    if (oldId === id) return;
-    localStorage.setItem(STORAGE_KEY, id);
-    dispatchWorkspaceEvent(id, _workspaces);
+    const store = useWorkspaceStore.getState();
+    if (store.currentWorkspaceId === id) return;
+    store.setCurrentWorkspaceId(id);
+    dispatchWorkspaceEvent(id, store.workspaces);
 }
 
 function dispatchWorkspaceEvent(id: string | null, workspaces: Workspace[]) {
-    // @ts-ignore
     const event = new CustomEvent(CHANGE_EVENT, {
         detail: { workspaceId: id, workspaces: workspaces }
     });

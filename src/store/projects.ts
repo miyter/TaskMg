@@ -30,7 +30,11 @@ function requireAuthAndWorkspace() {
 }
 
 // 同期取得用のエクスポート
-export const getProjects = getProjectsRaw;
+export const getProjects = (workspaceId?: string): Project[] => {
+    const targetId = workspaceId || getCurrentWorkspaceId();
+    if (!targetId) return [];
+    return getProjectsRaw(targetId);
+};
 
 /**
  * プロジェクトのリアルタイム購読

@@ -40,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
     return (
         <aside
             className={cn(
-                "h-full bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 flex flex-col group relative",
+                "h-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-300 flex flex-col group relative",
                 isSidebarOpen ? "translate-x-0" : "-translate-x-full",
                 // Mobile absolute positioning
                 "fixed md:relative z-20 md:z-0 shadow-xl md:shadow-none"

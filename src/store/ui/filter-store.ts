@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { persist } from 'zustand/middleware';
+import { SortCriteria } from '../../logic/sort';
 
 export type FilterType = 'inbox' | 'today' | 'upcoming' | 'important' | 'project' | 'label' | 'search' | 'all' | 'timeblock' | 'duration' | 'custom' | 'wizard' | 'target-dashboard' | 'wiki';
 
@@ -11,14 +12,14 @@ interface FilterState {
 
     // View Options
     showCompleted: boolean;
-    sortCriteria: string; // 'createdAt_desc', 'dueDate_asc', etc.
+    sortCriteria: SortCriteria; // 'createdAt_desc', 'dueDate_asc', etc.
 
     // Actions
     setFilter: (type: FilterType, id?: string | null) => void;
     setSearchQuery: (query: string) => void;
     clearFilter: () => void;
     setShowCompleted: (show: boolean) => void;
-    setSortCriteria: (criteria: string) => void;
+    setSortCriteria: (criteria: SortCriteria) => void;
 }
 
 export const useFilterStore = create<FilterState>()(

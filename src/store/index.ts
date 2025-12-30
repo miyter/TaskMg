@@ -1,104 +1,33 @@
 /**
- * 更新日: 2025-12-21
- * 内容: subscribeToTasks の引数シグネチャを (workspaceId, callback) に統一
- * TypeScript化: 2025-12-29
+ * Store Barrel ファイル
+ * 全てのストア機能を統合してエクスポート
+ * 更新日: 2025-12-30
  */
 
 import { auth } from '../core/firebase';
-import { getCurrentWorkspaceId } from './workspace';
-
-import {
-    createBackupData as createBackupDataRaw,
-    importBackupData as importBackupDataRaw
-} from './backup';
-import { addProject, deleteProject, updateProject } from './projects';
+import { Unsubscribe } from '../core/firebase-sdk';
 import { Task } from './schema';
-import {
-    addTaskRaw,
-    deleteTaskRaw,
-    getTaskByIdRaw,
-    updateTaskRaw,
-    updateTaskStatusRaw
-} from './store-raw';
+import { subscribeToTasksRaw } from './store-raw';
 
+// 各ドメインのストアを再エクスポート
+export * from './backup';
+export * from './filters';
+export * from './labels';
+export * from './projects';
+export * from './schema';
+export * from './tasks';
+export * from './timeblocks';
+export * from './workspace';
 
 /**
- * 認証とワークスペース選択のガード
+ * タスク一覧の購読
+ * DataSyncManager からの呼び出し (workspaceId, callback) に対応
  */
-function requireAuthAndWorkspace() {
-    const userId = auth.currentUser?.uid;
-    const workspaceId = getCurrentWorkspaceId();
-    if (!userId || !workspaceId) {
-        throw new Error('Authentication or Workspace required.');
+export function subscribeToTasks(workspaceId: string, callback: (tasks: Task[]) => void): Unsubscribe {
+    const user = auth.currentUser;
+    if (!user || !workspaceId) {
+        if (typeof callback === 'function') callback([]);
+        return () => { };
     }
-    return { userId, workspaceId };
+    return subscribeToTasksRaw(user.uid, workspaceId, callback);
 }
-
-/**
- * 新しいタスクを追加する
- */
-export async function addTask(taskData: Partial<Task>) {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    return addTaskRaw(userId, workspaceId, taskData);
-}
-
-/**
- * タスクの状態を更新する
- */
-export async function updateTaskStatus(taskId: string, status: string) {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    return updateTaskStatusRaw(userId, workspaceId, taskId, status);
-}
-
-/**
- * タスクを更新する
- */
-export async function updateTask(taskId: string, updates: Partial<Task>) {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    return updateTaskRaw(userId, workspaceId, taskId, updates);
-}
-
-/**
- * タスクを削除する
- */
-export async function deleteTask(taskId: string) {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    return deleteTaskRaw(userId, workspaceId, taskId);
-}
-
-/**
- * タスクのステータスをトグルする
- */
-export async function toggleTaskStatus(taskId: string, currentStatus: string) {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
-    return updateTaskStatusRaw(userId, workspaceId, taskId, newStatus);
-}
-
-/**
- * タスクをIDで取得する
- */
-export async function getTaskById(taskId: string): Promise<Task | null> {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    return getTaskByIdRaw(userId, workspaceId, taskId);
-}
-
-/**
- * データのインポート処理
- */
-export async function importBackupData(backupData: any) {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    return importBackupDataRaw(userId, workspaceId, backupData);
-}
-
-/**
- * バックアップデータの生成
- */
-export async function createBackupData() {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    return createBackupDataRaw(userId, workspaceId);
-}
-
-// Project exports
-export { addProject, deleteProject, updateProject };
-

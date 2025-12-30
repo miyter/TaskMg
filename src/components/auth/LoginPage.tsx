@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { auth } from '../../core/firebase';
 import { signInAnonymously, signInWithEmailAndPassword } from '../../core/firebase-sdk';
-import { cn } from '../../utils/cn';
 
 export const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -45,40 +44,43 @@ export const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-            <div className="max-w-md w-full p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl transition-all duration-300">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">TaskMg</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Sign in to manage your tasks</p>
+        <div className="min-h-screen flex items-center justify-center bg-premium-gradient p-4 antialiased">
+            <div className="max-w-md w-full p-8 bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-[2rem] shadow-2xl transition-all duration-300">
+                <div className="text-center mb-10">
+                    <div className="inline-flex items-center justify-center p-4 bg-white dark:bg-gray-700 rounded-3xl shadow-lg mb-6 animate-float">
+                        <img src="/images/web-app-manifest-512x512.png" alt="Logo" className="h-12 w-12" />
+                    </div>
+                    <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Task<span className="text-blue-600 dark:text-blue-400">Mg</span></h1>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">究極のタスク管理エクスペリエンス</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
                     {error && (
-                        <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 text-sm rounded-lg">
+                        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-xl font-medium animate-in slide-in-from-top-2 duration-300">
                             {error}
                         </div>
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Email</label>
                         <input
                             type="email"
                             required
                             value={email}
                             onChange={e => setEmail(e.target.value)}
-                            className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all"
-                            placeholder="your@email.com"
+                            className="w-full px-5 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl focus:ring-2 focus:ring-blue-500/50 outline-none text-gray-900 dark:text-white transition-all placeholder-gray-400"
+                            placeholder="mail@example.com"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Password</label>
                         <input
                             type="password"
                             required
                             value={password}
                             onChange={e => setPassword(e.target.value)}
-                            className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all"
+                            className="w-full px-5 py-3 bg-white/50 dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl focus:ring-2 focus:ring-blue-500/50 outline-none text-gray-900 dark:text-white transition-all placeholder-gray-400"
                             placeholder="••••••••"
                         />
                     </div>
@@ -86,31 +88,28 @@ export const LoginPage: React.FC = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={cn(
-                            "w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
-                            loading && "animate-pulse"
-                        )}
+                        className="btn-premium w-full py-4 text-lg"
                     >
-                        {loading ? 'Signing in...' : 'Sign In'}
+                        {loading ? 'サインイン中...' : 'サインイン'}
                     </button>
                 </form>
 
-                <div className="mt-6">
+                <div className="mt-8">
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+                            <div className="w-full border-t border-gray-200/50 dark:border-gray-700/50"></div>
                         </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">Or continue with</span>
+                        <div className="relative flex justify-center text-xs">
+                            <span className="px-3 bg-transparent text-gray-400 uppercase tracking-widest font-bold">OR</span>
                         </div>
                     </div>
 
                     <button
                         onClick={handleGuestLogin}
                         disabled={loading}
-                        className="mt-6 w-full py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="mt-8 w-full py-3.5 bg-gray-100/50 hover:bg-gray-200/50 dark:bg-gray-700/30 dark:hover:bg-gray-600/50 text-gray-700 dark:text-gray-200 font-bold rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-3 border border-transparent hover:border-gray-300 dark:hover:border-gray-600"
                     >
-                        <span>🕵️</span> Guest Access
+                        <span className="text-xl">🕵️</span> ゲストとして利用
                     </button>
                 </div>
             </div>

@@ -17,7 +17,9 @@ import {
     Unsubscribe,
     updateDoc
 } from "../core/firebase-sdk";
+import { areTaskArraysIdentical } from '../utils/compare';
 import { paths } from '../utils/paths';
+import { withRetry } from '../utils/retry';
 import { Task } from './schema';
 
 const toJSDate = (val: any): Date | undefined => (val instanceof Timestamp) ? val.toDate() : (val instanceof Date ? val : undefined);
@@ -25,18 +27,34 @@ const toFirestoreDate = (val: any): Timestamp | Date | undefined => (val instanc
 
 function deserializeTask(id: string, data: any): Task {
     // データを安全に Task 型に整形
-    // Note: Zodでparseするのも手だが、ここではパフォーマンス重視で手動マッピング＋キャストでいく
+    if (!data || typeof data !== 'object') {
+        return {
+            id,
+            title: 'Invalid Task',
+            status: 'todo',
+            ownerId: '',
+        } as Task;
+    }
+
     const recurrence = data.recurrence || null;
 
     return {
         id,
-        ...data,
-        createdAt: toJSDate(data.createdAt) || undefined,
+        title: String(data.title || 'Untitled'),
+        description: data.description ? String(data.description) : null,
+        status: (data.status === 'completed' || data.status === 'todo' || data.status === 'archived')
+            ? data.status
+            : 'todo',
         dueDate: toJSDate(data.dueDate) || undefined,
-        recurrence: recurrence,
+        createdAt: toJSDate(data.createdAt) || undefined,
         completedAt: toJSDate(data.completedAt) || undefined,
-        ownerId: data.ownerId || '', // 必須フィールド
-        title: data.title || '' // 必須フィールド
+        ownerId: String(data.ownerId || ''),
+        projectId: data.projectId ? String(data.projectId) : null,
+        labelIds: Array.isArray(data.labelIds) ? data.labelIds.map(String) : [],
+        timeBlockId: data.timeBlockId ? String(data.timeBlockId) : null,
+        duration: typeof data.duration === 'number' ? data.duration : undefined,
+        isImportant: !!data.isImportant,
+        recurrence: recurrence,
     } as Task;
 }
 
@@ -73,8 +91,8 @@ export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdat
         const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
         const currentTasks = _cachedTasksMap.get(workspaceId);
 
-        // Optimization: Deep compare using JSON.stringify
-        if (currentTasks && JSON.stringify(currentTasks) === JSON.stringify(tasks)) {
+        // Optimization: Stabilize reference using custom comparison
+        if (currentTasks && areTaskArraysIdentical(currentTasks, tasks)) {
             // If content is identical, use the cached reference to avoid re-renders
             if (isFirst) {
                 safeUpdate(currentTasks);
@@ -95,7 +113,7 @@ export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdat
 
 // タスク操作関数// 他の関数（addTaskRaw, updateTaskRawなど）は既存ロジックを維持
 export async function addTaskRaw(userId: string, workspaceId: string, taskData: Partial<Task>) {
-    try {
+    return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
         const safeData: any = { ...taskData };
         if (safeData.dueDate) safeData.dueDate = toFirestoreDate(safeData.dueDate);
@@ -108,14 +126,11 @@ export async function addTaskRaw(userId: string, workspaceId: string, taskData: 
             status: 'todo',
             createdAt: serverTimestamp()
         });
-    } catch (error) {
-        console.error("[Tasks] addTaskRaw failed:", error);
-        throw error;
-    }
+    });
 }
 
 export async function updateTaskStatusRaw(userId: string, workspaceId: string, taskId: string, status: string) {
-    try {
+    return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
         const updates: any = { status };
         if (status === 'completed') {
@@ -124,32 +139,23 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
             updates.completedAt = null;
         }
         await updateDoc(doc(db, path, taskId), updates);
-    } catch (error) {
-        console.error("[Tasks] updateTaskStatusRaw failed:", error);
-        throw error;
-    }
+    });
 }
 
 export async function updateTaskRaw(userId: string, workspaceId: string, taskId: string, updates: Partial<Task>) {
-    try {
+    return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
         const safeUpdates: any = { ...updates };
         if (safeUpdates.dueDate !== undefined) safeUpdates.dueDate = toFirestoreDate(safeUpdates.dueDate);
         await updateDoc(doc(db, path, taskId), safeUpdates);
-    } catch (error) {
-        console.error("[Tasks] updateTaskRaw failed:", error);
-        throw error;
-    }
+    });
 }
 
 export async function deleteTaskRaw(userId: string, workspaceId: string, taskId: string) {
-    try {
+    return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
         await deleteDoc(doc(db, path, taskId));
-    } catch (error) {
-        console.error("[Tasks] deleteTaskRaw failed:", error);
-        throw error;
-    }
+    });
 }
 
 export async function getTaskByIdRaw(userId: string, workspaceId: string, taskId: string): Promise<Task | null> {

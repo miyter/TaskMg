@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
+import { addFilter, updateFilter } from '../../store';
 import { Filter } from '../../store/schema';
-import { addFilter, updateFilter } from '../../store/store';
 import { useModalStore } from '../../store/ui/modal-store';
 import { Modal } from '../common/Modal';
 

@@ -7,7 +7,10 @@ export const AddTaskButton: React.FC = () => {
     if (isEditing) {
         return (
             <div className="mb-4">
-                <InlineTaskInput onCancel={() => setIsEditing(false)} />
+                <InlineTaskInput
+                    onCancel={() => setIsEditing(false)}
+                    onSuccess={() => setIsEditing(false)}
+                />
             </div>
         );
     }
@@ -15,6 +18,7 @@ export const AddTaskButton: React.FC = () => {
     return (
         <button
             onClick={() => setIsEditing(true)}
+            aria-label="新しいタスクを追加"
             className="group flex items-center gap-2 w-full text-left py-2 px-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors mb-2"
         >
             <div className="w-5 h-5 rounded-full flex items-center justify-center bg-transparent group-hover:bg-blue-100/50 dark:group-hover:bg-blue-900/30 transition-colors">

@@ -37,8 +37,8 @@ const FilterItem: React.FC<{ item: typeof FILTER_ITEMS[number], tasks: any[] }> 
     const count = tasks.filter(t => {
         if (t.status === 'completed') return false;
         if (item.id === 'all') return true;
-        if (item.id === 'inbox') return !t.projectId || t.projectId === 'unassigned';
-        if (item.id === 'important') return t.important; // スキーマにないかもしれないが互換性のため
+        if (item.id === 'inbox') return !t.projectId || String(t.projectId) === 'unassigned' || t.projectId === 'none';
+        if (item.id === 'important') return !!t.isImportant;
         // today/upcoming は日付ロジックが必要だが、ここでは簡易化
         return false;
     }).length;

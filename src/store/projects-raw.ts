@@ -14,25 +14,22 @@ import {
 } from "../core/firebase-sdk";
 
 import { db } from '../core/firebase';
+import { areProjectArraysIdentical } from '../utils/compare';
 import { paths } from '../utils/paths';
+import { withRetry } from '../utils/retry';
 import { Project } from './schema';
 
 // ==========================================================
 // ★ RAW FUNCTIONS (userId, workspaceId 必須)
 // ==========================================================
 
-// プロジェクトリストのキャッシュ
-// 最後に購読されたワークスペースのデータを保持する。
-// 購読切り替え時に不整合を防ぐため、subscribe時にリセットされる。
-let _cachedProjects: Project[] = [];
+// プロジェクトリストのキャッシュ（複数ワークスペース対応）
+const _cachedProjectsMap = new Map<string, Project[]>();
 
 /**
  * プロジェクトデータのリアルタイムリスナーを開始する (RAW)
  */
 export function subscribeToProjectsRaw(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void): Unsubscribe {
-    // 購読開始時にキャッシュクリアはしない（参照安定化のため）
-    // _cachedProjects = [];
-
     const path = paths.projects(userId, workspaceId);
 
     // 並び順を保証
@@ -42,45 +39,48 @@ export function subscribeToProjectsRaw(userId: string, workspaceId: string, onUp
 
     return onSnapshot(q, (snapshot) => {
         const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
+        const currentCached = _cachedProjectsMap.get(workspaceId);
 
         // Custom optimization for reference stability
-        if (JSON.stringify(_cachedProjects) === JSON.stringify(projects)) {
+        if (currentCached && areProjectArraysIdentical(currentCached, projects)) {
             if (isFirst) {
-                onUpdate(_cachedProjects);
+                onUpdate(currentCached);
             }
             isFirst = false;
             return;
         }
 
         // キャッシュを更新
-        _cachedProjects = projects;
+        _cachedProjectsMap.set(workspaceId, projects);
         isFirst = false;
         onUpdate(projects);
     }, (error) => {
         console.error("Error subscribing to projects:", error);
-        _cachedProjects = [];
+        _cachedProjectsMap.set(workspaceId, []);
         onUpdate([]);
     });
 }
 
 /**
- * 現在キャッシュされているプロジェクトリストを取得する
- * TaskInput等の同期的なUI描画用。
+ * 指定したワークスペースの現在キャッシュされているプロジェクトリストを取得する
+ * @param workspaceId ワークスペースID
  */
-export function getProjects(): Project[] {
-    return _cachedProjects;
+export function getProjects(workspaceId: string): Project[] {
+    return _cachedProjectsMap.get(workspaceId) || [];
 }
 
 /**
  * 新しいプロジェクトを追加する (RAW)
  */
 export async function addProjectRaw(userId: string, workspaceId: string, name: string) {
-    const path = paths.projects(userId, workspaceId);
+    return withRetry(async () => {
+        const path = paths.projects(userId, workspaceId);
 
-    await addDoc(collection(db, path), {
-        name,
-        ownerId: userId,
-        createdAt: serverTimestamp()
+        await addDoc(collection(db, path), {
+            name,
+            ownerId: userId,
+            createdAt: serverTimestamp()
+        });
     });
 }
 
@@ -88,15 +88,19 @@ export async function addProjectRaw(userId: string, workspaceId: string, name: s
  * プロジェクトを更新する (RAW)
  */
 export async function updateProjectRaw(userId: string, workspaceId: string, projectId: string, updates: Partial<Project>) {
-    const path = paths.projects(userId, workspaceId);
-    const ref = doc(db, path, projectId);
-    return updateDoc(ref, updates);
+    return withRetry(async () => {
+        const path = paths.projects(userId, workspaceId);
+        const ref = doc(db, path, projectId);
+        await updateDoc(ref, updates);
+    });
 }
 
 /**
  * プロジェクトを削除する (RAW)
  */
 export async function deleteProjectRaw(userId: string, workspaceId: string, projectId: string) {
-    const path = paths.projects(userId, workspaceId);
-    await deleteDoc(doc(db, path, projectId));
+    return withRetry(async () => {
+        const path = paths.projects(userId, workspaceId);
+        await deleteDoc(doc(db, path, projectId));
+    });
 }

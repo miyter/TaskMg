@@ -60,6 +60,7 @@ const App: React.FC = () => {
     const getTitle = () => {
         if (filterType === 'project') return projects.find(p => p.id === targetId)?.name || 'Project';
         if (filterType === 'label') return labels.find(l => l.id === targetId)?.name || 'Label';
+        if (filterType === 'search') return query ? `"${query}" の検索結果` : '検索';
         switch (filterType) {
             case 'inbox': return 'Inbox';
             case 'today': return 'Today';
@@ -92,8 +93,6 @@ const App: React.FC = () => {
                     <DashboardApp />
                 ) : filterType === 'wiki' ? (
                     <WikiApp />
-                ) : filterType === 'search' ? (
-                    <div className="p-4">Search Results for "{query}" (Backend search required)</div>
                 ) : (
                     <TaskList />
                 )}

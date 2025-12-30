@@ -5,6 +5,9 @@ import { sortTasks } from './sort';
 
 type FilterCriteria = string | FilterConditions;
 
+/**
+ * フィルター条件に基づいてタスクを絞り込む (Primary Engine)
+ */
 export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
     if (!criteria) return tasks;
 
@@ -14,21 +17,21 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
         // 1. Status Check
         if (conditions.status.length > 0) {
             const status = task.status || 'todo';
-            const lookingForCompleted = conditions.status.includes('completed');
-            if (lookingForCompleted && status !== 'completed') return false;
-            // 'active' or 'todo' logic could be added here if needed
-            // Assuming default excludes completed unless specified, or maybe status check overrides default?
-            // Usually, search filters narrow down. If status:completed is specified, must be completed.
+            // "completed" が条件に含まれている場合、タスクも "completed" である必要がある
+            if (conditions.status.includes('completed') && status !== 'completed') return false;
+            // "active" (等) が条件に含まれている場合、タスクは "completed" 以外である必要がある
+            if (conditions.status.includes('active') && status === 'completed') return false;
+            // "important" が条件に含まれている場合、タスクの isImportant フラグをチェック
+            if (conditions.status.includes('important') && !task.isImportant) return false;
         }
 
         // 2. Project Check
         if (conditions.projects.length > 0) {
-            if (!task.projectId || !conditions.projects.includes(task.projectId)) {
-                // If project ID is specific, task must match.
-                // Could be partial match if we supported name search, but IDs usually exact.
-                // For now exact match on ID.
-                return false;
-            }
+            const hasMatch = conditions.projects.some(p => {
+                if (p === 'unassigned') return !task.projectId;
+                return task.projectId === p;
+            });
+            if (!hasMatch) return false;
         }
 
         // 3. Label Check
@@ -40,16 +43,17 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
 
         // 4. TimeBlock Check
         if (conditions.timeBlocks.length > 0) {
-            if (!task.timeBlockId || !conditions.timeBlocks.includes(task.timeBlockId)) {
-                return false;
-            }
+            const hasMatch = conditions.timeBlocks.some(tb => {
+                if (tb === 'unassigned') return !task.timeBlockId;
+                return task.timeBlockId === tb;
+            });
+            if (!hasMatch) return false;
         }
 
-        // 5. Duration Check
+        // 5. Duration Check (Number comparison)
         if (conditions.durations.length > 0) {
-            // Simple string match for number or exact number match
-            const dur = String(task.duration);
-            if (!conditions.durations.includes(dur)) return false;
+            const taskDur = task.duration || 0;
+            if (!conditions.durations.includes(taskDur)) return false;
         }
 
         // 6. Date Check
@@ -59,6 +63,8 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
 
             const isMatch = conditions.dates.some(d => {
                 const now = new Date();
+                now.setHours(0, 0, 0, 0);
+
                 if (d === 'today') return isSameDay(taskDate, now);
                 if (d === 'tomorrow') {
                     const tmrw = new Date(now);
@@ -66,26 +72,31 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
                     return isSameDay(taskDate, tmrw);
                 }
                 if (d === 'week') {
-                    // This week? Or next 7 days? Usually means "within this week".
                     const start = getStartOfWeek(now);
                     const end = new Date(start);
                     end.setDate(end.getDate() + 7);
                     return taskDate >= start && taskDate < end;
                 }
-                if (d === 'overdue') {
-                    const startOfToday = new Date(now);
-                    startOfToday.setHours(0, 0, 0, 0);
-                    return taskDate < startOfToday && task.status !== 'completed';
+                if (d === 'upcoming') {
+                    // 明日以降の7日間
+                    const tmrw = new Date(now);
+                    tmrw.setDate(tmrw.getDate() + 1);
+                    const nextWeek = new Date(tmrw);
+                    nextWeek.setDate(nextWeek.getDate() + 7);
+                    return taskDate >= tmrw && taskDate < nextWeek;
                 }
-                return false; // Unknown date keywords ignored or exact date string matching not implemented here yet
+                if (d === 'overdue') {
+                    return taskDate < now && task.status !== 'completed';
+                }
+                return false;
             });
             if (!isMatch) return false;
         }
 
-        // 7. Keywords (Title/Description)
+        // 7. Keywords (Title/Description) - AND search
         if (conditions.keywords.length > 0) {
             const content = `${task.title} ${task.description || ''}`.toLowerCase();
-            const matchesAll = conditions.keywords.every(kw => content.includes(kw));
+            const matchesAll = conditions.keywords.every(kw => content.includes(kw.toLowerCase()));
             if (!matchesAll) return false;
         }
 
@@ -93,60 +104,67 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
     });
 }
 
+export interface SearchConfig {
+    keyword?: string | null;
+    showCompleted?: boolean;
+    projectId?: string | 'unassigned' | null;
+    labelId?: string | null;
+    timeBlockId?: string | 'unassigned' | null;
+    duration?: string | number | null;
+    savedFilter?: { query: string } | null;
+    sortCriteria?: string;
+    filterType?: string | null;
+}
+
 /**
- * UIの条件に基づいたタスクの抽出とソート
+ * UIの条件に基づいたタスクの抽出とソート (Unified implementation)
  */
-export function getProcessedTasks(tasks: Task[], config: any): Task[] {
-    const { keyword, showCompleted, projectId, labelId, timeBlockId, duration, savedFilter, sortCriteria } = config;
+export function getProcessedTasks(tasks: Task[], config: SearchConfig): Task[] {
+    const {
+        keyword, showCompleted, projectId, labelId,
+        timeBlockId, duration, savedFilter, sortCriteria, filterType
+    } = config;
 
-    let filtered = tasks;
+    // 1. ベースとなる条件オブジェクトを作成 (キーワードがあればパース、なければ空)
+    const conditions: FilterConditions = keyword ? parseFilterQuery(keyword) : {
+        keywords: [],
+        projects: [],
+        labels: [],
+        timeBlocks: [],
+        durations: [],
+        dates: [],
+        status: []
+    };
 
-    // キーワード検索
-    if (keyword) {
-        const k = keyword.toLowerCase();
-        filtered = filtered.filter(t =>
-            (t.title + (t.description || '')).toLowerCase().includes(k)
-        );
-    }
+    // 2. config から追加の条件（サイドバークリック等）をマッピング
+    if (projectId) conditions.projects.push(projectId);
+    if (labelId) conditions.labels.push(labelId);
+    if (timeBlockId) conditions.timeBlocks.push(timeBlockId);
 
-    // 完了済み表示設定
-    if (!showCompleted) {
-        filtered = filtered.filter(t => t.status !== 'completed');
-    }
-
-    // プロジェクト絞り込み
-    if (projectId === 'unassigned') {
-        filtered = filtered.filter(t => !t.projectId);
-    } else if (projectId) {
-        filtered = filtered.filter(t => t.projectId === projectId);
-    }
-
-    // ラベル絞り込み
-    if (labelId) {
-        filtered = filtered.filter(t => t.labelIds?.includes(labelId));
-    }
-
-    // 時間帯絞り込み
-    if (timeBlockId === 'unassigned') {
-        filtered = filtered.filter(t => !t.timeBlockId);
-    } else if (timeBlockId) {
-        filtered = filtered.filter(t => t.timeBlockId === timeBlockId);
-    }
-
-    // 所要時間絞り込み
     if (duration) {
-        const dur = parseInt(duration, 10);
-        if (!isNaN(dur)) {
-            filtered = filtered.filter(t => t.duration === dur);
-        }
+        const d = typeof duration === 'number' ? duration : parseInt(duration, 10);
+        if (!isNaN(d)) conditions.durations.push(d);
     }
 
-    // 保存済みフィルターの適用
+    // filterType (today, upcoming, important) の処理
+    if (filterType === 'today') conditions.dates.push('today');
+    if (filterType === 'upcoming') conditions.dates.push('upcoming');
+    if (filterType === 'important') conditions.status.push('important'); // 特殊なステータス扱いとして条件に追加
+
+    // 完了表示設定
+    if (!showCompleted) {
+        conditions.status.push('active');
+    }
+
+    // 3. フィルタリング実行
+    let filtered = filterTasks(tasks, conditions);
+
+    // 4. 保存済みフィルター（クエリ文字列）があれば更に追加で適用
     if (savedFilter && savedFilter.query) {
         filtered = filterTasks(filtered, savedFilter.query);
     }
 
-    // ソートの適用
-    return sortTasks(filtered, sortCriteria);
+    // 5. ソートの適用
+    return sortTasks(filtered, sortCriteria || 'createdAt_desc');
 }
 

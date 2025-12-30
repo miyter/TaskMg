@@ -4,6 +4,7 @@ import { CustomFilterList } from './CustomFilterList';
 import { DurationList } from './DurationList';
 import { LabelList } from './LabelList';
 import { ProjectList } from './ProjectList';
+import { SidebarSearch } from './SidebarSearch';
 import { SidebarSection } from './SidebarSection';
 import { TargetList } from './TargetList';
 import { TimeBlockList } from './TimeBlockList';
@@ -11,6 +12,7 @@ import { TimeBlockList } from './TimeBlockList';
 export const SidebarContent: React.FC = () => {
     return (
         <div className="flex flex-col gap-4">
+            <SidebarSearch />
             <BasicFilters />
 
             <SidebarSection title="Projects">

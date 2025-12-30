@@ -46,7 +46,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
         const isExceeded = rawPercent > 100;
 
         return (
-            <div className="mt-2 mb-2 py-2 px-4 bg-gray-50/80 dark:bg-[#1e1e1e]/50 rounded-lg flex items-center gap-4 text-sm border border-gray-100 dark:border-gray-800/50 backdrop-blur-sm">
+            <div className="glass-card flex items-center gap-4 py-3 px-4 my-2">
                 {/* 1. Name */}
                 <div className="flex-shrink-0 w-24 truncate text-xs font-bold text-gray-500 dark:text-gray-400" title={timeBlock.name}>
                     {timeBlock.name}
@@ -91,7 +91,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
     const avgMinutes = count > 0 ? (totalTaskMinutes / count) : 0;
 
     return (
-        <div className="mt-2 mb-2 py-2 px-4 bg-gray-50/80 dark:bg-[#1e1e1e]/50 rounded-lg flex items-center justify-evenly text-sm border border-gray-100 dark:border-gray-800/50 backdrop-blur-sm">
+        <div className="glass-card flex items-center justify-evenly py-3 px-4 my-2">
             <div className="flex flex-row items-baseline gap-2">
                 <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold">COUNT</span>
                 <span className="font-bold text-sm text-gray-700 dark:text-gray-200">{count}<span className="text-xs font-normal ml-0.5 text-gray-400">件</span></span>

@@ -37,6 +37,7 @@ export const TaskSchema = z.object({
 
     // Metadata
     duration: z.number().optional(), // minutes
+    isImportant: z.boolean().default(false),
     recurrence: RecurrenceSchema,
 });
 

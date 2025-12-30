@@ -1,9 +1,10 @@
 import { useDraggable } from '@dnd-kit/core';
 import React from 'react';
+import { toggleTaskStatus, updateTask } from '../../store';
 import { Task } from '../../store/schema';
-import { toggleTaskStatus } from '../../store/store';
 import { useModalStore } from '../../store/ui/modal-store';
 import { cn } from '../../utils/cn';
+import { formatDateCompact, getTaskDateColor } from '../../utils/date';
 
 interface TaskItemProps {
     task: Task;
@@ -11,6 +12,7 @@ interface TaskItemProps {
 
 export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
     const isCompleted = task.status === 'completed';
+    const isImportant = !!task.isImportant;
     const { openModal } = useModalStore();
 
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -22,6 +24,13 @@ export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
         e.stopPropagation();
         if (task.id) {
             await toggleTaskStatus(task.id, task.status || 'todo');
+        }
+    };
+
+    const handleToggleImportant = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (task.id) {
+            await updateTask(task.id, { isImportant: !isImportant });
         }
     };
 
@@ -38,7 +47,7 @@ export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
             {...attributes}
             onClick={() => openModal('task-detail', task)}
             className={cn(
-                "group flex items-start gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-xl hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 cursor-pointer",
+                "group flex items-start gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-xl hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 cursor-pointer hover-lift",
                 isDragging && "opacity-50 border-blue-500 shadow-lg"
             )}
         >
@@ -66,17 +75,39 @@ export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
                         {task.description}
                     </div>
                 )}
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-3 mt-2">
                     {task.dueDate && (
-                        <span className={cn("text-xs flex items-center gap-1", isCompleted ? "text-gray-400" : "text-red-500")}>
-                            📅 {typeof task.dueDate === 'string' ? task.dueDate : 'Date'}
+                        <span className={cn("text-xs flex items-center gap-1", isCompleted ? "text-gray-400" : getTaskDateColor(task.dueDate))}>
+                            📅 {formatDateCompact(task.dueDate)}
                         </span>
                     )}
                 </div>
             </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
+                <button
+                    onClick={handleToggleImportant}
+                    className={cn(
+                        "p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
+                        isImportant ? "text-yellow-500 opacity-100" : "text-gray-400"
+                    )}
+                    title={isImportant ? "重要度を解除" : "重要としてマーク"}
+                >
+                    <svg className="w-4 h-4" fill={isImportant ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                    </svg>
+                </button>
+            </div>
         </li>
     );
 }, (prev, next) => {
-    // Custom deep compare for performance
-    return JSON.stringify(prev.task) === JSON.stringify(next.task);
+    return (
+        prev.task.id === next.task.id &&
+        prev.task.status === next.task.status &&
+        prev.task.title === next.task.title &&
+        prev.task.description === next.task.description &&
+        prev.task.isImportant === next.task.isImportant &&
+        prev.task.dueDate === next.task.dueDate
+    );
 });

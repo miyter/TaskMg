@@ -6,21 +6,30 @@
 
 ## 2025-12-30
 
-### リファクタリング完了 ✅
+### リファクタリング・設計改善 ✅
 - **完全 React 化**: `src/ui` 内のレガシー DOM 操作コードを全廃し、全て React コンポーネントに移行完了。
 - **ディレクトリ最適化**: `src/features` に主要機能をフラットに配置し、見通しを改善。
-- **型安全性**: プロジェクト全体の TypeScript 化率 100%。
+- **workspace の Zustand 移行**: グローバル変数と localStorage の直接操作を完全に廃止し、`useWorkspaceStore` による一元管理を実現。
+- **型安全性 100%**: `SortCriteria`, `SearchConfig`, `Task` スキーマなど、全域にわたる TypeScript 化と厳密な型定義。
+- **ストアバレルファイルの再構成**: `store.ts` と `index.ts` の混在を解消し、`src/store/index.ts` を唯一のエントリポイントとして整理。
+- **フックのリアクティブ化**: `useWorkspace` フックを Zustand と同期させ、ワークスペース切り替え時の自動再読み込みを実現。
 
-### パフォーマンス/設計改善 ✅
-- **データ購読の高度化**: `store-raw.ts` / `projects-raw.ts` にて、JSON比較による更新抑制と参照安定化を実装。
-- **レンダリング最適化**: `TaskItem`, `ProjectItem` の `React.memo` 化および `CustomFilterList` の `useMemo` による計算コスト削減。
-- **App.tsx スリム化**: サイドバー定義とDnDロジックを分離 (`SidebarContent`, `useAppDnD`)。
-- **コード共通化**: 日付処理 (`utils/date.ts`) と UI密度ロジック (`utils/ui-utils.ts`) を集約し、各コンポーネントで再利用開始。
-- **設定の永続化**: ソート・完了表示設定を `filter-store` に統合し永続化。`TaskList` にUI追加。
+### パフォーマンス/安定性向上 ✅
+- **データ購読の高度化**: `store-raw.ts` / `projects-raw.ts` にて、`areTaskArraysIdentical` や JSON比較による不要な再レンダリングの抑制。
+- **レンダリング最適化**: `TaskItem`, `ProjectItem` の `React.memo` (shallow compare) 化および計算コストの高いフィルタ処理の `useMemo` 化。
+- **キャッシュの堅牢化**: projects キャッシュを `Map<string, Project[]>` 形式に変更し、ワークスペース間でのデータ混入を防止。
+- **ロジックの集約**: `search.ts` の二重フィルタリングを解消し、`filterTasks` エンジンにすべての検索ロジックを集約。
+- **データの正規化**: `deserializeTask` での厳密なバリデーションとデフォルト値設定により、不正データによるクラッシュを防止。
+- **耐障害性の向上**: `withRetry` ユーティリティを導入し、書き込み操作に指数バックオフ再試行を適用。
 
-### 残務処理・品質向上 ✅
-- **未使用コード削除**: `api-adapters.ts`, レガシー `showMessageModal` 依存関係、未使用 `getTasks()` 関数を削除。
-- **破損したインポートパスの修正**: `features/` 配下の壊れた相対パスを多数修正。
-- **TypeScript 型チェック 100% pass**: `npx tsc --noEmit` がエラーなしで完了。
+### UI/UX & 機能強化 ✅
+- **プレミアム・デザイン**: グラスモルフィズム、高級感のあるグラデーション、浮遊アニメーション等の適用。
+- **高度な検索**: フレーズ検索 (`"fix bug"`)、接頭辞クエリ (`is:important`, `p:"Inbox"`) への対応。
+- **検索UIの統合**: サイドバー内への検索バー配置と、ショートカット `/` による即時アクセス。
+- **重要度（スター）の正式実装**: `isImportant` スキーマ導入、スターアイコンによる直感的なトグル機能。
+- **動的ソート**: `TaskList` での作成日、期限、重要度、名前による並び替え。
+- **日付表示の高度化**: `formatDateCompact` による「今日」「明日」の相対表記と、期限切れの強調表示。
+- **操作性向上**: `TaskList` ヘッダーの sticky 化、完了タスク表示のトグル、空状態の刷新。
+
 
 ---

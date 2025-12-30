@@ -1,7 +1,7 @@
 import { Task } from '../store/schema';
 import { toDate } from '../utils/date';
 
-type SortCriteria = 'dueDate' | 'createdAt' | 'title' | 'duration' | 'dueDate_desc' | 'createdAt_desc' | 'title_desc' | 'duration_desc';
+export type SortCriteria = 'dueDate' | 'createdAt' | 'title' | 'duration' | 'dueDate_desc' | 'createdAt_desc' | 'title_desc' | 'duration_desc' | string;
 
 export function sortTasks(tasks: Task[], criteria: SortCriteria = 'createdAt_desc'): Task[] {
     if (!Array.isArray(tasks)) return [];
@@ -30,6 +30,10 @@ export function sortTasks(tasks: Task[], criteria: SortCriteria = 'createdAt_des
             case 'duration':
                 valA = a.duration || 0;
                 valB = b.duration || 0;
+                break;
+            case 'important':
+                valA = a.isImportant ? 1 : 0;
+                valB = b.isImportant ? 1 : 0;
                 break;
             default:
                 valA = 0;

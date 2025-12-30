@@ -1,25 +1,26 @@
 import { useEffect, useState } from 'react';
-import { APP_EVENTS } from '../core/event-constants';
-import { getCurrentWorkspaceId } from '../store/workspace';
+import { auth } from '../core/firebase';
+import { useWorkspaceStore } from '../store/ui/workspace-store';
 
+/**
+ * 現在のワークスペースID、ログインユーザーID、およびロード状態を提供するフック
+ */
 export const useWorkspace = () => {
-    const [workspaceId, setWorkspaceId] = useState<string | null>(getCurrentWorkspaceId());
+    const workspaceId = useWorkspaceStore((state) => state.currentWorkspaceId);
+    const [userId, setUserId] = useState<string | null>(auth.currentUser?.uid || null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Update state if localStorage changed externally (though unlikely in SPA flow without event)
-        const current = getCurrentWorkspaceId();
-        if (current !== workspaceId) setWorkspaceId(current);
+        // 認証状態の監視
+        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+            setUserId(user ? user.uid : null);
+            setLoading(false);
+        });
 
-        const handleWorkspaceChange = (e: any) => {
-            const newId = e.detail?.workspaceId;
-            setWorkspaceId(newId);
-        };
-
-        document.addEventListener(APP_EVENTS.WORKSPACE_CHANGED, handleWorkspaceChange);
         return () => {
-            document.removeEventListener(APP_EVENTS.WORKSPACE_CHANGED, handleWorkspaceChange);
+            unsubscribeAuth();
         };
     }, []);
 
-    return { workspaceId };
+    return { workspaceId, userId, loading };
 };

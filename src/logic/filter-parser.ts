@@ -3,8 +3,8 @@ export interface FilterConditions {
     projects: string[]; // projectId
     labels: string[]; // labelId
     timeBlocks: string[]; // timeBlockId
-    durations: string[];
-    dates: string[]; // 'today', 'tomorrow', 'week', etc.
+    durations: number[]; // Change string[] to number[]
+    dates: string[]; // 'today', 'tomorrow', 'week', 'upcoming', 'overdue', etc.
     status: string[]; // 'completed', etc.
 }
 
@@ -19,20 +19,42 @@ export function parseFilterQuery(query: string): FilterConditions {
         status: []
     };
 
+
     if (!query) return conditions;
 
-    const parts = query.trim().split(/\s+/);
-    parts.forEach(part => {
-        if (!part) return;
+    // Regex to match:
+    // 1. key:"quoted value" -> ([a-zA-Z]+:"[^"]*")
+    // 2. key:value        -> ([a-zA-Z]+:[^\s]+)
+    // 3. "phrase"          -> ("[^"]*")
+    // 4. word             -> ([^\s]+)
+    const regex = /([a-zA-Z]+:"[^"]*"|[a-zA-Z]+:[^\s]+|"[^"]*"|[^\s]+)/g;
+    const matches = query.match(regex);
+
+    if (!matches) return conditions;
+
+    matches.forEach(part => {
+        // Handle phrase search (entirely quoted)
+        if (part.startsWith('"') && part.endsWith('"')) {
+            const phrase = part.substring(1, part.length - 1);
+            if (phrase) conditions.keywords.push(phrase.toLowerCase());
+            return;
+        }
 
         if (part.includes(':')) {
-            const [key, val] = part.split(':');
+            const colonIndex = part.indexOf(':');
+            const key = part.substring(0, colonIndex).toLowerCase();
+            let val = part.substring(colonIndex + 1);
+
+            // Strip quotes from value if present
+            if (val.startsWith('"') && val.endsWith('"')) {
+                val = val.substring(1, val.length - 1);
+            }
             const lowerVal = val.toLowerCase();
 
-            switch (key.toLowerCase()) {
+            switch (key) {
                 case 'project':
                 case 'p':
-                    conditions.projects.push(val); // Keep case for ID? Assuming sensitive or normalized elsewhere.
+                    conditions.projects.push(val);
                     break;
                 case 'label':
                 case 'l':
@@ -44,19 +66,25 @@ export function parseFilterQuery(query: string): FilterConditions {
                     break;
                 case 'duration':
                 case 'd':
-                    conditions.durations.push(val);
+                    const d = parseInt(val, 10);
+                    if (!isNaN(d)) conditions.durations.push(d);
                     break;
                 case 'date':
                 case 'due':
-                    conditions.dates.push(lowerVal);
+                    const validDates = ['today', 'tomorrow', 'week', 'upcoming', 'overdue'];
+                    if (validDates.includes(lowerVal)) {
+                        conditions.dates.push(lowerVal);
+                    }
                     break;
                 case 'status':
                 case 'is':
-                    conditions.status.push(lowerVal);
+                    const validStatus = ['completed', 'active', 'todo', 'important'];
+                    if (validStatus.includes(lowerVal)) {
+                        conditions.status.push(lowerVal);
+                    }
                     break;
                 default:
-                    // Unknown prefix treated as keyword or ignored?
-                    // For now, treat as keyword including the prefix to be safe, or just ignore prefix.
+                    // Unknown prefix treated as keyword
                     conditions.keywords.push(part.toLowerCase());
                     break;
             }
