@@ -22,7 +22,8 @@
         "noFallthroughCasesInSwitch": true,
         /* JS Support */
         "allowJs": true,
-        "checkJs": false
+        "checkJs": false,
+        "jsx": "react-jsx"
     },
     "include": [
         "src"

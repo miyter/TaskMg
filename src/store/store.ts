@@ -35,3 +35,37 @@ export function subscribeToTasks(workspaceId: string, callback: (tasks: Task[]) 
     // store-raw.js の subscribeToTasksRaw(userId, workspaceId, onUpdate) を呼び出す
     return subscribeToTasksRaw(user.uid, workspaceId, callback);
 }
+
+// ==========================================================
+// ★ Task Mutation Wrappers
+// ==========================================================
+
+import {
+    deleteTaskRaw,
+    updateTaskRaw,
+    updateTaskStatusRaw
+} from './store-raw';
+import { getCurrentWorkspaceId } from './workspace';
+
+function requireAuth() {
+    const user = auth.currentUser;
+    const workspaceId = getCurrentWorkspaceId();
+    if (!user || !workspaceId) throw new Error('Authentication and Workspace required.');
+    return { userId: user.uid, workspaceId };
+}
+
+export async function updateTask(taskId: string, updates: Partial<Task>) {
+    const { userId, workspaceId } = requireAuth();
+    return updateTaskRaw(userId, workspaceId, taskId, updates);
+}
+
+export async function toggleTaskStatus(taskId: string, currentStatus: string) {
+    const { userId, workspaceId } = requireAuth();
+    const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
+    return updateTaskStatusRaw(userId, workspaceId, taskId, newStatus);
+}
+
+export async function deleteTask(taskId: string) {
+    const { userId, workspaceId } = requireAuth();
+    return deleteTaskRaw(userId, workspaceId, taskId);
+}
