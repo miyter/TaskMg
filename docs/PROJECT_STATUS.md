@@ -11,6 +11,8 @@
 - **目標設計ウィザード**: 対話形式で目標を明確化し、行動計画へと落とし込むガイド機能。
 - **マルチフレームワーク**: OKR、WOOP、バックワード・デザインなど、状況に応じた目標管理手法をサポート。
 - **フレームワーク Wiki**: 各手法のベストプラクティスをアプリ内で学習・参照可能。
+- **マルチワークスペース**: 複数のワークスペースを切り替えて、異なるプロジェクト群を独立管理。
+- **設定の永続化**: テーマ、フォント、UI密度、ソート順などの設定をブラウザに保存し、再訪問時も維持。
 
 ---
 
@@ -32,52 +34,51 @@
 
 ```
 src/
-├── App.tsx              # React アプリケーションルート
-├── main.tsx             # エントリーポイント
+├── App.tsx                  # React アプリケーションルート
+├── main.tsx                 # エントリーポイント
+├── index.css                # グローバルスタイル
 │
-├── components/          # 共有・UIコンポーネント
-│   ├── auth/            # 認証関連 (LoginPage)
-│   ├── layout/          # レイアウト (AppLayout)
-│   ├── modals/          # モーダル管理
-│   ├── sidebar/         # サイドバー構成要素
-│   └── tasks/           # タスクリスト・アイテム
+├── components/              # 共有・UIコンポーネント
+│   ├── auth/                # 認証関連 (LoginPage)
+│   ├── common/              # 共通コンポーネント (Modal, SortableItem)
+│   ├── layout/              # レイアウト (AppLayout)
+│   ├── modals/              # モーダル (TaskDetailModal, SettingsModal 等)
+│   ├── sidebar/             # サイドバー構成要素 (SidebarContent, ProjectList 等)
+│   └── tasks/               # タスク関連 (TaskList, TaskItem, TaskStats)
 │
-├── features/            # 機能モジュール
-│   ├── target-dashboard/ # 目標ダッシュボード (OKR/WOOP/Backward)
-│   ├── wiki/            # フレームワーク解説Wiki
-│   └── wizard/          # 目標設計ウィザード
+├── features/                # 機能モジュール
+│   ├── target-dashboard/    # 目標ダッシュボード (OKR/WOOP/Backward)
+│   ├── wiki/                # フレームワーク解説Wiki
+│   └── wizard/              # 目標設計ウィザード
 │
-├── hooks/               # カスタムフック (useTasks, useProjects...)
-├── store/               # Zustand & Firestore Logic
-├── core/                # Firebase設定・定数
-├── logic/               # ビジネスロジック (検索・ソート等)
-└── utils/               # ユーティリティ関数
+├── hooks/                   # カスタムフック
+│   ├── useAppDnD.ts         # DnDロジック
+│   ├── useTasks.ts          # タスク購読
+│   ├── useProjects.ts       # プロジェクト購読
+│   ├── useThemeEffect.ts    # テーマ適用
+│   └── ...                  # その他 (useLabels, useTimeBlocks 等)
+│
+├── store/                   # Zustand & Firestore Logic
+│   ├── ui/                  # UI状態管理 (filter-store, settings-store 等)
+│   ├── store-raw.ts         # タスクCRUD (Firestore)
+│   ├── projects-raw.ts      # プロジェクトCRUD
+│   ├── schema.ts            # Zodスキーマ定義
+│   └── ...                  # その他 (workspace, labels, timeblocks)
+│
+├── core/                    # Firebase設定・定数
+├── logic/                   # ビジネスロジック (search, sort, filter-parser)
+└── utils/                   # ユーティリティ (date, cn, paths, ui-utils)
 ```
 
 ---
 
 ## 🔄 現在のステータス
 
-### リファクタリング完了 (2025-12-30) ✅
-- **完全 React 化**: `src/ui` 内のレガシー DOM 操作コードを全廃し、全て React コンポーネントに移行完了。
-- **ディレクトリ最適化**: `src/features` に主要機能をフラットに配置し、見通しを改善。
-- **型安全性**: プロジェクト全体の TypeScript 化率 100%。
+💎 **健全性: 極めて良好**
 
-### パフォーマンス/設計改善 (2025-12-30) ✅
-- **データ購読の高度化**: `store-raw.ts` / `projects-raw.ts` にて、JSON比較による更新抑制と参照安定化を実装。
-- **レンダリング最適化**: `TaskItem`, `ProjectItem` の `React.memo` 化および `CustomFilterList` の `useMemo` による計算コスト削減。
-- **App.tsx スリム化**: サイドバー定義とDnDロジックを分離 (`SidebarContent`, `useAppDnD`)。
-- **コード共通化**: 日付処理 (`utils/date.ts`) と UI密度ロジック (`utils/ui-utils.ts`) を集約し、各コンポーネントで再利用開始。
-- **設定の永続化**: ソート・完了表示設定を `filter-store` に統合し永続化。`TaskList` にUI追加。
-
-### 残務処理・品質向上 (2025-12-30) ✅
-- **未使用コード削除**: `api-adapters.ts`, レガシー `showMessageModal` 依存関係、未使用 `getTasks()` 関数を削除。
-- **破損したインポートパスの修正**: `features/` 配下の壊れた相対パスを多数修正。
-- **TypeScript 型チェック 100% pass**: `npx tsc --noEmit` がエラーなしで完了。
-
-### 健全性
-💎 **極めて良好**
 技術的負債の大半（レガシーバックエンドロジック、DOM直接操作）が解消され、新機能開発やパフォーマンスチューニングに適したクリーンな状態です。
+
+> 詳細な作業履歴は [CHANGELOG.md](./CHANGELOG.md) を参照してください。
 
 ---
 
