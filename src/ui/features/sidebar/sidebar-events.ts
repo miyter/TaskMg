@@ -1,5 +1,5 @@
 import { APP_EVENTS } from '../../../core/event-constants';
-import { openFilterEditModal } from '../../../store/ui/modal-store';
+import { openModalDirect } from '../../../store/ui/modal-store';
 import { openInNewWindow } from '../../core/window-manager';
 import { showCustomContextMenu } from './sidebar-components';
 import { getSidebarUI } from './sidebar-state';
@@ -29,9 +29,9 @@ export function setupSidebarEvents() {
                 if (!isDesktop()) {
                     toggleSidebar(false);
                     // サイドバーのアニメーション(300ms)完了を待つ
-                    setTimeout(() => openSettingsModal(), 300);
+                    setTimeout(() => openModalDirect('settings'), 300);
                 } else {
-                    openSettingsModal();
+                    openModalDirect('settings');
                 }
                 return;
             }
@@ -54,8 +54,8 @@ export function setupSidebarEvents() {
 
         if (btn) {
             const id = btn.id;
-            if (id === 'add-filter-btn') openFilterEditModal();
-            if (id === 'edit-timeblocks-btn') openTimeBlockModal();
+            if (id === 'add-filter-btn') openModalDirect('filter-edit');
+            if (id === 'edit-timeblocks-btn') openModalDirect('timeblock-edit');
         }
     });
 
@@ -105,7 +105,7 @@ export function setupSidebarEvents() {
             showCustomContextMenu(e as MouseEvent, [
                 {
                     label: '新しいウィンドウで開く',
-                    action: () => openInNewWindow(viewType!, itemId)
+                    action: () => openInNewWindow(viewType!, itemId ? { id: itemId } : {})
                 }
             ]);
         }

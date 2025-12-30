@@ -64,8 +64,8 @@ export function renderFixedAddTaskBar(footerContainer: HTMLElement, inputContain
     if (btn) {
         btn.onclick = () => {
             // タスクモーダルを開く（新規作成モード）
-            import('../store/ui/modal-store').then(({ openTaskDetailModal }) => {
-                openTaskDetailModal({
+            import('../store/ui/modal-store').then(({ openModalDirect }) => {
+                openModalDirect('task-detail', {
                     id: 'temp-new-task',
                     title: '',
                     description: '',

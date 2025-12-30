@@ -1,4 +1,4 @@
-import { openSettingsModal } from '../store/ui/modal-store';
+import { openModalDirect } from '../store/ui/modal-store';
 import { applyFonts, applyFontSize } from './layout/fonts';
 
 let isInitialized = false;
@@ -17,7 +17,7 @@ export function initSettings(): void {
         const target = e.target as HTMLElement;
         if (target.closest('#nav-settings')) {
             e.preventDefault();
-            openSettingsModal();
+            openModalDirect('settings');
         }
     };
 
@@ -29,5 +29,5 @@ export function initSettings(): void {
  * 設定モーダルの表示実行
  */
 export function showSettingsModal(): void {
-    openSettingsModal();
+    openModalDirect('settings');
 }

@@ -43,6 +43,7 @@ export function initSidebar() {
 
     // HTML更新後に再キャッシュ（重要）
     UI = cacheSidebarElements();
+    if (!UI.container) return;
 
     // ユーティリティセットアップ
     if (UI.sidebar && UI.resizer) {

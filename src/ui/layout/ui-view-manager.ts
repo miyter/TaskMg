@@ -91,7 +91,7 @@ export function updateView(allTasks: Task[], allProjects: Project[], allLabels: 
     // 2. 検索
     if (currentFilter.type === 'search') {
         showView(UI.search, allViewElements.filter(v => v !== UI!.search));
-        if (UI.search) renderSearchPage(UI.search, allTasks, allProjects, currentFilter);
+        if (UI.search) renderSearchPage(UI.search, allViewElements.filter(v => v !== UI!.search), allTasks, allProjects, currentFilter);
         updateFooterVisibility(true, null, null);
         return;
     }

@@ -79,7 +79,7 @@ export function getStoredBool(key: string, defaultValue = false): boolean {
 export function getSidebarDensity(): string {
     // 1. New density key
     const density = localStorage.getItem(SIDEBAR_CONFIG.STORAGE_KEYS.DENSITY);
-    if (density && Object.values(SIDEBAR_CONFIG.DENSITY_LEVELS).includes(density)) {
+    if (density && (Object.values(SIDEBAR_CONFIG.DENSITY_LEVELS) as string[]).includes(density)) {
         return density;
     }
 

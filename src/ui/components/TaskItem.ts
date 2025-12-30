@@ -6,7 +6,7 @@
 import { Project, Task, TimeBlock } from '../../store/schema';
 import { updateTaskStatus } from '../../store/store';
 import { getTimeBlocks } from '../../store/timeblocks';
-import { openTaskDetailModal } from '../../store/ui/modal-store';
+import { openModalDirect } from '../../store/ui/modal-store';
 import { formatDateCompact, getTaskDateColor } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { SelectionState, toggleTaskSelection } from '../state/ui-state';
@@ -157,7 +157,7 @@ export function createTaskItem(task: Task, allProjects: Project[], selectionStat
         if (isSelectionMode) {
             toggleTaskSelection(task.id);
         } else {
-            openTaskDetailModal(task);
+            openModalDirect('task-detail', task);
         }
     });
 

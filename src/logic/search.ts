@@ -1,6 +1,7 @@
 import { Task } from '../store/schema';
 import { getStartOfWeek, isSameDay, toDate } from '../utils/date';
 import { FilterConditions, parseFilterQuery } from './filter-parser';
+import { sortTasks } from './sort';
 
 type FilterCriteria = string | FilterConditions;
 
@@ -91,3 +92,61 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
         return true;
     });
 }
+
+/**
+ * UIの条件に基づいたタスクの抽出とソート
+ */
+export function getProcessedTasks(tasks: Task[], config: any): Task[] {
+    const { keyword, showCompleted, projectId, labelId, timeBlockId, duration, savedFilter, sortCriteria } = config;
+
+    let filtered = tasks;
+
+    // キーワード検索
+    if (keyword) {
+        const k = keyword.toLowerCase();
+        filtered = filtered.filter(t =>
+            (t.title + (t.description || '')).toLowerCase().includes(k)
+        );
+    }
+
+    // 完了済み表示設定
+    if (!showCompleted) {
+        filtered = filtered.filter(t => t.status !== 'completed');
+    }
+
+    // プロジェクト絞り込み
+    if (projectId === 'unassigned') {
+        filtered = filtered.filter(t => !t.projectId);
+    } else if (projectId) {
+        filtered = filtered.filter(t => t.projectId === projectId);
+    }
+
+    // ラベル絞り込み
+    if (labelId) {
+        filtered = filtered.filter(t => t.labelIds?.includes(labelId));
+    }
+
+    // 時間帯絞り込み
+    if (timeBlockId === 'unassigned') {
+        filtered = filtered.filter(t => !t.timeBlockId);
+    } else if (timeBlockId) {
+        filtered = filtered.filter(t => t.timeBlockId === timeBlockId);
+    }
+
+    // 所要時間絞り込み
+    if (duration) {
+        const dur = parseInt(duration, 10);
+        if (!isNaN(dur)) {
+            filtered = filtered.filter(t => t.duration === dur);
+        }
+    }
+
+    // 保存済みフィルターの適用
+    if (savedFilter && savedFilter.query) {
+        filtered = filterTasks(filtered, savedFilter.query);
+    }
+
+    // ソートの適用
+    return sortTasks(filtered, sortCriteria);
+}
+

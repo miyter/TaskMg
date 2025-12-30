@@ -4,9 +4,9 @@
  * TypeScript化: 2025-12-29
  */
 import { Workspace } from '../../store/schema';
+import { openModalDirect } from '../../store/ui/modal-store';
 import { getCurrentWorkspaceId, setCurrentWorkspaceId } from '../../store/workspace';
 import { showItemContextMenu } from '../features/sidebar/sidebar-components';
-import { showSettingsModal } from '../settings/settings.js';
 
 const CLASSES = {
     MENU_VISIBLE: ['opacity-100', 'visible', 'scale-100', 'pointer-events-auto'],
@@ -56,8 +56,8 @@ export function initWorkspaceDropdown() {
         setMenuVisible(!isOpen);
     };
 
-    if (addBtn) addBtn.onclick = () => { setMenuVisible(false); openWorkspaceEditModal(null); };
-    if (settingsBtn) settingsBtn.onclick = () => { setMenuVisible(false); showSettingsModal(); };
+    if (addBtn) addBtn.onclick = () => { setMenuVisible(false); openModalDirect('workspace-edit', null); };
+    if (settingsBtn) settingsBtn.onclick = () => { setMenuVisible(false); openModalDirect('settings'); };
 
     // ワークスペース変更イベントを購読
     document.addEventListener('workspace-changed', (e: any) => {

@@ -1,8 +1,9 @@
 /**
  * サイドバーの各項目レンダリング制御
  */
-import { filterTasks } from '../../../logic/search';
+import { getProcessedTasks } from '../../../logic/search';
 import { getTimeBlocks } from '../../../store/timeblocks';
+import { openModalDirect } from '../../../store/ui/modal-store';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components';
 import { SIDEBAR_CONFIG } from './sidebar-constants';
 import { setupDropZone } from './sidebar-drag-drop';
@@ -64,7 +65,7 @@ export function renderTimeBlocks() {
             const bid = block.id;
             return tid === bid;
         });
-        const displayName = `${block.start} - ${block.end}`;
+        const displayName = `${block.start} - ${block.end} `;
         // block.id should be string, but schema says optional. Assuming it has id when retrieved.
         const blockId = block.id || '';
         const item = createSidebarItem(displayName, 'timeblock', blockId, { color: block.color }, count, density);
@@ -72,7 +73,7 @@ export function renderTimeBlocks() {
         item.onclick = () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: blockId } }));
         item.oncontextmenu = (e) => {
             e.preventDefault();
-            openTimeBlockModal();
+            openModalDirect('timeblock-edit');
         };
 
         setupDropZone(item, 'timeblock', blockId);
@@ -119,13 +120,13 @@ export function renderFilters() {
     const density = getSidebarDensity();
 
     const fragment = document.createDocumentFragment();
-    const iconHtml = `<svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>`;
+    const iconHtml = `< svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" fill = "none" stroke = "currentColor" viewBox = "0 0 24 24" > <path stroke - linecap="round" stroke - linejoin="round" stroke - width="2" d = "M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" > </path></svg > `;
 
     filters.forEach(filter => {
         let count = 0;
         try {
-            if (typeof filterTasks === 'function') {
-                const results = filterTasks(tasks, { savedFilter: filter, showCompleted: false });
+            if (typeof getProcessedTasks === 'function') {
+                const results = getProcessedTasks(tasks, { savedFilter: filter, showCompleted: false });
                 count = results.length;
             }
         } catch (e) {

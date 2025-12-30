@@ -4,7 +4,7 @@
 import { APP_EVENTS } from '../../../core/event-constants';
 import { deleteFilter } from '../../../store/filters';
 import { deleteProject } from '../../../store/projects';
-import { openProjectEditModal, openWorkspaceEditModal } from '../../../store/ui/modal-store';
+import { openModalDirect } from '../../../store/ui/modal-store';
 import { deleteWorkspace, getWorkspaces, setCurrentWorkspaceId } from '../../../store/workspace';
 import { showMessageModal } from '../../components';
 import { SIDEBAR_CONFIG } from './sidebar-constants';
@@ -150,7 +150,7 @@ function getMenuConfig(type: SidebarItemType, itemData: any): MenuConfig | undef
     const configs: Record<string, MenuConfig> = {
         project: {
             editLabel: '編集',
-            onEdit: () => openProjectEditModal(itemData),
+            onEdit: () => openModalDirect('project-edit', itemData),
             onDelete: async () => {
                 await deleteProject(itemData.id);
                 dispatchRoute('inbox');
@@ -159,7 +159,7 @@ function getMenuConfig(type: SidebarItemType, itemData: any): MenuConfig | undef
         },
         filter: {
             editLabel: '編集 / 名前変更',
-            onEdit: () => openFilterEditModal(itemData),
+            onEdit: () => openModalDirect('filter-edit', itemData),
             onDelete: async () => {
                 await deleteFilter(itemData.id);
                 dispatchRoute('inbox');
@@ -168,7 +168,7 @@ function getMenuConfig(type: SidebarItemType, itemData: any): MenuConfig | undef
         },
         workspace: {
             editLabel: '名前変更',
-            onEdit: () => openWorkspaceEditModal(itemData),
+            onEdit: () => openModalDirect('workspace-edit', itemData),
             onDelete: async () => {
                 const workspaces = getWorkspaces();
                 if (workspaces.length <= 1) throw new Error("最後のワークスペースは削除できない。");
@@ -177,7 +177,7 @@ function getMenuConfig(type: SidebarItemType, itemData: any): MenuConfig | undef
 
                 const remaining = getWorkspaces().filter(ws => ws.id !== itemData.id);
                 if (remaining.length > 0) {
-                    setCurrentWorkspaceId(remaining[0].id);
+                    setCurrentWorkspaceId(remaining[0].id!);
                     dispatchRoute('dashboard');
                 }
             },
