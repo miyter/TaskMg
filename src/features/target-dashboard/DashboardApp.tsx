@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MOCK_DATA } from '../dashboard-data';
+import { MOCK_DATA } from './dashboard-data';
 import { DashboardHeader } from './DashboardHeader';
 import { BackwardView } from './views/BackwardView';
 import { OkrView } from './views/OkrView';

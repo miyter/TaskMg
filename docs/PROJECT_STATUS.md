@@ -2,6 +2,16 @@
 
 **最終更新**: 2025-12-30
 
+## 📝 プロダクト概要
+**TaskMg** は、目標達成とタスク管理を統合した先進的な Web アプリケーションです。
+**「目標（Target）から逆算して、日々の行動（Task）を設計する」** というコンセプトの元、単なるToDoリストではなく、OKR、WOOP、バックワード・デザインといった複数のフレームワークをシームレスに切り替えて利用できることが特徴です。
+
+### 主な機能
+- **高度なタスク管理**: プロジェクト、ラベル、時間帯（Time Block）、所要時間による多角的なフィルタリングと統計表示。
+- **目標設計ウィザード**: 対話形式で目標を明確化し、行動計画へと落とし込むガイド機能。
+- **マルチフレームワーク**: OKR、WOOP、バックワード・デザインなど、状況に応じた目標管理手法をサポート。
+- **フレームワーク Wiki**: 各手法のベストプラクティスをアプリ内で学習・参照可能。
+
 ---
 
 ## 🏗️ 技術スタック
@@ -14,7 +24,7 @@
 | **状態管理** | Zustand | 5.0.9 |
 | **スタイリング** | Tailwind CSS | 3.4.3 |
 | **バックエンド** | Firebase Firestore | 10.14.1 |
-| **D&D** | @dnd-kit | core 6.3.1, sortable 10.0.0 |
+| **D&D** | @dnd-kit | 6.3.1 |
 
 ---
 
@@ -25,74 +35,52 @@ src/
 ├── App.tsx              # React アプリケーションルート
 ├── main.tsx             # エントリーポイント
 │
-├── components/          # ★ React コンポーネント
-│   ├── common/          # Modal.tsx, SortableItem.tsx
-│   ├── modals/          # ModalManager, TaskDetailModal
-│   ├── sidebar/         # Sidebar, ProjectList, TimeBlockList, etc.
-│   └── tasks/           # TaskList, TaskItem
+├── components/          # 共有・UIコンポーネント
+│   ├── auth/            # 認証関連 (LoginPage)
+│   ├── layout/          # レイアウト (AppLayout)
+│   ├── modals/          # モーダル管理
+│   ├── sidebar/         # サイドバー構成要素
+│   └── tasks/           # タスクリスト・アイテム
 │
-├── ui/                  # ⚠️ レガシー層 (削除予定・縮小中)
-│   ├── core/            # AppInitializer, EventManager
-│   └── features/        # sidebar (移行済み/削除待ち)
+├── features/            # 機能モジュール
+│   ├── target-dashboard/ # 目標ダッシュボード (OKR/WOOP/Backward)
+│   ├── wiki/            # フレームワーク解説Wiki
+│   └── wizard/          # 目標設計ウィザード
 │
-├── store/               # Zustand & Firestore
-│   ├── ui/              # modal-store, ui-store
-│   ├── backup.ts        # バックアップ・インポート機能
-│   └── store-raw.ts     # Core Store Logic
-│
-└── hooks/               # useTasks, useProjects, etc.
+├── hooks/               # カスタムフック (useTasks, useProjects...)
+├── store/               # Zustand & Firestore Logic
+├── core/                # Firebase設定・定数
+├── logic/               # ビジネスロジック (検索・ソート等)
+└── utils/               # ユーティリティ関数
 ```
 
 ---
 
-## 🔄 移行状況
+## 🔄 現在のステータス
 
-### サイドバー React 化 (完了 ✅)
-- **状況**: `Sidebar.tsx` に `TimeBlockList`, `DurationList`, `CustomFilterList`, `WorkspaceDropdown` を統合済み。
-- **クリーンアップ**: `src/ui/features/sidebar` 内のレガシーコードを完全削除済み。
+### リファクタリング完了 (2025-12-30) ✅
+- **完全 React 化**: `src/ui` 内のレガシー DOM 操作コードを全廃し、全て React コンポーネントに移行完了。
+- **ディレクトリ最適化**: `src/features` に主要機能をフラットに配置し、見通しを改善。
+- **型安全性**: プロジェクト全体の TypeScript 化率 100%。
 
-### ストア・バックアップ改善 (完了 ✅)
-- **状況**: `backup.ts` 分離、`store-raw.ts` のクリーンアップ完了。
-- **改善**: `addTaskCompatibility` 廃止、キャッシュの Workspace 対応強化。
-
-### モーダルシステム (完了 ✅)
-- **状況**: `TaskDetailModal` 含む全モーダルの React 化・一元管理完了。
-
-### TypeScript 化 (完了 ✅)
-- **状況**: プロジェクト全体の TS 化完了。
-
----
-
-## 📊 プロジェクト統計 (概要)
-- **ソースファイル**: 約 134 ファイル
-- **TS移行率**: 100%
-- **健全性**: 🟢 良好 (レガシー削除フェーズへ)
+### 健全性
+💎 **極めて良好**
+技術的負債の大半（レガシーバックエンドロジック、DOM直接操作）が解消され、新機能開発やパフォーマンスチューニングに適したクリーンな状態です。
 
 ---
 
 ## 🎯 次のステップ
 
-### `src/ui` ディレクトリ整理 (完了 ✅)
-- **状況**: `src/ui` ディレクトリを完全削除。`src/ui/features` は `src/features` に移動。
-- **構造**: `src` 直下は `components`, `features`, `hooks`, `store`, `core`, `logic`, `utils` ですっきり整理された。
+1. **パフォーマンス最適化**
+   - `React.memo`, `useMemo`, `useCallback` の適用による再レンダリング抑制。
+   - 動的インポート（Code Splitting）の検討。
 
----
+2. **残務処理・品質向上**
+   - 未使用ユーティリティ関数の洗い出しと削除。
+   - テストカバレッジの拡充。
 
-## 📊 プロジェクト統計 (概要)
-- **ソースファイル**: 約 100 ファイル
-- **TS移行率**: 100%
-- **健全性**: 💎 極めて良好 (ディレクトリ構造最適化完了)
-
----
-
-## 🎯 次のステップ
-
-1. **機能強化・最適化**
-   - パフォーマンスチューニング (React.memo, useMemo 等の適用確認)
-   - テストカバレッジの向上
-   - 新機能開発への復帰
-2. **残存機能のリファクタリング**
-   - `src/features` 内の `legacy` ロジック (wizard等) を順次 React コンポーネント化。
+3. **新機能開発への復帰**
+   - 既存機能のブラッシュアップや、ユーザーフィードバックに基づく新機能追加。
 
 ---
 

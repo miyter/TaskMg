@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { WIKI_DATA, WikiFramework } from '../wiki-data';
+import { WIKI_DATA, WikiFramework } from './wiki-data';
 import { WikiFrameworkCard } from './WikiFrameworkCard';
 import { WikiFrameworkModal } from './WikiFrameworkModal';
 

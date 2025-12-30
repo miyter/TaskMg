@@ -9,7 +9,6 @@ import {
 import { arrayMove } from '@dnd-kit/sortable';
 import React from 'react';
 import { LoginPage } from './components/auth/LoginPage';
-import { LegacyView } from './components/common/LegacyView';
 import { AppLayout } from './components/layout/AppLayout'; // New Import
 import { ModalManager } from './components/modals/ModalManager';
 import { BasicFilters } from './components/sidebar/BasicFilters';
@@ -24,9 +23,9 @@ import { TaskList } from './components/tasks/TaskList';
 // Sub-apps
 import { auth } from './core/firebase';
 import { onAuthStateChanged } from './core/firebase-sdk';
-import { DashboardApp } from './features/target-dashboard/react/DashboardApp';
-import { WikiApp } from './features/wiki/react/WikiApp';
-import { renderWizard } from './features/wizard/wizard';
+import { DashboardApp } from './features/target-dashboard/DashboardApp';
+import { WikiApp } from './features/wiki/WikiApp';
+import { WizardApp } from './features/wizard/WizardApp';
 import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
 import { useThemeEffect } from './hooks/useThemeEffect';
@@ -181,7 +180,7 @@ const App: React.FC = () => {
             >
                 {/* Main Content Routing */}
                 {filterType === 'wizard' ? (
-                    <LegacyView render={(el) => renderWizard(el)} />
+                    <WizardApp />
                 ) : filterType === 'target-dashboard' ? (
                     <DashboardApp />
                 ) : filterType === 'wiki' ? (
