@@ -7,14 +7,16 @@
 import { auth } from '../core/firebase';
 import { getCurrentWorkspaceId } from './workspace';
 
+import {
+    createBackupData as createBackupDataRaw,
+    importBackupData as importBackupDataRaw
+} from './backup';
 import { Task } from './schema';
 import {
     addTaskRaw,
-    createBackupDataRaw,
     deleteTaskRaw,
     getTaskByIdRaw,
     getTasks as getTasksRaw,
-    importBackupDataRaw,
     updateTaskRaw,
     updateTaskStatusRaw
 } from './store-raw';
@@ -63,6 +65,15 @@ export async function updateTask(taskId: string, updates: Partial<Task>) {
 export async function deleteTask(taskId: string) {
     const { userId, workspaceId } = requireAuthAndWorkspace();
     return deleteTaskRaw(userId, workspaceId, taskId);
+}
+
+/**
+ * タスクのステータスをトグルする
+ */
+export async function toggleTaskStatus(taskId: string, currentStatus: string) {
+    const { userId, workspaceId } = requireAuthAndWorkspace();
+    const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
+    return updateTaskStatusRaw(userId, workspaceId, taskId, newStatus);
 }
 
 /**

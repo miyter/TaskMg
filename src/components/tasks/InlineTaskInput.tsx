@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { addTaskCompatibility } from '../../store/store';
+import { addTask } from '../../store/store';
 import { cn } from '../../utils/cn';
 
 interface InlineTaskInputProps {
@@ -18,7 +18,7 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
 
         setIsSubmitting(true);
         try {
-            await addTaskCompatibility({ title });
+            await addTask({ title });
             setTitle(''); // Reset form
             // Keep input focused or close depending on UX preference.
             // For now, keep it open for quick entry.

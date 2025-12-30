@@ -3,7 +3,7 @@
  */
 import { getProjects } from '../store/projects';
 import { Project, TimeBlock } from '../store/schema';
-import { addTaskCompatibility } from '../store/store';
+import { addTask } from '../store/store';
 import { getTimeBlocks } from '../store/timeblocks';
 import { createGlassCard } from './components/glass-card';
 import { UI_STYLES } from './core/ui-style-constants';
@@ -165,7 +165,7 @@ function setupInlineEvents(container: HTMLElement, projectId: string | null, lab
 
 async function handleAddTask(data: any): Promise<void> {
     try {
-        await addTaskCompatibility(data);
+        await addTask(data);
     } catch (e: any) {
         console.error(e);
         showMessageModal({
