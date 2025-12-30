@@ -1,5 +1,5 @@
 import React from 'react';
-import { KGIStatus } from '../components/header';
+import { KGIStatus } from './dashboard-types';
 
 interface DashboardHeaderProps {
     kgi: KGIStatus;
@@ -71,8 +71,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(({ kgi
                                 key={tab.id}
                                 onClick={() => onTabChange(tab.id)}
                                 className={`group px-3 py-1.5 rounded-md text-xs font-bold transition-all ${currentTab === tab.id
-                                        ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white'
-                                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                    ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white'
+                                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                                     }`}
                                 title={tab.label}
                             >

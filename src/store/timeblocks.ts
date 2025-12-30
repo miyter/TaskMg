@@ -18,7 +18,7 @@ import {
 } from "../core/firebase-sdk";
 
 import { auth, db } from "../core/firebase";
-import { showMessageModal } from '../ui/components';
+
 import { paths } from '../utils/paths';
 import { TimeBlock } from './schema';
 
@@ -75,8 +75,7 @@ export function clearTimeBlocksCache() {
 export async function saveTimeBlock(block: Partial<TimeBlock>): Promise<boolean | undefined> {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-        // @ts-ignore
-        showMessageModal("ログインが必要です");
+        console.error('Authentication required for TimeBlock operation.');
         return;
     }
 

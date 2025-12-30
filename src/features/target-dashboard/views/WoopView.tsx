@@ -1,5 +1,5 @@
 import React from 'react';
-import { WoopData } from '../../dashboard-types';
+import { WoopData } from '../dashboard-types';
 
 interface WoopViewProps {
     data: WoopData;

@@ -1,9 +1,3 @@
-/**
- * 更新日: 2025-12-21
- * 内容: 集計ヘルパーの統合、toDateの堅牢化、繰り返し計算ロジック保持
- * TypeScript化: 2025-12-29
- */
-
 import { Timestamp } from "firebase/firestore";
 
 export interface RecurrenceConfig {
@@ -89,6 +83,27 @@ export function formatDateCompact(date: Date | Timestamp | string | number | nul
 
     return year !== now.getFullYear() ? `${year}/${month}/${day}` : `${month}/${day}`;
 }
+
+/**
+ * HTML <input type="date"> 用のフォーマット (YYYY-MM-DD)
+ */
+export const formatDateForInput = (date: Date | Timestamp | string | number | null): string => {
+    const target = toDate(date);
+    if (!target) return '';
+    const y = target.getFullYear();
+    const m = String(target.getMonth() + 1).padStart(2, '0');
+    const d = String(target.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
+
+/**
+ * HTML <input type="date"> の値 (YYYY-MM-DD) をDate型に変換
+ */
+export const parseDateInput = (val: string): Date | null => {
+    if (!val) return null;
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+};
 
 /**
  * 期限日に基づくTailwindカラークラスを取得

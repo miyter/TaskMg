@@ -1,5 +1,5 @@
 import React from 'react';
-import { WikiFramework } from '../wiki-data';
+import { WikiFramework } from './wiki-data';
 
 interface WikiFrameworkCardProps {
     framework: WikiFramework;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { OkrData } from '../../dashboard-types';
+import { OkrData } from '../dashboard-types';
 
 interface OkrViewProps {
     data: OkrData;

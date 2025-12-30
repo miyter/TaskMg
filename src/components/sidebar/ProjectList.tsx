@@ -39,10 +39,14 @@ export const ProjectList: React.FC = () => {
 // Extracted for cleaner click handling vs dnd
 import { Project } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
+import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
+import { getDensityClass } from '../../utils/ui-utils';
 
-const ProjectItem: React.FC<{ project: Project }> = ({ project }) => {
+const ProjectItem = React.memo<{ project: Project }>(({ project }) => {
     const { filterType, targetId, setFilter } = useFilterStore();
+    const { density } = useSettingsStore();
+
     const isActive = filterType === 'project' && targetId === project.id;
 
     const { setNodeRef, isOver } = useDroppable({
@@ -58,7 +62,8 @@ const ProjectItem: React.FC<{ project: Project }> = ({ project }) => {
             ref={setNodeRef}
             onClick={() => setFilter('project', project.id)}
             className={cn(
-                "group flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer transition-colors select-none",
+                "group flex items-center justify-between px-2 rounded-md cursor-pointer transition-colors select-none",
+                getDensityClass(density),
                 isActive
                     ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
                     : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200",
@@ -71,4 +76,6 @@ const ProjectItem: React.FC<{ project: Project }> = ({ project }) => {
             </div>
         </div>
     );
-};
+}, (prev, next) => {
+    return JSON.stringify(prev.project) === JSON.stringify(next.project);
+});

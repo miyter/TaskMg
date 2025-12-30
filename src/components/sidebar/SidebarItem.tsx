@@ -1,5 +1,7 @@
 import React from 'react';
+import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
+import { getDensityClass } from '../../utils/ui-utils';
 
 interface SidebarItemProps {
     icon?: React.ReactNode;
@@ -20,12 +22,15 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
     onClick,
     onContextMenu
 }) => {
+    const { density } = useSettingsStore();
+
     return (
         <div
             onClick={onClick}
             onContextMenu={onContextMenu}
             className={cn(
-                "group flex items-center justify-between px-2 py-1 ml-1 rounded-md cursor-pointer transition-colors select-none",
+                "group flex items-center justify-between px-2 ml-1 rounded-md cursor-pointer transition-colors select-none",
+                getDensityClass(density), // Dynamic padding based on density
                 isActive
                     ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
                     : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200",

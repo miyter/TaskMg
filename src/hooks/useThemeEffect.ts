@@ -65,6 +65,5 @@ export const useThemeEffect = () => {
         // Sync density to sidebar store as well (if sidebar uses separate store, but ideally they should merge)
         // For now, we update the legacy ui-store sidebarDensity to match global density
         setSidebarDensity(density);
-
     }, [density, setSidebarDensity]);
 };

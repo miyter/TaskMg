@@ -6,7 +6,7 @@ import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { Recurrence, Task } from '../../store/schema';
 import { addTask, deleteTask, updateTask } from '../../store/store';
 import { useModalStore } from '../../store/ui/modal-store';
-import { getInitialDueDateFromRecurrence, toDate } from '../../utils/date';
+import { formatDateForInput, getInitialDueDateFromRecurrence, parseDateInput, toDate } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { Modal } from '../common/Modal';
 
@@ -20,21 +20,6 @@ const RECURRENCE_OPTIONS = [
     { value: 'monthly', label: '毎月' },
 ];
 const DAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
-
-// --- ユーティリティ ---
-const formatDateForInput = (date: Date | null): string => {
-    if (!date) return '';
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-};
-
-const parseDateInput = (val: string): Date | null => {
-    if (!val) return null;
-    const d = new Date(val);
-    return isNaN(d.getTime()) ? null : d;
-};
 
 // --- メインコンポーネント ---
 export const TaskDetailModal: React.FC = () => {

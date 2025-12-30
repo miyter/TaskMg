@@ -1,40 +1,27 @@
 import {
     closestCenter,
-    DndContext,
-    DragEndEvent,
-    PointerSensor,
-    useSensor,
-    useSensors
+    DndContext
 } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
 import React from 'react';
 import { LoginPage } from './components/auth/LoginPage';
-import { AppLayout } from './components/layout/AppLayout'; // New Import
+import { AppLayout } from './components/layout/AppLayout';
 import { ModalManager } from './components/modals/ModalManager';
-import { BasicFilters } from './components/sidebar/BasicFilters';
-import { CustomFilterList } from './components/sidebar/CustomFilterList';
-import { DurationList } from './components/sidebar/DurationList';
-import { LabelList } from './components/sidebar/LabelList';
-import { ProjectList } from './components/sidebar/ProjectList';
-import { SidebarSection } from './components/sidebar/SidebarSection';
-import { TargetList } from './components/sidebar/TargetList';
-import { TimeBlockList } from './components/sidebar/TimeBlockList';
+import { SidebarContent } from './components/sidebar/SidebarContent';
 import { TaskList } from './components/tasks/TaskList';
-// Sub-apps
 import { auth } from './core/firebase';
 import { onAuthStateChanged } from './core/firebase-sdk';
 import { DashboardApp } from './features/target-dashboard/DashboardApp';
 import { WikiApp } from './features/wiki/WikiApp';
 import { WizardApp } from './features/wizard/WizardApp';
+import { useAppDnD } from './hooks/useAppDnD';
 import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
 import { useThemeEffect } from './hooks/useThemeEffect';
-import { updateProject, updateTask } from './store';
 import { useFilterStore } from './store/ui/filter-store';
 
 const App: React.FC = () => {
     useThemeEffect();
-    const { filterType, targetId, searchQuery } = useFilterStore();
+    const { filterType, targetId, query } = useFilterStore();
     const { projects } = useProjects();
     const { labels } = useLabels();
 
@@ -67,56 +54,7 @@ const App: React.FC = () => {
         };
     }, []);
 
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 5,
-            },
-        })
-    );
-
-    const handleDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (!over) return;
-
-        const activeId = String(active.id);
-        const overId = String(over.id);
-
-        // タスクをサイドバーへドラッグした場合の処理 (移動)
-        if (activeId.startsWith('task:')) {
-            const taskId = activeId.split(':')[1];
-            const targetType = over.data.current?.type;
-            const targetValue = over.data.current?.value;
-
-            const updates: any = {};
-            if (targetType === 'project') updates.projectId = targetValue;
-            if (targetType === 'inbox') updates.projectId = null;
-            if (targetType === 'timeblock') updates.timeBlockId = targetValue === 'unassigned' ? null : targetValue;
-
-            if (Object.keys(updates).length > 0) {
-                try {
-                    await updateTask(taskId, updates);
-                } catch (err) {
-                    console.error('Failed to update task via dnd', err);
-                }
-            }
-        }
-
-        // プロジェクト自体の並び替え
-        if (activeId !== overId && !activeId.startsWith('task:')) {
-            const oldIndex = projects.findIndex(p => p.id === activeId);
-            const newIndex = projects.findIndex(p => p.id === overId);
-
-            if (oldIndex !== -1 && newIndex !== -1) {
-                const newProjects = arrayMove(projects, oldIndex, newIndex);
-                // 仮の「order」更新ロジック (スキーマに未定義の場合は実体化が必要だが、ここではUIフィードバック)
-                // 本来は各プロジェクトのorder値を更新してFirestoreへ書き込む
-                newProjects.forEach(async (p, idx) => {
-                    if (p.id) await updateProject(p.id, { order: idx } as any);
-                });
-            }
-        }
-    };
+    const { sensors, handleDragEnd } = useAppDnD(projects);
 
     // Compute Title
     const getTitle = () => {
@@ -132,37 +70,6 @@ const App: React.FC = () => {
         }
     };
 
-    // Sidebar Content Definition
-    const sidebarContent = (
-        <div className="flex flex-col gap-4">
-            <BasicFilters />
-
-            <SidebarSection title="Projects">
-                <ProjectList />
-            </SidebarSection>
-
-            <SidebarSection title="Targets" defaultExpanded={false}>
-                <TargetList />
-            </SidebarSection>
-
-            <SidebarSection title="Labels" defaultExpanded={false}>
-                <LabelList />
-            </SidebarSection>
-
-            <SidebarSection title="Time Blocks" defaultExpanded={false}>
-                <TimeBlockList />
-            </SidebarSection>
-
-            <SidebarSection title="Durations" defaultExpanded={false}>
-                <DurationList />
-            </SidebarSection>
-
-            <SidebarSection title="Filters" defaultExpanded={false}>
-                <CustomFilterList />
-            </SidebarSection>
-        </div>
-    );
-
     if (!user) {
         return <LoginPage />;
     }
@@ -175,7 +82,7 @@ const App: React.FC = () => {
         >
             <ModalManager />
             <AppLayout
-                sidebarContent={sidebarContent}
+                sidebarContent={<SidebarContent />}
                 title={getTitle()}
             >
                 {/* Main Content Routing */}
@@ -186,7 +93,7 @@ const App: React.FC = () => {
                 ) : filterType === 'wiki' ? (
                     <WikiApp />
                 ) : filterType === 'search' ? (
-                    <div className="p-4">Search Results for "{searchQuery}" (Backend search required)</div>
+                    <div className="p-4">Search Results for "{query}" (Backend search required)</div>
                 ) : (
                     <TaskList />
                 )}

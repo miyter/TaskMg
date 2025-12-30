@@ -17,12 +17,10 @@ import {
     addTaskRaw,
     deleteTaskRaw,
     getTaskByIdRaw,
-    getTasks as getTasksRaw,
     updateTaskRaw,
     updateTaskStatusRaw
 } from './store-raw';
 
-export const getTasks = getTasksRaw;
 
 /**
  * 認証とワークスペース選択のガード

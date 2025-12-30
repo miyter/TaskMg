@@ -22,7 +22,7 @@ import {
 } from "../core/firebase-sdk";
 
 import { auth, db } from "../core/firebase";
-import { showMessageModal } from '../ui/components';
+
 import { paths } from '../utils/paths';
 
 import { APP_EVENTS } from '../core/event-constants';
@@ -145,7 +145,7 @@ export async function addWorkspace(name: string): Promise<{ id: string, name: st
         return { id: docRef.id, name: name };
     } catch (e) {
         console.error("[Workspace] Add error:", e);
-        showMessageModal("ワークスペースの作成に失敗した。");
+        // Error notification handled by caller or UI layer
         throw e;
     }
 }
@@ -167,7 +167,7 @@ export async function updateWorkspaceName(id: string, newName: string): Promise<
         await updateDoc(doc(db, path, id), { name: newName });
     } catch (e) {
         console.error("[Workspace] Update error:", e);
-        showMessageModal("名前の更新に失敗した。");
+        // Error notification handled by caller or UI layer
     }
 }
 
@@ -179,6 +179,6 @@ export async function deleteWorkspace(id: string): Promise<void> {
         await deleteDoc(doc(db, path, id));
     } catch (e) {
         console.error("[Workspace] Delete error:", e);
-        showMessageModal("削除に失敗した。");
+        // Error notification handled by caller or UI layer
     }
 }

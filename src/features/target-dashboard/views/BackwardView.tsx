@@ -1,5 +1,5 @@
 import React from 'react';
-import { BackwardData } from '../../dashboard-types';
+import { BackwardData } from '../dashboard-types';
 
 interface BackwardViewProps {
     data: BackwardData;

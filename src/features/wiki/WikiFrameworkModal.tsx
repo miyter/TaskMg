@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MODAL_CLASSES } from '../../../core/ui-modal-constants';
-import { WikiFramework } from '../wiki-data';
+import { WikiFramework } from './wiki-data';
 
 interface WikiFrameworkModalProps {
     framework: WikiFramework;
@@ -34,7 +33,7 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ framewor
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className={`${MODAL_CLASSES.WIDTH.DEFAULT} bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-all duration-300 transform ${mount ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
+            <div className={`max-w-3xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-all duration-300 transform ${mount ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
                 {/* ヘッダー */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-3">

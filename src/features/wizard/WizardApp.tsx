@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useFilterStore } from '../../../store/ui/filter-store';
+import { useFilterStore } from '../../store/ui/filter-store';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
 import { WizardStep } from './WizardStep';
 import { WizardWelcome } from './WizardWelcome';

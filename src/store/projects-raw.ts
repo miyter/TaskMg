@@ -30,18 +30,31 @@ let _cachedProjects: Project[] = [];
  * プロジェクトデータのリアルタイムリスナーを開始する (RAW)
  */
 export function subscribeToProjectsRaw(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void): Unsubscribe {
-    // 購読開始時にキャッシュを一旦クリア（古いワークスペースのデータ混入防止）
-    _cachedProjects = [];
+    // 購読開始時にキャッシュクリアはしない（参照安定化のため）
+    // _cachedProjects = [];
 
     const path = paths.projects(userId, workspaceId);
 
     // 並び順を保証
     const q = query(collection(db, path), orderBy('createdAt', 'asc'));
 
+    let isFirst = true;
+
     return onSnapshot(q, (snapshot) => {
         const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
+
+        // Custom optimization for reference stability
+        if (JSON.stringify(_cachedProjects) === JSON.stringify(projects)) {
+            if (isFirst) {
+                onUpdate(_cachedProjects);
+            }
+            isFirst = false;
+            return;
+        }
+
         // キャッシュを更新
         _cachedProjects = projects;
+        isFirst = false;
         onUpdate(projects);
     }, (error) => {
         console.error("Error subscribing to projects:", error);

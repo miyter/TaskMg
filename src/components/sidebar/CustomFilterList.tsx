@@ -25,13 +25,15 @@ const CustomFilterItem: React.FC<{ filter: any, tasks: any[] }> = ({ filter, tas
     const isActive = filterType === 'custom' && targetId === filter.id;
 
     // 件数計算 (logic/search の getProcessedTasks を使用)
-    let count = 0;
-    try {
-        const results = getProcessedTasks(tasks, { savedFilter: filter, showCompleted: false });
-        count = results.length;
-    } catch (e) {
-        console.warn('[CustomFilterItem] Count error:', e);
-    }
+    const count = React.useMemo(() => {
+        try {
+            const results = getProcessedTasks(tasks, { savedFilter: filter, showCompleted: false });
+            return results.length;
+        } catch (e) {
+            console.warn('[CustomFilterItem] Count error:', e);
+            return 0;
+        }
+    }, [tasks, filter]);
 
     return (
         <SidebarItem

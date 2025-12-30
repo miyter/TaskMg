@@ -9,7 +9,7 @@ interface TaskItemProps {
     task: Task;
 }
 
-export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
+export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
     const isCompleted = task.status === 'completed';
     const { openModal } = useModalStore();
 
@@ -76,4 +76,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
             </div>
         </li>
     );
-};
+}, (prev, next) => {
+    // Custom deep compare for performance
+    return JSON.stringify(prev.task) === JSON.stringify(next.task);
+});

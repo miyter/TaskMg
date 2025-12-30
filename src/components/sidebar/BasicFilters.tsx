@@ -25,8 +25,12 @@ export const BasicFilters: React.FC = () => {
     );
 };
 
+import { useSettingsStore } from '../../store/ui/settings-store';
+import { getDensityClass } from '../../utils/ui-utils';
+
 const FilterItem: React.FC<{ item: typeof FILTER_ITEMS[number], tasks: any[] }> = ({ item, tasks }) => {
     const { filterType, setFilter } = useFilterStore();
+    const { density } = useSettingsStore();
     const isActive = filterType === item.id;
 
     // 件数計算
@@ -54,7 +58,8 @@ const FilterItem: React.FC<{ item: typeof FILTER_ITEMS[number], tasks: any[] }> 
             <button
                 onClick={() => setFilter(item.id)}
                 className={cn(
-                    "w-full flex items-center px-3 py-1.5 text-sm rounded-md transition-colors text-left gap-3 group/item",
+                    "w-full flex items-center px-3 text-sm rounded-md transition-colors text-left gap-3 group/item",
+                    getDensityClass(density),
                     isActive
                         ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
                         : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700",

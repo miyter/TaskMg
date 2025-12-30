@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '../../../utils/cn';
+import { cn } from '../../utils/cn';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
 
 interface WizardProgressBarProps {

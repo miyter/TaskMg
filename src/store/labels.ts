@@ -5,7 +5,7 @@
  */
 
 import { auth } from '../core/firebase';
-import { showMessageModal } from '../ui/components';
+
 
 import { Unsubscribe } from '../core/firebase-sdk';
 import {
@@ -25,8 +25,7 @@ export const getLabels = getLabelsRaw;
 function requireAuth() {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-        // @ts-ignore
-        showMessageModal("操作にはログインが必要です。", "error");
+        console.error('Authentication required for label operation.');
         throw new Error('Authentication required.');
     }
     return userId;

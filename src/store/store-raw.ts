@@ -48,10 +48,8 @@ function deserializeTask(id: string, data: any): Task {
 const _cachedTasksMap = new Map<string, Task[]>();
 let _currentWorkspaceId: string | null = null;
 
-export function getTasks(): Task[] {
-    if (!_currentWorkspaceId) return [];
-    return _cachedTasksMap.get(_currentWorkspaceId) || [];
-}
+
+
 
 export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void): Unsubscribe {
     const safeUpdate = (data: Task[]) => {
@@ -69,8 +67,23 @@ export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdat
     const path = paths.tasks(userId, workspaceId);
     const q = query(collection(db, path));
 
+    let isFirst = true;
+
     return onSnapshot(q, (snapshot) => {
         const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
+        const currentTasks = _cachedTasksMap.get(workspaceId);
+
+        // Optimization: Deep compare using JSON.stringify
+        if (currentTasks && JSON.stringify(currentTasks) === JSON.stringify(tasks)) {
+            // If content is identical, use the cached reference to avoid re-renders
+            if (isFirst) {
+                safeUpdate(currentTasks);
+            }
+            isFirst = false;
+            return;
+        }
+
+        isFirst = false;
         _cachedTasksMap.set(workspaceId, tasks);
         safeUpdate(tasks);
     }, (error) => {
