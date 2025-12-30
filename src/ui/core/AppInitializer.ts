@@ -4,7 +4,7 @@
  * TypeScript化: 2025-12-29
  */
 
-import { auth, initializeFirebase } from '../../core/firebase';
+import { auth } from '../../core/firebase';
 import { onAuthStateChanged, User } from '../../core/firebase-sdk';
 import { subscribeToWorkspaces } from '../../store/workspace';
 import { setupAuthHandlers, updateAuthUI } from '../auth.js';
@@ -27,12 +27,8 @@ import { applyAllUISettings } from './ui-settings-manager';
  * 起動シーケンス
  */
 export function runInitialization(): void {
-    try {
-        initializeFirebase();
-    } catch (e) {
-        console.error("Firebase Initialization Failed", e);
-        return;
-    }
+    // Firebaseはsrc/core/firebase.tsの読み込み時に自動初期化されるため、ここでの明示的な呼び出しは不要
+
 
     initTheme();
     renderLayout();

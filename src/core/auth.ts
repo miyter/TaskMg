@@ -1,6 +1,6 @@
 /**
- * 更新日: 2025-12-29
- * 内容: TypeScript化
+ * 更新日: 2025-12-30
+ * 内容: 自動初期化対応によるリファクタリング
  */
 
 import {
@@ -12,7 +12,7 @@ import {
     User
 } from "./firebase-sdk";
 
-import { auth, isFirebaseInitialized } from './firebase';
+import { auth } from './firebase';
 
 // グローバル定数の型定義
 declare global {
@@ -23,11 +23,10 @@ declare global {
 }
 
 /**
- * 現在のログインユーザーIDを取得（キャッシュ用）
+ * 現在のログインユーザーIDを取得
  */
 export function getCurrentUserId(): string | null {
-    if (!isFirebaseInitialized) return null;
-    return auth?.currentUser?.uid || null;
+    return auth.currentUser?.uid || null;
 }
 
 /**
@@ -36,8 +35,6 @@ export function getCurrentUserId(): string | null {
  * @param {Function} onLogout - ログアウト時のコールバック
  */
 export function initAuthListener(onLogin: (user: User) => void, onLogout: () => void) {
-    if (!isFirebaseInitialized) return;
-
     // 環境変数（Canvas等）からの初期トークンログイン
     // リスナー登録より先に実行することで、初期状態のちらつき（ログアウト→即ログイン）を抑制する
     const initialToken = (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) ||
@@ -70,7 +67,6 @@ export function initAuthListener(onLogin: (user: User) => void, onLogout: () => 
  * メールアドレスとパスワードによるログイン
  */
 export async function loginWithEmail(email: string, password: string): Promise<any> {
-    if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
     return await signInWithEmailAndPassword(auth, email, password);
 }
 
@@ -78,7 +74,6 @@ export async function loginWithEmail(email: string, password: string): Promise<a
  * ログアウト実行
  */
 export async function logout(): Promise<void> {
-    if (!isFirebaseInitialized) return;
     try {
         await signOut(auth);
     } catch (e) {
@@ -92,7 +87,7 @@ export async function logout(): Promise<void> {
  */
 export async function updateUserAuthPassword(newPassword: string): Promise<void> {
     const user = auth.currentUser;
-    if (!user) throw new Error("Authentication required");
+    if (!user) throw new Error("Authentication required: No current user.");
 
     // UI側のハンドラーでエラーをキャッチしてモーダルを表示することを期待する
     await updatePassword(user, newPassword);

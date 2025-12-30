@@ -2,7 +2,7 @@
  * UIビューマネージャー
  * TypeScript化: 2025-12-29
  */
-import { getProcessedTasks } from '../../logic/search.js';
+import { getProcessedTasks } from '../../logic/search';
 import { Filter, Label, Project, Task, TimeBlock } from '../../store/schema';
 import { renderDashboard } from '../features/dashboard/dashboard.js';
 import { renderTargetDashboard } from '../features/target-dashboard/target-dashboard.js';

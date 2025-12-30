@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useModalStore } from '../../store/ui/modal-store';
 import { SidebarDensity, useUIStore } from '../../store/ui/ui-store';
+import { cn } from '../../utils/cn';
 import { Modal } from '../common/Modal';
 
 type SettingsTab = 'general' | 'appearance' | 'account';

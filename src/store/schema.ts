@@ -43,6 +43,7 @@ export const TaskSchema = z.object({
 export const ProjectSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, "Project name is required"),
+    color: z.string().optional(),
     ownerId: z.string(),
     createdAt: DateLikeSchema,
 });

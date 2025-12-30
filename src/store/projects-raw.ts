@@ -1,7 +1,6 @@
 /**
- * 更新日: 2025-12-21
- * 内容: キャッシュ管理の安全性向上、DBインスタンスのキャッシュ化
- * TypeScript化: 2025-12-29
+ * 更新日: 2025-12-30
+ * 内容: firebase.tsの自動初期化対応によるリファクタリング
  */
 
 import {
@@ -14,17 +13,9 @@ import {
     updateDoc
 } from "../core/firebase-sdk";
 
-import { Firestore } from 'firebase/firestore';
-import { getFirebase } from '../core/firebase';
+import { db } from '../core/firebase';
 import { paths } from '../utils/paths';
 import { Project } from './schema';
-
-// モジュールスコープでDBインスタンスを保持（初期化後に設定）
-let _db: Firestore | null = null;
-function getDb(): Firestore {
-    if (!_db) _db = getFirebase().db;
-    return _db;
-}
 
 // ==========================================================
 // ★ RAW FUNCTIONS (userId, workspaceId 必須)
@@ -43,7 +34,6 @@ export function subscribeToProjectsRaw(userId: string, workspaceId: string, onUp
     _cachedProjects = [];
 
     const path = paths.projects(userId, workspaceId);
-    const db = getDb();
 
     // 並び順を保証
     const q = query(collection(db, path), orderBy('createdAt', 'asc'));
@@ -73,7 +63,6 @@ export function getProjects(): Project[] {
  */
 export async function addProjectRaw(userId: string, workspaceId: string, name: string) {
     const path = paths.projects(userId, workspaceId);
-    const db = getDb();
 
     await addDoc(collection(db, path), {
         name,
@@ -87,7 +76,6 @@ export async function addProjectRaw(userId: string, workspaceId: string, name: s
  */
 export async function updateProjectRaw(userId: string, workspaceId: string, projectId: string, updates: Partial<Project>) {
     const path = paths.projects(userId, workspaceId);
-    const db = getDb();
     const ref = doc(db, path, projectId);
     return updateDoc(ref, updates);
 }
@@ -97,6 +85,5 @@ export async function updateProjectRaw(userId: string, workspaceId: string, proj
  */
 export async function deleteProjectRaw(userId: string, workspaceId: string, projectId: string) {
     const path = paths.projects(userId, workspaceId);
-    const db = getDb();
     await deleteDoc(doc(db, path, projectId));
 }

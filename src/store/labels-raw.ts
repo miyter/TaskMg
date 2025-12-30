@@ -14,7 +14,7 @@ import {
     updateDoc
 } from "../core/firebase-sdk";
 
-import { getFirebase } from '../core/firebase';
+import { db } from '../core/firebase';
 import { paths } from '../utils/paths';
 import { Label } from './schema';
 
@@ -38,7 +38,7 @@ export function subscribeToLabelsRaw(userId: string, onUpdate: (labels: Label[])
     }
 
     const path = paths.labels(userId);
-    const { db } = getFirebase();
+    // db is directly imported from firebase.ts
     const q = query(collection(db, path));
 
     return onSnapshot(q, (snapshot) => {
@@ -57,7 +57,7 @@ export function subscribeToLabelsRaw(userId: string, onUpdate: (labels: Label[])
  */
 export async function addLabelRaw(userId: string, name: string, color: string) {
     const path = paths.labels(userId);
-    const { db } = getFirebase();
+    // db is directly imported from firebase.ts
 
     await addDoc(collection(db, path), {
         name,
@@ -72,7 +72,7 @@ export async function addLabelRaw(userId: string, name: string, color: string) {
  */
 export async function updateLabelRaw(userId: string, labelId: string, updates: Partial<Label>) {
     const path = paths.labels(userId);
-    const { db } = getFirebase();
+    // db is directly imported from firebase.ts
     const ref = doc(db, path, labelId);
     return updateDoc(ref, updates);
 }
@@ -82,6 +82,6 @@ export async function updateLabelRaw(userId: string, labelId: string, updates: P
  */
 export async function deleteLabelRaw(userId: string, labelId: string) {
     const path = paths.labels(userId);
-    const { db } = getFirebase();
+    // db is directly imported from firebase.ts
     await deleteDoc(doc(db, path, labelId));
 }
