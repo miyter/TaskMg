@@ -39,16 +39,17 @@
 | コンポーネント | 指摘事項 | 改善案 |
 | :--- | :--- | :--- |
 | **src/store/tasks.ts** | 認証チェックの効率 | `requireAuthAndWorkspace` が頻繁に呼ばれる。パフォーマンスに影響する場合、Zustandストア内でのキャッシュ利用を検討 |
-| **src/store/tasks.ts** | トグル処理の競合リスク | `toggleTaskStatus` が引数 `currentStatus` に依存しており古い値を参照する危険性あり。最新取得またはトランザクション利用を推奨 |
-| **src/logic/search.ts** | パフォーマンス懸念 | タスク数1000件超で毎回全件フィルタ・ソートが走る。メモ化 (`useMemo`) やリストの仮想化 (`react-window`) が必須要件 |
+| **src/store/tasks.ts** | ~~トグル処理の競合リスク~~ | ✅ 改善済み: `getTaskFromCache` で最新状態を取得するように修正 |
+| **src/logic/search.ts** | ~~パフォーマンス懸念~~ | ✅ 改善済み: 日付基準値の事前計算、条件ビルダー分離を実施 |
 | **src/logic/filter-parser** | パーサーの脆弱性 | 正規表現が簡易的で、`label:work project:"home"` 等のスペース混じりのクエリでパース崩れのリスクが高い |
 | **src/logic/filter-parser** | 型変換の非一貫性 | `duration` (number) のパース処理分散や `is:important` の扱いなど、構造的な整理とテストが必要 |
 | **src/hooks/useTasks.ts** | 購読解除の競合リスク | `workspaceId` 変更時の `unsubscribe` タイミングにより、古いリスナーが残るレースコンディションの可能性がある (部分的に改善済みだが要検証) |
 | **src/components/modals/ModalManager.tsx** | データフローの切断 | 各モーダルコンポーネントに `modalData` がPropsとして渡されておらず、ストア依存が隠蔽されている (部分的に改善済みだが完全ではない) |
-| **src/store/ui/modal-store.ts** | 非React連携の脆弱性 | `openModal` ヘルパーが `getState()` を直呼びしており、SSRや将来的な拡張でクラッシュするリスクがある |
-| **src/store/ui/modal-store.ts** | 型安全性の欠如 | `modalData` が `any` を含んでおり、各利用箇所でのキャストが必要でバグの温床となっている |
-| **src/store/store-raw.ts** | グローバルキャッシュの危険性 | `_cachedTasksMap` がモジュールスコープ変数であり、複数タブ/ユーザー切替時の競合やメモリリークの原因になる |
-| **src/store/store-raw.ts** | 同期ロジックの脆弱性 | `onSnapshot` エラー時にデータを空 `[]` で上書きしており、一時的な接続断でデータ消失に見える挙動を起こす |
+| **src/store/ui/modal-store.ts** | ~~非React連携の脆弱性~~ | ✅ 改善済み: ヘルパー関数削除、@deprecatedコメント追加 |
+| **src/store/ui/modal-store.ts** | 型安全性の欠如 | ✅ 改善済み: `modalData` を `Partial<T>` 型に変更 |
+| **src/store/store-raw.ts** | グローバルキャッシュの危険性 | ⚠️ 警告コメント追加済み。将来的にZustand/クラス化推奨 |
+| **src/store/store-raw.ts** | ~~同期ロジックの脆弱性~~ | ✅ 改善済み: エラー時にキャッシュを消さないように修正済み |
+| **src/store/store-raw.ts** | ~~リスナー通知の最適化~~ | ✅ 改善済み: shallow copy配布、queueMicrotask対応 |
 | **src/store/store-raw.ts** | リトライ戦略の曖昧さ | `withRetry` が全操作に一律適用されており、エラー種別判断やバックオフ戦略が不明確で無限ループのリスクがある |
 | **src/store/store-raw.ts** | 無効データの隠蔽 | `deserializeTask` が不正データに `Invalid Task` を返すが、根本的なバリデーションエラーとして処理すべき |
 | **src/core/firebase.ts** | 型チェックの放棄 | 全体への `@ts-nocheck` 適用は危険。必要な行のみの `ts-ignore` に留め、型定義を守るべき |

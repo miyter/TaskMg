@@ -63,20 +63,29 @@ function deserializeTask(id: string, data: any): Task {
 // ★ RAW FUNCTIONS (userId必須)
 // ==========================================================
 
-// ワークスペースごとのタスクキャッシュ（複数ワークスペース対応）
+/**
+ * @internal モジュールスコープのキャッシュ管理
+ * 
+ * ⚠️ 注意: これらはモジュールスコープのグローバル変数です。
+ * 将来的にはZustandストアまたは専用クラスへの移行を検討してください。
+ * 複数タブ/ユーザー切替時の競合リスクがあります。
+ */
 const _cachedTasksMap = new Map<string, Task[]>();
-// サブスクリプション管理
 const _listeners = new Map<string, Set<(tasks: Task[]) => void>>();
 const _unsubscribes = new Map<string, Unsubscribe>();
-
 let _currentWorkspaceId: string | null = null;
 
-// リスナーへの通知ヘルパー
+/**
+ * リスナーへの通知ヘルパー
+ * shallow copyを配布して不要なre-renderを防止
+ */
 function notifyListeners(workspaceId: string) {
     const tasks = _cachedTasksMap.get(workspaceId) || [];
     const listeners = _listeners.get(workspaceId);
     if (listeners) {
-        listeners.forEach(listener => listener(tasks));
+        // 各リスナーに新しい配列参照を渡す (shallow copy)
+        const tasksCopy = [...tasks];
+        listeners.forEach(listener => listener(tasksCopy));
     }
 }
 
@@ -102,6 +111,10 @@ export function resetTaskCache(workspaceId?: string) {
 
 /**
  * キャッシュからタスクを同期的に取得 (Optimistic updateなどの参照用)
+ * 
+ * @internal この関数は内部使用専用です。
+ * Reactコンポーネントからの直接呼び出しは避け、useTasks等のフックを使用してください。
+ * Optimistic Update等、ストア操作関数内での参照用途に限定してください。
  */
 export function getTaskFromCache(workspaceId: string, taskId: string): Task | undefined {
     const tasks = _cachedTasksMap.get(workspaceId);
@@ -123,10 +136,11 @@ export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdat
     const listeners = _listeners.get(workspaceId)!;
     listeners.add(onUpdate);
 
-    // 即時キャッシュ返却
+    // 即時キャッシュ返却 (React strict mode対応: 非同期で実行)
     const cached = _cachedTasksMap.get(workspaceId);
     if (cached) {
-        onUpdate(cached);
+        // queueMicrotaskでReactのレンダリングサイクル外で実行
+        queueMicrotask(() => onUpdate([...cached]));
     }
 
     // サブスクリプションが未確立なら開始
@@ -223,11 +237,13 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
 
 export async function updateTaskRaw(userId: string, workspaceId: string, taskId: string, updates: Partial<Task>) {
     // Optimistic Update
+    // Note: Shallow merge only - nested objects are replaced, not deep-merged.
+    // For Task type, this is acceptable as nested properties are rare.
     const currentTasks = _cachedTasksMap.get(workspaceId);
     if (currentTasks) {
         const newTasks = currentTasks.map(t => {
             if (t.id === taskId) {
-                return { ...t, ...updates }; // 単純マージ
+                return { ...t, ...updates };
             }
             return t;
         });

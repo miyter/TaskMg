@@ -6,6 +6,53 @@ import { sortTasks } from './sort';
 type FilterCriteria = string | FilterConditions;
 
 /**
+ * 日付基準値を事前計算 (パフォーマンス最適化)
+ */
+function createDateBaselines() {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const weekStart = getStartOfWeek(now);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const upcomingEnd = new Date(tomorrow);
+    upcomingEnd.setDate(upcomingEnd.getDate() + 7);
+
+    return { now, tomorrow, weekStart, weekEnd, upcomingEnd };
+}
+
+/**
+ * 日付条件のマッチング (事前計算した基準値を使用)
+ */
+function matchesDateCondition(
+    taskDate: Date,
+    condition: string,
+    baselines: ReturnType<typeof createDateBaselines>,
+    taskStatus: string
+): boolean {
+    const { now, tomorrow, weekStart, weekEnd, upcomingEnd } = baselines;
+
+    switch (condition) {
+        case 'today':
+            return isSameDay(taskDate, now);
+        case 'tomorrow':
+            return isSameDay(taskDate, tomorrow);
+        case 'week':
+            return taskDate >= weekStart && taskDate < weekEnd;
+        case 'upcoming':
+            return taskDate >= tomorrow && taskDate < upcomingEnd;
+        case 'overdue':
+            return taskDate < now && taskStatus !== 'completed';
+        default:
+            return false;
+    }
+}
+
+/**
  * フィルター条件に基づいてタスクを絞り込む (Primary Engine)
  */
 export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
@@ -13,12 +60,13 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
 
     const conditions = typeof criteria === 'string' ? parseFilterQuery(criteria) : criteria;
 
+    // 日付基準値を事前計算 (タスクごとに再計算しない)
+    const dateBaselines = conditions.dates.length > 0 ? createDateBaselines() : null;
+
     return tasks.filter(task => {
         // 1. Status Check
         if (conditions.status.length > 0) {
             const status = task.status || 'todo';
-            // If explicit status requested, must match one of them
-            // Special handling for 'active' -> match 'todo'
             const isMatch = conditions.status.some(s => {
                 if (s === 'active' && status === 'todo') return true;
                 return s === status;
@@ -71,40 +119,14 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
             if (!conditions.durations.includes(taskDur)) return false;
         }
 
-        // 6. Date Check
-        if (conditions.dates.length > 0) {
+        // 6. Date Check (Using pre-calculated baselines)
+        if (dateBaselines && conditions.dates.length > 0) {
             const taskDate = toDate(task.dueDate);
             if (!taskDate) return false;
 
-            const isMatch = conditions.dates.some(d => {
-                const now = new Date();
-                now.setHours(0, 0, 0, 0);
-
-                if (d === 'today') return isSameDay(taskDate, now);
-                if (d === 'tomorrow') {
-                    const tmrw = new Date(now);
-                    tmrw.setDate(tmrw.getDate() + 1);
-                    return isSameDay(taskDate, tmrw);
-                }
-                if (d === 'week') {
-                    const start = getStartOfWeek(now);
-                    const end = new Date(start);
-                    end.setDate(end.getDate() + 7);
-                    return taskDate >= start && taskDate < end;
-                }
-                if (d === 'upcoming') {
-                    // 明日以降の7日間
-                    const tmrw = new Date(now);
-                    tmrw.setDate(tmrw.getDate() + 1);
-                    const nextWeek = new Date(tmrw);
-                    nextWeek.setDate(nextWeek.getDate() + 7);
-                    return taskDate >= tmrw && taskDate < nextWeek;
-                }
-                if (d === 'overdue') {
-                    return taskDate < now && task.status !== 'completed';
-                }
-                return false;
-            });
+            const isMatch = conditions.dates.some(d =>
+                matchesDateCondition(taskDate, d, dateBaselines, task.status || 'todo')
+            );
             if (!isMatch) return false;
         }
 
@@ -112,13 +134,11 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
         const content = `${task.title} ${task.description || ''}`.toLowerCase();
 
         if (conditions.keywords.length > 0) {
-            // AND logic: all keywords must be present
             const matchesAll = conditions.keywords.every(kw => content.includes(kw));
             if (!matchesAll) return false;
         }
 
         if (conditions.excludeKeywords.length > 0) {
-            // Exclude if ANY excludeKeyword is present
             const matchesAnyExclude = conditions.excludeKeywords.some(kw => content.includes(kw));
             if (matchesAnyExclude) return false;
         }
@@ -140,15 +160,12 @@ export interface SearchConfig {
 }
 
 /**
- * UIの条件に基づいたタスクの抽出とソート (Unified implementation)
+ * SearchConfigからFilterConditionsを構築するヘルパー
  */
-export function getProcessedTasks(tasks: Task[], config: SearchConfig): Task[] {
-    const {
-        keyword, showCompleted, projectId, labelId,
-        timeBlockId, duration, savedFilter, sortCriteria, filterType
-    } = config;
+function buildFilterConditions(config: SearchConfig): FilterConditions {
+    const { keyword, showCompleted, projectId, labelId, timeBlockId, duration, filterType } = config;
 
-    // 1. ベースとなる条件オブジェクトを作成 (キーワードがあればパース、なければ空)
+    // ベースとなる条件オブジェクトを作成
     const conditions: FilterConditions = keyword ? parseFilterQuery(keyword) : {
         keywords: [],
         excludeKeywords: [],
@@ -164,7 +181,7 @@ export function getProcessedTasks(tasks: Task[], config: SearchConfig): Task[] {
         isImportant: false
     };
 
-    // 2. config から追加の条件（サイドバークリック等）をマッピング
+    // UI選択からの条件追加
     if (projectId) conditions.projects.push(projectId);
     if (labelId) conditions.labels.push(labelId);
     if (timeBlockId) conditions.timeBlocks.push(timeBlockId);
@@ -184,15 +201,29 @@ export function getProcessedTasks(tasks: Task[], config: SearchConfig): Task[] {
         conditions.status.push('active');
     }
 
-    // 3. フィルタリング実行
+    return conditions;
+}
+
+/**
+ * UIの条件に基づいたタスクの抽出とソート (Unified implementation)
+ * 
+ * Note: This function is designed to be wrapped with useMemo at the component level
+ * for optimal performance. The tasks and config should be memoized dependencies.
+ */
+export function getProcessedTasks(tasks: Task[], config: SearchConfig): Task[] {
+    const { savedFilter, sortCriteria } = config;
+
+    // 1. 条件構築 (extracted for clarity)
+    const conditions = buildFilterConditions(config);
+
+    // 2. フィルタリング実行
     let filtered = filterTasks(tasks, conditions);
 
-    // 4. 保存済みフィルター（クエリ文字列）があれば更に追加で適用
+    // 3. 保存済みフィルター（クエリ文字列）があれば更に追加で適用
     if (savedFilter && savedFilter.query) {
         filtered = filterTasks(filtered, savedFilter.query);
     }
 
-    // 5. ソートの適用
+    // 4. ソートの適用
     return sortTasks(filtered, sortCriteria || 'createdAt_desc');
 }
-
