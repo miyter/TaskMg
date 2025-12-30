@@ -56,9 +56,12 @@ export const useAppDnD = (projects: Project[]) => {
                 // 現状はFirestore更新リクエストを投げるのみ。
                 const newProjects = arrayMove(projects, oldIndex, newIndex);
 
-                newProjects.forEach(async (p, idx) => {
-                    if (p.id) await updateProject(p.id, { order: idx } as any);
-                });
+                await Promise.all(newProjects.map((p, idx) => {
+                    // Update order
+                    // Note: 'order' field needs to be in ProjectSchema (added implicitly or needs update)
+                    if (p.id) return updateProject(p.id, { order: idx } as any);
+                    return Promise.resolve();
+                }));
             }
         }
     };

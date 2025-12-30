@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { addTarget } from '../../store';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
 import { WizardStep } from './WizardStep';
@@ -15,16 +16,28 @@ export const WizardApp: React.FC = () => {
         setStep(prev => prev + 1);
     };
 
-    const handleFinish = (stepData: Record<string, string>) => {
-        const finalData = { ...data, ...stepData };
-        console.log("Wizard Completed", finalData);
-        alert(`${WIZARD_MODES[mode].label}の目標が作成されました！（ダッシュボードへ移動します）`);
 
-        // Reset and navigate
-        setStep(0);
-        setData({});
-        // Navigate to dashboard (assuming target-dashboard exists as a view)
-        setFilter('target-dashboard');
+
+    const handleFinish = async (stepData: Record<string, string>) => {
+        const finalData = { ...data, ...stepData };
+
+        try {
+            await addTarget({
+                mode: mode,
+                data: finalData
+            });
+            console.log("Wizard Completed, Saved to Firestore", finalData);
+            alert(`${WIZARD_MODES[mode].label}の目標が作成されました！（ダッシュボードへ移動します）`);
+
+            // Reset and navigate
+            setStep(0);
+            setData({});
+            // Navigate to dashboard
+            setFilter('target-dashboard');
+        } catch (error) {
+            console.error("Failed to save wizard target:", error);
+            alert("目標の保存に失敗しました。");
+        }
     };
 
     const handleBack = () => {

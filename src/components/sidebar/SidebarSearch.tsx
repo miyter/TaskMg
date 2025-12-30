@@ -2,14 +2,29 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useFilterStore } from '../../store/ui/filter-store';
 
 export const SidebarSearch: React.FC = () => {
-    const { query, setSearchQuery, setFilter } = useFilterStore();
+    const { query, setSearchQuery } = useFilterStore();
     const [localQuery, setLocalQuery] = useState(query);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // 同期: ストアのqueryが変わったときは追従
+    // 同期: ストアのqueryが変わったときは追従 (外部からの変更に対応)
     useEffect(() => {
-        setLocalQuery(query);
+        if (query !== localQuery) {
+            setLocalQuery(query);
+        }
     }, [query]);
+
+    // Debounce処理
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (localQuery !== query) {
+                setSearchQuery(localQuery);
+            }
+        }, 300);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [localQuery, query, setSearchQuery]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,6 +36,12 @@ export const SidebarSearch: React.FC = () => {
         setLocalQuery(val);
     };
 
+    const handleClear = () => {
+        setLocalQuery('');
+        setSearchQuery('');
+        inputRef.current?.focus();
+    };
+
     return (
         <form onSubmit={handleSubmit} className="px-3 mb-2">
             <div className="relative group">
@@ -29,6 +50,7 @@ export const SidebarSearch: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
+                <label htmlFor="page-search-input" className="sr-only">サイドバー検索</label>
                 <input
                     ref={inputRef}
                     id="page-search-input"
@@ -36,9 +58,19 @@ export const SidebarSearch: React.FC = () => {
                     placeholder="検索 (/)"
                     value={localQuery}
                     onChange={handleChange}
-                    onBlur={() => setSearchQuery(localQuery)}
-                    className="w-full bg-gray-100 dark:bg-gray-700/50 border border-transparent focus:border-blue-500/50 focus:bg-white dark:focus:bg-gray-700 rounded-lg py-1.5 pl-9 pr-3 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-500 outline-none transition-all"
+                    className="w-full bg-gray-100 dark:bg-gray-700/50 border border-transparent focus:border-blue-500/50 focus:bg-white dark:focus:bg-gray-700 rounded-lg py-1.5 pl-9 pr-8 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-500 outline-none transition-all"
                 />
+                {localQuery && (
+                    <button
+                        type="button"
+                        onClick={handleClear}
+                        className="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                )}
             </div>
         </form>
     );

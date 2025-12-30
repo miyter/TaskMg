@@ -50,4 +50,5 @@ export const paths = {
     // ワークスペース依存データ
     tasks: (userId: string, workspaceId: string) => `${getWorkspaceBasePath(userId, workspaceId)}/tasks`,
     projects: (userId: string, workspaceId: string) => `${getWorkspaceBasePath(userId, workspaceId)}/projects`,
+    targets: (userId: string, workspaceId: string) => `${getWorkspaceBasePath(userId, workspaceId)}/targets`,
 };

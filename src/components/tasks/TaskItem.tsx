@@ -71,7 +71,14 @@ export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
                     {task.title}
                 </div>
                 {task.description && (
-                    <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                    <div
+                        className="text-xs text-gray-500 mt-1 overflow-hidden"
+                        style={{
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: 'var(--task-line-clamp)',
+                        }}
+                    >
                         {task.description}
                     </div>
                 )}

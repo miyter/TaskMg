@@ -15,14 +15,18 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
 
     return tasks.filter(task => {
         // 1. Status Check
+        // 1. Status Check
         if (conditions.status.length > 0) {
             const status = task.status || 'todo';
             // "completed" が条件に含まれている場合、タスクも "completed" である必要がある
             if (conditions.status.includes('completed') && status !== 'completed') return false;
             // "active" (等) が条件に含まれている場合、タスクは "completed" 以外である必要がある
             if (conditions.status.includes('active') && status === 'completed') return false;
-            // "important" が条件に含まれている場合、タスクの isImportant フラグをチェック
-            if (conditions.status.includes('important') && !task.isImportant) return false;
+        }
+
+        // 1.5 Important Check
+        if (conditions.isImportant && !task.isImportant) {
+            return false;
         }
 
         // 2. Project Check
@@ -93,11 +97,39 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
             if (!isMatch) return false;
         }
 
-        // 7. Keywords (Title/Description) - AND search
+        // 7. Keywords (Title/Description) - AND/OR search
         if (conditions.keywords.length > 0) {
             const content = `${task.title} ${task.description || ''}`.toLowerCase();
-            const matchesAll = conditions.keywords.every(kw => content.includes(kw.toLowerCase()));
-            if (!matchesAll) return false;
+
+            // Simple OR logic: if 'or' exists, treat as group separator
+            // e.g. "a b OR c" => (a AND b) OR (c)
+            if (conditions.keywords.includes('or')) {
+                const groups: string[][] = [];
+                let currentGroup: string[] = [];
+
+                conditions.keywords.forEach(kw => {
+                    if (kw === 'or') {
+                        if (currentGroup.length > 0) {
+                            groups.push(currentGroup);
+                            currentGroup = [];
+                        }
+                    } else {
+                        currentGroup.push(kw);
+                    }
+                });
+                if (currentGroup.length > 0) groups.push(currentGroup);
+
+                // If any group matches (AND within group)
+                const matchesAnyGroup = groups.some(group =>
+                    group.every(kw => content.includes(kw))
+                );
+
+                if (!matchesAnyGroup) return false;
+            } else {
+                // Default: All keywords must match (AND)
+                const matchesAll = conditions.keywords.every(kw => content.includes(kw.toLowerCase()));
+                if (!matchesAll) return false;
+            }
         }
 
         return true;
@@ -133,7 +165,8 @@ export function getProcessedTasks(tasks: Task[], config: SearchConfig): Task[] {
         timeBlocks: [],
         durations: [],
         dates: [],
-        status: []
+        status: [],
+        isImportant: false
     };
 
     // 2. config から追加の条件（サイドバークリック等）をマッピング
@@ -149,7 +182,7 @@ export function getProcessedTasks(tasks: Task[], config: SearchConfig): Task[] {
     // filterType (today, upcoming, important) の処理
     if (filterType === 'today') conditions.dates.push('today');
     if (filterType === 'upcoming') conditions.dates.push('upcoming');
-    if (filterType === 'important') conditions.status.push('important'); // 特殊なステータス扱いとして条件に追加
+    if (filterType === 'important') conditions.isImportant = true;
 
     // 完了表示設定
     if (!showCompleted) {

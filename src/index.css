@@ -15,7 +15,9 @@
         --font-jp: 'M PLUS 2';
     }
 
+    html,
     body {
+        height: 100%;
         @apply font-sans antialiased text-gray-800 dark:text-gray-100 transition-colors duration-300;
         font-family: var(--font-en), var(--font-jp), sans-serif;
     }
@@ -57,21 +59,25 @@
     body.app-density-compact {
         --modal-p: 1rem;
         --modal-gap: 0.75rem;
+        --task-line-clamp: 1;
     }
 
     body.app-density-normal {
         --modal-p: 1.5rem;
         --modal-gap: 1.5rem;
+        --task-line-clamp: 2;
     }
 
     body.app-density-comfortable {
         --modal-p: 2rem;
         --modal-gap: 2rem;
+        --task-line-clamp: 3;
     }
 
     body.app-density-spacious {
         --modal-p: 2.5rem;
         --modal-gap: 2.5rem;
+        --task-line-clamp: 999;
     }
 
     /* Density Utilities */

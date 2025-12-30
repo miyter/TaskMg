@@ -28,6 +28,7 @@ const toFirestoreDate = (val: any): Timestamp | Date | undefined => (val instanc
 function deserializeTask(id: string, data: any): Task {
     // データを安全に Task 型に整形
     if (!data || typeof data !== 'object') {
+        console.warn(`[deserializeTask] Invalid data for task ${id}:`, data);
         return {
             id,
             title: 'Invalid Task',
@@ -65,6 +66,18 @@ function deserializeTask(id: string, data: any): Task {
 // ワークスペースごとのタスクキャッシュ（複数ワークスペース対応）
 const _cachedTasksMap = new Map<string, Task[]>();
 let _currentWorkspaceId: string | null = null;
+
+/**
+ * キャッシュをクリアする (ログアウト時やメモリ解放用)
+ */
+export function resetTaskCache(workspaceId?: string) {
+    if (workspaceId) {
+        _cachedTasksMap.delete(workspaceId);
+    } else {
+        _cachedTasksMap.clear();
+    }
+    _currentWorkspaceId = null;
+}
 
 
 

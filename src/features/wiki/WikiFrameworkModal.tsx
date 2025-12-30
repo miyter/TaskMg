@@ -1,39 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
+import { Modal } from '../../components/common/Modal';
+import { useModalStore } from '../../store/ui/modal-store';
 import { WikiFramework } from './wiki-data';
 
-interface WikiFrameworkModalProps {
-    framework: WikiFramework;
-    onClose: () => void;
-}
+export const WikiFrameworkModal: React.FC = () => {
+    const { activeModal, modalData, closeModal } = useModalStore();
+    const isOpen = activeModal === 'wiki-framework';
+    const framework = modalData as WikiFramework;
 
-export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ framework, onClose }) => {
-    const [mount, setMount] = useState(false);
-
-    useEffect(() => {
-        setMount(true);
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-        document.addEventListener('keydown', handleEscape);
-        return () => document.removeEventListener('keydown', handleEscape);
-    }, [onClose]);
-
-    const handleApply = () => {
+    const handleApply = useCallback(() => {
         // ウィザードに遷移 (既存のカスタムイベントを使用)
+        // Note: This relies on App.tsx listening to this event or a store subscription
         window.dispatchEvent(new CustomEvent('change-view', {
             detail: { view: 'wizard', mode: framework.id }
         }));
-        onClose();
-    };
+        closeModal();
+    }, [framework, closeModal]);
+
+    if (!isOpen || !framework) return null;
 
     return (
-        <div
-            className={`fixed inset-0 z-[70] flex items-center justify-center p-4 transition-all duration-300 ${mount ? 'bg-black/60 backdrop-blur-sm opacity-100' : 'bg-black/0 backdrop-blur-none opacity-0'}`}
-            onClick={(e) => {
-                if (e.target === e.currentTarget) onClose();
-            }}
+        <Modal
+            isOpen={isOpen}
+            onClose={closeModal}
+            className="max-w-3xl max-h-[90vh] p-0 overflow-hidden bg-transparent shadow-none"
         >
-            <div className={`max-w-3xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-all duration-300 transform ${mount ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
+            <div className={`w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]`}>
                 {/* ヘッダー */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-3">
@@ -43,19 +35,11 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ framewor
                             <p className="text-sm text-gray-500 dark:text-gray-400">{framework.subTitle}</p>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        aria-label="Close"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
+                    {/* Close button is handled by Modal component header usually, but here we customize content */}
                 </div>
 
                 {/* コンテンツ */}
-                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] custom-scrollbar">
+                <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
                     {/* 概要 */}
                     <div className="mb-8">
                         <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center">
@@ -132,7 +116,7 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ framewor
                 {/* フッター */}
                 <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                     <button
-                        onClick={onClose}
+                        onClick={closeModal}
                         className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     >
                         閉じる
@@ -151,6 +135,6 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ framewor
                     </button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };

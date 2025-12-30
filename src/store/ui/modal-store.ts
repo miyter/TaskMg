@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Filter, Label, Project, Task, TimeBlock, Workspace } from '../schema';
 
-export type ModalType = 'settings' | 'task-detail' | 'create-project' | 'label-edit' | 'project-edit' | 'workspace-edit' | 'filter-edit' | 'timeblock-edit' | null;
+export type ModalType = 'settings' | 'task-detail' | 'create-project' | 'label-edit' | 'project-edit' | 'workspace-edit' | 'filter-edit' | 'timeblock-edit' | 'wiki-framework' | null;
 
 export type ModalData = Task | Project | Label | Workspace | Filter | TimeBlock | any;
 

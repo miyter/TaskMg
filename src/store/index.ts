@@ -15,6 +15,7 @@ export * from './filters';
 export * from './labels';
 export * from './projects';
 export * from './schema';
+export * from './targets';
 export * from './tasks';
 export * from './timeblocks';
 export * from './workspace';

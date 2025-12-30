@@ -24,14 +24,13 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
     };
 
     const handleNext = () => {
-        // Collect data with keys like 'step1-input0', or just pass the array for this step.
-        // For simplicity, let's pass a structured object keyed by step and input index?
-        // Or just flattened. The legacy code didn't strictly save data structurally, just moved steps.
-        // We'll pass current step inputs up.
-        // Actually, we might want to preserve values if user goes back.
-        // For now, simple implementation:
-        const stepData = Object.entries(inputs).reduce((acc, [k, v]) => {
-            acc[`step${step}_input${k}`] = v;
+        // Collect data using the keys defined in the config
+        const stepData = stepConfig.inputs.reduce((acc, input, idx) => {
+            const value = inputs[idx] || '';
+            // Use meaningful key from config
+            if (input.key) {
+                acc[input.key] = value;
+            }
             return acc;
         }, {} as Record<string, string>);
 

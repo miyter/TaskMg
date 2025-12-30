@@ -6,6 +6,7 @@ export interface FilterConditions {
     durations: number[]; // Change string[] to number[]
     dates: string[]; // 'today', 'tomorrow', 'week', 'upcoming', 'overdue', etc.
     status: string[]; // 'completed', etc.
+    isImportant?: boolean; // Explicit flag
 }
 
 export function parseFilterQuery(query: string): FilterConditions {
@@ -16,7 +17,8 @@ export function parseFilterQuery(query: string): FilterConditions {
         timeBlocks: [],
         durations: [],
         dates: [],
-        status: []
+        status: [],
+        isImportant: false
     };
 
 
@@ -27,7 +29,8 @@ export function parseFilterQuery(query: string): FilterConditions {
     // 2. key:value        -> ([a-zA-Z]+:[^\s]+)
     // 3. "phrase"          -> ("[^"]*")
     // 4. word             -> ([^\s]+)
-    const regex = /([a-zA-Z]+:"[^"]*"|[a-zA-Z]+:[^\s]+|"[^"]*"|[^\s]+)/g;
+    // Updated to better handle spaces within quotes
+    const regex = /(?:[a-zA-Z]+:(?:"[^"]*"|[^\s]+))|(?:"[^"]*")|(?:[^\s]+)/g;
     const matches = query.match(regex);
 
     if (!matches) return conditions;
@@ -78,9 +81,12 @@ export function parseFilterQuery(query: string): FilterConditions {
                     break;
                 case 'status':
                 case 'is':
-                    const validStatus = ['completed', 'active', 'todo', 'important'];
+                    const validStatus = ['completed', 'active', 'todo'];
                     if (validStatus.includes(lowerVal)) {
                         conditions.status.push(lowerVal);
+                    }
+                    if (lowerVal === 'important') {
+                        conditions.isImportant = true;
                     }
                     break;
                 default:

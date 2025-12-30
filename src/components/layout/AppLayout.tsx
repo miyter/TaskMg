@@ -11,7 +11,7 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, children }) => {
-    const { toggleSidebar } = useUIStore();
+    const { toggleSidebar, isSidebarOpen } = useUIStore();
     const { openModal } = useModalStore();
 
     return (
@@ -23,9 +23,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
             <main className="flex-1 flex flex-col relative h-full overflow-hidden" id="main-content">
                 <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 sticky top-0">
                     <div className="flex items-center gap-3">
-                        <button onClick={toggleSidebar} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                        </button>
+                        {/* 
+                            サイドバーが開いているときは、サイドバー内の閉じるボタンを使用するため、
+                            ヘッダーのトグルボタンは非表示にする (Desktop)。
+                            MobileではサイドバーがOverlayなのでトグルは常にあっても良いが、
+                            SidebarOpen時は隠れるので問題ない。
+                         */}
+                        {!isSidebarOpen && (
+                            <button onClick={toggleSidebar} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                            </button>
+                        )}
                         <WorkspaceDropdown />
                         <h1 className="font-bold text-lg border-l border-gray-300 dark:border-gray-700 pl-3 ml-1">{title}</h1>
                     </div>

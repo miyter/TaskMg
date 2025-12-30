@@ -59,7 +59,7 @@ export function subscribeToWorkspaces(userId: string, onUpdate?: (workspaces: Wo
         const items: Workspace[] = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-        }));
+        })) as Workspace[];
 
         store.setWorkspaces(items);
 

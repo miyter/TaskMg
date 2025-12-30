@@ -39,6 +39,7 @@ export const TaskSchema = z.object({
     duration: z.number().optional(), // minutes
     isImportant: z.boolean().default(false),
     recurrence: RecurrenceSchema,
+    order: z.number().optional(), // For custom ordering
 });
 
 export const ProjectSchema = z.object({
@@ -79,6 +80,16 @@ export const TimeBlockSchema = z.object({
     order: z.number().optional(),
 });
 
+export const TargetSchema = z.object({
+    id: z.string().optional(),
+    mode: z.string(), // 'backward', 'woop', 'okr'
+    data: z.record(z.string(), z.string()), // Key-value pairs from wizard steps
+    createdAt: DateLikeSchema,
+    updatedAt: DateLikeSchema,
+    ownerId: z.string(),
+    workspaceId: z.string(), // Targets are workspace-bound
+});
+
 // --- Type Exports ---
 
 export type Recurrence = z.infer<typeof RecurrenceSchema>;
@@ -88,3 +99,4 @@ export type Label = z.infer<typeof LabelSchema>;
 export type Workspace = z.infer<typeof WorkspaceSchema>;
 export type Filter = z.infer<typeof FilterSchema>;
 export type TimeBlock = z.infer<typeof TimeBlockSchema>;
+export type Target = z.infer<typeof TargetSchema>;

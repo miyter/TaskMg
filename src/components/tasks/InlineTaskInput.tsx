@@ -22,8 +22,6 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
             await addTask({ title });
             setTitle(''); // Reset form
             onSuccess?.();
-            // Keep input focused or close depending on UX preference.
-            // For now, keep it open for quick entry.
         } catch (error) {
             console.error(error);
             alert('Failed to add task');
@@ -42,9 +40,28 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
         }
     };
 
+    const containerRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                // If input is empty, just cancel. If has text, maybe still cancel? 
+                // User requirement implies consistency with modal closing on background check.
+                onCancel?.();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [onCancel, title]);
+
     return (
-        <div className={cn("glass-effect rounded-xl shadow-xl p-4 border-blue-500/20 dark:border-blue-400/20 animate-in slide-in-from-top-2 duration-300", className)}>
+        <div ref={containerRef} className={cn("glass-effect rounded-xl shadow-xl p-4 border-blue-500/20 dark:border-blue-400/20 animate-in slide-in-from-top-2 duration-300", className)}>
+            <label htmlFor="inline-task-input" className="sr-only">タスク名</label>
             <input
+                id="inline-task-input"
                 type="text"
                 autoFocus
                 className="w-full bg-transparent text-base font-medium text-gray-800 dark:text-gray-100 placeholder-gray-400 outline-none mb-4"
@@ -56,11 +73,18 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
             />
             <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-700/50">
                 <div className="flex gap-3">
-                    {/* Placeholder for Date Picker Trigger */}
-                    <button className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button
+                        type="button"
+                        className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                        aria-label="日付を設定"
+                    >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </button>
-                    <button className="text-gray-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button
+                        type="button"
+                        className="text-gray-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                        aria-label="重要に設定"
+                    >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
                     </button>
                 </div>
