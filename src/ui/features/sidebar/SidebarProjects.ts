@@ -45,7 +45,7 @@ export function updateSidebarProjects(projects: Project[], allTasks: Task[] = []
 
         // 汎用アイテムコンポーネントを使用
         // Note: createSidebarItem creates an HTMLElement but is currently in JS
-        const item = createSidebarItem(project.name, 'project', project.id || '', project.color, count);
+        const item = createSidebarItem(project.name, 'project', project.id || '', { color: project.color }, count);
 
         // ナビゲーションイベント
         item.onclick = () => {
