@@ -39,7 +39,7 @@ export const BackwardView: React.FC<BackwardViewProps> = React.memo(({ data }) =
 
                 return (
                     <div
-                        key={index}
+                        key={item.id || `milestone-${index}`}
                         className="relative flex items-center mb-4 animate-fade-in group"
                         style={{ animationDelay: `${index * 50}ms` }}
                     >

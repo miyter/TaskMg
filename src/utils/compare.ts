@@ -1,5 +1,11 @@
 /**
  * 簡易的な配列の内容比較
+ * 
+ * ⚠️ 注意: JSON.stringify を使用しているため、以下の制限があります:
+ * - プロパティの順序に依存
+ * - 循環参照に対応していない
+ * - Date オブジェクトは文字列化される
+ * 単純な値の配列やプリミティブ向けです。
  */
 export function areArraysEqual<T>(a: T[] | undefined, b: T[] | undefined): boolean {
     if (a === b) return true;
@@ -8,15 +14,21 @@ export function areArraysEqual<T>(a: T[] | undefined, b: T[] | undefined): boole
 }
 
 /**
- * タスク一覧の変更検知
+ * タスク一覧の変更検知（順序非依存版）
+ * 
+ * ID でソートした後に比較するため、Firestore の順序保証がない場合でも安定動作
  */
 export function areTaskArraysIdentical(a: any[] | undefined, b: any[] | undefined): boolean {
     if (a === b) return true;
     if (!a || !b || a.length !== b.length) return false;
 
-    for (let i = 0; i < a.length; i++) {
-        const ta = a[i];
-        const tb = b[i];
+    // IDでソートして順序非依存にする
+    const sortedA = [...a].sort((x, y) => (x.id || '').localeCompare(y.id || ''));
+    const sortedB = [...b].sort((x, y) => (x.id || '').localeCompare(y.id || ''));
+
+    for (let i = 0; i < sortedA.length; i++) {
+        const ta = sortedA[i];
+        const tb = sortedB[i];
         if (ta.id !== tb.id) return false;
         if (ta.status !== tb.status) return false;
         if (ta.title !== tb.title) return false;
@@ -24,7 +36,11 @@ export function areTaskArraysIdentical(a: any[] | undefined, b: any[] | undefine
         if (ta.projectId !== tb.projectId) return false;
         if (ta.timeBlockId !== tb.timeBlockId) return false;
         if (ta.duration !== tb.duration) return false;
-        // 日付の比較（getTime()等）はパフォーマンスと相談だが、一旦これだけでも十分安定する
+        if (ta.isImportant !== tb.isImportant) return false;
+        // 日付の比較
+        const dueDateA = ta.dueDate instanceof Date ? ta.dueDate.getTime() : ta.dueDate;
+        const dueDateB = tb.dueDate instanceof Date ? tb.dueDate.getTime() : tb.dueDate;
+        if (dueDateA !== dueDateB) return false;
     }
 
     return true;

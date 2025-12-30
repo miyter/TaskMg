@@ -36,8 +36,10 @@ export function sortTasks(tasks: Task[], criteria: SortCriteria = 'createdAt_des
                 valB = b.isImportant ? 1 : 0;
                 break;
             default:
-                valA = 0;
-                valB = 0;
+                // 不明な criteria の場合は createdAt にフォールバック
+                console.warn(`[sortTasks] Unknown criteria: ${field}, falling back to createdAt`);
+                valA = toDate(a.createdAt)?.getTime();
+                valB = toDate(b.createdAt)?.getTime();
         }
 
         return compareNullable(valA, valB) * multiplier;

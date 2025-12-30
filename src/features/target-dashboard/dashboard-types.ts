@@ -6,6 +6,7 @@ export interface KGIStatus {
 }
 
 export interface Milestone {
+    id?: string;
     date: string;
     title: string;
     type: 'goal' | 'milestone' | 'current' | 'action';

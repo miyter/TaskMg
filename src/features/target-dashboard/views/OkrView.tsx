@@ -37,7 +37,8 @@ export const OkrView: React.FC<OkrViewProps> = React.memo(({ data }) => {
                 <div className="hidden md:block absolute top-[-25px] left-[16.66%] right-[16.66%] h-1 bg-gray-200 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-700 rounded-t-xl z-0"></div>
 
                 {data.keyResults.map(kr => {
-                    const percent = Math.round((kr.current / kr.target) * 100);
+                    // ゼロ除算防止: target が 0 の場合は 0% として扱う
+                    const percent = kr.target > 0 ? Math.round((kr.current / kr.target) * 100) : 0;
                     const confColor = getConfidenceColor(kr.confidence);
 
                     return (

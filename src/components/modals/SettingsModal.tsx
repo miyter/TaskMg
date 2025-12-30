@@ -66,7 +66,7 @@ export const SettingsModal: React.FC = () => {
                                 </h4>
                                 <div className="space-y-3">
                                     {(['compact', 'normal', 'comfortable', 'spacious'] as Density[]).map(d => (
-                                        <label key={d} className={cn(
+                                        <label key={d} htmlFor={`density-${d}`} className={cn(
                                             "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
                                             density === d
                                                 ? "border-blue-500 bg-blue-50 dark:bg-blue-900/10"
@@ -79,6 +79,7 @@ export const SettingsModal: React.FC = () => {
                                                 {density === d && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
                                             </div>
                                             <input
+                                                id={`density-${d}`}
                                                 type="radio"
                                                 name="density"
                                                 checked={density === d}
@@ -122,8 +123,10 @@ export const SettingsModal: React.FC = () => {
                                     <span>Tt</span> フォント設定
                                 </h4>
                                 <div>
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">欧文フォント</label>
+                                    <label htmlFor="settings-font-en" className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">欧文フォント</label>
                                     <input
+                                        id="settings-font-en"
+                                        name="fontEn"
                                         type="text"
                                         value={fontEn}
                                         onChange={(e) => setFontEn(e.target.value)}
@@ -132,8 +135,10 @@ export const SettingsModal: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">和文フォント</label>
+                                    <label htmlFor="settings-font-jp" className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">和文フォント</label>
                                     <input
+                                        id="settings-font-jp"
+                                        name="fontJp"
                                         type="text"
                                         value={fontJp}
                                         onChange={(e) => setFontJp(e.target.value)}

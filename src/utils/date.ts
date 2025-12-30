@@ -138,8 +138,10 @@ export function getNextRecurrenceDate(currentDueDate: Date | Timestamp | string 
         case 'weekly': {
             if (!recurrence.days?.length) return null;
             const currentDay = nextDate.getDay();
+            // 1日目から探索開始（当日は含めない = 次の該当曜日を探す）
             for (let i = 1; i <= 7; i++) {
-                if (recurrence.days.includes((currentDay + i) % 7)) {
+                const targetDay = (currentDay + i) % 7;
+                if (recurrence.days.includes(targetDay)) {
                     nextDate.setDate(nextDate.getDate() + i);
                     return nextDate;
                 }

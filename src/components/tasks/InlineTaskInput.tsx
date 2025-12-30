@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { addTask } from '../../store';
+import { toast } from '../../store/ui/toast-store';
 import { cn } from '../../utils/cn';
 
 interface InlineTaskInputProps {
@@ -24,7 +25,7 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
             onSuccess?.();
         } catch (error) {
             console.error(error);
-            alert('Failed to add task');
+            toast.error('タスクの追加に失敗しました');
         } finally {
             setIsSubmitting(false);
         }

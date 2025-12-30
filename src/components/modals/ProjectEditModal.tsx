@@ -81,7 +81,10 @@ export const ProjectEditModal: React.FC = () => {
             <div className="flex flex-col gap-6">
                 {/* Header */}
                 <div>
+                    <label htmlFor="project-name-input" className="sr-only">プロジェクト名</label>
                     <input
+                        id="project-name-input"
+                        name="projectName"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -89,18 +92,18 @@ export const ProjectEditModal: React.FC = () => {
                         placeholder={isEdit ? 'プロジェクト名' : '新しいプロジェクト名'}
                         className="w-full text-lg font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400"
                         autoFocus
+                        aria-describedby={error ? "project-name-error" : undefined}
                     />
+                    {/* Error - 入力欄の直下に表示 */}
+                    {error && (
+                        <p id="project-name-error" className="text-sm text-red-500 mt-2">{error}</p>
+                    )}
                 </div>
 
                 {/* Description */}
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
                     {isEdit ? 'プロジェクト名を変更します。' : '新しいプロジェクトを作成します。'}
                 </p>
-
-                {/* Error */}
-                {error && (
-                    <p className="text-sm text-red-500 text-center">{error}</p>
-                )}
 
                 {/* Footer */}
                 <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">

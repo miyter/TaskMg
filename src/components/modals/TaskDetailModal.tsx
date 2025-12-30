@@ -169,6 +169,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4 shrink-0">
                     <input
+                        id="task-title"
+                        name="title"
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
@@ -229,6 +231,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                     />
                                 ) : (
                                     <textarea
+                                        id="task-description"
+                                        name="description"
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         onBlur={() => description.trim() && setShowPreview(true)}

@@ -62,9 +62,12 @@ export const LoginPage: React.FC = () => {
                     )}
 
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Email</label>
+                        <label htmlFor="login-email" className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Email</label>
                         <input
+                            id="login-email"
+                            name="email"
                             type="email"
+                            autoComplete="email"
                             required
                             value={email}
                             onChange={e => setEmail(e.target.value)}
@@ -74,9 +77,12 @@ export const LoginPage: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Password</label>
+                        <label htmlFor="login-password" className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Password</label>
                         <input
+                            id="login-password"
+                            name="password"
                             type="password"
+                            autoComplete="current-password"
                             required
                             value={password}
                             onChange={e => setPassword(e.target.value)}
