@@ -1,36 +1,42 @@
 export interface FilterConditions {
     keywords: string[];
+    excludeKeywords: string[];
     projects: string[]; // projectId
+    excludeProjects: string[];
     labels: string[]; // labelId
-    timeBlocks: string[]; // timeBlockId
-    durations: number[]; // Change string[] to number[]
-    dates: string[]; // 'today', 'tomorrow', 'week', 'upcoming', 'overdue', etc.
-    status: string[]; // 'completed', etc.
-    isImportant?: boolean; // Explicit flag
+    excludeLabels: string[];
+    timeBlocks: string[];
+    excludeTimeBlocks: string[];
+    durations: number[];
+    dates: string[];
+    status: string[];
+    isImportant?: boolean;
 }
 
 export function parseFilterQuery(query: string): FilterConditions {
     const conditions: FilterConditions = {
         keywords: [],
+        excludeKeywords: [],
         projects: [],
+        excludeProjects: [],
         labels: [],
+        excludeLabels: [],
         timeBlocks: [],
+        excludeTimeBlocks: [],
         durations: [],
         dates: [],
         status: [],
         isImportant: false
     };
 
-
     if (!query) return conditions;
 
     // Regex to match:
-    // 1. key:"quoted value" -> ([a-zA-Z]+:"[^"]*")
-    // 2. key:value        -> ([a-zA-Z]+:[^\s]+)
-    // 3. "phrase"          -> ("[^"]*")
-    // 4. word             -> ([^\s]+)
-    // Updated to better handle spaces within quotes
-    const regex = /(?:[a-zA-Z]+:(?:"[^"]*"|[^\s]+))|(?:"[^"]*")|(?:[^\s]+)/g;
+    // 1. -key:"value" or key:"value" -> (-?[a-zA-Z]+:"[^"]*")
+    // 2. -key:value or key:value     -> (-?[a-zA-Z]+:[^\s]+)
+    // 3. "phrase"                     -> ("[^"]*")
+    // 4. -word or word               -> (-?[^\s]+)
+    const regex = /(?:-?[a-zA-Z]+:(?:"[^"]*"|[^\s]+))|(?:"[^"]*")|(?:-?[^\s]+)/g;
     const matches = query.match(regex);
 
     if (!matches) return conditions;
@@ -43,10 +49,24 @@ export function parseFilterQuery(query: string): FilterConditions {
             return;
         }
 
+        // Handle negation for simple words (e.g. -bug)
+        if (part.startsWith('-') && !part.includes(':')) {
+            const word = part.substring(1);
+            if (word) conditions.excludeKeywords.push(word.toLowerCase());
+            return;
+        }
+
         if (part.includes(':')) {
-            const colonIndex = part.indexOf(':');
-            const key = part.substring(0, colonIndex).toLowerCase();
-            let val = part.substring(colonIndex + 1);
+            let isNegative = false;
+            let token = part;
+            if (token.startsWith('-')) {
+                isNegative = true;
+                token = token.substring(1);
+            }
+
+            const colonIndex = token.indexOf(':');
+            const key = token.substring(0, colonIndex).toLowerCase();
+            let val = token.substring(colonIndex + 1);
 
             // Strip quotes from value if present
             if (val.startsWith('"') && val.endsWith('"')) {
@@ -57,15 +77,18 @@ export function parseFilterQuery(query: string): FilterConditions {
             switch (key) {
                 case 'project':
                 case 'p':
-                    conditions.projects.push(val);
+                    if (isNegative) conditions.excludeProjects.push(val);
+                    else conditions.projects.push(val);
                     break;
                 case 'label':
                 case 'l':
-                    conditions.labels.push(val);
+                    if (isNegative) conditions.excludeLabels.push(val);
+                    else conditions.labels.push(val);
                     break;
                 case 'timeblock':
                 case 'tb':
-                    conditions.timeBlocks.push(val);
+                    if (isNegative) conditions.excludeTimeBlocks.push(val);
+                    else conditions.timeBlocks.push(val);
                     break;
                 case 'duration':
                 case 'd':
@@ -88,10 +111,17 @@ export function parseFilterQuery(query: string): FilterConditions {
                     if (lowerVal === 'important') {
                         conditions.isImportant = true;
                     }
+                    if (lowerVal === 'unimportant') { // Negation alias
+                        // Handle logic elsewhere or flag? 
+                        // Simplified: merely skipping isImportant=true is default, 
+                        // but explicit "is:unimportant" might mean filter ONLY unimportant.
+                        // For now staying compatible with current logic.
+                    }
                     break;
                 default:
                     // Unknown prefix treated as keyword
-                    conditions.keywords.push(part.toLowerCase());
+                    if (isNegative) conditions.excludeKeywords.push(token.toLowerCase());
+                    else conditions.keywords.push(token.toLowerCase());
                     break;
             }
         } else {

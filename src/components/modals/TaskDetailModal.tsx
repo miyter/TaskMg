@@ -23,10 +23,16 @@ const RECURRENCE_OPTIONS = [
 const DAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
 
 // --- メインコンポーネント ---
-export const TaskDetailModal: React.FC = () => {
+interface TaskDetailModalProps {
+    isOpen?: boolean;
+    data?: any;
+    zIndex?: number;
+}
+
+export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { activeModal, modalData, closeModal } = useModalStore();
-    const isOpen = activeModal === 'task-detail';
-    const task = modalData as Task | null;
+    const isOpen = propIsOpen ?? (activeModal === 'task-detail');
+    const task = (propData ?? modalData) as Task | null;
     const isNewTask = !task?.id || task.id === 'temp-new-task';
 
     // --- Hooks ---
@@ -158,7 +164,7 @@ export const TaskDetailModal: React.FC = () => {
     if (!isOpen) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} className="max-w-4xl h-[85vh]">
+        <Modal isOpen={isOpen} onClose={closeModal} zIndex={zIndex} className="max-w-4xl h-[85vh]">
             <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4 shrink-0">

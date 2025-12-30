@@ -4,6 +4,7 @@ import {
 } from '@dnd-kit/core';
 import React from 'react';
 import { LoginPage } from './components/auth/LoginPage';
+import { ToastContainer } from './components/common/ToastContainer';
 import { AppLayout } from './components/layout/AppLayout';
 import { ModalManager } from './components/modals/ModalManager';
 import { SidebarContent } from './components/sidebar/SidebarContent';
@@ -81,6 +82,7 @@ const App: React.FC = () => {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
         >
+            <ToastContainer />
             <ModalManager />
             <AppLayout
                 sidebarContent={<SidebarContent />}

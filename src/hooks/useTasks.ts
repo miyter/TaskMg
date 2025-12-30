@@ -9,20 +9,30 @@ export const useTasks = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
+
         if (!workspaceId) {
             setTasks([]);
+            // workspaceIdがない場合、認証ロード中でなければロード完了扱い
             if (!authLoading) setLoading(false);
             return;
         }
 
-        // ワークスペース変更時にローディング状態に戻す
+        // ワークスペース変更時は即座にロード中＆空にする
         setLoading(true);
+        setTasks([]);
+
         const unsubscribe = subscribeToTasks(workspaceId, (newTasks) => {
-            setTasks(newTasks);
-            setLoading(false);
+            if (isMounted) {
+                setTasks(newTasks);
+                setLoading(false);
+            }
         });
 
-        return () => unsubscribe();
+        return () => {
+            isMounted = false;
+            unsubscribe();
+        };
     }, [workspaceId, authLoading]);
 
     return { tasks, loading: loading || authLoading };

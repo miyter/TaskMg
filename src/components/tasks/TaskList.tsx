@@ -60,7 +60,7 @@ export const TaskList: React.FC = () => {
         <div className="flex flex-col h-full overflow-hidden relative">
             {/* Task List Container */}
             <div className="flex-1 overflow-y-auto custom-scrollbar px-1 pb-20">
-                <div className="sticky top-0 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm pt-1 pb-4 mb-4 flex items-center gap-2">
+                <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm pt-1 pb-4 mb-4 flex items-center gap-2">
                     <div className="flex-1">
                         <AddTaskButton />
                     </div>
@@ -89,15 +89,15 @@ export const TaskList: React.FC = () => {
                         )}
                         title={showCompleted ? "Hide completed tasks" : "Show completed tasks"}
                     >
-                        {showCompleted ? '完了を隠す' : '完了を表示'}
+                        {showCompleted ? '完了を非表示' : '完了を表示'}
                     </button>
                 </div>
 
                 {processedTasks.length === 0 ? (
-                    <div className="text-center py-20 flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in duration-700">
+                    <div className="text-center py-20 flex flex-col items-center justify-center min-h-[60vh]">
                         <div className="relative mb-8">
-                            <div className="absolute -inset-4 bg-blue-500/10 dark:bg-blue-400/10 blur-3xl rounded-full animate-pulse" />
-                            <div className="relative animate-float">
+                            <div className="absolute -inset-4 bg-blue-500/10 dark:bg-blue-400/10 blur-3xl rounded-full" />
+                            <div className="relative">
                                 <svg className="w-24 h-24 text-blue-200 dark:text-blue-900/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                 </svg>
@@ -125,7 +125,7 @@ export const TaskList: React.FC = () => {
             </div>
 
             {/* Stats Bar (Sticky Bottom Area) */}
-            <div className="flex-none mt-auto pt-2 border-t border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur pb-2">
+            <div className="flex-none mt-auto pt-2 border-t border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
                 <TaskStats tasks={processedTasks} timeBlockId={config.timeBlockId} />
             </div>
         </div>

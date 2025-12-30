@@ -15,13 +15,15 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
 
     return tasks.filter(task => {
         // 1. Status Check
-        // 1. Status Check
         if (conditions.status.length > 0) {
             const status = task.status || 'todo';
-            // "completed" が条件に含まれている場合、タスクも "completed" である必要がある
-            if (conditions.status.includes('completed') && status !== 'completed') return false;
-            // "active" (等) が条件に含まれている場合、タスクは "completed" 以外である必要がある
-            if (conditions.status.includes('active') && status === 'completed') return false;
+            // If explicit status requested, must match one of them
+            // Special handling for 'active' -> match 'todo'
+            const isMatch = conditions.status.some(s => {
+                if (s === 'active' && status === 'todo') return true;
+                return s === status;
+            });
+            if (!isMatch) return false;
         }
 
         // 1.5 Important Check
@@ -37,12 +39,18 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
             });
             if (!hasMatch) return false;
         }
+        if (conditions.excludeProjects.length > 0) {
+            if (conditions.excludeProjects.some(p => task.projectId === p)) return false;
+        }
 
         // 3. Label Check
         if (conditions.labels.length > 0) {
             if (!task.labelIds || !conditions.labels.some(l => task.labelIds?.includes(l))) {
                 return false;
             }
+        }
+        if (conditions.excludeLabels.length > 0) {
+            if (task.labelIds && conditions.excludeLabels.some(l => task.labelIds?.includes(l))) return false;
         }
 
         // 4. TimeBlock Check
@@ -52,6 +60,9 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
                 return task.timeBlockId === tb;
             });
             if (!hasMatch) return false;
+        }
+        if (conditions.excludeTimeBlocks.length > 0) {
+            if (conditions.excludeTimeBlocks.some(tb => task.timeBlockId === tb)) return false;
         }
 
         // 5. Duration Check (Number comparison)
@@ -97,39 +108,19 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
             if (!isMatch) return false;
         }
 
-        // 7. Keywords (Title/Description) - AND/OR search
+        // 7. Keywords (Title/Description)
+        const content = `${task.title} ${task.description || ''}`.toLowerCase();
+
         if (conditions.keywords.length > 0) {
-            const content = `${task.title} ${task.description || ''}`.toLowerCase();
+            // AND logic: all keywords must be present
+            const matchesAll = conditions.keywords.every(kw => content.includes(kw));
+            if (!matchesAll) return false;
+        }
 
-            // Simple OR logic: if 'or' exists, treat as group separator
-            // e.g. "a b OR c" => (a AND b) OR (c)
-            if (conditions.keywords.includes('or')) {
-                const groups: string[][] = [];
-                let currentGroup: string[] = [];
-
-                conditions.keywords.forEach(kw => {
-                    if (kw === 'or') {
-                        if (currentGroup.length > 0) {
-                            groups.push(currentGroup);
-                            currentGroup = [];
-                        }
-                    } else {
-                        currentGroup.push(kw);
-                    }
-                });
-                if (currentGroup.length > 0) groups.push(currentGroup);
-
-                // If any group matches (AND within group)
-                const matchesAnyGroup = groups.some(group =>
-                    group.every(kw => content.includes(kw))
-                );
-
-                if (!matchesAnyGroup) return false;
-            } else {
-                // Default: All keywords must match (AND)
-                const matchesAll = conditions.keywords.every(kw => content.includes(kw.toLowerCase()));
-                if (!matchesAll) return false;
-            }
+        if (conditions.excludeKeywords.length > 0) {
+            // Exclude if ANY excludeKeyword is present
+            const matchesAnyExclude = conditions.excludeKeywords.some(kw => content.includes(kw));
+            if (matchesAnyExclude) return false;
         }
 
         return true;
@@ -160,9 +151,13 @@ export function getProcessedTasks(tasks: Task[], config: SearchConfig): Task[] {
     // 1. ベースとなる条件オブジェクトを作成 (キーワードがあればパース、なければ空)
     const conditions: FilterConditions = keyword ? parseFilterQuery(keyword) : {
         keywords: [],
+        excludeKeywords: [],
         projects: [],
+        excludeProjects: [],
         labels: [],
+        excludeLabels: [],
         timeBlocks: [],
+        excludeTimeBlocks: [],
         durations: [],
         dates: [],
         status: [],

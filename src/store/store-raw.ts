@@ -65,67 +65,116 @@ function deserializeTask(id: string, data: any): Task {
 
 // ワークスペースごとのタスクキャッシュ（複数ワークスペース対応）
 const _cachedTasksMap = new Map<string, Task[]>();
+// サブスクリプション管理
+const _listeners = new Map<string, Set<(tasks: Task[]) => void>>();
+const _unsubscribes = new Map<string, Unsubscribe>();
+
 let _currentWorkspaceId: string | null = null;
+
+// リスナーへの通知ヘルパー
+function notifyListeners(workspaceId: string) {
+    const tasks = _cachedTasksMap.get(workspaceId) || [];
+    const listeners = _listeners.get(workspaceId);
+    if (listeners) {
+        listeners.forEach(listener => listener(tasks));
+    }
+}
 
 /**
  * キャッシュをクリアする (ログアウト時やメモリ解放用)
  */
 export function resetTaskCache(workspaceId?: string) {
     if (workspaceId) {
+        // 特定ワークスペースの解除
+        _unsubscribes.get(workspaceId)?.();
+        _unsubscribes.delete(workspaceId);
+        _listeners.delete(workspaceId);
         _cachedTasksMap.delete(workspaceId);
     } else {
+        // 全解除
+        _unsubscribes.forEach(unsub => unsub());
+        _unsubscribes.clear();
+        _listeners.clear();
         _cachedTasksMap.clear();
     }
     _currentWorkspaceId = null;
 }
 
-
-
+/**
+ * キャッシュからタスクを同期的に取得 (Optimistic updateなどの参照用)
+ */
+export function getTaskFromCache(workspaceId: string, taskId: string): Task | undefined {
+    const tasks = _cachedTasksMap.get(workspaceId);
+    return tasks?.find(t => t.id === taskId);
+}
 
 export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void): Unsubscribe {
-    const safeUpdate = (data: Task[]) => {
-        if (typeof onUpdate === 'function') onUpdate(data);
-    };
-
     if (!userId || !workspaceId) {
-        safeUpdate([]);
+        onUpdate([]);
         return () => { };
     }
 
-    // 現在のワークスペースを記録
     _currentWorkspaceId = workspaceId;
 
-    const path = paths.tasks(userId, workspaceId);
-    const q = query(collection(db, path));
+    // リスナー登録
+    if (!_listeners.has(workspaceId)) {
+        _listeners.set(workspaceId, new Set());
+    }
+    const listeners = _listeners.get(workspaceId)!;
+    listeners.add(onUpdate);
 
-    let isFirst = true;
+    // 即時キャッシュ返却
+    const cached = _cachedTasksMap.get(workspaceId);
+    if (cached) {
+        onUpdate(cached);
+    }
 
-    return onSnapshot(q, (snapshot) => {
-        const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
-        const currentTasks = _cachedTasksMap.get(workspaceId);
+    // サブスクリプションが未確立なら開始
+    if (!_unsubscribes.has(workspaceId)) {
+        const path = paths.tasks(userId, workspaceId);
+        const q = query(collection(db, path));
 
-        // Optimization: Stabilize reference using custom comparison
-        if (currentTasks && areTaskArraysIdentical(currentTasks, tasks)) {
-            // If content is identical, use the cached reference to avoid re-renders
-            if (isFirst) {
-                safeUpdate(currentTasks);
+        const unsub = onSnapshot(q, (snapshot) => {
+            const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
+            const currentTasks = _cachedTasksMap.get(workspaceId);
+
+            // Optimization: Stabilize reference using custom comparison
+            if (currentTasks && areTaskArraysIdentical(currentTasks, tasks)) {
+                return;
             }
-            isFirst = false;
-            return;
-        }
 
-        isFirst = false;
-        _cachedTasksMap.set(workspaceId, tasks);
-        safeUpdate(tasks);
-    }, (error) => {
-        console.error("[Tasks] Subscription error:", error);
-        _cachedTasksMap.set(workspaceId, []);
-        safeUpdate([]);
-    });
+            _cachedTasksMap.set(workspaceId, tasks);
+            notifyListeners(workspaceId);
+        }, (error) => {
+            console.error("[Tasks] Subscription error:", error);
+            // エラー時は空にせず、キャッシュ維持または適切なエラーハンドリングが理想だが、
+            // ここでは安全のため空配列を通知せず、現状維持とする（無限ロード防止）
+            // _cachedTasksMap.set(workspaceId, []); // 削除: 既存キャッシュを消さない
+            // notifyListeners(workspaceId);
+        });
+
+        _unsubscribes.set(workspaceId, unsub);
+    }
+
+    // Unsubscribe関数
+    return () => {
+        listeners.delete(onUpdate);
+        if (listeners.size === 0) {
+            // リスナーがいなくなったら購読停止
+            const unsub = _unsubscribes.get(workspaceId);
+            if (unsub) {
+                unsub();
+                _unsubscribes.delete(workspaceId);
+            }
+        }
+    };
 }
 
-// タスク操作関数// 他の関数（addTaskRaw, updateTaskRawなど）は既存ロジックを維持
+// タスク操作関数（Optimistic UI対応）
 export async function addTaskRaw(userId: string, workspaceId: string, taskData: Partial<Task>) {
+    // Optimistic Update: IDは一時的に生成（Firestoreが上書きするがキーが変わるため注意が必要）
+    // *追加の場合はIDが未確定なのでOptimistic Updateは難しいが、プレースホルダーを表示するアプローチもある
+    // ここでは追加のラグは許容し、更新/削除のラグごまかしを優先する
     return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
         const safeData: any = { ...taskData };
@@ -143,6 +192,23 @@ export async function addTaskRaw(userId: string, workspaceId: string, taskData: 
 }
 
 export async function updateTaskStatusRaw(userId: string, workspaceId: string, taskId: string, status: string) {
+    // Optimistic Update
+    const currentTasks = _cachedTasksMap.get(workspaceId);
+    if (currentTasks) {
+        const newTasks = currentTasks.map(t => {
+            if (t.id === taskId) {
+                return {
+                    ...t,
+                    status: status as any,
+                    completedAt: status === 'completed' ? new Date() : undefined
+                };
+            }
+            return t;
+        });
+        _cachedTasksMap.set(workspaceId, newTasks);
+        notifyListeners(workspaceId);
+    }
+
     return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
         const updates: any = { status };
@@ -156,6 +222,19 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
 }
 
 export async function updateTaskRaw(userId: string, workspaceId: string, taskId: string, updates: Partial<Task>) {
+    // Optimistic Update
+    const currentTasks = _cachedTasksMap.get(workspaceId);
+    if (currentTasks) {
+        const newTasks = currentTasks.map(t => {
+            if (t.id === taskId) {
+                return { ...t, ...updates }; // 単純マージ
+            }
+            return t;
+        });
+        _cachedTasksMap.set(workspaceId, newTasks);
+        notifyListeners(workspaceId);
+    }
+
     return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
         const safeUpdates: any = { ...updates };
@@ -165,6 +244,14 @@ export async function updateTaskRaw(userId: string, workspaceId: string, taskId:
 }
 
 export async function deleteTaskRaw(userId: string, workspaceId: string, taskId: string) {
+    // Optimistic Update
+    const currentTasks = _cachedTasksMap.get(workspaceId);
+    if (currentTasks) {
+        const newTasks = currentTasks.filter(t => t.id !== taskId);
+        _cachedTasksMap.set(workspaceId, newTasks);
+        notifyListeners(workspaceId);
+    }
+
     return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
         await deleteDoc(doc(db, path, taskId));

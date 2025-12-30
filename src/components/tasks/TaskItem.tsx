@@ -47,8 +47,8 @@ export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
             {...attributes}
             onClick={() => openModal('task-detail', task)}
             className={cn(
-                "group flex items-start gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-xl hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 cursor-pointer hover-lift",
-                isDragging && "opacity-50 border-blue-500 shadow-lg"
+                "group flex items-start gap-3 p-[var(--task-p)] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-xl hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 cursor-pointer hover-lift",
+                isDragging && "opacity-70 border-blue-500 shadow-lg"
             )}
         >
             {/* Checkbox */}
@@ -72,12 +72,7 @@ export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
                 </div>
                 {task.description && (
                     <div
-                        className="text-xs text-gray-500 mt-1 overflow-hidden"
-                        style={{
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 'var(--task-line-clamp)',
-                        }}
+                        className="text-xs text-gray-500 mt-1 line-clamp-[var(--task-line-clamp)]"
                     >
                         {task.description}
                     </div>
@@ -92,12 +87,15 @@ export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
+            <div className={cn(
+                "flex items-center gap-1 transition-opacity",
+                isImportant ? "opacity-100" : "opacity-30 group-hover:opacity-100"
+            )}>
                 <button
                     onClick={handleToggleImportant}
                     className={cn(
                         "p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
-                        isImportant ? "text-yellow-500 opacity-100" : "text-gray-400"
+                        isImportant ? "text-yellow-500" : "text-gray-400"
                     )}
                     title={isImportant ? "重要度を解除" : "重要としてマーク"}
                 >
@@ -109,12 +107,21 @@ export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
         </li>
     );
 }, (prev, next) => {
+    const isDateEqual = (d1: any, d2: any) => {
+        if (d1 === d2) return true;
+        if (!d1 || !d2) return false;
+        // Compare by ISO string to handle potential object reference differences for same time
+        const t1 = d1 instanceof Date ? d1.toISOString() : d1;
+        const t2 = d2 instanceof Date ? d2.toISOString() : d2;
+        return t1 === t2;
+    };
+
     return (
         prev.task.id === next.task.id &&
         prev.task.status === next.task.status &&
         prev.task.title === next.task.title &&
         prev.task.description === next.task.description &&
         prev.task.isImportant === next.task.isImportant &&
-        prev.task.dueDate === next.task.dueDate
+        isDateEqual(prev.task.dueDate, next.task.dueDate)
     );
 });

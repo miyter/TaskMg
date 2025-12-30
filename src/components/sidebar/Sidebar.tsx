@@ -1,6 +1,7 @@
 import React from 'react';
+import logo from '../../assets/logo.png';
 import { useUIStore } from '../../store/ui/ui-store';
-import { cn } from '../../utils/cn'; // Utility needed
+import { cn } from '../../utils/cn';
 
 interface SidebarProps {
     children?: React.ReactNode;
@@ -47,14 +48,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 "backdrop-blur-none md:backdrop-blur-xl",
                 "border-r border-gray-200 dark:border-gray-700/50", // adjusted border color
                 isSidebarOpen ? "translate-x-0" : "-translate-x-full",
-                "fixed md:relative z-20 md:z-0 shadow-xl md:shadow-none"
+                "fixed md:relative z-20 md:z-0 shadow-xl md:shadow-none overflow-hidden"
             )}
             style={{ width: isSidebarOpen ? `${sidebarWidth}px` : '0px' }}
         >
             {/* Header */}
             <div className="h-14 flex items-center px-4 flex-shrink-0 justify-between">
                 <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition select-none">
-                    <img src="/images/web-app-manifest-512x512.png" alt="Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+                    <img src={logo} alt="Logo" className="h-8 w-8 rounded-lg shadow-sm" />
                     <span className="text-lg font-bold text-gray-800 dark:text-white tracking-tight">Task<span className="text-blue-600 dark:text-blue-400">Mg</span></span>
                 </div>
                 <button
@@ -75,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
             {/* Resizer */}
             <div
                 onMouseDown={handleMouseDown}
-                className="absolute top-0 right-[-4px] w-2 h-full cursor-col-resize hover:bg-blue-500/50 transition-colors z-30 opacity-0 group-hover:opacity-100 hidden md:block"
+                className="absolute top-0 right-[-4px] w-2 h-full cursor-col-resize hover:bg-blue-500/50 transition-colors z-30 opacity-30 hover:opacity-100 hidden md:block"
                 title="ドラッグしてリサイズ"
             />
         </aside>
