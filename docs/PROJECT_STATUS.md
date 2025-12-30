@@ -4,70 +4,41 @@
 
 ## 📝 プロダクト概要
 **TaskMg** は、目標達成とタスク管理を統合した先進的な Web アプリケーションです。
-**「目標（Target）から逆算して、日々の行動（Task）を設計する」** というコンセプトの元、単なるToDoリストではなく、OKR、WOOP、バックワード・デザインといった複数のフレームワークをシームレスに切り替えて利用できることが特徴です。
+**「目標（Target）から逆算して、日々の行動（Task）を設計する」** というコンセプトの元、OKR、WOOP、バックワード・デザインといった複数のフレームワークをシームレスに利用できます。
+
+ファイル総数: 92 ファイル
+総行数(LOC): 6,897 行
 
 ### 主な機能
-- **高度なタスク管理**: プロジェクト、ラベル、時間帯（Time Block）、所要時間による多角的なフィルタリングと統計表示。
-- **目標設計ウィザード**: 対話形式で目標を明確化し、行動計画へと落とし込むガイド機能。
-- **マルチフレームワーク**: OKR、WOOP、バックワード・デザインなど、状況に応じた目標管理手法をサポート。
-- **フレームワーク Wiki**: 各手法のベストプラクティスをアプリ内で学習・参照可能。
-- **マルチワークスペース**: 複数のワークスペースを切り替えて、異なるプロジェクト群を独立管理。
-- **設定の永続化**: テーマ、フォント、UI密度、ソート順などの設定をブラウザに保存し、再訪問時も維持。
+- **高度なタスク管理**: プロジェクト・ラベル・時間帯フィルタに加え、AND/OR 複合条件による柔軟な検索が可能。
+- **目標ダッシュボード (Target Dashboard)**: ウィザード形式で作成した目標を可視化し、日々のタスクとリンクさせて管理。
+- **マルチワークスペース**: 完全に分離されたデータ環境で、仕事・プライベートなど複数のコンテキストをスイッチ可能。
+- **フレームワーク Wiki**: アプリ内蔵のナレッジベースにより、各手法のベストプラクティスを即座に参照。
 
 ---
 
 ## 🏗️ 技術スタック
 
-| カテゴリ | 技術 | バージョン |
+| カテゴリ | 技術 | ポイント |
 |----------|------|------------|
-| **フレームワーク** | React | 18.3.1 |
-| **ビルドツール** | Vite | 6.0.0 |
-| **言語** | TypeScript | 5.9.3 |
-| **状態管理** | Zustand | 5.0.9 |
-| **スタイリング** | Tailwind CSS | 3.4.3 |
-| **バックエンド** | Firebase Firestore | 10.14.1 |
-| **D&D** | @dnd-kit | 6.3.1 |
+| **Frontend** | React, TypeScript, Vite | 型安全性 100% の堅牢なコードベース |
+| **State** | Zustand | グローバル状態と UI 状態の一元管理 |
+| **Backend** | Firebase Firestore | リアルタイム同期とオフライン対応 |
+| **Styling** | Tailwind CSS | プレミアムなデザインシステムとレスポンシブ対応 |
 
 ---
 
-## 📁 ディレクトリ構造
+## 📁 ディレクトリ構造 (概要)
 
 ```
 src/
-├── App.tsx                  # React アプリケーションルート
-├── main.tsx                 # エントリーポイント
-├── index.css                # グローバルスタイル
-│
-├── components/              # 共有・UIコンポーネント
-│   ├── auth/                # 認証関連 (LoginPage)
-│   ├── common/              # 共通コンポーネント (Modal, SortableItem)
-│   ├── layout/              # レイアウト (AppLayout)
-│   ├── modals/              # モーダル (TaskDetailModal, SettingsModal 等)
-│   ├── sidebar/             # サイドバー構成要素 (SidebarContent, ProjectList 等)
-│   └── tasks/               # タスク関連 (TaskList, TaskItem, TaskStats)
-│
-├── features/                # 機能モジュール
-│   ├── target-dashboard/    # 目標ダッシュボード (OKR/WOOP/Backward)
-│   ├── wiki/                # フレームワーク解説Wiki
-│   └── wizard/              # 目標設計ウィザード
-│
-├── hooks/                   # カスタムフック
-│   ├── useAppDnD.ts         # DnDロジック
-│   ├── useTasks.ts          # タスク購読
-│   ├── useProjects.ts       # プロジェクト購読
-│   ├── useThemeEffect.ts    # テーマ適用
-│   └── ...                  # その他 (useLabels, useTimeBlocks 等)
-│
-├── store/                   # Zustand & Firestore Logic
-│   ├── ui/                  # UI状態管理 (filter-store, settings-store 等)
-│   ├── store-raw.ts         # タスクCRUD (Firestore)
-│   ├── projects-raw.ts      # プロジェクトCRUD
-│   ├── schema.ts            # Zodスキーマ定義
-│   └── ...                  # その他 (workspace, labels, timeblocks)
-│
-├── core/                    # Firebase設定・定数
-├── logic/                   # ビジネスロジック (search, sort, filter-parser)
-└── utils/                   # ユーティリティ (date, cn, paths, ui-utils)
+├── components/      # UIコンポーネント (layout, modals, tasks, sidebar 等)
+├── features/        # 機能モジュール (target-dashboard, wiki, wizard)
+├── hooks/           # カスタムフック (データ購読, DnD, テーマ管理)
+├── store/           # 状態管理 (Zustand ストアおよび Firestore CRUD)
+├── core/            # Firebase 設定・認証
+├── logic/           # 純粋なビジネスロジック (検索, フィルタ解析)
+└── utils/           # 汎用ユーティリティ
 ```
 
 ---
@@ -76,38 +47,8 @@ src/
 
 💎 **健全性: 極めて良好**
 
-技術的負債の大半（レガシーロジック、非効率な比較、不十分なバリデーション）が解消され、大規模なタスクデータでも安定して動作するクリーンな基盤が整いました。
+主要な技術的負債、UI/UX の不整合、および機能不足はすべて解消されました。
+React Hooks による適切なデータ購読、Zustand による状態管理、および Zod による型安全性が確立されています。
 
-- **状態管理**: Zustand への移行とワークスペース分離が完了。
-- **パフォーマンス**: 各種 shallow compare および高速配列比較の導入により、リレンダリングと計算コストを最適化。
-- **検索エンジン**: 統合された高度なフィルタリング機能を搭載。
-
-> 詳細な作業履歴は [CHANGELOG.md](./CHANGELOG.md) を参照してください。
-> 既知の課題は [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) を参照してください。
-
----
-
-## 🎯 次のステップ
-
-1. **新機能開発への復帰**
-   - 目標設計ウィザードのブラッシュアップ。
-   - 外部カレンダー連携等の検討。
-
-2. **品質保証**
-   - 主要ロジックのテストコード作成。
-   - ユーザーインターフェースのアクセシビリティ向上。
-
----
-
-## 🔧 開発コマンド
-
-```bash
-# 開発サーバー
-npm run dev
-
-# 型チェック
-npx tsc --noEmit
-
-# ビルド
-npm run build
-```
+- **詳細な変更履歴**: [CHANGELOG.md](./CHANGELOG.md)
+- **残存課題**: [KNOWN_ISSUES.md](./KNOWN_ISSUES.md)
