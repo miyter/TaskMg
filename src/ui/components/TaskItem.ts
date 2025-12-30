@@ -6,9 +6,9 @@
 import { Project, Task, TimeBlock } from '../../store/schema';
 import { updateTaskStatus } from '../../store/store';
 import { getTimeBlocks } from '../../store/timeblocks';
+import { openTaskDetailModal } from '../../store/ui/modal-store';
 import { formatDateCompact, getTaskDateColor } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
-import { openTaskEditModal } from '../modals/task-modal';
 import { SelectionState, toggleTaskSelection } from '../state/ui-state';
 import { showTaskContextMenu } from './TaskContextMenu';
 
@@ -32,8 +32,8 @@ export function createTaskItem(task: Task, allProjects: Project[], selectionStat
     li.setAttribute('draggable', (isSelectionMode || isDurationView) ? 'false' : 'true');
 
     const isCompleted = task.status === 'completed';
-    const dateText = formatDateCompact(task.dueDate);
-    const dateColorClass = getTaskDateColor(task.dueDate);
+    const dateText = formatDateCompact(task.dueDate ?? null);
+    const dateColorClass = getTaskDateColor(task.dueDate ?? null);
     const isRecurring = !!(task.recurrence && task.recurrence.type !== 'none');
     const isOneTime = !!task.dueDate && !isRecurring;
 
@@ -157,7 +157,7 @@ export function createTaskItem(task: Task, allProjects: Project[], selectionStat
         if (isSelectionMode) {
             toggleTaskSelection(task.id);
         } else {
-            openTaskEditModal(task);
+            openTaskDetailModal(task);
         }
     });
 

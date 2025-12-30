@@ -15,3 +15,20 @@ export const useModalStore = create<ModalState>((set) => ({
     openModal: (type, data = null) => set({ activeModal: type, modalData: data }),
     closeModal: () => set({ activeModal: null, modalData: null }),
 }));
+
+// --- 非Reactコード用ヘルパー ---
+// Vanilla TS (ui/) からモーダルを開くためのユーティリティ
+
+/**
+ * タスク詳細モーダルを開く（非React用）
+ */
+export function openTaskDetailModal(task: any) {
+    useModalStore.getState().openModal('task-detail', task);
+}
+
+/**
+ * モーダルを閉じる（非React用）
+ */
+export function closeModalDirect() {
+    useModalStore.getState().closeModal();
+}

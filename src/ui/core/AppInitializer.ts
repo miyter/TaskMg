@@ -13,7 +13,7 @@ import { initSidebar } from '../features/sidebar/sidebar.js';
 import { renderLayout } from '../layout/layout';
 import { applyBackground, initTheme } from '../layout/theme';
 import { renderLoginState } from '../layout/ui-view-utils';
-import { initTaskModal } from '../modals/task-modal';
+// initTaskModal は廃止 - React版 TaskDetailModal が ModalManager で管理される
 import { initSettings } from '../settings.js';
 import {
     getWorkspaceUnsubscribe,
@@ -40,7 +40,7 @@ export function runInitialization(): void {
     applyAllUISettings();
 
     initSettings();
-    initTaskModal();
+    // initTaskModal() は廃止
     initWorkspaceDropdown();
     setupAuthHandlers();
     setupGlobalEventListeners();

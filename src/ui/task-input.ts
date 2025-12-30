@@ -64,11 +64,15 @@ export function renderFixedAddTaskBar(footerContainer: HTMLElement, inputContain
     if (btn) {
         btn.onclick = () => {
             // タスクモーダルを開く（新規作成モード）
-            // @ts-ignore: Dynamic import
-            import('./modals/task-modal').then(({ showTaskModal }) => {
-                showTaskModal(null, {
-                    projectId: projectId || undefined,
-                    labelIds: labelId ? [labelId] : []
+            import('../store/ui/modal-store').then(({ openTaskDetailModal }) => {
+                openTaskDetailModal({
+                    id: 'temp-new-task',
+                    title: '',
+                    description: '',
+                    projectId: projectId || null,
+                    labelIds: labelId ? [labelId] : [],
+                    status: 'todo',
+                    recurrence: { type: 'none' },
                 });
             });
         };
