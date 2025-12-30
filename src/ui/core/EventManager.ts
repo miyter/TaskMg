@@ -26,70 +26,74 @@ function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (.
  * アプリケーション全体のイベントリスナーを設定
  */
 export function setupGlobalEventListeners(): void {
-    // 初回ログインフラグ（ページ状態復元用）
-    let isFirstWorkspaceLoad = true;
+    try {
+        // 初回ログインフラグ（ページ状態復元用）
+        let isFirstWorkspaceLoad = true;
 
-    // 1. ワークスペース切り替え
-    document.addEventListener(APP_EVENTS.WORKSPACE_CHANGED, (e: any) => {
-        const { workspaceId } = e.detail;
-        console.log('[EventManager] Workspace changed to:', workspaceId);
+        // 1. ワークスペース切り替え
+        document.addEventListener(APP_EVENTS.WORKSPACE_CHANGED, (e: any) => {
+            const { workspaceId } = e.detail;
+            console.log('[EventManager] Workspace changed to:', workspaceId);
 
-        const headerTitle = document.getElementById('header-title');
-        if (headerTitle) headerTitle.textContent = '読み込み中...';
+            const headerTitle = document.getElementById('header-title');
+            if (headerTitle) headerTitle.textContent = '読み込み中...';
 
-        if (auth?.currentUser) {
-            // 初回ログイン時はwindowモードまたは保存されたページ状態を確認
-            if (isFirstWorkspaceLoad) {
-                isFirstWorkspaceLoad = false;
+            if (auth?.currentUser) {
+                // 初回ログイン時はwindowモードまたは保存されたページ状態を確認
+                if (isFirstWorkspaceLoad) {
+                    isFirstWorkspaceLoad = false;
 
-                if (isWindowMode()) {
-                    const initialView = getInitialViewMode();
-                    if (initialView) {
-                        setCurrentFilter({ type: initialView });
+                    if (isWindowMode()) {
+                        const initialView = getInitialViewMode();
+                        if (initialView) {
+                            setCurrentFilter({ type: initialView });
+                        }
+                    } else {
+                        try {
+                            const saved = JSON.parse(localStorage.getItem('lastPage') || 'null');
+                            // 設定画面は自動で開かないようにする
+                            if (saved && saved.page === 'settings') {
+                                setCurrentFilter({ type: 'inbox' });
+                            } else {
+                                setCurrentFilter(saved ? { type: saved.page, id: saved.id || null } : { type: 'inbox' });
+                            }
+                        } catch (e) {
+                            setCurrentFilter({ type: 'inbox' });
+                        }
                     }
                 } else {
-                    try {
-                        const saved = JSON.parse(localStorage.getItem('lastPage') || 'null');
-                        // 設定画面は自動で開かないようにする
-                        if (saved && saved.page === 'settings') {
-                            setCurrentFilter({ type: 'inbox' });
-                        } else {
-                            setCurrentFilter(saved ? { type: saved.page, id: saved.id || null } : { type: 'inbox' });
-                        }
-                    } catch (e) {
-                        setCurrentFilter({ type: 'inbox' });
-                    }
+                    // ワークスペース切り替え時はインボックスにリセット
+                    setCurrentFilter({ type: 'inbox', id: null });
                 }
-            } else {
-                // ワークスペース切り替え時はインボックスにリセット
-                setCurrentFilter({ type: 'inbox', id: null });
+
+                // 一旦全てのデータ同期を停止し、再開する
+                stopDataSync(false);
+                startAllSubscriptions();
+
+                // 即座にUIを更新（クリア状態またはロード中表示のため）
+                updateUI();
             }
+        });
 
-            // 一旦全てのデータ同期を停止し、再開する
-            stopDataSync(false);
-            startAllSubscriptions();
+        // 2. ルーティング（サイドバー等）
+        document.addEventListener(APP_EVENTS.ROUTE_CHANGE, (e: any) => {
+            const { page, id } = e.detail;
+            setCurrentFilter({ type: page, id: id || null });
 
-            // 即座にUIを更新（クリア状態またはロード中表示のため）
+            // 設定画面は保存しない
+            if (page !== 'settings') {
+                localStorage.setItem('lastPage', JSON.stringify({ page, id: id || null }));
+            }
             updateUI();
-        }
-    });
+        });
 
-    // 2. ルーティング（サイドバー等）
-    document.addEventListener(APP_EVENTS.ROUTE_CHANGE, (e: any) => {
-        const { page, id } = e.detail;
-        setCurrentFilter({ type: page, id: id || null });
+        // 3. 検索・フィルタUI
+        const debouncedSearch = debounce(() => updateUI(), 300);
+        document.getElementById('search-input')?.addEventListener('input', debouncedSearch);
 
-        // 設定画面は保存しない
-        if (page !== 'settings') {
-            localStorage.setItem('lastPage', JSON.stringify({ page, id: id || null }));
-        }
-        updateUI();
-    });
-
-    // 3. 検索・フィルタUI
-    const debouncedSearch = debounce(() => updateUI(), 300);
-    document.getElementById('search-input')?.addEventListener('input', debouncedSearch);
-
-    // 4. コンポーネント固有のイベント
-    setupCustomSortDropdown();
+        // 4. コンポーネント固有のイベント
+        setupCustomSortDropdown();
+    } catch (error) {
+        console.error('[EventManager] Failed to setup global event listeners:', error);
+    }
 }

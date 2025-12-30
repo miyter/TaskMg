@@ -128,89 +128,99 @@ export function buildSidebarHTML(): string {
 }
 
 export function setupSidebarToggles() {
-    document.querySelectorAll('.sidebar-section-header').forEach(header => {
-        const targetId = (header as HTMLElement).dataset.target;
-        if (!targetId) return;
+    try {
+        const headers = document.querySelectorAll('.sidebar-section-header');
+        headers.forEach(header => {
+            const elHeader = header as HTMLElement;
+            const targetId = elHeader.dataset.target;
+            if (!targetId) return;
 
-        const list = document.getElementById(targetId);
-        const arrow = header.querySelector('.section-arrow');
+            const list = document.getElementById(targetId);
+            const arrow = elHeader.querySelector('.section-arrow');
 
-        if (!list || !arrow) return;
+            if (!list || !arrow) return;
 
-        (header as HTMLElement).onclick = (e) => {
-            // ボタンやドラッグハンドルのクリックは無視
-            if ((e.target as HTMLElement).closest('button')) return;
+            elHeader.onclick = (e) => {
+                // ボタンやドラッグハンドルのクリックは無視
+                if ((e.target as HTMLElement).closest('button')) return;
 
-            const isHidden = list.classList.toggle(SIDEBAR_CONFIG.CLASSES.HIDDEN);
-            const isOpen = !isHidden;
+                const isHidden = list.classList.toggle(SIDEBAR_CONFIG.CLASSES.HIDDEN);
+                const isOpen = !isHidden;
 
-            arrow.classList.toggle('rotate-0', isOpen);
-            arrow.classList.toggle('-rotate-90', !isOpen);
-            header.setAttribute('aria-expanded', String(isOpen));
+                arrow.classList.toggle('rotate-0', isOpen);
+                arrow.classList.toggle('-rotate-90', !isOpen);
+                elHeader.setAttribute('aria-expanded', String(isOpen));
 
-            localStorage.setItem(getSectionKey(targetId), String(isOpen));
-        };
-    });
+                localStorage.setItem(getSectionKey(targetId), String(isOpen));
+            };
+        });
+    } catch (error) {
+        console.error("Error setting up sidebar toggles", error);
+    }
 }
 
 /**
  * セクションのドラッグ&ドロップ初期化
  */
 export function setupSectionDragAndDrop() {
-    const wrapper = document.getElementById('sidebar-sections-wrapper');
-    if (!wrapper) return;
+    try {
+        const wrapper = document.getElementById('sidebar-sections-wrapper');
+        if (!wrapper) return;
 
-    let dragSrcEl: HTMLElement | null = null;
+        let dragSrcEl: HTMLElement | null = null;
 
-    const sections = wrapper.querySelectorAll('.sidebar-section-container');
-    sections.forEach(section => {
-        const el = section as HTMLElement;
-        el.addEventListener('dragstart', (e: DragEvent) => {
-            dragSrcEl = el;
-            if (e.dataTransfer) {
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', el.dataset.sectionKey || '');
-            }
-            el.classList.add('opacity-50', 'bg-gray-100', 'dark:bg-gray-800');
-        });
+        const sections = wrapper.querySelectorAll('.sidebar-section-container');
+        sections.forEach(section => {
+            const el = section as HTMLElement;
+            el.addEventListener('dragstart', (e: DragEvent) => {
+                dragSrcEl = el;
+                if (e.dataTransfer) {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', el.dataset.sectionKey || '');
+                }
+                el.classList.add('opacity-50', 'bg-gray-100', 'dark:bg-gray-800');
+            });
 
-        el.addEventListener('dragend', (e) => {
-            el.classList.remove('opacity-50', 'bg-gray-100', 'dark:bg-gray-800');
-            wrapper.querySelectorAll('.sidebar-section-container').forEach(col => {
-                col.classList.remove('border-t-2', 'border-blue-500');
+            el.addEventListener('dragend', (e) => {
+                el.classList.remove('opacity-50', 'bg-gray-100', 'dark:bg-gray-800');
+                wrapper.querySelectorAll('.sidebar-section-container').forEach(col => {
+                    col.classList.remove('border-t-2', 'border-blue-500');
+                });
+            });
+
+            el.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (e.dataTransfer) {
+                    e.dataTransfer.dropEffect = 'move';
+                }
+                // 自分自身へのドラッグは無視
+                if (dragSrcEl === el) return;
+                el.classList.add('border-t-2', 'border-blue-500');
+            });
+
+            el.addEventListener('dragleave', (e) => {
+                el.classList.remove('border-t-2', 'border-blue-500');
+            });
+
+            el.addEventListener('drop', (e) => {
+                e.stopPropagation(); // 親への伝播（タスクのドロップなど）を防ぐ
+                e.preventDefault();
+
+                if (dragSrcEl !== el) {
+                    // DOM移動
+                    if (dragSrcEl) {
+                        wrapper.insertBefore(dragSrcEl, el);
+                    }
+
+                    // 順序保存
+                    saveSectionOrder(wrapper);
+                }
+                return false;
             });
         });
-
-        el.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            if (e.dataTransfer) {
-                e.dataTransfer.dropEffect = 'move';
-            }
-            // 自分自身へのドラッグは無視
-            if (dragSrcEl === el) return;
-            el.classList.add('border-t-2', 'border-blue-500');
-        });
-
-        el.addEventListener('dragleave', (e) => {
-            el.classList.remove('border-t-2', 'border-blue-500');
-        });
-
-        el.addEventListener('drop', (e) => {
-            e.stopPropagation(); // 親への伝播（タスクのドロップなど）を防ぐ
-            e.preventDefault();
-
-            if (dragSrcEl !== el) {
-                // DOM移動
-                if (dragSrcEl) {
-                    wrapper.insertBefore(dragSrcEl, el);
-                }
-
-                // 順序保存
-                saveSectionOrder(wrapper);
-            }
-            return false;
-        });
-    });
+    } catch (e) {
+        console.error("Failed to setup sidebar drag and drop", e);
+    }
 }
 
 function saveSectionOrder(wrapper: HTMLElement) {

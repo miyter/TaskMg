@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TaskMg - スマートなタスク管理</title>
     <link rel="icon" type="image/png" sizes="96x96" href="/images/favicon-96x96.png">
-    
+
     <!-- プリロード & 外部フォント -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=M+PLUS+2:wght@400;500;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=M+PLUS+2:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
     <!-- アプリケーションのスタイル -->
-    
+
     <!-- 初期設定（レンダリングブロックを最小限に） -->
     <script>
         // テーマの即時適用（FOUC対策）
-        (function() {
+        (function () {
             if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             } else {
@@ -27,7 +30,7 @@
 
     <!-- Firebase Config 注入 (IIFEで確実に実行) -->
     <script>
-        (function() {
+        (function () {
             // 本番ビルドでも確実に設定が残るよう、明示的にwindowオブジェクトに代入
             window.GLOBAL_FIREBASE_CONFIG = {
                 apiKey: "AIzaSyCD6u_GAQJrU8DBu1LMUGw0wUsAXtdC6qw",
@@ -38,7 +41,7 @@
                 appId: "1:245900813558:web:3502cafdd4fa5d1c9538d7",
                 measurementId: "G-NQC4YWR4EM"
             };
-            
+
             // 環境変数からの注入がある場合は上書き（開発環境用）
             if (typeof __firebase_config !== 'undefined') {
                 try {
@@ -58,9 +61,10 @@
             console.log("[index.html] Firebase config injected successfully.");
         })();
     </script>
-  <script type="module" crossorigin src="/assets/main-BhetxQ1b.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-DbbZg7SU.css">
+  <script type="module" crossorigin src="/assets/main-B3FOfnc9.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-5c60CxSn.css">
 </head>
+
 <body class="h-screen overflow-hidden">
 
     <!-- アプリケーションルート -->
@@ -69,4 +73,5 @@
     <!-- エントリーポイント -->
 
 </body>
+
 </html>
