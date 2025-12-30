@@ -1,7 +1,6 @@
-// @ts-nocheck
 /**
- * 更新日: 2025-12-30
- * 内容: 自動シングルトン初期化へ変更 (Undefined Error対策)
+ * 更新日: 2025-12-31
+ * 内容: TypeScript型チェックの有効化と設定取得ロジックの整理
  */
 
 import { FirebaseApp, getApps, initializeApp } from 'firebase/app';
@@ -11,9 +10,24 @@ import { Firestore, getFirestore } from 'firebase/firestore';
 // グローバル定数の型定義
 declare global {
     interface Window {
-        GLOBAL_FIREBASE_CONFIG?: any;
+        GLOBAL_FIREBASE_CONFIG?: Record<string, string>;
     }
-    const __firebase_config: string | object | undefined;
+    const __firebase_config: string | Record<string, string> | undefined;
+}
+
+// Viteの環境変数の型定義
+interface ImportMetaEnv {
+    readonly VITE_FIREBASE_API_KEY?: string;
+    readonly VITE_FIREBASE_AUTH_DOMAIN?: string;
+    readonly VITE_FIREBASE_PROJECT_ID?: string;
+    readonly VITE_FIREBASE_STORAGE_BUCKET?: string;
+    readonly VITE_FIREBASE_MESSAGING_SENDER_ID?: string;
+    readonly VITE_FIREBASE_APP_ID?: string;
+    readonly VITE_FIREBASE_MEASUREMENT_ID?: string;
+}
+
+interface ImportMeta {
+    readonly env: ImportMetaEnv;
 }
 
 /**
@@ -27,11 +41,9 @@ function getConfiguration() {
 
     // 2. Vite環境変数 (import.meta.env)
     try {
-        // @ts-ignore
-        if (import.meta && import.meta.env) {
-            // @ts-ignore
-            const env = import.meta.env;
-            const envConfig = {
+        const env = (import.meta as any).env as ImportMetaEnv | undefined;
+        if (env && env.VITE_FIREBASE_API_KEY) {
+            return {
                 apiKey: env.VITE_FIREBASE_API_KEY,
                 authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
                 projectId: env.VITE_FIREBASE_PROJECT_ID,
@@ -40,22 +52,16 @@ function getConfiguration() {
                 appId: env.VITE_FIREBASE_APP_ID,
                 measurementId: env.VITE_FIREBASE_MEASUREMENT_ID,
             };
-            if (envConfig.apiKey) {
-                return envConfig;
-            }
         }
     } catch (e) {
         // 無視して次へ
     }
 
     // 3. レガシー注入変数 (__firebase_config)
-    // @ts-ignore
     if (typeof __firebase_config !== 'undefined') {
         try {
-            // @ts-ignore
             if (typeof __firebase_config === 'object') return __firebase_config;
-            // @ts-ignore
-            return JSON.parse(__firebase_config);
+            return JSON.parse(__firebase_config) as Record<string, string>;
         } catch (e) {
             console.error("[Firebase] Config parse failed (legacy):", e);
             return null;
@@ -76,7 +82,6 @@ if (!firebaseConfig?.apiKey) {
 }
 
 // アプリ初期化 (シングルトンパターン)
-// 既存のアプリインスタンスがある場合は再利用し、二重初期化を防ぐ
 let appInstance: FirebaseApp;
 if (getApps().length > 0) {
     appInstance = getApps()[0];
@@ -86,10 +91,10 @@ if (getApps().length > 0) {
     console.log("[Firebase] Initialized new app instance.");
 }
 
-// サービスのエクスポート (定数として直接公開)
+// サービスのエクスポート
 export const app: FirebaseApp = appInstance;
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 
-// 後方互換性のため（使用箇所がなければ削除可）
+// 後方互換性のため
 export const isFirebaseInitialized = true;

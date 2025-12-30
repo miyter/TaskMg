@@ -45,12 +45,20 @@ export function getEndOfDay(date: Date | Timestamp | string | number | null = ne
     return res;
 }
 
-export function getStartOfWeek(date: Date | Timestamp | string | number | null = new Date()): Date {
+/**
+ * 週の開始日を取得
+ * @param startDay 0: 日曜日, 1: 月曜日 (デフォルト: 1)
+ */
+export function getStartOfWeek(date: Date | Timestamp | string | number | null = new Date(), startDay: number = 1): Date {
     const d = toDate(date) || new Date();
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // 月曜始まり
+    // 指定した開始日からの差分を計算
+    const diff = d.getDate() - day + (day < startDay ? startDay - 7 : startDay);
     const start = new Date(d);
-    start.setDate(diff); // ここは setDate で変異させてから新しい Date を作るか、コピーに対して操作する
+    start.setDate(diff);
+
+    // NOTE: FirestoreはUTCで保存されるが、表示時はローカルタイムに変換される。
+    // 日付境界での不整合を避けるため、常にローカルタイムの 00:00:00 を基準とする。
     return getStartOfDay(start);
 }
 

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { addProject, deleteProject, updateProject } from '../../store/projects';
 import { Project } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
-import { getCurrentWorkspaceId } from '../../store/workspace';
+import { useWorkspaceStore } from '../../store/ui/workspace-store';
 import { Modal } from '../common/Modal';
 
 /**
@@ -10,6 +10,8 @@ import { Modal } from '../common/Modal';
  */
 export const ProjectEditModal: React.FC = () => {
     const { activeModal, modalData, closeModal } = useModalStore();
+    const { currentWorkspaceId } = useWorkspaceStore();
+
     const isOpen = activeModal === 'project-edit';
     const project = modalData as Project | null;
     const isEdit = !!project?.id;
@@ -34,25 +36,26 @@ export const ProjectEditModal: React.FC = () => {
             return;
         }
 
+        if (!currentWorkspaceId && !isEdit) {
+            setError('ワークスペースが選択されていません。再度お試しください。');
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
         try {
             if (isEdit && project?.id) {
                 await updateProject(project.id, { name: trimmedName });
-            } else {
-                const workspaceId = getCurrentWorkspaceId();
-                if (!workspaceId) {
-                    throw new Error('ワークスペースが選択されていません');
-                }
-                await addProject(trimmedName, workspaceId);
+            } else if (currentWorkspaceId) {
+                await addProject(trimmedName, currentWorkspaceId);
             }
             closeModal();
         } catch (err: any) {
             setError('保存に失敗しました: ' + (err.message || '不明なエラー'));
             setLoading(false);
         }
-    }, [name, isEdit, project, closeModal]);
+    }, [name, isEdit, project, currentWorkspaceId, closeModal]);
 
     const handleDelete = useCallback(async () => {
         if (!project?.id) return;

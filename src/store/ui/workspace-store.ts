@@ -23,7 +23,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         {
             name: 'workspace-storage',
             partialize: (state) => ({
-                currentWorkspaceId: state.currentWorkspaceId
+                currentWorkspaceId: state.currentWorkspaceId,
+                workspaces: state.workspaces
             }),
         }
     )

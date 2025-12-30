@@ -46,9 +46,10 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                // If input is empty, just cancel. If has text, maybe still cancel? 
-                // User requirement implies consistency with modal closing on background check.
-                onCancel?.();
+                // タイトルが入力されている場合は、誤操作防止のためキャンセルしない
+                if (!title.trim()) {
+                    onCancel?.();
+                }
             }
         };
 
