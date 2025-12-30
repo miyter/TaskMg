@@ -157,6 +157,27 @@ interface Recurrence {
 
 ---
 
+## リファクタリング完了状況 (2025-12-30)
+
+1.  **Phase 1: TaskDetailModal の機能拡張** ✅
+    *   スケジュール設定、繰り返し、タイムブロック統合、Markdownメモ
+2.  **Phase 2: 旧バニラJSモーダルの移行と削除** ✅
+    *   `task-modal.ts` 一式削除
+    *   `label-modal.ts` 一式削除
+    *   `project-modal.ts` 一式削除
+    *   `workspace-modal.ts` 一式削除
+    *   `filter-modal.ts` 削除
+    *   `timeblock-modal.ts` 一式削除
+    *   `settings/` ディレクトリ削除
+    *   `modal-helpers.ts`, `modal-common.ts` 削除
+3.  **Phase 3: Reactベースの管理システムへの統一** ✅
+    *   `ModalManager.tsx` ですべてのモーダルを一元管理
+    *   `modal-store.ts` による状態管理と非Reactコード向けブリッジの構築
+- [x] ビルドエラーなし
+- [ ] 動作確認完了
+
+---
+
 ## 📝 変更履歴
 
 ### 2025-12-30 完了

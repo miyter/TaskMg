@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ModalType = 'settings' | 'task-detail' | 'create-project' | null;
+export type ModalType = 'settings' | 'task-detail' | 'create-project' | 'label-edit' | 'project-edit' | 'workspace-edit' | 'filter-edit' | 'timeblock-edit' | null;
 
 interface ModalState {
     activeModal: ModalType;
@@ -20,10 +20,52 @@ export const useModalStore = create<ModalState>((set) => ({
 // Vanilla TS (ui/) からモーダルを開くためのユーティリティ
 
 /**
+ * 設定モーダルを開く（非React用）
+ */
+export function openSettingsModal() {
+    useModalStore.getState().openModal('settings');
+}
+
+/**
  * タスク詳細モーダルを開く（非React用）
  */
 export function openTaskDetailModal(task: any) {
     useModalStore.getState().openModal('task-detail', task);
+}
+
+/**
+ * ラベル編集モーダルを開く（非React用）
+ */
+export function openLabelEditModal(label: any = null) {
+    useModalStore.getState().openModal('label-edit', label);
+}
+
+/**
+ * プロジェクト編集モーダルを開く（非React用）
+ */
+export function openProjectEditModal(project: any = null) {
+    useModalStore.getState().openModal('project-edit', project);
+}
+
+/**
+ * ワークスペース編集モーダルを開く（非React用）
+ */
+export function openWorkspaceEditModal(workspace: any = null) {
+    useModalStore.getState().openModal('workspace-edit', workspace);
+}
+
+/**
+ * フィルター編集モーダルを開く（非React用）
+ */
+export function openFilterEditModal(filter: any = null) {
+    useModalStore.getState().openModal('filter-edit', filter);
+}
+
+/**
+ * 時間帯設定モーダルを開く（非React用）
+ */
+export function openTimeBlockModal() {
+    useModalStore.getState().openModal('timeblock-edit');
 }
 
 /**

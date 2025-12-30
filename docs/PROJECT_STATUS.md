@@ -112,8 +112,10 @@ closeTaskModal();
 
 ## 🎯 改善タスク
 
-### Phase 1: TaskDetailModal 拡張
-`src/components/modals/TaskDetailModal.tsx` に以下を追加：
+### モーダルシステム
+- **現状**: すべてのモーダル（タスク、ラベル、プロジェクト、ワークスペース、フィルター、時間帯、設定）が React/JSX 移行済み。
+- **管理**: `useModalStore` (Zustand) と `ModalManager.tsx` による一元管理。
+- **バニラJS互換性**: `modal-store.ts` のヘルパー関数を通じて非Reactコードからも呼び出し可能。
 - [ ] スケジュール設定 (dueDate, recurrence)
 - [ ] 時間帯選択 (timeBlockId)
 - [ ] 所要時間選択 (duration)

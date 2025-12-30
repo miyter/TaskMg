@@ -1,11 +1,9 @@
 /**
  * タスクリスト描画制御
  */
-import { createTaskItem } from './components/TaskItem';
-// @ts-ignore: TaskContextMenu.ts might not export showTaskContextMenu correctly or path issue? Checking.
-// TaskContextMenu.ts typically exports showTaskContextMenu.
 import { Project, Task } from '../store/schema';
-import { showTaskContextMenu } from './components/TaskContextMenu';
+import { showTaskContextMenu } from './components/task-context-menu';
+import { createTaskItem } from './components/TaskItem';
 import { SelectionState } from './state/ui-state';
 
 /**

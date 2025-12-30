@@ -6,7 +6,6 @@
 import { Workspace } from '../../store/schema';
 import { getCurrentWorkspaceId, setCurrentWorkspaceId } from '../../store/workspace';
 import { showItemContextMenu } from '../features/sidebar/sidebar-components';
-import { showWorkspaceModal } from '../modals/workspace-modal';
 import { showSettingsModal } from '../settings/settings.js';
 
 const CLASSES = {
@@ -57,7 +56,7 @@ export function initWorkspaceDropdown() {
         setMenuVisible(!isOpen);
     };
 
-    if (addBtn) addBtn.onclick = () => { setMenuVisible(false); showWorkspaceModal(null); };
+    if (addBtn) addBtn.onclick = () => { setMenuVisible(false); openWorkspaceEditModal(null); };
     if (settingsBtn) settingsBtn.onclick = () => { setMenuVisible(false); showSettingsModal(); };
 
     // ワークスペース変更イベントを購読

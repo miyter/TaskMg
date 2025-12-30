@@ -4,7 +4,7 @@
  */
 
 import { Project, Task } from '../../../store/schema';
-import { showProjectModal } from '../../modals/project-modal';
+import { openProjectEditModal } from '../../../store/ui/modal-store';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components';
 import { setupDropZone } from './sidebar-drag-drop';
 
@@ -18,7 +18,7 @@ export function initSidebarProjects(container: HTMLElement) {
     if (addBtn) {
         addBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            showProjectModal();
+            openProjectEditModal();
         });
     }
 }

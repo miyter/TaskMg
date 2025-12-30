@@ -5,9 +5,9 @@ import { getProjects } from '../store/projects';
 import { Project, TimeBlock } from '../store/schema';
 import { addTask } from '../store/store';
 import { getTimeBlocks } from '../store/timeblocks';
+import { showMessageModal } from './components';
 import { createGlassCard } from './components/glass-card';
 import { UI_STYLES } from './core/ui-style-constants';
-import { showMessageModal } from './modals/modal-helpers';
 
 interface InlineInputOptions {
     forceExpand?: boolean;

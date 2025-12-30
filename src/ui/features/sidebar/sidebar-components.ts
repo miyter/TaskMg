@@ -4,11 +4,9 @@
 import { APP_EVENTS } from '../../../core/event-constants';
 import { deleteFilter } from '../../../store/filters';
 import { deleteProject } from '../../../store/projects';
+import { openProjectEditModal, openWorkspaceEditModal } from '../../../store/ui/modal-store';
 import { deleteWorkspace, getWorkspaces, setCurrentWorkspaceId } from '../../../store/workspace';
 import { showMessageModal } from '../../components';
-import { showFilterModal } from '../../modals/filter-modal';
-import { showProjectModal } from '../../modals/project-modal';
-import { showWorkspaceModal } from '../../modals/workspace-modal';
 import { SIDEBAR_CONFIG } from './sidebar-constants';
 // Import types
 
@@ -152,7 +150,7 @@ function getMenuConfig(type: SidebarItemType, itemData: any): MenuConfig | undef
     const configs: Record<string, MenuConfig> = {
         project: {
             editLabel: '編集',
-            onEdit: () => showProjectModal(itemData),
+            onEdit: () => openProjectEditModal(itemData),
             onDelete: async () => {
                 await deleteProject(itemData.id);
                 dispatchRoute('inbox');
@@ -161,7 +159,7 @@ function getMenuConfig(type: SidebarItemType, itemData: any): MenuConfig | undef
         },
         filter: {
             editLabel: '編集 / 名前変更',
-            onEdit: () => showFilterModal(itemData),
+            onEdit: () => openFilterEditModal(itemData),
             onDelete: async () => {
                 await deleteFilter(itemData.id);
                 dispatchRoute('inbox');
@@ -170,7 +168,7 @@ function getMenuConfig(type: SidebarItemType, itemData: any): MenuConfig | undef
         },
         workspace: {
             editLabel: '名前変更',
-            onEdit: () => showWorkspaceModal(itemData),
+            onEdit: () => openWorkspaceEditModal(itemData),
             onDelete: async () => {
                 const workspaces = getWorkspaces();
                 if (workspaces.length <= 1) throw new Error("最後のワークスペースは削除できない。");

@@ -1,8 +1,6 @@
 import { APP_EVENTS } from '../../../core/event-constants';
+import { openFilterEditModal } from '../../../store/ui/modal-store';
 import { openInNewWindow } from '../../core/window-manager';
-import { showFilterModal } from '../../modals/filter-modal';
-import { showSettingsModal } from '../../settings';
-import { showTimeBlockModal } from '../timeblock/timeblock-modal';
 import { showCustomContextMenu } from './sidebar-components';
 import { getSidebarUI } from './sidebar-state';
 import { isDesktop } from './sidebar-utils';
@@ -31,9 +29,9 @@ export function setupSidebarEvents() {
                 if (!isDesktop()) {
                     toggleSidebar(false);
                     // サイドバーのアニメーション(300ms)完了を待つ
-                    setTimeout(() => showSettingsModal(), 300);
+                    setTimeout(() => openSettingsModal(), 300);
                 } else {
-                    showSettingsModal();
+                    openSettingsModal();
                 }
                 return;
             }
@@ -56,8 +54,8 @@ export function setupSidebarEvents() {
 
         if (btn) {
             const id = btn.id;
-            if (id === 'add-filter-btn') showFilterModal();
-            if (id === 'edit-timeblocks-btn') showTimeBlockModal();
+            if (id === 'add-filter-btn') openFilterEditModal();
+            if (id === 'edit-timeblocks-btn') openTimeBlockModal();
         }
     });
 

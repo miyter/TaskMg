@@ -3,7 +3,6 @@
  */
 import { filterTasks } from '../../../logic/search';
 import { getTimeBlocks } from '../../../store/timeblocks';
-import { showTimeBlockModal } from '../timeblock/timeblock-modal';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components';
 import { SIDEBAR_CONFIG } from './sidebar-constants';
 import { setupDropZone } from './sidebar-drag-drop';
@@ -73,7 +72,7 @@ export function renderTimeBlocks() {
         item.onclick = () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: blockId } }));
         item.oncontextmenu = (e) => {
             e.preventDefault();
-            showTimeBlockModal(block);
+            openTimeBlockModal();
         };
 
         setupDropZone(item, 'timeblock', blockId);

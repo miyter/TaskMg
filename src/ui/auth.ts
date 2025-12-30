@@ -9,7 +9,7 @@ import {
     updatePassword,
     User
 } from "../core/firebase-sdk";
-import { showMessageModal } from './modals/modal-helpers';
+import { showMessageModal } from './components';
 
 let currentUserId: string | null = null;
 

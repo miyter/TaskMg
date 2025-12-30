@@ -10,7 +10,7 @@ import { openTaskDetailModal } from '../../store/ui/modal-store';
 import { formatDateCompact, getTaskDateColor } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { SelectionState, toggleTaskSelection } from '../state/ui-state';
-import { showTaskContextMenu } from './TaskContextMenu';
+import { showTaskContextMenu } from './task-context-menu';
 
 
 interface TaskItemContext {
