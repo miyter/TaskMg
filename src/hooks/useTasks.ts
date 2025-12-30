@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Task } from '../store/schema';
 import { subscribeToTasks } from '../store/store';
-import { getCurrentWorkspaceId } from '../store/workspace';
+import { useWorkspace } from './useWorkspace';
 
 export const useTasks = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
-    const workspaceId = getCurrentWorkspaceId();
+    const { workspaceId } = useWorkspace();
 
     useEffect(() => {
         if (!workspaceId) {

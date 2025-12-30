@@ -5,7 +5,6 @@ import { useFilterStore } from '../../store/ui/filter-store';
 import { cn } from '../../utils/cn';
 
 const FILTER_ITEMS = [
-    { id: 'dashboard', name: 'ダッシュボード', icon: '📊', color: 'text-blue-600' },
     { id: 'inbox', name: 'インボックス', icon: '📥', color: 'text-blue-500', droppable: true },
     { id: 'search', name: '検索', icon: '🔍', color: 'text-gray-500' },
     { id: 'today', name: '今日', icon: '📅', color: 'text-green-500' },

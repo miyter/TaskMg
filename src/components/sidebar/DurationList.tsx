@@ -1,13 +1,13 @@
 import { useDroppable } from '@dnd-kit/core';
 import React from 'react';
+import { UI_CONFIG } from '../../core/ui-constants';
 import { useTasks } from '../../hooks/useTasks';
 import { useFilterStore } from '../../store/ui/filter-store';
-import { SIDEBAR_CONFIG } from '../../ui/features/sidebar/sidebar-constants';
 import { SidebarItem } from './SidebarItem';
 
 export const DurationList: React.FC = () => {
     const { tasks } = useTasks();
-    const durations = SIDEBAR_CONFIG.DURATIONS;
+    const durations = UI_CONFIG.SIDEBAR.DURATIONS;
 
     return (
         <div className="space-y-0.5 py-1">

@@ -8,36 +8,34 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import React from 'react';
+import { LoginPage } from './components/auth/LoginPage';
 import { LegacyView } from './components/common/LegacyView';
+import { AppLayout } from './components/layout/AppLayout'; // New Import
 import { ModalManager } from './components/modals/ModalManager';
 import { BasicFilters } from './components/sidebar/BasicFilters';
 import { CustomFilterList } from './components/sidebar/CustomFilterList';
 import { DurationList } from './components/sidebar/DurationList';
 import { LabelList } from './components/sidebar/LabelList';
 import { ProjectList } from './components/sidebar/ProjectList';
-import { Sidebar } from './components/sidebar/Sidebar';
 import { SidebarSection } from './components/sidebar/SidebarSection';
 import { TargetList } from './components/sidebar/TargetList';
 import { TimeBlockList } from './components/sidebar/TimeBlockList';
-import { WorkspaceDropdown } from './components/sidebar/WorkspaceDropdown';
 import { TaskList } from './components/tasks/TaskList';
 // Sub-apps
 import { auth } from './core/firebase';
 import { onAuthStateChanged } from './core/firebase-sdk';
+import { DashboardApp } from './features/target-dashboard/react/DashboardApp';
+import { WikiApp } from './features/wiki/react/WikiApp';
+import { renderWizard } from './features/wizard/wizard';
 import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
+import { useThemeEffect } from './hooks/useThemeEffect';
 import { updateProject, updateTask } from './store';
 import { useFilterStore } from './store/ui/filter-store';
-import { useModalStore } from './store/ui/modal-store';
-import { useUIStore } from './store/ui/ui-store';
-import { DashboardApp } from './ui/features/target-dashboard/react/DashboardApp';
-import { WikiApp } from './ui/features/wiki/react/WikiApp';
-import { renderWizard } from './ui/features/wizard/wizard';
 
 const App: React.FC = () => {
-    const { toggleSidebar } = useUIStore();
-    const { openModal } = useModalStore();
-    const { filterType, targetId, setFilter, setSearchQuery } = useFilterStore();
+    useThemeEffect();
+    const { filterType, targetId, searchQuery } = useFilterStore();
     const { projects } = useProjects();
     const { labels } = useLabels();
 
@@ -135,82 +133,65 @@ const App: React.FC = () => {
         }
     };
 
+    // Sidebar Content Definition
+    const sidebarContent = (
+        <div className="flex flex-col gap-4">
+            <BasicFilters />
+
+            <SidebarSection title="Projects">
+                <ProjectList />
+            </SidebarSection>
+
+            <SidebarSection title="Targets" defaultExpanded={false}>
+                <TargetList />
+            </SidebarSection>
+
+            <SidebarSection title="Labels" defaultExpanded={false}>
+                <LabelList />
+            </SidebarSection>
+
+            <SidebarSection title="Time Blocks" defaultExpanded={false}>
+                <TimeBlockList />
+            </SidebarSection>
+
+            <SidebarSection title="Durations" defaultExpanded={false}>
+                <DurationList />
+            </SidebarSection>
+
+            <SidebarSection title="Filters" defaultExpanded={false}>
+                <CustomFilterList />
+            </SidebarSection>
+        </div>
+    );
+
+    if (!user) {
+        return <LoginPage />;
+    }
+
     return (
         <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
         >
-            <div className="h-full flex overflow-hidden bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
-                <ModalManager />
-
-                <Sidebar>
-                    <div className="flex flex-col gap-4">
-                        <BasicFilters />
-
-                        <SidebarSection title="Projects">
-                            <ProjectList />
-                        </SidebarSection>
-
-                        <SidebarSection title="Targets" defaultExpanded={false}>
-                            <TargetList />
-                        </SidebarSection>
-
-                        <SidebarSection title="Labels" defaultExpanded={false}>
-                            <LabelList />
-                        </SidebarSection>
-
-                        <SidebarSection title="Time Blocks" defaultExpanded={false}>
-                            <TimeBlockList />
-                        </SidebarSection>
-
-                        <SidebarSection title="Durations" defaultExpanded={false}>
-                            <DurationList />
-                        </SidebarSection>
-
-                        <SidebarSection title="Filters" defaultExpanded={false}>
-                            <CustomFilterList />
-                        </SidebarSection>
-                    </div>
-                </Sidebar>
-
-                <main className="flex-1 flex flex-col relative h-full overflow-hidden">
-                    <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 sticky top-0">
-                        <div className="flex items-center gap-3">
-                            <button onClick={toggleSidebar} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                            </button>
-                            <WorkspaceDropdown />
-                            <h1 className="font-bold text-lg border-l border-gray-300 dark:border-gray-700 pl-3 ml-1">{getTitle()}</h1>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => openModal('settings')}
-                                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-                                title="Settings"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            </button>
-                        </div>
-                    </header>
-                    <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-                        <div className="max-w-4xl mx-auto h-full">
-                            {filterType === 'wizard' ? (
-                                <LegacyView render={(el) => renderWizard(el)} />
-                            ) : filterType === 'target-dashboard' ? (
-                                <DashboardApp />
-                            ) : filterType === 'wiki' ? (
-                                <WikiApp />
-                            ) : filterType === 'search' ? (
-                                <div className="p-4">Search Results for "{query}" (Backend search required)</div>
-                            ) : (
-                                <TaskList />
-                            )}
-                        </div>
-                    </div>
-                </main>
-            </div>
+            <ModalManager />
+            <AppLayout
+                sidebarContent={sidebarContent}
+                title={getTitle()}
+            >
+                {/* Main Content Routing */}
+                {filterType === 'wizard' ? (
+                    <LegacyView render={(el) => renderWizard(el)} />
+                ) : filterType === 'target-dashboard' ? (
+                    <DashboardApp />
+                ) : filterType === 'wiki' ? (
+                    <WikiApp />
+                ) : filterType === 'search' ? (
+                    <div className="p-4">Search Results for "{searchQuery}" (Backend search required)</div>
+                ) : (
+                    <TaskList />
+                )}
+            </AppLayout>
         </DndContext>
     );
 };
