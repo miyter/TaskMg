@@ -6,7 +6,7 @@
 import { Project, Task } from '../../../store/schema';
 import { openModalDirect } from '../../../store/ui/modal-store';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components';
-import { setupDropZone } from './sidebar-drag-drop';
+// import { setupDropZone } from './sidebar-drag-drop'; // Removed for @dnd-kit migration
 
 /**
  * プロジェクトセクションのイベント初期化
@@ -61,8 +61,8 @@ export function updateSidebarProjects(projects: Project[], allTasks: Task[] = []
             showItemContextMenu(e, 'project', project);
         };
 
-        // ドラッグ＆ドロップターゲット設定
-        setupDropZone(item, 'project', project.id || null);
+        // ドラッグ＆ドロップターゲット設定 (React + @dnd-kitで処理されるため、Vanilla側は削除)
+        // setupDropZone(item, 'project', project.id || null);
 
         list.appendChild(item);
     });

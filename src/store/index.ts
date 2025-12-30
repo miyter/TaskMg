@@ -11,6 +11,7 @@ import {
     createBackupData as createBackupDataRaw,
     importBackupData as importBackupDataRaw
 } from './backup';
+import { addProject, deleteProject, updateProject } from './projects';
 import { Task } from './schema';
 import {
     addTaskRaw,
@@ -99,3 +100,7 @@ export async function createBackupData() {
     const { userId, workspaceId } = requireAuthAndWorkspace();
     return createBackupDataRaw(userId, workspaceId);
 }
+
+// Project exports
+export { addProject, deleteProject, updateProject };
+

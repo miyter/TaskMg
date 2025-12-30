@@ -1,120 +1,40 @@
-import { APP_EVENTS } from '../../../core/event-constants';
-import { SIDEBAR_CONFIG } from './sidebar-constants';
-import { cacheSidebarElements, getSidebarUI } from './sidebar-state';
-import { isDesktop } from './sidebar-utils';
-
-// We need to type CustomEvent for SIDEBAR_SETTINGS_UPDATED or use any
-interface SidebarSettingsEventDetail {
-    density: string;
-}
-
 /**
- * 密度モードを適用する
+ * sidebar-view.ts (Stubbed for React migration)
+ * This file previously handled direct DOM manipulation for the sidebar.
+ * It is now deprecated as React components (Sidebar.tsx) and useUIStore handle these concerns.
  */
-export function applyDensityMode(density: string) {
-    const items = document.querySelectorAll('.sidebar-item-row');
-    const densityClasses = Object.values(SIDEBAR_CONFIG.DENSITY_CLASSES);
-    // Explicitly cast access because density string might be anything
-    const configClasses = SIDEBAR_CONFIG.DENSITY_CLASSES as Record<string, string>;
-    const targetClass = configClasses[density] || configClasses['normal'];
 
-    items.forEach(item => {
-        item.classList.remove(...densityClasses);
-        item.classList.add(targetClass);
-    });
+/**
+ * 密度モードを適用する (Stub: Now handled by Sidebar.tsx)
+ */
+export function applyDensityMode(_density: string) {
+    // console.log('[SidebarView] applyDensityMode is now handled by React');
 }
 
 /**
- * 密度モード設定リスナーのセットアップ
+ * 密度モード設定リスナーのセットアップ (Stub)
  */
 export function setupDensityModeListener() {
-    window.addEventListener(APP_EVENTS.SIDEBAR_SETTINGS_UPDATED, ((e: CustomEvent<SidebarSettingsEventDetail>) => {
-        applyDensityMode(e.detail.density);
-    }) as EventListener);
+    // console.log('[SidebarView] setupDensityModeListener is now handled by React');
 }
 
 /**
- * サイドバーの開閉を切り替える
+ * サイドバーの開閉を切り替える (Stub)
  */
-export function toggleSidebar(open: boolean) {
-    const UI = getSidebarUI();
-    const { sidebar, resizer, overlay } = UI;
-    const { CLOSED, HIDDEN } = SIDEBAR_CONFIG.CLASSES;
-
-    if (!sidebar) return;
-
-    sidebar.classList.toggle(CLOSED, !open);
-    sidebar.classList.toggle(HIDDEN, !open);
-
-    // オーバーレイの制御 (モバイル用)
-    if (overlay) {
-        overlay.classList.toggle(HIDDEN, !open);
-    }
-
-    if (isDesktop()) {
-        if (resizer) resizer.classList.toggle(HIDDEN, !open);
-        if (open) {
-            const w = localStorage.getItem(SIDEBAR_CONFIG.STORAGE_KEYS.WIDTH) || String(SIDEBAR_CONFIG.DEFAULT_WIDTH);
-            sidebar.style.width = `${w}px`;
-        } else {
-            sidebar.style.width = '0';
-        }
-    }
-    updateSidebarVisibility();
+export function toggleSidebar(_open: boolean) {
+    // console.log('[SidebarView] toggleSidebar is now handled by useUIStore and Sidebar.tsx');
 }
 
 /**
- * サイドバーの可視状態（ボタン等）を更新する
+ * サイドバーの可視状態を更新する (Stub)
  */
 export function updateSidebarVisibility() {
-    const UI = getSidebarUI();
-    const { sidebar, openBtn, closeBtn } = UI;
-    const { CLOSED, HIDDEN } = SIDEBAR_CONFIG.CLASSES;
-
-    // UIキャッシュが古い場合があるため再取得を試みる
-    if (!sidebar) return;
-
-    // openBtn/closeBtn はDOM生成タイミングによってはnullの可能性があるためチェック
-    if (!openBtn && !closeBtn) return;
-
-    const isClosed = sidebar.classList.contains(CLOSED) || sidebar.classList.contains(HIDDEN);
-
-    if (isDesktop()) {
-        if (openBtn) openBtn.classList.toggle(HIDDEN, !isClosed);
-        if (closeBtn) closeBtn.classList.toggle(HIDDEN, isClosed);
-        if (!isClosed) sidebar.classList.remove(HIDDEN);
-    } else {
-        if (openBtn) openBtn.classList.remove(HIDDEN);
-        if (closeBtn) closeBtn.classList.remove(HIDDEN);
-        sidebar.classList.remove(HIDDEN);
-    }
+    // Navigation logic etc. is now handled by React
 }
 
 /**
- * ハンバーガーメニューのイベント登録（DOM生成待機リトライ付き）
+ * ハンバーガーメニューのイベント登録 (Stub)
  */
 export function initializeSidebarToggles() {
-    const openBtn = document.getElementById('sidebar-open-btn');
-    const closeBtn = document.getElementById('sidebar-close-btn');
-
-    // ボタンが見つかるまでリトライ
-    if (!openBtn) {
-        requestAnimationFrame(initializeSidebarToggles);
-        return;
-    }
-
-    // キャッシュ更新（重要）
-    const UI = cacheSidebarElements();
-    const { overlay } = UI;
-
-    openBtn.onclick = () => toggleSidebar(true);
-    if (closeBtn) closeBtn.onclick = () => toggleSidebar(false);
-
-    // オーバーレイのクリックで閉じる
-    if (overlay) {
-        overlay.onclick = () => toggleSidebar(false);
-    }
-
-    // 初期状態の反映
-    updateSidebarVisibility();
+    // Handled by header buttons in App.tsx or Sidebar.tsx
 }

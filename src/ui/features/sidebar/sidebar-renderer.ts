@@ -6,7 +6,7 @@ import { getTimeBlocks } from '../../../store/timeblocks';
 import { openModalDirect } from '../../../store/ui/modal-store';
 import { createSidebarItem, showItemContextMenu } from './sidebar-components';
 import { SIDEBAR_CONFIG } from './sidebar-constants';
-import { setupDropZone } from './sidebar-drag-drop';
+// import { setupDropZone } from './sidebar-drag-drop'; // Removed for @dnd-kit migration
 import { countActiveTasks, getSidebarDensity } from './sidebar-utils';
 import { updateSidebarProjects } from './SidebarProjects';
 
@@ -76,14 +76,14 @@ export function renderTimeBlocks() {
             openModalDirect('timeblock-edit');
         };
 
-        setupDropZone(item, 'timeblock', blockId);
+        // setupDropZone(item, 'timeblock', blockId); // Removed for @dnd-kit migration
         fragment.appendChild(item);
     });
 
     const unassignedCount = countActiveTasks(tasks, (t: Task) => !t.timeBlockId || t.timeBlockId === 'null' || t.timeBlockId === 'unassigned');
     const unassignedItem = createSidebarItem('未定', 'timeblock', 'unassigned', { color: '#a0aec0' }, unassignedCount, density);
     unassignedItem.onclick = () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'timeblock', id: 'unassigned' } }));
-    setupDropZone(unassignedItem, 'timeblock', 'unassigned');
+    // setupDropZone(unassignedItem, 'timeblock', 'unassigned'); // Removed for @dnd-kit migration
     fragment.appendChild(unassignedItem);
 
     list.appendChild(fragment);
@@ -104,7 +104,7 @@ export function renderDurations() {
         const item = createSidebarItem(`${mins} min`, 'duration', mins.toString(), { iconHtml }, count, density);
 
         item.onclick = () => document.dispatchEvent(new CustomEvent('route-change', { detail: { page: 'duration', id: mins.toString() } }));
-        setupDropZone(item, 'duration', mins.toString());
+        // setupDropZone(item, 'duration', mins.toString()); // Removed for @dnd-kit migration
         fragment.appendChild(item);
     });
     list.appendChild(fragment);

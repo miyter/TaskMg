@@ -6,6 +6,7 @@ import {
     useSensor,
     useSensors
 } from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
 import React from 'react';
 import { ModalManager } from './components/modals/ModalManager';
 import { BasicFilters } from './components/sidebar/BasicFilters';
@@ -16,7 +17,7 @@ import { SidebarSection } from './components/sidebar/SidebarSection';
 import { TaskList } from './components/tasks/TaskList';
 import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
-import { updateTask } from './store';
+import { updateProject, updateTask } from './store';
 import { useFilterStore } from './store/ui/filter-store';
 import { useModalStore } from './store/ui/modal-store';
 import { useUIStore } from './store/ui/ui-store';
@@ -43,7 +44,7 @@ const App: React.FC = () => {
         const activeId = String(active.id);
         const overId = String(over.id);
 
-        // タスクをサイドバーへドラッグした場合の処理
+        // タスクをサイドバーへドラッグした場合の処理 (移動)
         if (activeId.startsWith('task:')) {
             const taskId = activeId.split(':')[1];
             const targetType = over.data.current?.type;
@@ -60,6 +61,21 @@ const App: React.FC = () => {
                 } catch (err) {
                     console.error('Failed to update task via dnd', err);
                 }
+            }
+        }
+
+        // プロジェクト自体の並び替え
+        if (activeId !== overId && !activeId.startsWith('task:')) {
+            const oldIndex = projects.findIndex(p => p.id === activeId);
+            const newIndex = projects.findIndex(p => p.id === overId);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newProjects = arrayMove(projects, oldIndex, newIndex);
+                // 仮の「order」更新ロジック (スキーマに未定義の場合は実体化が必要だが、ここではUIフィードバック)
+                // 本来は各プロジェクトのorder値を更新してFirestoreへ書き込む
+                newProjects.forEach(async (p, idx) => {
+                    if (p.id) await updateProject(p.id, { order: idx } as any);
+                });
             }
         }
     };

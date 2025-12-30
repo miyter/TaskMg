@@ -5,7 +5,7 @@
  * - sidebar-view.js: 表示制御、密度設定、ハンバーガーメニュー
  * - sidebar-events.js: クリック、右クリックイベントのハンドリング
  */
-import { setupDropZone } from './sidebar-drag-drop';
+// import { setupDropZone } from './sidebar-drag-drop'; // Removed for @dnd-kit migration
 import { renderSidebarItems, updateInboxCount } from './sidebar-renderer';
 import { buildSidebarHTML, setupSectionDragAndDrop, setupSidebarToggles } from './sidebar-structure';
 import { getSidebarDensity, setupResizer } from './sidebar-utils';
@@ -54,7 +54,7 @@ export function initSidebar() {
     setupSectionDragAndDrop();
     setupDataEventListeners();
 
-    if (UI.inbox) setupDropZone(UI.inbox, 'inbox');
+    // if (UI.inbox) setupDropZone(UI.inbox, 'inbox'); // Removed for @dnd-kit migration
 
     // プロジェクト一覧の初期化
     initSidebarProjects(UI.container);
