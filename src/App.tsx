@@ -8,26 +8,67 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import React from 'react';
+import { LegacyView } from './components/common/LegacyView';
 import { ModalManager } from './components/modals/ModalManager';
 import { BasicFilters } from './components/sidebar/BasicFilters';
+import { CustomFilterList } from './components/sidebar/CustomFilterList';
+import { DurationList } from './components/sidebar/DurationList';
 import { LabelList } from './components/sidebar/LabelList';
 import { ProjectList } from './components/sidebar/ProjectList';
 import { Sidebar } from './components/sidebar/Sidebar';
 import { SidebarSection } from './components/sidebar/SidebarSection';
+import { TargetList } from './components/sidebar/TargetList';
+import { TimeBlockList } from './components/sidebar/TimeBlockList';
+import { WorkspaceDropdown } from './components/sidebar/WorkspaceDropdown';
 import { TaskList } from './components/tasks/TaskList';
+// Sub-apps
+import { auth } from './core/firebase';
+import { onAuthStateChanged } from './core/firebase-sdk';
 import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
 import { updateProject, updateTask } from './store';
 import { useFilterStore } from './store/ui/filter-store';
 import { useModalStore } from './store/ui/modal-store';
 import { useUIStore } from './store/ui/ui-store';
+import { DashboardApp } from './ui/features/target-dashboard/react/DashboardApp';
+import { WikiApp } from './ui/features/wiki/react/WikiApp';
+import { renderWizard } from './ui/features/wizard/wizard';
 
 const App: React.FC = () => {
     const { toggleSidebar } = useUIStore();
     const { openModal } = useModalStore();
-    const { filterType, targetId } = useFilterStore();
+    const { filterType, targetId, setFilter, setSearchQuery } = useFilterStore();
     const { projects } = useProjects();
     const { labels } = useLabels();
+
+    const [user, setUser] = React.useState<any>(null);
+
+    React.useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUser(user);
+        });
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            const isInput = ['INPUT', 'TEXTAREA'].includes(target.tagName) || target.closest('[contenteditable]');
+            const hasModal = document.querySelector('[role="dialog"]');
+
+            if (e.key === '/' && !isInput && !hasModal) {
+                const searchInput = document.getElementById('page-search-input');
+                if (searchInput) {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            unsubscribe();
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -111,8 +152,24 @@ const App: React.FC = () => {
                             <ProjectList />
                         </SidebarSection>
 
+                        <SidebarSection title="Targets" defaultExpanded={false}>
+                            <TargetList />
+                        </SidebarSection>
+
                         <SidebarSection title="Labels" defaultExpanded={false}>
                             <LabelList />
+                        </SidebarSection>
+
+                        <SidebarSection title="Time Blocks" defaultExpanded={false}>
+                            <TimeBlockList />
+                        </SidebarSection>
+
+                        <SidebarSection title="Durations" defaultExpanded={false}>
+                            <DurationList />
+                        </SidebarSection>
+
+                        <SidebarSection title="Filters" defaultExpanded={false}>
+                            <CustomFilterList />
                         </SidebarSection>
                     </div>
                 </Sidebar>
@@ -123,7 +180,8 @@ const App: React.FC = () => {
                             <button onClick={toggleSidebar} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                             </button>
-                            <h1 className="font-bold text-lg">{getTitle()}</h1>
+                            <WorkspaceDropdown />
+                            <h1 className="font-bold text-lg border-l border-gray-300 dark:border-gray-700 pl-3 ml-1">{getTitle()}</h1>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -137,8 +195,18 @@ const App: React.FC = () => {
                         </div>
                     </header>
                     <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-                        <div className="max-w-3xl mx-auto">
-                            <TaskList />
+                        <div className="max-w-4xl mx-auto h-full">
+                            {filterType === 'wizard' ? (
+                                <LegacyView render={(el) => renderWizard(el)} />
+                            ) : filterType === 'target-dashboard' ? (
+                                <DashboardApp />
+                            ) : filterType === 'wiki' ? (
+                                <WikiApp />
+                            ) : filterType === 'search' ? (
+                                <div className="p-4">Search Results for "{query}" (Backend search required)</div>
+                            ) : (
+                                <TaskList />
+                            )}
                         </div>
                     </div>
                 </main>
