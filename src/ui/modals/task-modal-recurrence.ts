@@ -2,7 +2,7 @@
  * 繰り返し設定の制御ロジック
  * TypeScript化: 2025-12-29
  */
-import { getInitialDueDateFromRecurrence } from '../../utils/date';
+import { getInitialDueDateFromRecurrence, RecurrenceConfig } from '../../utils/date';
 import { formatDateForInput } from './modal-helpers';
 
 /**
@@ -32,8 +32,12 @@ export function setupRecurrenceControls() {
         // 'none' 以外で、かつ曜日指定が必要な場合は曜日未選択なら更新しない
         if (type === 'weekly' && days.length === 0) return;
 
-        // @ts-ignore: Recurrence type matching
-        const nextDate = getInitialDueDateFromRecurrence({ type, days });
+        const recurrence = {
+            type: type as RecurrenceConfig['type'],
+            days
+        };
+
+        const nextDate = getInitialDueDateFromRecurrence(recurrence);
         if (nextDate) {
             // 既存の日付が入っていても、繰り返しパターンが変わったら更新するのが親切設計
             // ただし、既に正当な未来の日付が入っている場合は維持するロジックも考えられるが、

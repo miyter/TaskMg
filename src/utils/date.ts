@@ -6,7 +6,7 @@
 
 import { Timestamp } from "firebase/firestore";
 
-interface RecurrenceConfig {
+export interface RecurrenceConfig {
     type: 'none' | 'daily' | 'weekly' | 'weekdays' | 'monthly' | null;
     days?: number[];
 }

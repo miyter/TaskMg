@@ -6,6 +6,7 @@ import { Timestamp } from 'firebase/firestore';
 import { Project, Task } from '../../store/schema';
 import { updateTask } from '../../store/store';
 import { showMessageModal } from '../../ui/components';
+export { showMessageModal };
 
 const INBOX_LABEL = '📥 インボックス';
 
