@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { auth, initAuthListener } from '../core/auth';
+import { initAuthListener } from '../core/auth';
+import { auth } from '../core/firebase';
 import { useWorkspaceStore } from '../store/ui/workspace-store';
 
 /**

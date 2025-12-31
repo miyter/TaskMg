@@ -17,6 +17,7 @@ import { WizardApp } from './features/wizard/WizardApp';
 import { useAppDnD } from './hooks/useAppDnD';
 import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
+import { useApplyTheme } from './hooks/useThemeEffect';
 import { useFilterStore } from './store/ui/filter-store';
 import { useViewStore } from './store/ui/view-store';
 

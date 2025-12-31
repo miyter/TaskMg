@@ -1,10 +1,18 @@
 import { SidebarDensity, UI_CONFIG } from '../core/ui-constants';
 
+/** Type guard for SidebarDensity */
+const isSidebarDensity = (value: string): value is SidebarDensity => {
+    return value in UI_CONFIG.DENSITY_CLASSES;
+};
+
 /**
  * Get the tailwind padding class for a specific density level
  */
 export const getDensityClass = (density: string): string => {
-    return UI_CONFIG.DENSITY_CLASSES[density as SidebarDensity] || UI_CONFIG.DENSITY_CLASSES.normal;
+    if (isSidebarDensity(density)) {
+        return UI_CONFIG.DENSITY_CLASSES[density];
+    }
+    return UI_CONFIG.DENSITY_CLASSES.normal;
 };
 
 /**

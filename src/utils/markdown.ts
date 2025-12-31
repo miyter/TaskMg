@@ -4,19 +4,17 @@
  * TypeScript化: 2025-12-29
  */
 
+/** HTMLエスケープ用のマップ */
+const HTML_ESCAPE_MAP: Record<string, string> = {
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+};
+
 /**
  * HTMLエスケープ（簡易版）
  */
 function escapeHtml(str: string): string {
-    return str.replace(/[&<>"']/g, (m) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[m as keyof typeof map] || m);
+    return str.replace(/[&<>"']/g, (m) => HTML_ESCAPE_MAP[m] || m);
 }
-
-// 型定義のためのマップ
-const map = {
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-};
 
 /**
  * MarkdownをHTMLに変換 (箇条書き・リンク・改行に対応)

@@ -18,6 +18,9 @@ interface UIState {
     setSidebarDensity: (density: SidebarDensity) => void;
 }
 
+/** Mobile breakpoint for sidebar auto-close */
+const MOBILE_BREAKPOINT = 1024; // lg breakpoint
+
 export const useUIStore = create<UIState>()(
     persist(
         (set) => ({
@@ -43,6 +46,12 @@ export const useUIStore = create<UIState>()(
                 sidebarDensity: state.sidebarDensity,
                 isSidebarOpen: state.isSidebarOpen // open state is also persisted
             }),
+            onRehydrateStorage: () => (state) => {
+                // On mobile, always close sidebar after rehydration to prevent layout issues
+                if (typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT) {
+                    state?.setSidebarOpen(false);
+                }
+            },
         }
     )
 );

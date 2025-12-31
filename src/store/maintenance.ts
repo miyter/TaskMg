@@ -42,8 +42,17 @@ export async function cleanupDuplicateTasks(workspaceId: string): Promise<number
             // If createdAt is missing, use ID string comparison.
 
             group.sort((a, b) => {
-                const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                // Handle Firestore Timestamp or Date objects
+                const getTime = (val: unknown): number => {
+                    if (!val) return 0;
+                    if (typeof val === 'object' && 'toDate' in val && typeof (val as { toDate: () => Date }).toDate === 'function') {
+                        return (val as { toDate: () => Date }).toDate().getTime();
+                    }
+                    const date = new Date(val as string | number | Date);
+                    return isNaN(date.getTime()) ? 0 : date.getTime();
+                };
+                const timeA = getTime(a.createdAt);
+                const timeB = getTime(b.createdAt);
                 return timeA - timeB; // Oldest first
             });
 
@@ -51,6 +60,7 @@ export async function cleanupDuplicateTasks(workspaceId: string): Promise<number
             const toDelete = group.slice(1);
 
             for (const task of toDelete) {
+                if (!task.id) continue; // Skip if id is undefined
                 console.log(`[Cleanup] Deleting duplicate task: "${task.title}" (${task.id})`);
                 deletePromises.push(deleteDoc(doc(db, path, task.id)));
                 deletedCount++;

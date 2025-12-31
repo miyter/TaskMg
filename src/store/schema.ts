@@ -21,9 +21,9 @@ const DateLikeSchema = z.union([
 // --- Schemas ---
 
 export const RecurrenceSchema = z.object({
-    type: z.enum(['none', 'daily', 'weekly', 'weekdays', 'monthly']).nullable(),
-    days: z.array(z.number()).optional(), // 0-6 for Sunday-Saturday
-}).nullable(); // optional()を削除し、nullable()のみに統一
+    type: z.enum(['none', 'daily', 'weekly', 'weekdays', 'monthly']).default('none'),
+    days: z.array(z.number().min(0).max(6)).optional(), // 0-6 for Sunday-Saturday
+}).nullable();
 
 export const TaskSchema = z.object({
     id: z.string().optional(), // Firestore ID
@@ -77,11 +77,17 @@ export const FilterSchema = z.object({
     createdAt: DateLikeSchema,
 });
 
+/** HH:mm format regex (00:00 to 23:59) */
+const TimeStringSchema = z.string().regex(
+    /^([01]\d|2[0-3]):([0-5]\d)$/,
+    "Time must be in HH:mm format (e.g., 09:00, 14:30)"
+);
+
 export const TimeBlockSchema = z.object({
     id: z.string().optional(),
     name: z.string(), // Display name
-    start: z.string(), // "HH:mm"
-    end: z.string(),   // "HH:mm"
+    start: TimeStringSchema, // "HH:mm"
+    end: TimeStringSchema,   // "HH:mm"
     color: z.string().optional(),
     order: z.number().optional(),
 });

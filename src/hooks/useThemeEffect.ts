@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { UI_CONFIG } from '../core/ui-constants';
 import { useSettingsStore } from '../store/ui/settings-store';
 import { useUIStore } from '../store/ui/ui-store';
 
@@ -59,17 +58,16 @@ export const useApplyTheme = () => {
 
     // Apply Density (Global)
     useEffect(() => {
-        useEffect(() => {
-            // UI_CONFIG.DENSITY_LEVELS is gone, use values directly or loop manually if needed.
-            // Actually we just need to remove old classes and add new one.
-            // We know density values from type Density.
-            const classes = ['app-density-compact', 'app-density-normal', 'app-density-comfortable', 'app-density-spacious'];
+        // UI_CONFIG.DENSITY_LEVELS is gone, use values directly or loop manually if needed.
+        // Actually we just need to remove old classes and add new one.
+        // We know density values from type Density.
+        const classes = ['app-density-compact', 'app-density-normal', 'app-density-comfortable', 'app-density-spacious'];
 
-            document.body.classList.remove(...classes);
-            document.body.classList.add(`app-density-${density}`);
+        document.body.classList.remove(...classes);
+        document.body.classList.add(`app-density-${density}`);
 
-            // Sync density to sidebar store as well (if sidebar uses separate store, but ideally they should merge)
-            // For now, we update the legacy ui-store sidebarDensity to match global density
-            setSidebarDensity(density);
-        }, [density, setSidebarDensity]);
-    };
+        // Sync density to sidebar store as well (if sidebar uses separate store, but ideally they should merge)
+        // For now, we update the legacy ui-store sidebarDensity to match global density
+        setSidebarDensity(density);
+    }, [density, setSidebarDensity]);
+};

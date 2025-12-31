@@ -1,5 +1,5 @@
 ﻿/**
- * 更新日: 2025-12-21
+ * 更新日: 2025-12-31
  * 内容: subscribeToLabels の引数シグネチャを (workspaceId, onUpdate) に統一
  * TypeScript化: 2025-12-29
  */
@@ -33,16 +33,16 @@ function requireAuth() {
 
 /**
  * ラベルのリアルタイム購読
- * Note: ラベルは全WS共通だが DataSyncManager の呼び出し規約に合わせる
+ * @param _workspaceId 現在は未使用（ラベルは全WS共通、将来のマルチワークスペース対応用）
+ * @param onUpdate ラベル更新時のコールバック
  */
-export function subscribeToLabels(workspaceId: string | ((labels: Label[]) => void), onUpdate?: (labels: Label[]) => void): Unsubscribe {
-    const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
+export function subscribeToLabels(_workspaceId: string, onUpdate: (labels: Label[]) => void): Unsubscribe {
     const userId = auth.currentUser?.uid;
 
-    if (userId && typeof callback === 'function') {
-        return subscribeToLabelsRaw(userId, callback);
+    if (userId) {
+        return subscribeToLabelsRaw(userId, onUpdate);
     } else {
-        if (typeof callback === 'function') callback([]);
+        onUpdate([]);
         return () => { };
     }
 }

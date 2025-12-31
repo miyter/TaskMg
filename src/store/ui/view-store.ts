@@ -20,7 +20,7 @@ export const useViewStore = create<ViewState>()(
             name: 'view-storage',
             partialize: (state) => ({
                 currentView: state.currentView,
-                viewData: state.viewData
+                // viewData is intentionally NOT persisted to avoid storage quota issues
             }),
         }
     )

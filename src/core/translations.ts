@@ -3,6 +3,8 @@
  * UIの文言を一元管理する
  */
 
+import { useSettingsStore } from '../store/ui/settings-store';
+
 type I18nKeys =
     | 'dashboard'
     | 'inbox'
@@ -117,4 +119,14 @@ export const getTranslator = (language: 'ja' | 'en') => {
     }
 
     return { t };
+};
+
+/**
+ * React Hook for translations
+ * Uses settings store to get current language
+ */
+
+export const useTranslation = () => {
+    const language = useSettingsStore((state) => state.language);
+    return getTranslator(language);
 };
