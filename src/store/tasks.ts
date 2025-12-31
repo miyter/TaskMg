@@ -59,7 +59,6 @@ export async function updateTask(taskId: string, updates: Partial<Task>) {
     try {
         const { userId, workspaceId } = requireAuthAndWorkspace();
         await updateTaskRaw(userId, workspaceId, taskId, updates);
-        toast.success("保存しました");
     } catch (error) {
         console.error("Failed to update task:", error);
         toast.error("タスクの保存に失敗しました");
@@ -74,7 +73,6 @@ export async function deleteTask(taskId: string) {
     try {
         const { userId, workspaceId } = requireAuthAndWorkspace();
         await deleteTaskRaw(userId, workspaceId, taskId);
-        toast.success("削除しました");
     } catch (error) {
         console.error("Failed to delete task:", error);
         toast.error("タスクの削除に失敗しました");

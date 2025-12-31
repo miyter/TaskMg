@@ -54,7 +54,7 @@ function deserializeTask(id: string, data: any): Task {
         projectId: data.projectId ? String(data.projectId) : null,
         labelIds: Array.isArray(data.labelIds) ? data.labelIds.map(String) : [],
         timeBlockId: data.timeBlockId ? String(data.timeBlockId) : null,
-        duration: typeof data.duration === 'number' ? data.duration : undefined,
+        duration: typeof data.duration === 'number' ? data.duration : null,
         isImportant: !!data.isImportant,
         recurrence: recurrence,
     };
@@ -206,6 +206,13 @@ export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdat
     };
 }
 
+// ヘルパー: undefinedを除去する
+function removeUndefined<T extends Record<string, any>>(obj: T): T {
+    return Object.fromEntries(
+        Object.entries(obj).filter(([_, v]) => v !== undefined)
+    ) as T;
+}
+
 // タスク操作関数（Optimistic UI対応）
 export async function addTaskRaw(userId: string, workspaceId: string, taskData: Partial<Task>) {
     // Optimistic Update: IDは一時的に生成（Firestoreが上書きするがキーが変わるため注意が必要）
@@ -213,7 +220,9 @@ export async function addTaskRaw(userId: string, workspaceId: string, taskData: 
     // ここでは追加のラグは許容し、更新/削除のラグごまかしを優先する
     return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
-        const safeData: any = { ...taskData };
+        // undefinedを削除して安全にする
+        const safeData = removeUndefined({ ...taskData });
+
         if (safeData.dueDate) safeData.dueDate = toFirestoreDate(safeData.dueDate);
 
         delete safeData.id;
@@ -308,7 +317,9 @@ export async function updateTaskRaw(userId: string, workspaceId: string, taskId:
 
     return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
-        const safeUpdates: any = { ...updates };
+        // undefinedを削除して安全にする
+        const safeUpdates = removeUndefined({ ...updates });
+
         if (safeUpdates.dueDate !== undefined) safeUpdates.dueDate = toFirestoreDate(safeUpdates.dueDate);
         await updateDoc(doc(db, path, taskId), safeUpdates);
     });

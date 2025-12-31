@@ -1,6 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLabels } from '../../hooks/useLabels';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { addTask, deleteTask, updateTask } from '../../store';
@@ -33,11 +32,11 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     const { activeModal, modalData, closeModal } = useModalStore();
     const isOpen = propIsOpen ?? (activeModal === 'task-detail');
     const task = (propData ?? modalData) as Task | null;
-    const isNewTask = !task?.id || task.id === 'temp-new-task';
+    // 新規タスク判定: IDがない、または'temp-'で始まる一時IDの場合
+    const isNewTask = !task?.id || task.id.startsWith('temp-');
 
     // --- Hooks ---
     const { projects } = useProjects();
-    const { labels } = useLabels();
     const { timeBlocks } = useTimeBlocks();
 
     // --- State ---
@@ -87,7 +86,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     }, [task]);
 
     // --- Handlers ---
-    const handleSave = useCallback(async () => {
+    // Note: useCallbackを使用しない理由:
+    // - モーダルは開閉のたびに再マウントされるため、メモ化の効果が限定的
+    // - 多数の依存配列を管理するオーバーヘッドより、シンプルな関数定義が保守性に優れる
+    const handleSave = async () => {
         if (!title.trim()) {
             alert('タイトルを入力してください');
             return;
@@ -101,14 +103,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
         const updates: Partial<Task> = {
             title: title.trim(),
-            description: description.trim() || null,
+            description: description.trim() ?? null,
             projectId: projectId === 'none' ? null : projectId,
             status: status as Task['status'],
             isImportant: isImportant,
             dueDate: dueDate ? Timestamp.fromDate(dueDate) : null,
             recurrence: recurrence?.type === 'none' ? null : recurrence,
-            timeBlockId: timeBlockId || null,
-            duration: duration || undefined,
+            timeBlockId: timeBlockId ?? null,
+            duration: duration ?? undefined,
         };
 
         try {
@@ -125,9 +127,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             console.error('Failed to save task', e);
             alert('保存に失敗しました');
         }
-    }, [title, description, projectId, status, dueDate, recurrence, timeBlockId, duration, isNewTask, task, closeModal]);
+    };
 
-    const handleDelete = useCallback(async () => {
+    const handleDelete = async () => {
         if (!task?.id || isNewTask) return;
         if (confirm('本当に削除しますか？')) {
             try {
@@ -138,7 +140,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 alert('削除に失敗しました');
             }
         }
-    }, [task, isNewTask, closeModal]);
+    };
 
     const handleRecurrenceTypeChange = (type: string) => {
         setRecurrence({

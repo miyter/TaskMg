@@ -59,5 +59,13 @@
 - **データ不整合の解消**: Wizard データの構造化 (`config` ベースのキー管理) と、日付比較ロジックの安全性検証。
 - **UI/UX 改善**: サイドバー/ヘッダーのレスポンシブ挙動の最適化、モバイルでの不要なブラー削除。
 
+### ロジック・アーキテクチャの堅牢化 (Grok Review 対応) ✅
+- **繰り返しタスク自動化**: タスク完了時に `recurrence` 設定を解析し、次期タスクを自動生成するバックエンドロジックを実装。
+- **検索フィルター強化**: `excludeStatus (-is:completed)` や `is:unimportant` のサポート、引用符付きクエリ (`key:"val ue"`) の正規表現パーサー改善。
+- **データ整合性**: `writeBatch` を用いたプロジェクト並び替えのアトミック更新、ローカルキャッシュ更新時の競合回避策 (`isMounted` チェック)。
+- **スパゲッティ依存の解消**: モーダルコンポーネント (`ProjectEditModal` 等) の `activeModal` / `modalData` 依存を Props 経由にリファクタリングし、データフローを可視化。
+- **インフラ/SDK 整備**: Cloudflare Workers の SPA ルーティング標準化 (`serveSinglePageApp`)、Firebase SDK ラッパーの整理、設定ストア (`settings-store`) の永続化最適化。
+
+
 
 ---

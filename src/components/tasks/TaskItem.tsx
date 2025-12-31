@@ -107,12 +107,18 @@ export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
         </li>
     );
 }, (prev, next) => {
+    // 日付比較: Timestamp/Date混在に対応するためgetTime()で統一比較
+    const getDateMs = (d: any): number | null => {
+        if (!d) return null;
+        if (d instanceof Date) return d.getTime();
+        if (typeof d.toDate === 'function') return d.toDate().getTime(); // Firestore Timestamp
+        if (typeof d.getTime === 'function') return d.getTime();
+        return null;
+    };
+
     const isDateEqual = (d1: any, d2: any) => {
-        if (d1 === d2) return true;
-        if (!d1 || !d2) return false;
-        // Compare by ISO string to handle potential object reference differences for same time
-        const t1 = d1 instanceof Date ? d1.toISOString() : d1;
-        const t2 = d2 instanceof Date ? d2.toISOString() : d2;
+        const t1 = getDateMs(d1);
+        const t2 = getDateMs(d2);
         return t1 === t2;
     };
 
