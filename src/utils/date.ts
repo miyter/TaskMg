@@ -1,3 +1,12 @@
+/**
+ * 日付ユーティリティ
+ * 
+ * NOTE: タイムゾーン対応が必要な場合は date-tz.ts を使用してください。
+ * このファイルの関数はブラウザのローカルタイムゾーンで動作しますが、
+ * 明示的なタイムゾーン変換が必要な場合は date-tz.ts の関数を推奨します。
+ * 
+ * @see ./date-tz.ts - date-fns-tz を使用したタイムゾーン対応版
+ */
 import { Timestamp } from "firebase/firestore";
 
 export interface RecurrenceConfig {
