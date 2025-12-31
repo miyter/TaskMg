@@ -8,6 +8,7 @@
 export * from './backup';
 export * from './filters';
 export * from './labels';
+export * from './maintenance';
 export * from './projects';
 export * from './schema';
 export * from './targets';

@@ -10,7 +10,9 @@ import { AccordionSection } from '../common/AccordionSection';
 import { Modal } from '../common/Modal';
 import { AccountSettingsTab } from './AccountSettingsTab';
 
-type SettingsTab = 'general' | 'appearance' | 'account';
+import { cleanupDuplicateTasks } from '../../store';
+
+type SettingsTab = 'general' | 'appearance' | 'account' | 'advanced';
 
 interface SettingsModalProps {
     isOpen?: boolean;
@@ -38,14 +40,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
         <Modal isOpen={isOpen} onClose={closeModal} title="設定" className="w-full max-w-3xl h-[90vh] md:h-[650px]">
             <div className="flex flex-col md:flex-row h-full -m-6">
                 {/* Sidebar */}
-                <div className="w-full md:w-56 bg-gray-50 dark:bg-gray-800/50 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700/50 p-2 md:p-4 flex md:block overflow-x-auto gap-2 md:gap-1 md:space-y-1 shrink-0">
+                <div className="w-full md:w-56 bg-white dark:bg-gray-900 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700/50 p-2 md:p-4 flex md:block overflow-x-auto gap-2 md:gap-1 md:space-y-1 shrink-0">
                     <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label="一般" icon="⚙️" />
                     <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label="外観" icon="🎨" />
                     <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} label="アカウント" icon="👤" />
+                    <TabButton active={activeTab === 'advanced'} onClick={() => setActiveTab('advanced')} label="高度な設定" icon="⚡" />
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-modal overflow-y-auto custom-scrollbar">
+                <div className="flex-1 p-modal overflow-y-auto custom-scrollbar bg-gray-50/50 dark:bg-gray-800/20">
                     {activeTab === 'appearance' && (
                         <div className="flex flex-col gap-4">
                             {/* Theme */}
@@ -59,7 +62,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 "p-3 border rounded-xl text-sm font-medium transition-all",
                                                 themeMode === mode
                                                     ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-2 ring-blue-200 dark:ring-blue-800"
-                                                    : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
+                                                    : "border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400"
                                             )}
                                         >
                                             <span className="capitalize">{mode}</span>
@@ -76,7 +79,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                             "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
                                             density === d
                                                 ? "border-blue-500 bg-blue-50 dark:bg-blue-900/10"
-                                                : "border-transparent hover:bg-gray-50 dark:hover:bg-gray-800"
+                                                : "border-transparent hover:bg-white dark:hover:bg-gray-800"
                                         )}>
                                             <div className={cn(
                                                 "w-4 h-4 rounded-full border flex items-center justify-center",
@@ -129,7 +132,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 name="fontEn"
                                                 value={fontEn}
                                                 onChange={(e) => setFontEn(e.target.value)}
-                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-gray-50 dark:bg-gray-900 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                                             >
                                                 {UI_CONFIG.FONTS.EU.map(f => (
                                                     <option key={f.value} value={f.value}>{f.label}</option>
@@ -148,7 +151,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 name="fontJp"
                                                 value={fontJp}
                                                 onChange={(e) => setFontJp(e.target.value)}
-                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-gray-50 dark:bg-gray-900 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                                             >
                                                 {UI_CONFIG.FONTS.JP.map(f => (
                                                     <option key={f.value} value={f.value}>{f.label}</option>
@@ -251,6 +254,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
 
                     {activeTab === 'account' && (
                         <AccountSettingsTab />
+                    )}
+
+                    {activeTab === 'advanced' && (
+                        <div className="flex flex-col gap-4">
+                            <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
+                                <h4 className="font-bold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
+                                    <span>🧹</span> データベースメンテナンス
+                                </h4>
+                                <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-4">
+                                    データベース内の重複したデータを検出し、整理します。この操作は取り消せません。実行前にバックアップを作成することを強く推奨します。
+                                </p>
+                                <button
+                                    onClick={async () => {
+                                        if (!currentWorkspaceId) return;
+                                        if (!window.confirm('重複したタスクを削除しますか？\n（タイトルが同じタスクのうち、古いものを残して削除します）')) return;
+
+                                        try {
+                                            const count = await cleanupDuplicateTasks(currentWorkspaceId);
+                                            alert(`${count} 件の重複タスクを削除しました。`);
+                                            if (count > 0) {
+                                                window.location.reload();
+                                            }
+                                        } catch (e: any) {
+                                            console.error(e);
+                                            alert(`エラーが発生しました: ${e.message}`);
+                                        }
+                                    }}
+                                    className="px-4 py-2 bg-white text-red-600 border border-red-200 hover:bg-red-50 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-colors"
+                                >
+                                    重複タスクの削除
+                                </button>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
