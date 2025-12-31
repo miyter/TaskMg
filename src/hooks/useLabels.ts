@@ -13,7 +13,8 @@ export const useLabels = () => {
     useEffect(() => {
         let mounted = true;
         // Subscribe to labels (User-global, not workspace-specific)
-        const unsubscribe = subscribeToLabels((newLabels) => {
+        // workspaceId is not used for labels but required by unified signature
+        const unsubscribe = subscribeToLabels('', (newLabels) => {
             if (mounted) {
                 setLabels(newLabels);
                 setLoading(false);
