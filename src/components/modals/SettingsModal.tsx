@@ -10,7 +10,7 @@ import { AccordionSection } from '../common/AccordionSection';
 import { Modal } from '../common/Modal';
 import { AccountSettingsTab } from './AccountSettingsTab';
 
-import { cleanupDuplicateTasks } from '../../store';
+import { cleanupDuplicateTasks } from '../../store/maintenance';
 
 type SettingsTab = 'general' | 'appearance' | 'account' | 'advanced';
 
@@ -37,10 +37,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
     const isOpen = !!propIsOpen;
 
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} title="設定" className="w-full max-w-3xl h-[90vh] md:h-[650px]">
+        <Modal isOpen={isOpen} onClose={closeModal} title="設定" className="w-full max-w-3xl h-[85vh]">
             <div className="flex flex-col md:flex-row h-full -m-6">
                 {/* Sidebar */}
-                <div className="w-full md:w-56 bg-white dark:bg-gray-900 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700/50 p-2 md:p-4 flex md:block overflow-x-auto gap-2 md:gap-1 md:space-y-1 shrink-0">
+                <div className="w-full md:w-56 bg-white dark:bg-gray-900 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700/50 p-2 md:p-4 flex md:block overflow-x-auto gap-2 md:gap-1 md:space-y-1 shrink-0 scrollbar-hide">
                     <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label="一般" icon="⚙️" />
                     <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label="外観" icon="🎨" />
                     <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} label="アカウント" icon="👤" />
@@ -200,7 +200,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                         className="btn-premium text-sm flex items-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 shadow-sm"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                        バックアップを作成
+                                        <span className="hidden sm:inline">バックアップを作成</span>
+                                        <span className="sm:hidden">DL</span>
                                     </button>
                                     <div className="relative">
                                         <input
@@ -298,13 +299,13 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; label: string;
     <button
         onClick={onClick}
         className={cn(
-            "w-auto md:w-full flex items-center gap-2 md:gap-3 px-3 py-2 text-sm rounded-lg transition-all text-left whitespace-nowrap",
+            "w-auto md:w-full flex-1 md:flex-none flex items-center gap-2 md:gap-3 px-3 py-2 text-sm rounded-lg transition-all text-left whitespace-nowrap min-w-0 justify-center md:justify-start",
             active
                 ? "bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 font-bold"
                 : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200"
         )}
     >
         <span className="text-base">{icon}</span>
-        <span>{label}</span>
+        <span className="truncate">{label}</span>
     </button>
 );

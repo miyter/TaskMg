@@ -2,6 +2,12 @@ import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn';
 
+
+
+// フォーカス可能な要素のセレクター
+// フォーカス可能な要素のセレクター
+const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -9,13 +15,19 @@ interface ModalProps {
     children: React.ReactNode;
     className?: string;
     zIndex?: number;
+    size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
-// フォーカス可能な要素のセレクター
-const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className, zIndex = 100 }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className, zIndex = 100, size = 'md' }) => {
     const modalRef = useRef<HTMLDivElement>(null);
+
+    const sizeClasses = {
+        sm: 'max-w-sm',
+        md: 'max-w-lg',
+        lg: 'max-w-3xl',
+        xl: 'max-w-5xl',
+        full: 'max-w-full m-4 h-[calc(100vh-2rem)]'
+    };
 
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
@@ -27,7 +39,10 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             if (e.key !== 'Tab' || !modalRef.current) return;
 
             const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-            if (focusableElements.length === 0) return;
+            if (focusableElements.length === 0) {
+                e.preventDefault();
+                return;
+            }
 
             const firstElement = focusableElements[0];
             const lastElement = focusableElements[focusableElements.length - 1];
@@ -53,12 +68,15 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             document.body.style.overflow = 'hidden';
 
             // モーダルオープン時に最初のフォーカス可能要素にフォーカス
-            requestAnimationFrame(() => {
+            const timer = setTimeout(() => {
                 const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
                 if (focusableElements && focusableElements.length > 0) {
                     focusableElements[0].focus();
+                } else if (modalRef.current) {
+                    modalRef.current.focus(); // Fallback to modal itself
                 }
-            });
+            }, 50);
+            return () => clearTimeout(timer);
         }
         return () => {
             window.removeEventListener('keydown', handleEsc);
@@ -80,7 +98,12 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={onClose} aria-hidden="true" />
             <div
                 ref={modalRef}
-                className={cn("relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col transform transition-all animate-scale-in", className)}
+                tabIndex={-1} // Allow focus fallack
+                className={cn(
+                    "relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full overflow-hidden flex flex-col transform transition-all animate-scale-in outline-none",
+                    sizeClasses[size],
+                    className
+                )}
             >
                 {title && (
                     <div className="px-modal py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center shrink-0">

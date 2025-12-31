@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type ViewType = 'tasks' | 'wizard' | 'target-dashboard' | 'wiki';
+export type ViewType = 'tasks' | 'wizard' | 'target-dashboard' | 'wiki' | 'search';
 
 interface ViewState {
     currentView: ViewType;

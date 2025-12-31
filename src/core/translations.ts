@@ -29,7 +29,11 @@ type I18nKeys =
     | 'account'
     | 'language'
     | 'important'
-    | 'all_tasks';
+    | 'all_tasks'
+    | 'add'
+    | 'backward_map'
+    | 'woop_board'
+    | 'okr_tree';
 
 export const translations: Record<'ja' | 'en', Record<I18nKeys, string>> = {
     ja: {
@@ -59,6 +63,10 @@ export const translations: Record<'ja' | 'en', Record<I18nKeys, string>> = {
         language: '言語 (Language)',
         important: '重要',
         all_tasks: 'すべて',
+        add: '追加',
+        backward_map: 'バックワード',
+        woop_board: 'WOOP',
+        okr_tree: 'OKR',
     },
     en: {
         dashboard: 'Dashboard',
@@ -87,6 +95,10 @@ export const translations: Record<'ja' | 'en', Record<I18nKeys, string>> = {
         language: 'Language',
         important: 'Important',
         all_tasks: 'All Tasks',
+        add: 'Add',
+        backward_map: 'Backward Map',
+        woop_board: 'WOOP Board',
+        okr_tree: 'OKR Tree',
     }
 };
 

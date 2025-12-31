@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { getTasks, isTasksInitialized, subscribeToTasks } from '../store';
 import { Task } from '../store/schema';
 import { useWorkspace } from './useWorkspace';
@@ -16,17 +16,16 @@ export const useTasks = () => {
         return !isTasksInitialized(workspaceId);
     });
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         let isMounted = true;
 
         if (!workspaceId) {
             setTasks([]);
-            // workspaceIdがない場合、認証ロード中でなければロード完了扱い
             if (!authLoading) setLoading(false);
             return;
         }
 
-        // ワークスペース変更時
+        // ワークスペース変更検知：キャッシュがあれば即表示、なければローディング
         if (isTasksInitialized(workspaceId)) {
             setTasks(getTasks(workspaceId));
             setLoading(false);
@@ -45,7 +44,6 @@ export const useTasks = () => {
         return () => {
             isMounted = false;
             unsubscribe();
-            // Optional: resetTasks or loading state if needed on unmount, but usually handled by effect re-run
         };
     }, [workspaceId, authLoading]);
 

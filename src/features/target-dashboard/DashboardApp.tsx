@@ -12,8 +12,8 @@ export const DashboardApp: React.FC = () => {
     const [currentTab, setCurrentTab] = useState('backward');
     const [collapsed, setCollapsed] = useState(false);
 
-    // Filter targets by mode
-    const filteredTargets = targets.filter(t => t.mode === currentTab);
+    // Filter targets by mode (case-insensitive)
+    const filteredTargets = targets.filter(t => t.mode?.toLowerCase() === currentTab.toLowerCase());
 
     // Transformer Functions
     const transformBackward = (t: Target): BackwardData => ({
@@ -81,11 +81,22 @@ export const DashboardApp: React.FC = () => {
         );
     };
 
-    // Dummy KGI for header (using first backward target if available, or placeholder)
-    const firstBackward = targets.find(t => t.mode === 'backward');
+    // Dynamic Header KGI Logic
+    // Select the most relevant target to display in the header (e.g., the first one in the list, or a "Main" one)
+    const selectedTarget = filteredTargets[0];
+
+    // Helper to extract a title based on mode
+    const getTargetTitle = (t: Target | undefined, mode: string) => {
+        if (!t) return "目標を設定して、進捗を可視化しましょう";
+        if (mode === 'backward') return t.data.goal_kgi || "未設定のKGI";
+        if (mode === 'woop') return t.data.wish || "未設定のWISH";
+        if (mode === 'okr') return t.data.objective || "未設定のObjective";
+        return "目標";
+    };
+
     const headerKgi = {
-        title: firstBackward?.data.goal_kgi || "目標を設定して、進捗を可視化しましょう",
-        progress: 0,
+        title: getTargetTitle(selectedTarget, currentTab),
+        progress: Number(selectedTarget?.data?.progress || 0), // Assuming progress might exist in data, or calc
         daysLeft: 0, // Would need real date calc
         status: 'good' as const
     };

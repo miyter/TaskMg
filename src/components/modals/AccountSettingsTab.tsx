@@ -14,12 +14,14 @@ export const AccountSettingsTab: React.FC = () => {
     // SettingsModalが開いている間に状態が変わるケースは少ないため、今回は簡易実装。
     // link成功後にUIを更新するためにstateを使用。
     const [isAnonymous, setIsAnonymous] = useState(user?.isAnonymous ?? false);
+    const [error, setError] = useState<string | null>(null);
 
     if (!user) return <div className="text-center text-gray-500">ログインしていません</div>;
 
     const handleLinkAccount = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
         try {
             const credential = EmailAuthProvider.credential(email, password);
             await linkWithCredential(user, credential);
@@ -30,7 +32,8 @@ export const AccountSettingsTab: React.FC = () => {
             let msg = "登録に失敗しました";
             if (error.code === 'auth/email-already-in-use') msg = "このメールアドレスは既に使用されています";
             if (error.code === 'auth/weak-password') msg = "パスワードが弱すぎます";
-            toast.error(msg);
+            setError(msg); // Set inline error
+            toast.error(msg); // Keep toast for visibility
         } finally {
             setLoading(false);
         }
@@ -46,15 +49,15 @@ export const AccountSettingsTab: React.FC = () => {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-300">
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6 border border-gray-100 dark:border-gray-700">
-                <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-3xl shadow-inner">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-8 sm:gap-6 border border-gray-100 dark:border-gray-700">
+                <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-3xl shadow-inner shrink-0">
                     {isAnonymous ? '🕵️' : '👤'}
                 </div>
                 <div className="flex-1 text-center sm:text-left">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
                         {isAnonymous ? 'ゲストユーザー' : (user.displayName || '登録ユーザー')}
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-mono mb-4">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-mono mb-4 break-all">
                         {isAnonymous ? `ID: ${user.uid.slice(0, 8)}...` : user.email}
                     </p>
 
@@ -85,9 +88,16 @@ export const AccountSettingsTab: React.FC = () => {
                         </p>
 
                         <form onSubmit={handleLinkAccount} className="space-y-4 max-w-md">
+                            {error && (
+                                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-lg font-medium animate-in slide-in-from-top-2">
+                                    {error}
+                                </div>
+                            )}
+
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Email</label>
+                                <label htmlFor="account-email" className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Email</label>
                                 <input
+                                    id="account-email"
                                     type="email"
                                     required
                                     value={email}
@@ -97,8 +107,9 @@ export const AccountSettingsTab: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Password</label>
+                                <label htmlFor="account-password" className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Password</label>
                                 <input
+                                    id="account-password"
                                     type="password"
                                     required
                                     minLength={6}

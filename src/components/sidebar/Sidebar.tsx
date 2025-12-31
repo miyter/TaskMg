@@ -19,27 +19,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         spacious: 'p-6'
     }[sidebarDensity];
 
-    const handleMouseDown = (e: React.MouseEvent) => {
-        const startX = e.clientX;
-        const startWidth = sidebarWidth;
-
-        const handleMouseMove = (moveEvent: MouseEvent) => {
-            const rawWidth = startWidth + (moveEvent.clientX - startX);
+    React.useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!document.body.classList.contains('resizing')) return;
             const newWidth = Math.max(
                 UI_CONFIG.SIDEBAR.MIN_WIDTH,
-                Math.min(UI_CONFIG.SIDEBAR.MAX_WIDTH, rawWidth)
+                Math.min(UI_CONFIG.SIDEBAR.MAX_WIDTH, e.clientX)
             );
             setSidebarWidth(newWidth);
         };
 
         const handleMouseUp = () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+            document.body.classList.remove('resizing');
             document.body.style.cursor = 'default';
         };
 
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [setSidebarWidth]);
+
+    const handleMouseDown = () => {
+        document.body.classList.add('resizing');
         document.body.style.cursor = 'col-resize';
     };
 
@@ -52,14 +57,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 "border-r border-gray-200/50 dark:border-gray-700/30",
                 isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
                 "fixed lg:relative z-30 lg:z-0 shadow-2xl lg:shadow-none overflow-hidden",
-                // Width handling via CSS variables
+                // Mobile width is fixed via inline style when open, otherwise 0. Desktop uses variable.
                 "w-[var(--sidebar-mobile)] lg:w-[var(--sidebar-desktop)]"
             )}
             style={{
                 '--sidebar-desktop': `${sidebarWidth}px`,
-                '--sidebar-mobile': `${UI_CONFIG.LAYOUT.MOBILE_SIDEBAR_WIDTH_PX}px`,
-                width: isSidebarOpen ? undefined : '0px',
-                minWidth: isSidebarOpen ? undefined : '0px'
+                '--sidebar-mobile': isSidebarOpen ? `${UI_CONFIG.LAYOUT.MOBILE_SIDEBAR_WIDTH_PX}px` : '0px',
+                width: isSidebarOpen ? undefined : '0px', // Force 0 width when closed on mobile to prevent layout shift
             } as React.CSSProperties}
         >
             {/* Header */}
@@ -73,10 +77,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 <button
                     onClick={toggleSidebar}
                     className="text-gray-400 hover:text-gray-900 dark:hover:text-white p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-90"
-                    title="サイドバーを閉じる"
-                    aria-label="サイドバーを閉じる"
+                    title={isSidebarOpen ? "サイドバーを閉じる" : "サイドバーを開く"}
+                    aria-label={isSidebarOpen ? "サイドバーを閉じる" : "サイドバーを開く"}
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={cn("w-5 h-5 transition-transform duration-300", !isSidebarOpen && "rotate-180")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
                     </svg>
                 </button>
@@ -90,10 +94,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
             <div
                 role="separator"
                 aria-orientation="vertical"
+                aria-label="サイドバーの幅調整"
                 aria-valuenow={sidebarWidth}
                 aria-valuemin={UI_CONFIG.SIDEBAR.MIN_WIDTH}
                 aria-valuemax={UI_CONFIG.SIDEBAR.MAX_WIDTH}
-                tabIndex={0}
+                tabIndex={isSidebarOpen ? 0 : -1}
                 onMouseDown={handleMouseDown}
                 onKeyDown={(e) => {
                     if (e.key === 'ArrowLeft') {
