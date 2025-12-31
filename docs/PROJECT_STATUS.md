@@ -50,5 +50,5 @@ src/
 主要な技術的負債、UI/UX の不整合、および機能不足はすべて解消されました。
 React Hooks による適切なデータ購読、Zustand による状態管理、および Zod による型安全性が確立されています。
 
-- **詳細な変更履歴**: [CHANGELOG.md](./CHANGELOG.md)
+- **変更履歴**: AIコンテキスト（トークン）節約のため、詳細な変更履歴は Git ログを参照してください。
 - **残存課題**: [KNOWN_ISSUES.md](./KNOWN_ISSUES.md)
