@@ -1,78 +1,48 @@
 import { useDroppable } from '@dnd-kit/core';
 import React from 'react';
+import { useTranslation } from '../../core/translations';
+import { useTaskCounts } from '../../hooks/useTaskCounts';
 import { useTasks } from '../../hooks/useTasks';
 import { useFilterStore } from '../../store/ui/filter-store';
+import { useSettingsStore } from '../../store/ui/settings-store';
+import { useViewStore } from '../../store/ui/view-store';
 import { cn } from '../../utils/cn';
-import { toDate } from '../../utils/date';
+import { getDensityClass } from '../../utils/ui-utils';
 
 const FILTER_ITEMS = [
-    { id: 'inbox', name: 'インボックス', icon: '📥', color: 'text-blue-500', droppable: true },
-    { id: 'search', name: '検索', icon: '🔍', color: 'text-gray-500' },
-    { id: 'today', name: '今日', icon: '📅', color: 'text-green-500' },
-    { id: 'upcoming', name: '近日中', icon: '🗓️', color: 'text-purple-500' },
-    { id: 'important', name: '重要', icon: '⭐', color: 'text-amber-400' },
-    { id: 'all', name: 'すべて', icon: '📋', color: 'text-gray-500' },
+    { id: 'inbox', i18nKey: 'inbox', icon: '📥', color: 'text-blue-500', droppable: true },
+    { id: 'search', i18nKey: 'search', icon: '🔍', color: 'text-gray-500' },
+    { id: 'today', i18nKey: 'today', icon: '📅', color: 'text-green-500' },
+    { id: 'upcoming', i18nKey: 'upcoming', icon: '🗓️', color: 'text-purple-500' },
+    { id: 'important', i18nKey: 'important', icon: '⭐', color: 'text-amber-400' },
+    { id: 'all', i18nKey: 'all_tasks', icon: '📋', color: 'text-gray-500' },
 ] as const;
 
 export const BasicFilters: React.FC = () => {
     const { tasks } = useTasks();
+    const { t } = useTranslation();
+    const counts = useTaskCounts();
 
     return (
         <ul className="space-y-0.5">
             {FILTER_ITEMS.map(item => (
-                <FilterItem key={item.id} item={item} tasks={tasks} />
+                <FilterItem
+                    key={item.id}
+                    item={item}
+                    tasks={tasks}
+                    label={t(item.i18nKey as any)}
+                    count={counts[item.id as keyof typeof counts] || 0}
+                />
             ))}
         </ul>
     );
 };
 
-import { useSettingsStore } from '../../store/ui/settings-store';
-import { getDensityClass } from '../../utils/ui-utils';
-
-import { useViewStore } from '../../store/ui/view-store';
-
-const FilterItem: React.FC<{ item: typeof FILTER_ITEMS[number], tasks: any[] }> = ({ item, tasks }) => {
+const FilterItem: React.FC<{ item: any, tasks: any[], label: string, count: number }> = ({ item, tasks, label, count }) => {
     const { filterType, setFilter } = useFilterStore();
     const { currentView, setView } = useViewStore();
     const { density } = useSettingsStore();
     const isActive = currentView === 'tasks' && filterType === item.id;
-
-    // 件数計算
-    const { showCompleted } = useFilterStore();
-    const count = tasks.filter(t => {
-        if (t.status === 'completed' && !showCompleted) return false;
-        if (t.status === 'archived') return false; // Never count archived in basic filters
-
-        if (item.id === 'all') return true;
-        if (item.id === 'inbox') return !t.projectId || String(t.projectId) === 'unassigned' || t.projectId === 'none';
-        if (item.id === 'important') return !!t.isImportant;
-
-        // 日付関連
-        if (item.id === 'today' || item.id === 'upcoming') {
-            if (!t.dueDate) return false;
-            const targetDate = toDate(t.dueDate);
-            if (!targetDate) return false;
-
-            const now = new Date();
-            now.setHours(0, 0, 0, 0);
-
-            if (item.id === 'today') {
-                return targetDate.getFullYear() === now.getFullYear() &&
-                    targetDate.getMonth() === now.getMonth() &&
-                    targetDate.getDate() === now.getDate();
-            }
-
-            if (item.id === 'upcoming') {
-                const tomorrow = new Date(now);
-                tomorrow.setDate(now.getDate() + 1);
-                const nextWeek = new Date(now);
-                nextWeek.setDate(now.getDate() + 8); // 1週間後
-                return targetDate >= tomorrow && targetDate < nextWeek;
-            }
-        }
-
-        return false;
-    }).length;
 
     const { setNodeRef, isOver } = useDroppable({
         id: `filter:${item.id}`,
@@ -85,8 +55,13 @@ const FilterItem: React.FC<{ item: typeof FILTER_ITEMS[number], tasks: any[] }> 
     });
 
     const handleClick = () => {
-        setView('tasks');
-        setFilter(item.id);
+        if (item.id === 'search') {
+            setView('tasks');
+            setFilter('search');
+        } else {
+            setView('tasks');
+            setFilter(item.id);
+        }
     };
 
     return (
@@ -99,13 +74,12 @@ const FilterItem: React.FC<{ item: typeof FILTER_ITEMS[number], tasks: any[] }> 
                     isActive
                         ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
                         : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700",
-                    // @ts-ignore
                     isOver && item.droppable && "ring-2 ring-blue-500 bg-blue-100 dark:bg-blue-900/50"
                 )}
             >
                 <span className={item.color}>{item.icon}</span>
-                <span className="flex-1">{item.name}</span>
-                {count > 0 && (
+                <span className="flex-1">{label}</span>
+                {item.id !== 'search' && count > 0 && (
                     <span className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                         {count}
                     </span>

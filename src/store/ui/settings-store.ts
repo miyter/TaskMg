@@ -12,12 +12,14 @@ interface SettingsState {
     fontJp: string;
     fontSize: FontSize;
     density: Density;
+    language: 'ja' | 'en';
 
     setThemeMode: (mode: ThemeMode) => void;
     setFontEn: (font: string) => void;
     setFontJp: (font: string) => void;
     setFontSize: (size: FontSize) => void;
     setDensity: (density: Density) => void;
+    setLanguage: (lang: 'ja' | 'en') => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -28,12 +30,14 @@ export const useSettingsStore = create<SettingsState>()(
             fontJp: 'M PLUS 2',
             fontSize: 'md',
             density: 'normal',
+            language: 'ja',
 
             setThemeMode: (mode) => set({ themeMode: mode }),
             setFontEn: (font) => set({ fontEn: font }),
             setFontJp: (font) => set({ fontJp: font }),
             setFontSize: (size) => set({ fontSize: size }),
             setDensity: (density) => set({ density }),
+            setLanguage: (lang) => set({ language: lang }),
         }),
         {
             name: 'app-settings',
@@ -43,6 +47,7 @@ export const useSettingsStore = create<SettingsState>()(
                 fontJp: state.fontJp,
                 fontSize: state.fontSize,
                 density: state.density,
+                language: state.language,
             }),
         }
     )

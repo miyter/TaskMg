@@ -54,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 "fixed md:relative z-30 md:z-0 shadow-2xl md:shadow-none overflow-hidden"
             )}
             style={{
-                width: isSidebarOpen ? (typeof window !== 'undefined' && window.innerWidth < 768 ? '280px' : `${sidebarWidth}px`) : '0px',
+                width: isSidebarOpen ? (typeof window !== 'undefined' && window.innerWidth < UI_CONFIG.SIDEBAR.BREAKPOINT_MD ? `${UI_CONFIG.LAYOUT.MOBILE_SIDEBAR_WIDTH_PX}px` : `${sidebarWidth}px`) : '0px',
                 minWidth: isSidebarOpen ? undefined : '0px'
             }}
         >
@@ -70,6 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                     onClick={toggleSidebar}
                     className="text-gray-400 hover:text-gray-900 dark:hover:text-white p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-90"
                     title="サイドバーを閉じる"
+                    aria-label="サイドバーを閉じる"
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>

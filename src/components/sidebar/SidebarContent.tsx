@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../core/translations';
 import { BasicFilters } from './BasicFilters';
 import { CustomFilterList } from './CustomFilterList';
 import { DurationList } from './DurationList';
@@ -10,32 +11,34 @@ import { TargetList } from './TargetList';
 import { TimeBlockList } from './TimeBlockList';
 
 export const SidebarContent: React.FC = () => {
+    const { t } = useTranslation();
+
     return (
         <div className="flex flex-col gap-4">
             <SidebarSearch />
             <BasicFilters />
 
-            <SidebarSection title="Projects">
+            <SidebarSection title={t('projects')}>
                 <ProjectList />
             </SidebarSection>
 
-            <SidebarSection title="Targets" defaultExpanded={false}>
+            <SidebarSection title={t('targets')} defaultExpanded={false}>
                 <TargetList />
             </SidebarSection>
 
-            <SidebarSection title="Labels" defaultExpanded={false}>
+            <SidebarSection title={t('labels')} defaultExpanded={false}>
                 <LabelList />
             </SidebarSection>
 
-            <SidebarSection title="Time Blocks" defaultExpanded={false}>
+            <SidebarSection title={t('timeblocks')} defaultExpanded={false}>
                 <TimeBlockList />
             </SidebarSection>
 
-            <SidebarSection title="Durations" defaultExpanded={false}>
+            <SidebarSection title={t('durations')} defaultExpanded={false}>
                 <DurationList />
             </SidebarSection>
 
-            <SidebarSection title="Filters" defaultExpanded={false}>
+            <SidebarSection title={t('filters')} defaultExpanded={false}>
                 <CustomFilterList />
             </SidebarSection>
         </div>

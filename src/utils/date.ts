@@ -38,6 +38,32 @@ export const isSameDay = (d1: Date | Timestamp | string | number | null, d2: Dat
         a.getDate() === b.getDate();
 };
 
+export const isToday = (date: Date | Timestamp | string | number | null): boolean => {
+    const target = toDate(date);
+    if (!target) return false;
+    const now = new Date();
+    return target.getFullYear() === now.getFullYear() &&
+        target.getMonth() === now.getMonth() &&
+        target.getDate() === now.getDate();
+};
+
+export const isUpcoming = (date: Date | Timestamp | string | number | null, days: number = 7): boolean => {
+    const target = toDate(date);
+    if (!target) return false;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const start = new Date(now);
+    start.setDate(now.getDate() + 1); // Tomorrow
+
+    const end = new Date(now);
+    end.setDate(now.getDate() + days + 1); // +8 days roughly to cover the range
+
+    // Ensure we are comparing dates correctly
+    // The previous logic was target >= tomorrow && target < nextWeek
+    return target >= start && target < end;
+};
+
 // --- 集計用ヘルパー ---
 
 export function getStartOfDay(date: Date | Timestamp | string | number | null = new Date()): Date {

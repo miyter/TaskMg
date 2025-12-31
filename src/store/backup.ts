@@ -26,11 +26,17 @@ export async function createBackupData(userId: string, workspaceId: string) {
         const tasksRef = collection(db, paths.tasks(userId, workspaceId));
         const projectsRef = collection(db, paths.projects(userId, workspaceId));
         const labelsRef = collection(db, paths.labels(userId));
+        const targetsRef = collection(db, paths.targets(userId, workspaceId));
+        const timeBlocksRef = collection(db, paths.timeblocks(userId));
+        const filtersRef = collection(db, paths.filters(userId));
 
-        const [tasksSnap, projectsSnap, labelsSnap] = await Promise.all([
+        const [tasksSnap, projectsSnap, labelsSnap, targetsSnap, timeBlocksSnap, filtersSnap] = await Promise.all([
             getDocs(tasksRef),
             getDocs(projectsRef),
-            getDocs(labelsRef)
+            getDocs(labelsRef),
+            getDocs(targetsRef),
+            getDocs(timeBlocksRef),
+            getDocs(filtersRef)
         ]);
 
         const serializeData = (snap: any) => snap.docs.map((d: any) => {
@@ -45,13 +51,16 @@ export async function createBackupData(userId: string, workspaceId: string) {
         });
 
         return {
-            version: "1.2",
+            version: "1.3",
             exportedAt: new Date().toISOString(),
             userId,
             workspaceId,
             tasks: serializeData(tasksSnap),
             projects: serializeData(projectsSnap),
-            labels: serializeData(labelsSnap)
+            labels: serializeData(labelsSnap),
+            targets: serializeData(targetsSnap),
+            timeBlocks: serializeData(timeBlocksSnap),
+            customFilters: serializeData(filtersSnap)
         };
     } catch (error) {
         console.error("[Backup] createBackupData failed:", error);
@@ -67,7 +76,15 @@ export async function importBackupData(userId: string, workspaceId: string, back
     if (!userId || !workspaceId || !backupData) throw new Error("Invalid import parameters.");
 
     try {
-        const { tasks = [], projects = [], labels = [] } = backupData;
+        const {
+            tasks = [],
+            projects = [],
+            labels = [],
+            targets = [],
+            timeBlocks = [],
+            customFilters = []
+        } = backupData;
+
         const projectMap = new Map<string, string>(); // OldID -> NewID
         const labelMap = new Map<string, string>();   // OldID -> NewID
 
@@ -103,7 +120,39 @@ export async function importBackupData(userId: string, workspaceId: string, back
             projectMap.set(project.id, docRef.id);
         }
 
-        // 3. タスクのインポート
+        // 3. TimeBlocksのインポート (単純追加)
+        for (const tb of timeBlocks) {
+            const newTbData = { ...tb };
+            delete newTbData.id;
+            await addDoc(collection(db, paths.timeblocks(userId)), newTbData);
+        }
+
+        // 4. Custom Filtersのインポート
+        for (const filter of customFilters) {
+            const newFilterData = { ...filter };
+            delete newFilterData.id;
+            if (typeof newFilterData.createdAt === 'string') {
+                newFilterData.createdAt = new Date(newFilterData.createdAt);
+            }
+            await addDoc(collection(db, paths.filters(userId)), newFilterData);
+        }
+
+        // 5. Targetsのインポート
+        for (const target of targets) {
+            const newTargetData = { ...target };
+            delete newTargetData.id;
+            if (typeof newTargetData.createdAt === 'string') {
+                newTargetData.createdAt = new Date(newTargetData.createdAt);
+            }
+            if (typeof newTargetData.updatedAt === 'string') {
+                newTargetData.updatedAt = new Date(newTargetData.updatedAt);
+            }
+            newTargetData.ownerId = userId;
+            newTargetData.workspaceId = workspaceId; // 現在のWSにインポート
+            await addDoc(collection(db, paths.targets(userId, workspaceId)), newTargetData);
+        }
+
+        // 6. タスクのインポート (依存関係解決後)
         const tasksPromises = tasks.map(async (task: any) => {
             const newTaskData = { ...task };
             delete newTaskData.id;
@@ -131,6 +180,8 @@ export async function importBackupData(userId: string, workspaceId: string, back
             }
 
             newTaskData.ownerId = userId;
+            // ターゲットIDなどは解決が難しいので維持またはNULLにする場合もあるが、ここでは維持(あるいはターゲット内リンクなら壊れる)
+            // TaskSchemaには targetId はない (Targetの方からリンクする構造かも？ 逆は？ Task -> Target はない)
 
             return addDoc(collection(db, paths.tasks(userId, workspaceId)), newTaskData);
         });
@@ -140,7 +191,8 @@ export async function importBackupData(userId: string, workspaceId: string, back
         return {
             tasksCount: tasks.length,
             projectsCount: projects.length,
-            labelsCount: labels.length
+            labelsCount: labels.length,
+            targetsCount: targets.length
         };
     } catch (error) {
         console.error("[Backup] importBackupData failed:", error);
