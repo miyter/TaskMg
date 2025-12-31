@@ -48,3 +48,19 @@ export interface RouteChangeDetail {
     page: string;
     id?: string | null;
 }
+
+// 統一されたイベント詳細型
+export type AppEventDetailMap = {
+    [APP_EVENTS.WORKSPACE_CHANGED]: WorkspaceChangedDetail;
+    [APP_EVENTS.ROUTE_CHANGE]: RouteChangeDetail;
+    [APP_EVENTS.TASKS_UPDATED]: void;
+    [APP_EVENTS.PROJECTS_UPDATED]: void;
+    [APP_EVENTS.LABELS_UPDATED]: void;
+    [APP_EVENTS.TIMEBLOCKS_UPDATED]: void;
+    [APP_EVENTS.FILTERS_UPDATED]: void;
+    [APP_EVENTS.SIDEBAR_SETTINGS_UPDATED]: void;
+    [APP_EVENTS.UI_SETTINGS_CHANGED]: void;
+    [APP_EVENTS.UI_UPDATED]: void;
+    [APP_EVENTS.THEME_CHANGED]: void;
+};
+

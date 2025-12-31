@@ -38,7 +38,7 @@ export const UI_CONFIG = {
         MIN_WIDTH: 150,
         MAX_WIDTH: 500,
         DEFAULT_WIDTH: 280,
-        BREAKPOINT_MD: 768,
+        BREAKPOINT_MD: 768, // Matches Tailwind 'md' breakpoint (768px)
         DURATIONS: [30, 45, 60, 75, 90],
     }
 } as const;

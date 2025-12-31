@@ -1,5 +1,6 @@
 import React from 'react';
 import logo from '../../assets/logo.png';
+import { UI_CONFIG } from '../../core/ui-constants';
 import { useUIStore } from '../../store/ui/ui-store';
 import { cn } from '../../utils/cn';
 
@@ -23,7 +24,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         const startWidth = sidebarWidth;
 
         const handleMouseMove = (moveEvent: MouseEvent) => {
-            const newWidth = Math.max(160, Math.min(480, startWidth + (moveEvent.clientX - startX)));
+            const rawWidth = startWidth + (moveEvent.clientX - startX);
+            const newWidth = Math.max(
+                UI_CONFIG.SIDEBAR.MIN_WIDTH,
+                Math.min(UI_CONFIG.SIDEBAR.MAX_WIDTH, rawWidth)
+            );
             setSidebarWidth(newWidth);
         };
 
