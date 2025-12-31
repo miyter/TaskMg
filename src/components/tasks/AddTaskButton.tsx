@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { InlineTaskInput } from './InlineTaskInput';
 
-export const AddTaskButton: React.FC = () => {
+interface AddTaskButtonProps {
+    initialValue?: string;
+}
+
+export const AddTaskButton: React.FC<AddTaskButtonProps> = ({ initialValue = '' }) => {
     const [isEditing, setIsEditing] = useState(false);
 
     React.useEffect(() => {
@@ -21,6 +25,7 @@ export const AddTaskButton: React.FC = () => {
                 <InlineTaskInput
                     onCancel={() => setIsEditing(false)}
                     onSuccess={() => setIsEditing(false)}
+                    initialValue={initialValue}
                 />
             </div>
         );
@@ -35,7 +40,7 @@ export const AddTaskButton: React.FC = () => {
             <div className="w-5 h-5 rounded-full flex items-center justify-center bg-transparent group-hover:bg-blue-100/50 dark:group-hover:bg-blue-900/30 transition-colors">
                 <svg className="w-4 h-4 text-inherit" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
             </div>
-            <span className="text-sm font-medium">タスクを追加</span>
+            <span className="text-sm font-medium">{initialValue ? `「${initialValue}」をタスクに追加` : 'タスクを追加'}</span>
         </button>
     );
 };

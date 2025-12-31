@@ -51,6 +51,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     const [duration, setDuration] = useState<number | null>(null);
     const [showPreview, setShowPreview] = useState(false);
     const [scheduleOpen, setScheduleOpen] = useState(false);
+    const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
 
     // --- 初期化 ---
     useEffect(() => {
@@ -82,8 +83,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
             // プレビュー: 内容があればプレビュー、なければ編集モード
             setShowPreview(!!(task.description?.trim()));
+
+            setIsDeleteConfirming(false);
         }
-    }, [task]);
+    }, [task, isOpen]);
 
     // --- Handlers ---
     // Note: useCallbackを使用しない理由:
@@ -129,16 +132,24 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
         }
     };
 
-    const handleDelete = async () => {
+    const handleDelete = async (e?: React.MouseEvent) => {
+        e?.preventDefault();
+        e?.stopPropagation();
+
         if (!task?.id || isNewTask) return;
-        if (confirm('本当に削除しますか？')) {
-            try {
-                await deleteTask(task.id);
-                closeModal();
-            } catch (e) {
-                console.error('Failed to delete task', e);
-                alert('削除に失敗しました');
-            }
+
+        if (!isDeleteConfirming) {
+            setIsDeleteConfirming(true);
+            return;
+        }
+
+        try {
+            await deleteTask(task.id);
+            closeModal();
+        } catch (e) {
+            console.error('Failed to delete task', e);
+            alert('削除に失敗しました');
+            setIsDeleteConfirming(false);
         }
     };
 
@@ -382,24 +393,49 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 {/* Footer */}
                 <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
                     {!isNewTask && (
-                        <button
-                            onClick={handleDelete}
-                            className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition flex items-center gap-1.5"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            削除
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {isDeleteConfirming ? (
+                                <>
+                                    <span className="text-sm font-bold text-red-600 animate-pulse">本当によろしいですか？</span>
+                                    <button
+                                        type="button"
+                                        onClick={handleDelete}
+                                        className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded transition font-medium text-sm"
+                                    >
+                                        削除を実行
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsDeleteConfirming(false)}
+                                        className="px-3 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition text-sm"
+                                    >
+                                        やめる
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleDelete}
+                                    className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition flex items-center gap-1.5"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    削除
+                                </button>
+                            )}
+                        </div>
                     )}
                     <div className={`flex gap-2 ${isNewTask ? 'ml-auto' : ''}`}>
                         <button
+                            type="button"
                             onClick={closeModal}
                             className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
                         >
                             キャンセル
                         </button>
                         <button
+                            type="button"
                             onClick={handleSave}
                             className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium shadow-md transition transform active:scale-95"
                         >

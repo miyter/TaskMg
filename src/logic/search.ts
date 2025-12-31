@@ -147,7 +147,14 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
         const content = `${task.title} ${task.description || ''}`.toLowerCase();
 
         if (conditions.keywords.length > 0) {
-            const matchesAll = conditions.keywords.every(kw => content.includes(kw));
+            const matchesAll = conditions.keywords.every(kw => {
+                // If kw is array, it's an OR group (matches ANY)
+                if (Array.isArray(kw)) {
+                    return kw.some(k => content.includes(k));
+                }
+                // Else it's a standard keyword (must include)
+                return content.includes(kw);
+            });
             if (!matchesAll) return false;
         }
 

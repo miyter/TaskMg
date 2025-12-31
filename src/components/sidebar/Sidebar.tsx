@@ -47,13 +47,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         <aside
             className={cn(
                 "h-full transition-all duration-300 flex flex-col group relative",
-                "bg-white dark:bg-gray-900 md:bg-white/70 md:dark:bg-gray-800/60",
-                "md:backdrop-blur-xl",
+                "bg-white dark:bg-gray-900 lg:bg-white/70 lg:dark:bg-gray-800/60",
+                "lg:backdrop-blur-xl",
                 "border-r border-gray-200/50 dark:border-gray-700/30",
-                isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-                "fixed md:relative z-30 md:z-0 shadow-2xl md:shadow-none overflow-hidden",
+                isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+                "fixed lg:relative z-30 lg:z-0 shadow-2xl lg:shadow-none overflow-hidden",
                 // Width handling via CSS variables
-                "w-[var(--sidebar-mobile)] md:w-[var(--sidebar-desktop)]"
+                "w-[var(--sidebar-mobile)] lg:w-[var(--sidebar-desktop)]"
             )}
             style={{
                 '--sidebar-desktop': `${sidebarWidth}px`,
@@ -103,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                     }
                 }}
                 className={cn(
-                    "absolute top-0 right-0 w-1 h-full cursor-col-resize z-40 transition-colors hidden md:flex items-center justify-center outline-none focus:bg-blue-500",
+                    "absolute top-0 right-0 w-1 h-full cursor-col-resize z-40 transition-colors hidden lg:flex items-center justify-center outline-none focus:bg-blue-500",
                     "hover:bg-blue-500/50 active:bg-blue-600 group/resizer"
                 )}
                 title="ドラッグまたは矢印キーでリサイズ"
@@ -112,7 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 <div className="absolute w-1.5 h-8 bg-gray-300 dark:bg-gray-600 rounded-full opacity-0 group-hover/resizer:opacity-100 group-focus/resizer:opacity-100 transition-opacity pointer-events-none" />
             </div>
             {/* Permanent subtle indicator for the resizer */}
-            <div className="absolute top-0 right-0 w-[1px] h-full bg-gray-200/50 dark:bg-gray-700/30 hidden md:block" />
+            <div className="absolute top-0 right-0 w-[1px] h-full bg-gray-200/50 dark:bg-gray-700/30 hidden lg:block" />
         </aside>
     );
 };

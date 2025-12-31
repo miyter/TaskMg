@@ -8,10 +8,11 @@ interface InlineTaskInputProps {
     onCancel?: () => void;
     onSuccess?: () => void;
     placeholder?: string;
+    initialValue?: string;
 }
 
-export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onCancel, onSuccess, placeholder = "タスク名を入力..." }) => {
-    const [title, setTitle] = useState('');
+export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onCancel, onSuccess, placeholder = "タスク名を入力...", initialValue = '' }) => {
+    const [title, setTitle] = useState(initialValue);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e?: React.FormEvent) => {
@@ -66,7 +67,7 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
                 id="inline-task-input"
                 type="text"
                 autoFocus
-                className="w-full bg-transparent text-base font-medium text-gray-800 dark:text-gray-100 placeholder-gray-400 outline-none mb-4"
+                className="w-full bg-transparent text-base font-medium text-gray-800 dark:text-gray-100 placeholder-gray-400 outline-none mb-4 focus:bg-white/50 dark:focus:bg-gray-800/50 p-2 -ml-2 rounded-lg transition-colors border border-transparent focus:border-blue-500/30"
                 placeholder={placeholder}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}

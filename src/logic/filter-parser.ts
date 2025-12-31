@@ -1,5 +1,5 @@
 export interface FilterConditions {
-    keywords: string[];
+    keywords: (string | string[])[];
     excludeKeywords: string[];
     projects: string[]; // projectId
     excludeProjects: string[];
@@ -43,7 +43,51 @@ export function parseFilterQuery(query: string): FilterConditions {
 
     if (!matches) return conditions;
 
-    matches.forEach(part => {
+    // Pre-processing to handle OR operator
+    // Group keywords joined by OR into arrays
+    const tokens: (string | string[])[] = [];
+    for (let i = 0; i < matches.length; i++) {
+        const part = matches[i];
+
+        // Is this an OR operator?
+        if (part === 'OR') {
+            const prevTokenIndex = tokens.length - 1;
+            const prevToken = tokens[prevTokenIndex];
+            const nextPart = matches[i + 1];
+
+            // Check if previous token is a keyword (or an OR-group of keywords)
+            // AND next token exists and is a keyword (not a property filter)
+            // Property filters contain ':' (simplified check)
+            const isPrevKeyword = prevToken && (typeof prevToken === 'string' ? !prevToken.includes(':') : true); // Array is always keyword group
+            const isNextKeyword = nextPart && !nextPart.includes(':') && nextPart !== 'OR';
+
+            if (isPrevKeyword && isNextKeyword) {
+                // Combine into OR group
+                const group: string[] = Array.isArray(prevToken) ? prevToken : [prevToken as string];
+                group.push(nextPart.toLowerCase().replace(/^"|"$/g, '')); // Normalize next part
+
+                // Update previous token with new group
+                tokens[prevTokenIndex] = group;
+
+                // Skip next part in validation loop since we consumed it
+                i++;
+                continue;
+            }
+        }
+
+        // Normal token processing
+        tokens.push(part);
+    }
+
+    tokens.forEach(token => {
+        // If token is an array, it's an OR-group of keywords
+        if (Array.isArray(token)) {
+            conditions.keywords.push(token);
+            return;
+        }
+
+        const part = token as string;
+
         // Handle phrase search (entirely quoted)
         if (part.startsWith('"') && part.endsWith('"')) {
             const phrase = part.substring(1, part.length - 1);
@@ -60,15 +104,15 @@ export function parseFilterQuery(query: string): FilterConditions {
 
         if (part.includes(':')) {
             let isNegative = false;
-            let token = part;
-            if (token.startsWith('-')) {
+            let tokenStr = part;
+            if (tokenStr.startsWith('-')) {
                 isNegative = true;
-                token = token.substring(1);
+                tokenStr = tokenStr.substring(1);
             }
 
-            const colonIndex = token.indexOf(':');
-            const key = token.substring(0, colonIndex).toLowerCase();
-            let val = token.substring(colonIndex + 1);
+            const colonIndex = tokenStr.indexOf(':');
+            const key = tokenStr.substring(0, colonIndex).toLowerCase();
+            let val = tokenStr.substring(colonIndex + 1);
 
             // Strip quotes from value if present
             if (val.startsWith('"') && val.endsWith('"')) {
@@ -122,12 +166,14 @@ export function parseFilterQuery(query: string): FilterConditions {
                     // Unknown prefix treated as keyword
                     // e.g. unknown:value -> treat as keyword "unknown:value"
                     // If negative, -unknown:value -> exclude "unknown:value"
-                    if (isNegative) conditions.excludeKeywords.push(token.toLowerCase());
-                    else conditions.keywords.push(token.toLowerCase());
+                    if (isNegative) conditions.excludeKeywords.push(tokenStr.toLowerCase());
+                    else conditions.keywords.push(tokenStr.toLowerCase());
                     break;
             }
         } else {
-            conditions.keywords.push(part.toLowerCase());
+            if (part !== 'OR') { // Ignore standalone OR if skipped by logic
+                conditions.keywords.push(part.toLowerCase());
+            }
         }
     });
 

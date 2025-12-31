@@ -94,7 +94,7 @@ export async function deleteTask(taskId: string) {
     try {
         const { userId, workspaceId } = requireAuthAndWorkspace();
         await deleteTaskRaw(userId, workspaceId, taskId);
-        // toast.success(MESSAGES.TASK_DELETE_SUCCESS); // Optional
+        toast.success(MESSAGES.TASK_DELETE_SUCCESS);
     } catch (error) {
         console.error("Failed to delete task:", error);
         toast.error(MESSAGES.TASK_DELETE_FAIL);

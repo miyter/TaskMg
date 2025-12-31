@@ -62,7 +62,7 @@ export const TaskList: React.FC = () => {
             <div className="flex-1 overflow-y-auto custom-scrollbar px-1 pb-24">
                 <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm pt-1 pb-4 mb-4 flex items-center gap-2">
                     <div className="flex-1">
-                        <AddTaskButton />
+                        <AddTaskButton initialValue={query} />
                     </div>
 
                     {/* Sort Options */}

@@ -58,7 +58,7 @@ export const SidebarSearch: React.FC = () => {
                     placeholder="検索 (/)"
                     value={localQuery}
                     onChange={handleChange}
-                    className="w-full bg-gray-100 dark:bg-gray-700/50 border border-transparent focus:border-blue-500/50 focus:bg-white dark:focus:bg-gray-700 rounded-lg py-1.5 pl-9 pr-8 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-500 outline-none transition-all"
+                    className="w-full bg-gray-100 dark:bg-gray-700/50 border border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-gray-700 rounded-lg py-1.5 pl-9 pr-8 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-500 outline-none transition-all"
                 />
                 {localQuery && (
                     <button

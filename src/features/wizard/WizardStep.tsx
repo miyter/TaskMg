@@ -53,7 +53,7 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
 
                     <div className="mb-8 space-y-4">
                         {stepConfig.inputs.map((input, idx) => (
-                            <div key={idx}>
+                            <div key={input.key || idx}>
                                 {input.type === 'textarea' ? (
                                     <textarea
                                         className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition text-base"
