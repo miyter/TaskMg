@@ -23,7 +23,7 @@ import { useFilterStore } from './store/ui/filter-store';
 const App: React.FC = () => {
     useThemeEffect();
     const { filterType, targetId, query } = useFilterStore();
-    const { projects } = useProjects();
+    const { projects, setProjectsOverride } = useProjects();
     const { labels } = useLabels();
 
     const [user, setUser] = React.useState<any>(null);
@@ -55,7 +55,10 @@ const App: React.FC = () => {
         };
     }, []);
 
-    const { sensors, handleDragEnd } = useAppDnD(projects);
+    const { sensors, handleDragEnd } = useAppDnD(projects, {
+        onOptimisticReorder: setProjectsOverride,
+        onRevertReorder: setProjectsOverride,
+    });
 
     // Compute Title
     const getTitle = () => {

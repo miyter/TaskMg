@@ -51,7 +51,7 @@ export const TaskList: React.FC = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div className="text-gray-400 text-sm animate-pulse">Loading tasks...</div>
+                <div className="text-gray-400 text-sm animate-pulse">タスクを読み込み中...</div>
             </div>
         );
     }

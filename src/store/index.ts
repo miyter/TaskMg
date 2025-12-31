@@ -7,7 +7,12 @@
 import { auth } from '../core/firebase';
 import { Unsubscribe } from '../core/firebase-sdk';
 import { Task } from './schema';
-import { subscribeToTasksRaw } from './store-raw';
+import {
+    getTasksFromCache,
+    isTasksInitialized as isTasksInitializedRaw,
+    subscribeToTasksRaw
+} from './store-raw';
+import { getCurrentWorkspaceId } from './workspace';
 
 // 各ドメインのストアを再エクスポート
 export * from './backup';
@@ -32,3 +37,21 @@ export function subscribeToTasks(workspaceId: string, callback: (tasks: Task[]) 
     }
     return subscribeToTasksRaw(user.uid, workspaceId, callback);
 }
+
+/**
+ * 全タスク取得 (同期)
+ */
+export const getTasks = (workspaceId?: string): Task[] => {
+    const targetId = workspaceId || getCurrentWorkspaceId();
+    if (!targetId) return [];
+    return getTasksFromCache(targetId);
+};
+
+/**
+ * キャッシュ初期化確認用のエクスポート
+ */
+export const isTasksInitialized = (workspaceId?: string): boolean => {
+    const targetId = workspaceId || getCurrentWorkspaceId();
+    if (!targetId) return false;
+    return isTasksInitializedRaw(targetId);
+};

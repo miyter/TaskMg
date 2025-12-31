@@ -3,12 +3,14 @@ import { useLabels } from '../../hooks/useLabels';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { cn } from '../../utils/cn';
 
+import { SidebarLoadingState } from '../common/SidebarLoadingState';
+
 export const LabelList: React.FC = () => {
     const { labels, loading } = useLabels();
     const { filterType, targetId, setFilter } = useFilterStore();
 
-    if (loading) return <div className="px-4 py-2 text-xs text-gray-400">Loading labels...</div>;
-    if (labels.length === 0) return <div className="px-4 py-2 text-xs text-gray-400">No labels found.</div>;
+    if (loading) return <SidebarLoadingState />;
+    if (labels.length === 0) return <div className="px-4 py-2 text-xs text-gray-400">ラベルはありません</div>;
 
     return (
         <ul className="space-y-0.5">

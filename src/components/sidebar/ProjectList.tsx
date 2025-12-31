@@ -9,15 +9,17 @@ import React from 'react';
 import { useProjects } from '../../hooks/useProjects';
 import { SortableItem } from '../common/SortableItem';
 
+import { SidebarLoadingState } from '../common/SidebarLoadingState';
+
 export const ProjectList: React.FC = () => {
     const { projects, loading } = useProjects();
 
     if (loading) {
-        return <div className="p-4 text-xs text-gray-400">Loading projects...</div>;
+        return <SidebarLoadingState />;
     }
 
     if (projects.length === 0) {
-        return <div className="p-4 text-xs text-gray-400">No projects found.</div>;
+        return <div className="p-4 text-xs text-gray-400">プロジェクトはありません</div>;
     }
 
     return (

@@ -3,6 +3,7 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { Density, FontSize, ThemeMode, useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
 import { Modal } from '../common/Modal';
+import { AccountSettingsTab } from './AccountSettingsTab';
 
 type SettingsTab = 'general' | 'appearance' | 'account';
 
@@ -159,10 +160,7 @@ export const SettingsModal: React.FC = () => {
                     )}
 
                     {activeTab === 'account' && (
-                        <div className="text-center py-12 text-gray-500">
-                            <p className="text-lg mb-2">🚧 準備中</p>
-                            <p className="text-sm">アカウント管理機能は今後実装予定です。</p>
-                        </div>
+                        <AccountSettingsTab />
                     )}
                 </div>
             </div>

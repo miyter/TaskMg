@@ -5,11 +5,13 @@ import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { SidebarItem } from './SidebarItem';
 
+import { SidebarLoadingState } from '../common/SidebarLoadingState';
+
 export const TimeBlockList: React.FC = () => {
     const { timeBlocks, loading } = useTimeBlocks();
     const { tasks } = useTasks();
 
-    if (loading) return null;
+    if (loading) return <SidebarLoadingState />;
 
     return (
         <div className="space-y-0.5 py-1">

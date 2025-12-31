@@ -12,8 +12,10 @@ import {
     addProjectRaw,
     deleteProjectRaw,
     getProjects as getProjectsRaw,
+    isProjectsInitialized as isProjectsInitializedRaw,
     subscribeToProjectsRaw,
-    updateProjectRaw
+    updateProjectRaw,
+    updateProjectsCacheRaw
 } from './projects-raw';
 import { Project } from './schema';
 
@@ -35,6 +37,20 @@ export const getProjects = (workspaceId?: string): Project[] => {
     if (!targetId) return [];
     return getProjectsRaw(targetId);
 };
+
+// キャッシュ初期化確認用のエクスポート
+export const isProjectsInitialized = (workspaceId?: string): boolean => {
+    const targetId = workspaceId || getCurrentWorkspaceId();
+    if (!targetId) return false;
+    return isProjectsInitializedRaw(targetId);
+};
+
+// キャッシュ手動更新 (Optimistic Update用)
+export const updateProjectsCache = (projects: Project[], workspaceId?: string) => {
+    const targetId = workspaceId || getCurrentWorkspaceId();
+    if (targetId) updateProjectsCacheRaw(targetId, projects);
+};
+
 
 /**
  * プロジェクトのリアルタイム購読

@@ -8,7 +8,20 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { updateProject, updateTask } from '../store';
 import { Project } from '../store/schema';
 
-export const useAppDnD = (projects: Project[]) => {
+/** Optimistic Update オプション */
+interface UseAppDnDOptions {
+    /**
+     * プロジェクト並び替え時にローカル状態を即座に更新するコールバック
+     * 呼び出し後すぐにUIに反映される
+     */
+    onOptimisticReorder?: (newProjects: Project[]) => void;
+    /**
+     * Firestore更新失敗時にローカル状態を元に戻すコールバック
+     */
+    onRevertReorder?: (originalProjects: Project[]) => void;
+}
+
+export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -50,18 +63,22 @@ export const useAppDnD = (projects: Project[]) => {
             const newIndex = projects.findIndex(p => p.id === overId);
 
             if (oldIndex !== -1 && newIndex !== -1) {
-                // 仮の「order」更新ロジック
-                // UI上は即座に反映されない(Firestore更新->購読更新待ち)が、
-                // arrayMoveの結果を使ってOptimistic Updateをするならここで行う。
-                // 現状はFirestore更新リクエストを投げるのみ。
                 const newProjects = arrayMove(projects, oldIndex, newIndex);
 
-                await Promise.all(newProjects.map((p, idx) => {
-                    // Update order
-                    // Note: 'order' field needs to be in ProjectSchema (added implicitly or needs update)
-                    if (p.id) return updateProject(p.id, { order: idx } as any);
-                    return Promise.resolve();
-                }));
+                // Optimistic Update: ローカル状態を即座に更新
+                options?.onOptimisticReorder?.(newProjects);
+
+                try {
+                    // Firestore更新 (バックグラウンド)
+                    await Promise.all(newProjects.map((p, idx) => {
+                        if (p.id) return updateProject(p.id, { order: idx } as any);
+                        return Promise.resolve();
+                    }));
+                } catch (err) {
+                    console.error('Failed to update project order', err);
+                    // 失敗時: 元の状態にロールバック
+                    options?.onRevertReorder?.(projects);
+                }
             }
         }
     };

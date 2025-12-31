@@ -114,3 +114,5 @@ export async function getTaskById(taskId: string): Promise<Task | null> {
     const { userId, workspaceId } = requireAuthAndWorkspace();
     return getTaskByIdRaw(userId, workspaceId, taskId);
 }
+
+

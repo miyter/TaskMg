@@ -116,9 +116,22 @@ export function resetTaskCache(workspaceId?: string) {
  * Reactコンポーネントからの直接呼び出しは避け、useTasks等のフックを使用してください。
  * Optimistic Update等、ストア操作関数内での参照用途に限定してください。
  */
+// 特定のタスク取得
 export function getTaskFromCache(workspaceId: string, taskId: string): Task | undefined {
     const tasks = _cachedTasksMap.get(workspaceId);
     return tasks?.find(t => t.id === taskId);
+}
+
+// 全タスク取得
+export function getTasksFromCache(workspaceId: string): Task[] {
+    return _cachedTasksMap.get(workspaceId) || [];
+}
+
+/**
+ * キャッシュが初期化されているか確認する
+ */
+export function isTasksInitialized(workspaceId: string): boolean {
+    return _cachedTasksMap.has(workspaceId);
 }
 
 export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void): Unsubscribe {

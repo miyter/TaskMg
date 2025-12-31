@@ -25,40 +25,93 @@ import { Project } from './schema';
 
 // プロジェクトリストのキャッシュ（複数ワークスペース対応）
 const _cachedProjectsMap = new Map<string, Project[]>();
+const _projectListeners = new Map<string, Set<(projects: Project[]) => void>>();
+const _projectUnsubscribes = new Map<string, Unsubscribe>();
+
+/**
+ * キャッシュが初期化されているか確認する
+ */
+export function isProjectsInitialized(workspaceId: string): boolean {
+    return _cachedProjectsMap.has(workspaceId);
+}
+
+/**
+ * リスナーへの通知ヘルパー
+ */
+function notifyProjectListeners(workspaceId: string) {
+    const projects = _cachedProjectsMap.get(workspaceId) || [];
+    const listeners = _projectListeners.get(workspaceId);
+    if (listeners) {
+        const projectsCopy = [...projects];
+        listeners.forEach(listener => listener(projectsCopy));
+    }
+}
+
+/**
+ * キャッシュを手動更新する (Optimistic Update用)
+ */
+export function updateProjectsCacheRaw(workspaceId: string, projects: Project[]) {
+    _cachedProjectsMap.set(workspaceId, projects);
+    notifyProjectListeners(workspaceId);
+}
 
 /**
  * プロジェクトデータのリアルタイムリスナーを開始する (RAW)
  */
 export function subscribeToProjectsRaw(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void): Unsubscribe {
-    const path = paths.projects(userId, workspaceId);
+    // リスナー登録
+    if (!_projectListeners.has(workspaceId)) {
+        _projectListeners.set(workspaceId, new Set());
+    }
+    const listeners = _projectListeners.get(workspaceId)!;
+    listeners.add(onUpdate);
 
-    // 並び順を保証
-    const q = query(collection(db, path), orderBy('createdAt', 'asc'));
+    // 即時キャッシュ返却 (React strict mode対応: 非同期で実行)
+    const cached = _cachedProjectsMap.get(workspaceId);
+    if (cached) {
+        queueMicrotask(() => onUpdate([...cached]));
+    }
 
-    let isFirst = true;
+    // サブスクリプション未確立なら開始
+    if (!_projectUnsubscribes.has(workspaceId)) {
+        const path = paths.projects(userId, workspaceId);
+        // 並び順を保証
+        const q = query(collection(db, path), orderBy('createdAt', 'asc'));
 
-    return onSnapshot(q, (snapshot) => {
-        const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-        const currentCached = _cachedProjectsMap.get(workspaceId);
+        const unsub = onSnapshot(q, (snapshot) => {
+            const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
+            const currentCached = _cachedProjectsMap.get(workspaceId);
 
-        // Custom optimization for reference stability
-        if (currentCached && areProjectArraysIdentical(currentCached, projects)) {
-            if (isFirst) {
-                onUpdate(currentCached);
+            // Custom optimization for reference stability
+            if (currentCached && areProjectArraysIdentical(currentCached, projects)) {
+                return;
             }
-            isFirst = false;
-            return;
-        }
 
-        // キャッシュを更新
-        _cachedProjectsMap.set(workspaceId, projects);
-        isFirst = false;
-        onUpdate(projects);
-    }, (error) => {
-        console.error("Error subscribing to projects:", error);
-        _cachedProjectsMap.set(workspaceId, []);
-        onUpdate([]);
-    });
+            // キャッシュを更新
+            _cachedProjectsMap.set(workspaceId, projects);
+            notifyProjectListeners(workspaceId);
+        }, (error) => {
+            console.error("Error subscribing to projects:", error);
+            _cachedProjectsMap.set(workspaceId, []);
+            notifyProjectListeners(workspaceId);
+        });
+
+        _projectUnsubscribes.set(workspaceId, unsub);
+    }
+
+    // Unsubscribe関数
+    return () => {
+        listeners.delete(onUpdate);
+        if (listeners.size === 0) {
+            const unsub = _projectUnsubscribes.get(workspaceId);
+            if (unsub) {
+                unsub();
+                _projectUnsubscribes.delete(workspaceId);
+            }
+            _projectListeners.delete(workspaceId);
+            // _cachedProjectsMap.delete(workspaceId); // キャッシュは残す（再接続時の高速化）
+        }
+    };
 }
 
 /**

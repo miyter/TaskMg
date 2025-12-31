@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
-import { subscribeToTasks } from '../store';
+import { getTasks, isTasksInitialized, subscribeToTasks } from '../store';
 import { Task } from '../store/schema';
 import { useWorkspace } from './useWorkspace';
 
 export const useTasks = () => {
     const { workspaceId, loading: authLoading } = useWorkspace();
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState(true);
+
+    const [tasks, setTasks] = useState<Task[]>(() => {
+        if (workspaceId) return getTasks(workspaceId);
+        return [];
+    });
+
+    const [loading, setLoading] = useState(() => {
+        if (!workspaceId) return true;
+        return !isTasksInitialized(workspaceId);
+    });
 
     useEffect(() => {
         let isMounted = true;
@@ -18,9 +26,14 @@ export const useTasks = () => {
             return;
         }
 
-        // ワークスペース変更時は即座にロード中＆空にする
-        setLoading(true);
-        setTasks([]);
+        // ワークスペース変更時
+        if (isTasksInitialized(workspaceId)) {
+            setTasks(getTasks(workspaceId));
+            setLoading(false);
+        } else {
+            setTasks([]);
+            setLoading(true);
+        }
 
         const unsubscribe = subscribeToTasks(workspaceId, (newTasks) => {
             if (isMounted) {
