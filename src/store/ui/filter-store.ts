@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { SortCriteria } from '../../logic/sort';
 
-export type FilterType = 'inbox' | 'today' | 'upcoming' | 'important' | 'project' | 'label' | 'search' | 'all' | 'timeblock' | 'duration' | 'custom';
+export type FilterType = 'inbox' | 'today' | 'upcoming' | 'important' | 'project' | 'label' | 'search' | 'timeblock' | 'duration' | 'custom';
 
 interface FilterState {
     filterType: FilterType;
@@ -42,6 +42,7 @@ export const useFilterStore = create<FilterState>()(
             partialize: (state) => ({
                 filterType: state.filterType,
                 targetId: state.targetId,
+                query: state.query, // Persist search query
                 showCompleted: state.showCompleted,
                 sortCriteria: state.sortCriteria
             }),

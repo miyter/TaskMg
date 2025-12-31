@@ -16,12 +16,19 @@ export const useTargets = () => {
         }
 
         setLoading(true);
+        let mounted = true;
+
         const unsubscribe = subscribeToTargets(workspaceId, (newTargets) => {
-            setTargets(newTargets);
-            setLoading(false);
+            if (mounted) {
+                setTargets(newTargets);
+                setLoading(false);
+            }
         });
 
-        return () => unsubscribe();
+        return () => {
+            mounted = false;
+            unsubscribe();
+        };
     }, [workspaceId, authLoading]);
 
     return { targets, loading: loading || authLoading };

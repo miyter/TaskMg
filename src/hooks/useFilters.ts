@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getFilters, subscribeToFilters } from '../store/filters';
+import { subscribeToFilters } from '../store/filters';
 import { Filter } from '../store/schema';
 import { getCurrentWorkspaceId } from '../store/workspace';
 
@@ -7,7 +7,7 @@ import { getCurrentWorkspaceId } from '../store/workspace';
  * カスタムフィルターを購読するカスタムフック
  */
 export const useFilters = () => {
-    const [filters, setFilters] = useState<Filter[]>(() => getFilters());
+    const [filters, setFilters] = useState<Filter[]>([]);
     const [loading, setLoading] = useState(true);
     const workspaceId = getCurrentWorkspaceId();
     const isInitialized = useRef(false);
@@ -19,18 +19,21 @@ export const useFilters = () => {
             return;
         }
 
+        let mounted = true;
+
         const unsubscribe = subscribeToFilters(workspaceId, (newFilters) => {
-            setFilters(newFilters);
-            // 初回のみloadingをfalseに設定（更新ごとの無駄なstate更新を回避）
-            if (!isInitialized.current) {
+            if (mounted) {
+                setFilters(newFilters);
                 setLoading(false);
-                isInitialized.current = true;
             }
         });
 
+        // Error handling is managed inside subscribeToFilters (logs to console)
+        // Future improvement: expose onError in subscribeToFilters
+
         return () => {
+            mounted = false;
             unsubscribe();
-            isInitialized.current = false; // workspace変更時にリセット
         };
     }, [workspaceId]);
 

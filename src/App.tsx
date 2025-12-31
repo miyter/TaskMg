@@ -17,12 +17,11 @@ import { WizardApp } from './features/wizard/WizardApp';
 import { useAppDnD } from './hooks/useAppDnD';
 import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
-import { useThemeEffect } from './hooks/useThemeEffect';
 import { useFilterStore } from './store/ui/filter-store';
 import { useViewStore } from './store/ui/view-store';
 
 const App: React.FC = () => {
-    useThemeEffect();
+    useApplyTheme();
     const { filterType, targetId, query } = useFilterStore();
     const { currentView } = useViewStore();
     const { projects, setProjectsOverride } = useProjects();
@@ -76,7 +75,7 @@ const App: React.FC = () => {
             case 'today': return 'Today';
             case 'upcoming': return 'Upcoming';
             case 'important': return 'Important';
-            case 'all': return 'All Tasks';
+            case 'custom': return 'All Tasks';
             default: return 'TaskMg';
         }
     };

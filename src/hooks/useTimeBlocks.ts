@@ -1,28 +1,35 @@
 import { useEffect, useState } from 'react';
 import { TimeBlock } from '../store/schema';
-import { getTimeBlocks, subscribeToTimeBlocks } from '../store/timeblocks';
+import { subscribeToTimeBlocks } from '../store/timeblocks';
 import { getCurrentWorkspaceId } from '../store/workspace';
 
 /**
  * TimeBlocks を購読するカスタムフック
  */
 export const useTimeBlocks = () => {
-    const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>(() => getTimeBlocks());
+    const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
     const [loading, setLoading] = useState(true);
     const workspaceId = getCurrentWorkspaceId();
 
     useEffect(() => {
         if (!workspaceId) {
+            setTimeBlocks([]);
             setLoading(false);
             return;
         }
 
+        let mounted = true;
         const unsubscribe = subscribeToTimeBlocks(workspaceId, (newBlocks) => {
-            setTimeBlocks(newBlocks);
-            setLoading(false);
+            if (mounted) {
+                setTimeBlocks(newBlocks);
+                setLoading(false);
+            }
         });
 
-        return () => unsubscribe();
+        return () => {
+            mounted = false;
+            unsubscribe();
+        };
     }, [workspaceId]);
 
     return { timeBlocks, loading };

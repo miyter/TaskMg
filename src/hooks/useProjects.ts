@@ -29,19 +29,26 @@ export const useProjects = () => {
             return;
         }
 
+        // Initialize from cache if available to avoid loading state
         if (isProjectsInitialized(workspaceId)) {
             setProjects(getProjects(workspaceId));
             setLoading(false);
         } else {
             setLoading(true);
-            setProjects([]);
         }
+
+        let mounted = true;
         const unsubscribe = subscribeToProjects(workspaceId, (newProjects) => {
-            setProjects(newProjects);
-            setLoading(false);
+            if (mounted) {
+                setProjects(newProjects);
+                setLoading(false);
+            }
         });
 
-        return () => unsubscribe();
+        return () => {
+            mounted = false;
+            unsubscribe();
+        };
     }, [workspaceId, authLoading]);
 
     /**
@@ -50,6 +57,9 @@ export const useProjects = () => {
      */
     const setProjectsOverride = (updatedProjects: Project[]) => {
         if (workspaceId) {
+            // Update local state immediately
+            setProjects(updatedProjects);
+            // Update store cache
             updateProjectsCache(updatedProjects, workspaceId);
         }
     };

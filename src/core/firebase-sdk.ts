@@ -2,22 +2,21 @@
 // インポート元をこのファイルに集約し、プロジェクト内でのバージョン不整合や二重ロードを防止
 // TypeScript化に伴い、CDN importを廃止してnpmパッケージを使用
 
-// --- Authentication ---
+// --- 認証 (Authentication) ---
 export {
     EmailAuthProvider, getAuth, linkWithCredential, onAuthStateChanged, signInAnonymously,
     signInWithCustomToken, signInWithEmailAndPassword, signOut, updatePassword,
-    // deleteUser, updateEmail, updateProfile, // Unused
     type User,
     type UserCredential
 } from "firebase/auth";
 
-// --- Firestore ---
+// --- Firestore (Database) ---
 export {
-    addDoc, collection, deleteDoc, doc, getDoc,
-    getDocs, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch,
+    Timestamp, addDoc, collection, deleteDoc, doc, getDoc,
+    getDocs, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
     type Unsubscribe
 } from "firebase/firestore";
 
-// --- App ---
+// --- アプリケーション (App) ---
 export { initializeApp } from "firebase/app";
 

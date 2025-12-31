@@ -1,6 +1,6 @@
 /**
- * 更新日: 2025-12-30
- * 内容: 自動初期化対応によるリファクタリング
+ * 更新日: 2025-12-31
+ * 内容: AuthServiceクラスによるリファクタリング (Grok Code Review対応)
  */
 
 import {
@@ -13,6 +13,7 @@ import {
     UserCredential
 } from "./firebase-sdk";
 
+import { logError } from '../utils/error-logger';
 import { auth } from './firebase';
 
 // グローバル定数の型定義
@@ -23,103 +24,126 @@ declare global {
     const __initial_auth_token: string | undefined;
 }
 
-/**
- * 現在のログインユーザーIDを取得
- */
-export function getCurrentUserId(): string | null {
-    return auth.currentUser?.uid || null;
-}
+class AuthService {
+    private isListenerInitialized = false;
 
-/**
- * 認証状態の監視リスナーを初期化
- * @param {Function} onLogin - ログイン時のコールバック
- * @param {Function} onLogout - ログアウト時のコールバック
- */
-let isListenerInitialized = false;
+    constructor() { }
 
-/**
- * 環境に応じた初期認証トークンを取得
- */
-function getInitialAuthToken(): string | null {
-    if (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) {
-        return window.GLOBAL_INITIAL_AUTH_TOKEN;
-    }
-    // @ts-ignore
-    if (typeof __initial_auth_token !== 'undefined') {
-        // @ts-ignore
-        return __initial_auth_token;
-    }
-    return null;
-}
-
-/**
- * 認証状態の監視リスナーを初期化
- * @param {Function} onLogin - ログイン時のコールバック
- * @param {Function} onLogout - ログアウト時のコールバック
- */
-export function initAuthListener(onLogin: (user: User) => void, onLogout: () => void) {
-    if (isListenerInitialized) {
-        console.warn("[Auth] Auth listener already initialized. Skipping.");
-        return () => { };
-    }
-    isListenerInitialized = true;
-
-    // 環境変数（Canvas等）からの初期トークンログイン
-    // リスナー登録より先に実行することで、初期状態のちらつき（ログアウト→即ログイン）を抑制する
-    const initialToken = getInitialAuthToken();
-
-    if (initialToken) {
-        signInWithCustomToken(auth, initialToken)
-            .then(() => console.log("[Auth] Initial token login success"))
-            .catch(err => {
-                // エラーログを詳細化し、失敗時はクリーンな状態を保証するためにサインアウトを試行
-                console.error("[Auth] Initial token login failed. Error:", err);
-                signOut(auth).catch(() => { });
-            });
+    /**
+     * 現在のログインユーザーIDを取得
+     */
+    public getCurrentUserId(): string | null {
+        return auth.currentUser?.uid || null;
     }
 
-    // 認証状態の監視
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) {
-            onLogin(user);
-        } else {
-            onLogout();
+    /**
+     * 環境に応じた初期認証トークンを取得
+     */
+    private getInitialAuthToken(): string | null {
+        if (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) {
+            return window.GLOBAL_INITIAL_AUTH_TOKEN;
         }
-    });
 
-    return () => {
-        isListenerInitialized = false;
-        unsubscribe();
-    };
-}
+        try {
+            // @ts-ignore
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                // @ts-ignore
+                return __initial_auth_token;
+            }
+        } catch (e) {
+            // ReferenceError safe
+        }
+        return null;
+    }
 
-/**
- * メールアドレスとパスワードによるログイン
- */
-export async function loginWithEmail(email: string, password: string): Promise<UserCredential> {
-    return await signInWithEmailAndPassword(auth, email, password);
-}
+    /**
+     * 初期トークンによるログインを試行 (一度だけ実行)
+     */
+    private async tryInitialTokenLogin(): Promise<void> {
+        if (this.isListenerInitialized) return;
+        this.isListenerInitialized = true;
 
-/**
- * ログアウト実行
- */
-export async function logout(): Promise<void> {
-    try {
-        await signOut(auth);
-    } catch (e) {
-        console.error("Logout failed", e);
-        throw e; // 呼び出し側が失敗を検知できるよう再スロー
+        const initialToken = this.getInitialAuthToken();
+        if (initialToken) {
+            try {
+                await signInWithCustomToken(auth, initialToken);
+                console.log("[Auth] Initial token login success");
+            } catch (err: any) {
+                logError({
+                    timestamp: new Date().toISOString(),
+                    type: 'error',
+                    message: `Initial token login failed: ${err.message}`,
+                    stack: err.stack,
+                    url: 'auth.ts'
+                });
+                // Initialize failure should NOT force sign out (Grok Review)
+            }
+        }
+    }
+
+    /**
+     * 認証状態の監視リスナーを初期化
+     * @param {Function} onLogin - ログイン時のコールバック
+     * @param {Function} onLogout - ログアウト時のコールバック
+     * @returns unsubscribe function
+     */
+    public initAuthListener(onLogin: (user: User) => void, onLogout: () => void): () => void {
+        // 初期トークンログインの試行（初回のみ実行される）
+        this.tryInitialTokenLogin();
+
+        // 認証状態の監視 (常に新しいリスナーを登録し、その解除関数を返す)
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                onLogin(user);
+            } else {
+                onLogout();
+            }
+        });
+
+        return unsubscribe;
+    }
+
+    /**
+     * メールアドレスとパスワードによるログイン
+     */
+    public async loginWithEmail(email: string, password: string): Promise<UserCredential> {
+        return await signInWithEmailAndPassword(auth, email, password);
+    }
+
+    /**
+     * ログアウト実行
+     */
+    public async logout(): Promise<void> {
+        try {
+            await signOut(auth);
+        } catch (e: any) {
+            logError({
+                timestamp: new Date().toISOString(),
+                type: 'error',
+                message: `Logout failed: ${e.message}`,
+                stack: e.stack,
+                url: 'auth.ts'
+            });
+            throw e;
+        }
+    }
+
+    /**
+     * パスワードの更新
+     */
+    public async updateUserAuthPassword(newPassword: string): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Authentication required: No current user.");
+        await updatePassword(user, newPassword);
     }
 }
 
-/**
- * パスワードの更新
- * 注: UIへのメッセージ表示は行わず、エラーをスローする責務のみを持つ
- */
-export async function updateUserAuthPassword(newPassword: string): Promise<void> {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Authentication required: No current user.");
+// Singleton instance
+export const authService = new AuthService();
 
-    // UI側のハンドラーでエラーをキャッチしてモーダルを表示することを期待する
-    await updatePassword(user, newPassword);
-}
+// Legacy Exports (Proxy to singleton) - for backward compatibility
+export const getCurrentUserId = () => authService.getCurrentUserId();
+export const initAuthListener = (onLogin: (user: User) => void, onLogout: () => void) => authService.initAuthListener(onLogin, onLogout);
+export const loginWithEmail = (e: string, p: string) => authService.loginWithEmail(e, p);
+export const logout = () => authService.logout();
+export const updateUserAuthPassword = (p: string) => authService.updateUserAuthPassword(p);

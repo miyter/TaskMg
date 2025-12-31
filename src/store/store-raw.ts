@@ -72,138 +72,181 @@ function deserializeTask(id: string, data: any): Task {
 // ★ RAW FUNCTIONS (userId必須)
 // ==========================================================
 
-/**
- * @internal モジュールスコープのキャッシュ管理
- * 
- * ⚠️ 注意: これらはモジュールスコープのグローバル変数です。
- * 将来的にはZustandストアまたは専用クラスへの移行を検討してください。
- * 複数タブ/ユーザー切替時の競合リスクがあります。
- */
-const _cachedTasksMap = new Map<string, Task[]>();
-const _listeners = new Map<string, Set<(tasks: Task[]) => void>>();
-const _unsubscribes = new Map<string, Unsubscribe>();
-let _currentWorkspaceId: string | null = null;
+// ==========================================================
+// ★ RAW FUNCTIONS (userId必須)
+// ==========================================================
 
 /**
- * リスナーへの通知ヘルパー
- * shallow copyを配布して不要なre-renderを防止
+ * TaskCache Class
+ * Manages in-memory cache and Firestore subscriptions for tasks.
  */
-function notifyListeners(workspaceId: string) {
-    const tasks = _cachedTasksMap.get(workspaceId) || [];
-    const listeners = _listeners.get(workspaceId);
-    if (listeners) {
-        // 各リスナーに新しい配列参照を渡す (shallow copy)
-        const tasksCopy = [...tasks];
-        listeners.forEach(listener => listener(tasksCopy));
+class TaskCache {
+    private static instance: TaskCache;
+    private cachedTasksMap = new Map<string, Task[]>();
+    private listeners = new Map<string, Set<(tasks: Task[]) => void>>();
+    private unsubscribes = new Map<string, Unsubscribe>();
+    private currentWorkspaceId: string | null = null;
+
+    private constructor() { }
+
+    public static getInstance(): TaskCache {
+        if (!TaskCache.instance) {
+            TaskCache.instance = new TaskCache();
+        }
+        return TaskCache.instance;
+    }
+
+    /**
+     * Notify listeners of updates
+     */
+    private notifyListeners(workspaceId: string) {
+        const tasks = this.cachedTasksMap.get(workspaceId) || [];
+        const listeners = this.listeners.get(workspaceId);
+        if (listeners) {
+            const tasksCopy = [...tasks];
+            listeners.forEach(listener => listener(tasksCopy));
+        }
+    }
+
+    /**
+     * Reset cache
+     */
+    public reset(workspaceId?: string) {
+        if (workspaceId) {
+            this.unsubscribes.get(workspaceId)?.();
+            this.unsubscribes.delete(workspaceId);
+            this.listeners.delete(workspaceId);
+            this.cachedTasksMap.delete(workspaceId);
+        } else {
+            this.unsubscribes.forEach(unsub => unsub());
+            this.unsubscribes.clear();
+            this.listeners.clear();
+            this.cachedTasksMap.clear();
+        }
+        this.currentWorkspaceId = null;
+    }
+
+    /**
+     * Get single task from cache
+     */
+    public getTask(workspaceId: string, taskId: string): Task | undefined {
+        const tasks = this.cachedTasksMap.get(workspaceId);
+        return tasks?.find(t => t.id === taskId);
+    }
+
+    /**
+     * Get all tasks from cache
+     */
+    public getTasks(workspaceId: string): Task[] {
+        return this.cachedTasksMap.get(workspaceId) || [];
+    }
+
+    /**
+     * Check if initialized
+     */
+    public isInitialized(workspaceId: string): boolean {
+        return this.cachedTasksMap.has(workspaceId);
+    }
+
+    /**
+     * Set cache manually (for Optimistic Updates)
+     */
+    public setCache(workspaceId: string, tasks: Task[]) {
+        this.cachedTasksMap.set(workspaceId, tasks);
+        this.notifyListeners(workspaceId);
+    }
+
+    /**
+     * Subscribe to tasks
+     */
+    public subscribe(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void): Unsubscribe {
+        if (!userId || !workspaceId) {
+            onUpdate([]);
+            return () => { };
+        }
+
+        this.currentWorkspaceId = workspaceId;
+
+        // Register listener
+        if (!this.listeners.has(workspaceId)) {
+            this.listeners.set(workspaceId, new Set());
+        }
+        const listeners = this.listeners.get(workspaceId)!;
+        listeners.add(onUpdate);
+
+        // Immediate cache return (Async for React strict mode compatibility)
+        const cached = this.cachedTasksMap.get(workspaceId);
+        if (cached) {
+            queueMicrotask(() => onUpdate([...cached]));
+        }
+
+        // Start subscription if not active
+        if (!this.unsubscribes.has(workspaceId)) {
+            const path = paths.tasks(userId, workspaceId);
+            const q = query(collection(db, path));
+
+            const unsub = onSnapshot(q, (snapshot) => {
+                const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
+                const currentTasks = this.cachedTasksMap.get(workspaceId);
+
+                // Optimization: Stabilize reference
+                if (currentTasks && areTaskArraysIdentical(currentTasks, tasks)) {
+                    return;
+                }
+
+                this.cachedTasksMap.set(workspaceId, tasks);
+                this.notifyListeners(workspaceId);
+            }, (error) => {
+                console.error("[Tasks] Subscription error:", error);
+            });
+
+            this.unsubscribes.set(workspaceId, unsub);
+        }
+
+        // Unsubscribe function
+        return () => {
+            listeners.delete(onUpdate);
+            if (listeners.size === 0) {
+                const unsub = this.unsubscribes.get(workspaceId);
+                if (unsub) {
+                    unsub();
+                    this.unsubscribes.delete(workspaceId);
+                }
+            }
+        };
     }
 }
+
+// Singleton Instance
+const taskCache = TaskCache.getInstance();
 
 /**
  * キャッシュをクリアする (ログアウト時やメモリ解放用)
  */
 export function resetTaskCache(workspaceId?: string) {
-    if (workspaceId) {
-        // 特定ワークスペースの解除
-        _unsubscribes.get(workspaceId)?.();
-        _unsubscribes.delete(workspaceId);
-        _listeners.delete(workspaceId);
-        _cachedTasksMap.delete(workspaceId);
-    } else {
-        // 全解除
-        _unsubscribes.forEach(unsub => unsub());
-        _unsubscribes.clear();
-        _listeners.clear();
-        _cachedTasksMap.clear();
-    }
-    _currentWorkspaceId = null;
+    taskCache.reset(workspaceId);
 }
 
 /**
  * キャッシュからタスクを同期的に取得 (Optimistic updateなどの参照用)
- * 
- * @internal この関数は内部使用専用です。
- * Reactコンポーネントからの直接呼び出しは避け、useTasks等のフックを使用してください。
- * Optimistic Update等、ストア操作関数内での参照用途に限定してください。
  */
-// 特定のタスク取得
 export function getTaskFromCache(workspaceId: string, taskId: string): Task | undefined {
-    const tasks = _cachedTasksMap.get(workspaceId);
-    return tasks?.find(t => t.id === taskId);
+    return taskCache.getTask(workspaceId, taskId);
 }
 
-// 全タスク取得
 export function getTasksFromCache(workspaceId: string): Task[] {
-    return _cachedTasksMap.get(workspaceId) || [];
+    return taskCache.getTasks(workspaceId);
 }
 
 /**
  * キャッシュが初期化されているか確認する
  */
 export function isTasksInitialized(workspaceId: string): boolean {
-    return _cachedTasksMap.has(workspaceId);
+    return taskCache.isInitialized(workspaceId);
 }
 
 export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void): Unsubscribe {
-    if (!userId || !workspaceId) {
-        onUpdate([]);
-        return () => { };
-    }
-
-    _currentWorkspaceId = workspaceId;
-
-    // リスナー登録
-    if (!_listeners.has(workspaceId)) {
-        _listeners.set(workspaceId, new Set());
-    }
-    const listeners = _listeners.get(workspaceId)!;
-    listeners.add(onUpdate);
-
-    // 即時キャッシュ返却 (React strict mode対応: 非同期で実行)
-    const cached = _cachedTasksMap.get(workspaceId);
-    if (cached) {
-        // queueMicrotaskでReactのレンダリングサイクル外で実行
-        queueMicrotask(() => onUpdate([...cached]));
-    }
-
-    // サブスクリプションが未確立なら開始
-    if (!_unsubscribes.has(workspaceId)) {
-        const path = paths.tasks(userId, workspaceId);
-        const q = query(collection(db, path));
-
-        const unsub = onSnapshot(q, (snapshot) => {
-            const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
-            const currentTasks = _cachedTasksMap.get(workspaceId);
-
-            // Optimization: Stabilize reference using custom comparison
-            if (currentTasks && areTaskArraysIdentical(currentTasks, tasks)) {
-                return;
-            }
-
-            _cachedTasksMap.set(workspaceId, tasks);
-            notifyListeners(workspaceId);
-        }, (error) => {
-            console.error("[Tasks] Subscription error:", error);
-            // エラー時は空にせず、キャッシュ維持または適切なエラーハンドリングが理想だが、
-            // ここでは安全のため空配列を通知せず、現状維持とする（無限ロード防止）
-            // _cachedTasksMap.set(workspaceId, []); // 削除: 既存キャッシュを消さない
-            // notifyListeners(workspaceId);
-        });
-
-        _unsubscribes.set(workspaceId, unsub);
-    }
-
-    // Unsubscribe関数
-    return () => {
-        listeners.delete(onUpdate);
-        if (listeners.size === 0) {
-            // リスナーがいなくなったら購読停止
-            const unsub = _unsubscribes.get(workspaceId);
-            if (unsub) {
-                unsub();
-                _unsubscribes.delete(workspaceId);
-            }
-        }
-    };
+    return taskCache.subscribe(userId, workspaceId, onUpdate);
 }
 
 // ヘルパー: undefinedを除去する
@@ -238,7 +281,7 @@ export async function addTaskRaw(userId: string, workspaceId: string, taskData: 
 
 export async function updateTaskStatusRaw(userId: string, workspaceId: string, taskId: string, status: string) {
     // Optimistic Update
-    const currentTasks = _cachedTasksMap.get(workspaceId);
+    const currentTasks = taskCache.getTasks(workspaceId);
     let task = currentTasks?.find(t => t.id === taskId);
 
     // If not found in cache, strict consistency would require split logic,
@@ -259,8 +302,7 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
             }
             return t;
         });
-        _cachedTasksMap.set(workspaceId, newTasks);
-        notifyListeners(workspaceId);
+        taskCache.setCache(workspaceId, newTasks);
     }
 
     // Recurrence Logic: Create next task if completing a recurring one
@@ -303,7 +345,7 @@ export async function updateTaskRaw(userId: string, workspaceId: string, taskId:
     // Optimistic Update
     // Note: Shallow merge only - nested objects are replaced, not deep-merged.
     // For Task type, this is acceptable as nested properties are rare.
-    const currentTasks = _cachedTasksMap.get(workspaceId);
+    const currentTasks = taskCache.getTasks(workspaceId);
     if (currentTasks) {
         const newTasks = currentTasks.map(t => {
             if (t.id === taskId) {
@@ -311,8 +353,7 @@ export async function updateTaskRaw(userId: string, workspaceId: string, taskId:
             }
             return t;
         });
-        _cachedTasksMap.set(workspaceId, newTasks);
-        notifyListeners(workspaceId);
+        taskCache.setCache(workspaceId, newTasks);
     }
 
     return withRetry(async () => {
@@ -327,11 +368,10 @@ export async function updateTaskRaw(userId: string, workspaceId: string, taskId:
 
 export async function deleteTaskRaw(userId: string, workspaceId: string, taskId: string) {
     // Optimistic Update
-    const currentTasks = _cachedTasksMap.get(workspaceId);
+    const currentTasks = taskCache.getTasks(workspaceId);
     if (currentTasks) {
         const newTasks = currentTasks.filter(t => t.id !== taskId);
-        _cachedTasksMap.set(workspaceId, newTasks);
-        notifyListeners(workspaceId);
+        taskCache.setCache(workspaceId, newTasks);
     }
 
     return withRetry(async () => {

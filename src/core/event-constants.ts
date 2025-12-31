@@ -2,6 +2,8 @@
  * アプリケーション全体で使用するイベント名の定数定義
  * Store層とUI層の両方から参照されるため、src/core/に配置して依存関係を整理する。
  */
+import { Workspace } from '../store/schema';
+
 export const APP_EVENTS = {
     // ワークスペース
     WORKSPACE_CHANGED: 'workspace-changed',
@@ -27,23 +29,11 @@ export const APP_EVENTS = {
 
 export type AppEventName = typeof APP_EVENTS[keyof typeof APP_EVENTS];
 
-import { Workspace } from '../store/schema';
-
-/**
- * @typedef {object} WorkspaceChangedDetail
- * @property {string} workspaceId
- * @property {Workspace[]} [workspaces]
- */
 export interface WorkspaceChangedDetail {
     workspaceId: string;
     workspaces?: Workspace[];
 }
 
-/**
- * @typedef {object} RouteChangeDetail
- * @property {string} page
- * @property {string|null} [id]
- */
 export interface RouteChangeDetail {
     page: string;
     id?: string | null;

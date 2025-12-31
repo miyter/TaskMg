@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { addTask, deleteTask, updateTask } from '../../store';
@@ -15,11 +15,15 @@ const DURATION_OPTIONS = [15, 30, 45, 60, 75, 90, 120];
 const RECURRENCE_OPTIONS = [
     { value: 'none', label: 'なし' },
     { value: 'daily', label: '毎日' },
-    { value: 'weekdays', label: '平日' },
+    { value: 'weekdays', label: '平日 (月-金)' },
     { value: 'weekly', label: '毎週' },
     { value: 'monthly', label: '毎月' },
 ];
 const DAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
+const TASK_STATUS = {
+    TODO: 'todo',
+    COMPLETED: 'completed',
+} as const;
 
 // --- メインコンポーネント ---
 interface TaskDetailModalProps {
@@ -43,7 +47,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [projectId, setProjectId] = useState<string | null>(null);
-    const [status, setStatus] = useState('todo');
+    const [status, setStatus] = useState<string>(TASK_STATUS.TODO);
     const [isImportant, setIsImportant] = useState(false);
     const [dueDate, setDueDate] = useState<Date | null>(null);
     const [recurrence, setRecurrence] = useState<Recurrence>({ type: 'none', days: [] });
@@ -59,7 +63,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             setTitle(task.title || '');
             setDescription(task.description || '');
             setProjectId(task.projectId || null);
-            setStatus(task.status || 'todo');
+            setStatus(task.status || TASK_STATUS.TODO);
             setIsImportant(!!task.isImportant);
             setTimeBlockId(task.timeBlockId || null);
             setDuration(task.duration || null);
@@ -89,10 +93,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     }, [task, isOpen]);
 
     // --- Handlers ---
-    // Note: useCallbackを使用しない理由:
-    // - モーダルは開閉のたびに再マウントされるため、メモ化の効果が限定的
-    // - 多数の依存配列を管理するオーバーヘッドより、シンプルな関数定義が保守性に優れる
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         if (!title.trim()) {
             alert('タイトルを入力してください');
             return;
@@ -130,9 +131,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             console.error('Failed to save task', e);
             alert('保存に失敗しました');
         }
-    };
+    }, [title, description, projectId, status, isImportant, dueDate, recurrence, timeBlockId, duration, isNewTask, task, closeModal]);
 
-    const handleDelete = async (e?: React.MouseEvent) => {
+    const handleDelete = useCallback(async (e?: React.MouseEvent) => {
         e?.preventDefault();
         e?.stopPropagation();
 
@@ -151,25 +152,34 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             alert('削除に失敗しました');
             setIsDeleteConfirming(false);
         }
-    };
+    }, [task?.id, isNewTask, isDeleteConfirming, closeModal]);
 
-    const handleRecurrenceTypeChange = (type: string) => {
+    const handleRecurrenceTypeChange = useCallback((type: string) => {
+        let newDays: number[] = [];
+        if (type === 'weekly') {
+            newDays = recurrence?.days || [];
+        } else if (type === 'weekdays') {
+            newDays = [1, 2, 3, 4, 5]; // Mon-Fri
+        }
+
         setRecurrence({
-            type: type as 'none' | 'daily' | 'weekly' | 'weekdays' | 'monthly' | null,
-            days: type === 'weekly' ? (recurrence?.days || []) : []
+            type: type as NonNullable<Recurrence>['type'],
+            days: newDays
         });
-    };
+    }, [recurrence?.days]);
 
-    const handleDayToggle = (dayIndex: number) => {
+    const handleDayToggle = useCallback((dayIndex: number) => {
         const currentDays = recurrence?.days || [];
         const newDays = currentDays.includes(dayIndex)
             ? currentDays.filter(d => d !== dayIndex)
             : [...currentDays, dayIndex].sort((a, b) => a - b);
+
+        // 曜日を手動操作したら、typeがweekdaysでもweekly扱いに変更して柔軟性を持たせる
         setRecurrence({
-            type: recurrence?.type || 'weekly',
+            type: 'weekly',
             days: newDays
         });
-    };
+    }, [recurrence?.days]);
 
     // --- Memoized ---
     const previewHtml = useMemo(() => simpleMarkdownToHtml(description), [description]);
@@ -177,7 +187,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     if (!isOpen) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} zIndex={zIndex} className="max-w-4xl h-[85vh]">
+        <Modal isOpen={isOpen} onClose={closeModal} zIndex={zIndex} className="max-w-4xl h-[95vh] sm:h-[85vh] w-full mx-2 sm:mx-auto mt-4 sm:mt-0 pb-safe">
             <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4 shrink-0">
@@ -218,8 +228,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
-                        {/* Left Column: Memo */}
-                        <div className="md:col-span-8 flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+                        {/* Left Column: Memo (Mobile: order-last if needed, but standard is top) */}
+                        <div className="md:col-span-8 flex flex-col h-full min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -230,17 +240,17 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                 <button
                                     type="button"
                                     onClick={() => setShowPreview(!showPreview)}
-                                    className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-0.5 rounded transition-colors text-xs font-medium"
+                                    className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-1 rounded transition-colors text-xs font-medium"
+                                    aria-label={showPreview ? '編集モードに切り替え' : 'プレビューモードに切り替え'}
                                 >
                                     {showPreview ? '編集' : 'プレビュー'}
                                 </button>
                             </div>
-                            <div className="flex-1 relative min-h-[200px]">
+                            <div className="flex-1 relative">
                                 {showPreview ? (
                                     <div
-                                        onClick={() => setShowPreview(false)}
-                                        className="w-full h-full p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm overflow-y-auto cursor-text prose prose-sm dark:prose-invert max-w-none"
-                                        dangerouslySetInnerHTML={{ __html: previewHtml || '<span class="text-gray-400">メモを入力...</span>' }}
+                                        className="w-full h-full p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm overflow-y-auto prose prose-sm dark:prose-invert max-w-none"
+                                        dangerouslySetInnerHTML={{ __html: previewHtml || '<span class="text-gray-400">メモがありません</span>' }}
                                     />
                                 ) : (
                                     <textarea
@@ -262,7 +272,11 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                         <div className="md:col-span-4 space-y-4">
                             {/* Schedule Section */}
                             <details open={scheduleOpen} onToggle={(e) => setScheduleOpen(e.currentTarget.open)} className="group border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-                                <summary className="flex items-center justify-between px-4 py-3 cursor-pointer list-none outline-none bg-gray-50 dark:bg-gray-700/30 rounded-t-lg group-[:not([open])]:rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50">
+                                <summary
+                                    className="flex items-center justify-between px-4 py-3 cursor-pointer list-none outline-none bg-gray-50 dark:bg-gray-700/30 rounded-t-lg group-[:not([open])]:rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50 focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                                    role="button"
+                                    aria-expanded={scheduleOpen}
+                                >
                                     <span className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                                         <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -304,8 +318,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                     </div>
 
                                     {/* Weekly Days */}
-                                    {recurrence?.type === 'weekly' && (
-                                        <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                                    {(recurrence?.type === 'weekly' || recurrence?.type === 'weekdays') && (
+                                        <div className="pt-2 border-t border-gray-100 dark:border-gray-700 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <span className="block text-xs font-semibold text-gray-500 mb-2 uppercase">繰り返す曜日</span>
                                             <div className="flex flex-wrap gap-2">
                                                 {DAY_LABELS.map((day, idx) => (
@@ -382,8 +396,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                     onChange={(e) => setStatus(e.target.value)}
                                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
                                 >
-                                    <option value="todo">To Do</option>
-                                    <option value="completed">完了</option>
+                                    <option value={TASK_STATUS.TODO}>To Do</option>
+                                    <option value={TASK_STATUS.COMPLETED}>完了</option>
+                                    <option value="archived">アーカイブ</option>
                                 </select>
                             </div>
                         </div>

@@ -6,9 +6,12 @@ import {
     useSensors
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
+import { useCallback } from 'react';
+import { getTranslator } from '../core/translations';
 import { UI_CONFIG } from '../core/ui-constants';
 import { reorderProjects, updateTask } from '../store';
 import { Project, Task } from '../store/schema';
+import { useSettingsStore } from '../store/ui/settings-store';
 import { toast } from '../store/ui/toast-store';
 
 /** Optimistic Update オプション */
@@ -39,17 +42,21 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
         })
     );
 
-    const handleDragEnd = async (event: DragEndEvent) => {
+    const { language } = useSettingsStore();
+    const { t } = getTranslator(language);
+
+    const handleDragEnd = useCallback(async (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over) return;
-
 
         const activeId = String(active.id);
         const overId = String(over.id);
 
+        const getTaskId = (id: string) => id.startsWith(UI_CONFIG.DND.PREFIX_TASK) ? id.split(':')[1] : null;
+        const draggedTaskId = getTaskId(activeId);
+
         // タスクをサイドバーへドラッグした場合の処理 (移動)
-        if (activeId.startsWith(UI_CONFIG.DND.PREFIX_TASK)) {
-            const taskId = activeId.split(':')[1];
+        if (draggedTaskId) {
             const targetType = over.data.current?.type;
             const targetValue = over.data.current?.value;
 
@@ -60,16 +67,16 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
 
             if (Object.keys(updates).length > 0) {
                 try {
-                    await updateTask(taskId, updates);
+                    await updateTask(draggedTaskId, updates);
                 } catch (err) {
                     console.error('Failed to update task via dnd', err);
-                    toast.error('タスクの移動に失敗しました');
+                    toast.error(t('error'));
                 }
             }
         }
 
         // プロジェクト自体の並び替え
-        if (activeId !== overId && !activeId.startsWith(UI_CONFIG.DND.PREFIX_TASK)) {
+        if (activeId !== overId && !draggedTaskId) {
             const oldIndex = projects.findIndex(p => p.id === activeId);
             const newIndex = projects.findIndex(p => p.id === overId);
 
@@ -84,13 +91,13 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
                     await reorderProjects(newProjects);
                 } catch (err) {
                     console.error('Failed to update project order', err);
-                    toast.error('並び替えに失敗しました');
+                    toast.error(t('error'));
                     // 失敗時: 元の状態にロールバック
                     options?.onRevertReorder?.(projects);
                 }
             }
         }
-    };
+    }, [projects, options, t]);
 
     return { sensors, handleDragEnd };
 };

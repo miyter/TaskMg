@@ -4,12 +4,6 @@
  */
 
 export const UI_CONFIG = {
-    DENSITY_LEVELS: {
-        COMPACT: 'compact',
-        NORMAL: 'normal',
-        COMFORTABLE: 'comfortable',
-        SPACIOUS: 'spacious'
-    },
     // Map levels to utility classes (Sidebar items padding)
     DENSITY_CLASSES: {
         'compact': 'py-0.5',
@@ -27,7 +21,6 @@ export const UI_CONFIG = {
     STORAGE_KEYS: {
         WIDTH: 'sidebarWidth',
         DENSITY: 'sidebar_density',
-        COMPACT: 'sidebar_compact', // @deprecated Legacy key - 移行完了後に削除予定
         SECTION_PREFIX: 'sidebar-section:',
         SECTION_ORDER: 'sidebar_section_order',
         FONT_EN: 'font_family_en',

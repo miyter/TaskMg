@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { auth } from '../core/firebase';
+import { auth, initAuthListener } from '../core/auth';
 import { useWorkspaceStore } from '../store/ui/workspace-store';
 
 /**
@@ -11,14 +11,20 @@ export const useWorkspace = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // 認証状態の監視
-        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-            setUserId(user ? user.uid : null);
-            setLoading(false);
-        });
+        // 認証状態の監視 (Centralized)
+        const unsubscribe = initAuthListener(
+            (user) => {
+                setUserId(user.uid);
+                setLoading(false);
+            },
+            () => {
+                setUserId(null);
+                setLoading(false);
+            }
+        );
 
         return () => {
-            unsubscribeAuth();
+            unsubscribe();
         };
     }, []);
 

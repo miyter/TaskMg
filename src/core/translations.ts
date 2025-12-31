@@ -103,17 +103,18 @@ export const translations: Record<'ja' | 'en', Record<I18nKeys, string>> = {
 };
 
 /**
- * 翻訳ヘルパーフックのような簡易関数
- * (Hooksではないが、storeからlangを取得して使う想定)
+ * 翻訳ヘルパー関数
+ * ストアから言語設定を受け取って翻訳関数を返す
  */
-import { useSettingsStore } from '../store/ui/settings-store';
-
-export const useTranslation = () => {
-    const { language } = useSettingsStore();
-
+export const getTranslator = (language: 'ja' | 'en') => {
     function t(key: I18nKeys): string {
-        return translations[language][key] || key;
+        const langData = translations[language];
+        if (!langData) {
+            // Fallback to English if language not found
+            return translations['en'][key] || key;
+        }
+        return langData[key] || translations['en'][key] || key;
     }
 
-    return { t, language };
+    return { t };
 };

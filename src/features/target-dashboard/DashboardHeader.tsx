@@ -1,5 +1,6 @@
 import React from 'react';
-import { useTranslation } from '../../core/translations';
+import { getTranslator } from '../../core/translations';
+import { useSettingsStore } from '../../store/ui/settings-store';
 import { KGIStatus } from './dashboard-types';
 
 interface DashboardHeaderProps {
@@ -11,7 +12,8 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(({ kgi, currentTab, onTabChange, collapsed, onToggleCollapse }) => {
-    const { t } = useTranslation();
+    const { language } = useSettingsStore();
+    const { t } = getTranslator(language);
     const statusColors: Record<string, string> = {
         good: 'text-emerald-500',
         warning: 'text-amber-500',

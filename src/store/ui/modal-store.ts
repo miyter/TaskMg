@@ -1,15 +1,21 @@
 import { create } from 'zustand';
 import { Filter, Label, Project, Task, TimeBlock, Workspace } from '../schema';
 
-export type ModalType = 'settings' | 'task-detail' | 'create-project' | 'label-edit' | 'project-edit' | 'workspace-edit' | 'filter-edit' | 'timeblock-edit' | 'wiki-framework' | null;
+export type ModalType = 'settings' | 'task-detail' | 'label-edit' | 'project-edit' | 'workspace-edit' | 'filter-edit' | 'timeblock-edit' | 'wiki-framework';
 
+// Discriminated Union for internal type safety
+export type ModalInstance =
+    | { id: string; type: 'settings'; data?: null }
+    | { id: string; type: 'task-detail'; data: Partial<Task> }
+    | { id: string; type: 'label-edit'; data: Partial<Label> }
+    | { id: string; type: 'project-edit'; data: Partial<Project> }
+    | { id: string; type: 'workspace-edit'; data: Partial<Workspace> }
+    | { id: string; type: 'filter-edit'; data: Partial<Filter> }
+    | { id: string; type: 'timeblock-edit'; data: Partial<TimeBlock> }
+    | { id: string; type: 'wiki-framework'; data?: any };
+
+// Union for argument type
 export type ModalData = Partial<Task> | Partial<Project> | Partial<Label> | Partial<Workspace> | Partial<Filter> | Partial<TimeBlock> | null;
-
-export interface ModalInstance {
-    id: string;
-    type: ModalType;
-    data: ModalData;
-}
 
 interface ModalState {
     stack: ModalInstance[];
@@ -25,8 +31,11 @@ export const useModalStore = create<ModalState>((set) => ({
     openModal: (type, data = null) => {
         if (!type) return;
         const id = generateId();
+        // @ts-ignore: Dynamic construction of discriminated union
+        const newModal: ModalInstance = { id, type, data };
+
         set((state) => ({
-            stack: [...state.stack, { id, type, data }]
+            stack: [...state.stack, newModal]
         }));
     },
     closeModal: () => set((state) => {

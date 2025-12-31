@@ -7,7 +7,10 @@ import { useUIStore } from '../store/ui/ui-store';
  * Applies global theme settings (fonts, density, sizes) to the DOM.
  * This replaces the legacy ui-settings-manager.ts logic.
  */
-export const useThemeEffect = () => {
+/**
+ * Applies global theme settings (fonts, density, sizes) to the DOM.
+ */
+export const useApplyTheme = () => {
     const { fontEn, fontJp, fontSize, density, themeMode } = useSettingsStore();
     const { setSidebarDensity } = useUIStore();
 
@@ -56,14 +59,17 @@ export const useThemeEffect = () => {
 
     // Apply Density (Global)
     useEffect(() => {
-        const densities = Object.values(UI_CONFIG.DENSITY_LEVELS);
-        const classes = densities.map(d => `app-density-${d}`);
+        useEffect(() => {
+            // UI_CONFIG.DENSITY_LEVELS is gone, use values directly or loop manually if needed.
+            // Actually we just need to remove old classes and add new one.
+            // We know density values from type Density.
+            const classes = ['app-density-compact', 'app-density-normal', 'app-density-comfortable', 'app-density-spacious'];
 
-        document.body.classList.remove(...classes);
-        document.body.classList.add(`app-density-${density}`);
+            document.body.classList.remove(...classes);
+            document.body.classList.add(`app-density-${density}`);
 
-        // Sync density to sidebar store as well (if sidebar uses separate store, but ideally they should merge)
-        // For now, we update the legacy ui-store sidebarDensity to match global density
-        setSidebarDensity(density);
-    }, [density, setSidebarDensity]);
-};
+            // Sync density to sidebar store as well (if sidebar uses separate store, but ideally they should merge)
+            // For now, we update the legacy ui-store sidebarDensity to match global density
+            setSidebarDensity(density);
+        }, [density, setSidebarDensity]);
+    };

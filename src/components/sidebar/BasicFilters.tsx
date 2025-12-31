@@ -1,6 +1,6 @@
 import { useDroppable } from '@dnd-kit/core';
 import React from 'react';
-import { useTranslation } from '../../core/translations';
+import { getTranslator } from '../../core/translations';
 import { useTaskCounts } from '../../hooks/useTaskCounts';
 import { useTasks } from '../../hooks/useTasks';
 import { useFilterStore } from '../../store/ui/filter-store';
@@ -15,12 +15,13 @@ const FILTER_ITEMS = [
     { id: 'today', i18nKey: 'today', icon: '📅', color: 'text-green-500' },
     { id: 'upcoming', i18nKey: 'upcoming', icon: '🗓️', color: 'text-purple-500' },
     { id: 'important', i18nKey: 'important', icon: '⭐', color: 'text-amber-400' },
-    { id: 'all', i18nKey: 'all_tasks', icon: '📋', color: 'text-gray-500' },
+    { id: 'custom', i18nKey: 'all_tasks', icon: '📋', color: 'text-gray-500' },
 ] as const;
 
 export const BasicFilters: React.FC = () => {
     const { tasks } = useTasks();
-    const { t } = useTranslation();
+    const { language } = useSettingsStore();
+    const { t } = getTranslator(language);
     const counts = useTaskCounts();
 
     return (
