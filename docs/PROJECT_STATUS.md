@@ -45,6 +45,34 @@ src/
 
 ---
 
+## 🧠 アーキテクチャ・設計思想
+
+### レイヤー分離
+- **UI層** (`components/`): 純粋な表示責務。ビジネスロジックを持たない。
+- **Hook層** (`hooks/`): データ購読とコンポーネントへの橋渡し。副作用の管理。
+- **Store層** (`store/`): Zustand による UI 状態 + Firestore CRUD 操作のカプセル化。
+- **Logic層** (`logic/`): 純粋関数によるビジネスロジック。テスト容易性を確保。
+
+### 状態管理戦略
+- **Server State**: Firestore のリアルタイム購読 (`onSnapshot`) で常に最新データを維持。
+- **UI State**: Zustand + `persist` middleware で localStorage に永続化。
+- **Derived State**: `useMemo` / セレクタで計算。不要な再レンダリングを抑制。
+
+### データフロー
+```
+Firestore → subscribeToXxx() → Hook (useState) → Component
+     ↑                                    ↓
+     └──────── addXxx() / updateXxx() ←───┘
+```
+
+### 設計原則
+1. **型安全性**: Zod スキーマによるランタイムバリデーション + TypeScript の静的型付け。
+2. **関心の分離**: `store/xxx.ts` (公開API) と `store/xxx-raw.ts` (内部実装) の分離。
+3. **統一シグネチャ**: 全 subscribe 関数は `(workspaceId, callback)` 形式に統一。
+4. **エラー可視化**: Toast 通知によるユーザーフィードバック。
+
+---
+
 ## 🔄 現在のステータス
 
 💎 **健全性: 極めて良好**
