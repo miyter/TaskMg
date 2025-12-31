@@ -4,9 +4,20 @@ import { InlineTaskInput } from './InlineTaskInput';
 export const AddTaskButton: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
 
+    React.useEffect(() => {
+        if (!isEditing) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setIsEditing(false);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isEditing]);
+
     if (isEditing) {
         return (
-            <div className="mb-4">
+            <div className="mb-2">
                 <InlineTaskInput
                     onCancel={() => setIsEditing(false)}
                     onSuccess={() => setIsEditing(false)}

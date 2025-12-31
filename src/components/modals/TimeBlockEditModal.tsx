@@ -274,11 +274,12 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate }
     );
 };
 
-const TimeSelect: React.FC<{ options: string[]; value: string; onChange: (val: string) => void }> = ({ options, value, onChange }) => (
+const TimeSelect: React.FC<{ options: string[]; value: string; onChange: (val: string) => void; label?: string }> = ({ options, value, onChange, label }) => (
     <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="appearance-none px-2 py-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded text-sm font-mono font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 outline-none cursor-pointer"
+        aria-label={label || "時間選択"}
     >
         {options.map(o => <option key={o} value={o}>{o}</option>)}
     </select>

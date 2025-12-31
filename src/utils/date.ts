@@ -237,3 +237,28 @@ export function getInitialDueDateFromRecurrence(recurrence: RecurrenceConfig): D
 
     return today;
 }
+
+// --- 時間計算ロジック ---
+
+/**
+ * HH:mm 形式の開始時間と終了時間の差分（分）を計算する
+ * 終了時間が開始時間より前の場合は、日を跨いだとみなして計算する
+ */
+export function calculateDurationMinutes(start: string, end: string): number {
+    if (!start || !end) return 0;
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+
+    // Validate numbers
+    if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return 0;
+
+    const startMinutes = startH * 60 + startM;
+    let endMinutes = endH * 60 + endM;
+
+    // 日を跨ぐ場合 (例: 23:00 -> 01:00)
+    if (endMinutes < startMinutes) {
+        endMinutes += 24 * 60;
+    }
+
+    return endMinutes - startMinutes;
+}

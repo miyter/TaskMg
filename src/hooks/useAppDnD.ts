@@ -1,6 +1,7 @@
 import {
     DragEndEvent,
     PointerSensor,
+    TouchSensor,
     useSensor,
     useSensors
 } from '@dnd-kit/core';
@@ -28,6 +29,12 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
         useSensor(PointerSensor, {
             activationConstraint: {
                 distance: 5,
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250, // Prevent accidental drags while scrolling
+                tolerance: 5,
             },
         })
     );

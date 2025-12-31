@@ -10,10 +10,14 @@ interface SidebarSectionProps {
 export const SidebarSection: React.FC<SidebarSectionProps> = ({ title, children, defaultExpanded = true }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
+    const sectionId = `section-${title.toLowerCase().replace(/\s+/g, '-')}`;
+
     return (
         <div className="mb-2">
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
+                aria-expanded={isExpanded}
+                aria-controls={sectionId}
                 className="flex items-center w-full px-2 py-1 text-xs font-semibold text-gray-500 uppercase hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
                 <svg
@@ -25,7 +29,7 @@ export const SidebarSection: React.FC<SidebarSectionProps> = ({ title, children,
                 {title}
             </button>
             {isExpanded && (
-                <div className="mt-1">
+                <div className="mt-1" id={sectionId}>
                     {children}
                 </div>
             )}

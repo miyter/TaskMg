@@ -93,7 +93,9 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
         // 2. Project Check
         if (conditions.projects.length > 0) {
             const hasMatch = conditions.projects.some(p => {
-                if (p === 'unassigned') return !task.projectId;
+                if (p === 'unassigned') {
+                    return !task.projectId || task.projectId === 'unassigned' || task.projectId === 'none';
+                }
                 return task.projectId === p;
             });
             if (!hasMatch) return false;

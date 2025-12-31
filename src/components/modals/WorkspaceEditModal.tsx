@@ -81,10 +81,12 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
             <div className="flex flex-col gap-6">
                 {/* Header */}
                 <div>
-                    <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
+                    <label htmlFor="workspace-name-input" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
                         {isEdit ? 'ワークスペース名の変更' : '新規ワークスペース'}
-                    </h2>
+                    </label>
                     <input
+                        id="workspace-name-input"
+                        name="workspaceName"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}

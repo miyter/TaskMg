@@ -88,6 +88,8 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
                         style={{ backgroundColor: label?.color || '#3B82F6' }}
                     />
                     <input
+                        id="label-name-input"
+                        name="labelName"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -95,6 +97,9 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
                         placeholder={isEdit ? 'ラベル名' : '新しいラベル名'}
                         className="flex-1 text-lg font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400"
                         autoFocus
+                        aria-label="ラベル名"
+                        aria-invalid={!!error}
+                        aria-describedby={error ? "label-error-msg" : undefined}
                     />
                 </div>
 
@@ -105,7 +110,7 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
 
                 {/* Error */}
                 {error && (
-                    <p className="text-sm text-red-500 text-center">{error}</p>
+                    <p id="label-error-msg" className="text-sm text-red-500 text-center" role="alert">{error}</p>
                 )}
 
                 {/* Footer */}

@@ -51,12 +51,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 "md:backdrop-blur-xl",
                 "border-r border-gray-200/50 dark:border-gray-700/30",
                 isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-                "fixed md:relative z-30 md:z-0 shadow-2xl md:shadow-none overflow-hidden"
+                "fixed md:relative z-30 md:z-0 shadow-2xl md:shadow-none overflow-hidden",
+                // Width handling via CSS variables
+                "w-[var(--sidebar-mobile)] md:w-[var(--sidebar-desktop)]"
             )}
             style={{
-                width: isSidebarOpen ? (typeof window !== 'undefined' && window.innerWidth < UI_CONFIG.SIDEBAR.BREAKPOINT_MD ? `${UI_CONFIG.LAYOUT.MOBILE_SIDEBAR_WIDTH_PX}px` : `${sidebarWidth}px`) : '0px',
+                '--sidebar-desktop': `${sidebarWidth}px`,
+                '--sidebar-mobile': `${UI_CONFIG.LAYOUT.MOBILE_SIDEBAR_WIDTH_PX}px`,
+                width: isSidebarOpen ? undefined : '0px',
                 minWidth: isSidebarOpen ? undefined : '0px'
-            }}
+            } as React.CSSProperties}
         >
             {/* Header */}
             <div className="h-14 flex items-center px-4 flex-shrink-0 justify-between border-b border-gray-100 dark:border-gray-800/50">
@@ -84,14 +88,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 
             {/* Resizer Handle */}
             <div
+                role="separator"
+                aria-orientation="vertical"
+                aria-valuenow={sidebarWidth}
+                aria-valuemin={UI_CONFIG.SIDEBAR.MIN_WIDTH}
+                aria-valuemax={UI_CONFIG.SIDEBAR.MAX_WIDTH}
+                tabIndex={0}
                 onMouseDown={handleMouseDown}
+                onKeyDown={(e) => {
+                    if (e.key === 'ArrowLeft') {
+                        setSidebarWidth(Math.max(UI_CONFIG.SIDEBAR.MIN_WIDTH, sidebarWidth - 10));
+                    } else if (e.key === 'ArrowRight') {
+                        setSidebarWidth(Math.min(UI_CONFIG.SIDEBAR.MAX_WIDTH, sidebarWidth + 10));
+                    }
+                }}
                 className={cn(
-                    "absolute top-0 right-0 w-1 h-full cursor-col-resize z-40 transition-colors hidden md:block",
-                    "hover:bg-blue-500/50 active:bg-blue-600",
-                    "after:content-[''] after:absolute after:top-1/2 after:left-[-4px] after:w-2 after:h-8 after:bg-gray-300 dark:after:bg-gray-600 after:rounded-full after:opacity-0 hover:after:opacity-100 after:transition-opacity after:translate-y-[-50%]"
+                    "absolute top-0 right-0 w-1 h-full cursor-col-resize z-40 transition-colors hidden md:flex items-center justify-center outline-none focus:bg-blue-500",
+                    "hover:bg-blue-500/50 active:bg-blue-600 group/resizer"
                 )}
-                title="ドラッグしてリサイズ"
-            />
+                title="ドラッグまたは矢印キーでリサイズ"
+            >
+                {/* Visual Indicator */}
+                <div className="absolute w-1.5 h-8 bg-gray-300 dark:bg-gray-600 rounded-full opacity-0 group-hover/resizer:opacity-100 group-focus/resizer:opacity-100 transition-opacity pointer-events-none" />
+            </div>
             {/* Permanent subtle indicator for the resizer */}
             <div className="absolute top-0 right-0 w-[1px] h-full bg-gray-200/50 dark:bg-gray-700/30 hidden md:block" />
         </aside>

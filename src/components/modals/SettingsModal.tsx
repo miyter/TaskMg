@@ -35,10 +35,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
     const isOpen = !!propIsOpen;
 
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} title="設定" className="max-w-3xl h-[650px]">
-            <div className="flex h-full -m-6">
+        <Modal isOpen={isOpen} onClose={closeModal} title="設定" className="w-full max-w-3xl h-[90vh] md:h-[650px]">
+            <div className="flex flex-col md:flex-row h-full -m-6">
                 {/* Sidebar */}
-                <div className="w-56 bg-gray-50 dark:bg-gray-800/50 border-r border-gray-100 dark:border-gray-700/50 p-4 space-y-1">
+                <div className="w-full md:w-56 bg-gray-50 dark:bg-gray-800/50 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700/50 p-2 md:p-4 flex md:block overflow-x-auto gap-2 md:gap-1 md:space-y-1 shrink-0">
                     <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label="一般" icon="⚙️" />
                     <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label="外観" icon="🎨" />
                     <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} label="アカウント" icon="👤" />
@@ -262,7 +262,7 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; label: string;
     <button
         onClick={onClick}
         className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all text-left",
+            "w-auto md:w-full flex items-center gap-2 md:gap-3 px-3 py-2 text-sm rounded-lg transition-all text-left whitespace-nowrap",
             active
                 ? "bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 font-bold"
                 : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200"

@@ -25,11 +25,12 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
     const { density } = useSettingsStore();
 
     return (
-        <div
+        <button
+            type="button"
             onClick={onClick}
             onContextMenu={onContextMenu}
             className={cn(
-                "group flex items-center justify-between px-2 ml-1 rounded-md cursor-pointer transition-colors select-none",
+                "w-full text-left group flex items-center justify-between px-2 ml-1 rounded-md transition-colors select-none outline-none focus:ring-2 focus:ring-blue-500/50",
                 getDensityClass(density), // Dynamic padding based on density
                 isActive
                     ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
@@ -46,6 +47,6 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
                     {count}
                 </span>
             )}
-        </div>
+        </button>
     );
 };

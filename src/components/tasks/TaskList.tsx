@@ -57,9 +57,9 @@ export const TaskList: React.FC = () => {
     }
 
     return (
-        <div className="flex flex-col h-full overflow-hidden relative bg-white dark:bg-gray-900">
+        <div className="flex flex-col h-full overflow-hidden relative">
             {/* Task List Container */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-1" style={{ paddingBottom: 'calc(var(--modal-gap, 1.5rem) * 2 + 3rem)' }}>
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-1 pb-24">
                 <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm pt-1 pb-4 mb-4 flex items-center gap-2">
                     <div className="flex-1">
                         <AddTaskButton />

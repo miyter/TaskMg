@@ -2,6 +2,7 @@ import React from 'react';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { Task } from '../../store/schema';
 import { cn } from '../../utils/cn';
+import { calculateDurationMinutes } from '../../utils/date';
 
 interface TaskStatsProps {
     tasks: Task[];
@@ -23,16 +24,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
     const timeBlock = timeBlockId ? timeBlocks.find(tb => tb.id === timeBlockId) : null;
 
     if (timeBlock && timeBlock.start && timeBlock.end) {
-        const calculateMinutes = (start: string, end: string): number => {
-            const [startH, startM] = start.split(':').map(Number);
-            const [endH, endM] = end.split(':').map(Number);
-            let startMinutes = startH * 60 + startM;
-            let endMinutes = endH * 60 + endM;
-            if (endMinutes < startMinutes) endMinutes += 24 * 60;
-            return endMinutes - startMinutes;
-        };
-
-        const capacityMinutes = calculateMinutes(timeBlock.start, timeBlock.end);
+        const capacityMinutes = calculateDurationMinutes(timeBlock.start, timeBlock.end);
         if (capacityMinutes <= 0) return null;
 
         const capacityHours = (capacityMinutes / 60).toFixed(2);

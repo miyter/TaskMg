@@ -53,8 +53,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
                         </button>
                     </div>
                 </header>
-                <div className="flex-1 p-4 lg:p-6 overflow-hidden flex flex-col items-center">
-                    <div className={cn("w-full bg-white dark:bg-gray-900 shadow-xl md:shadow-2xl rounded-2xl md:rounded-[2rem] overflow-hidden relative flex-1", UI_CONFIG.LAYOUT.CONTAINER_WIDTH_CLASS)}>
+                <div className="flex-1 p-2 md:p-4 lg:p-6 overflow-hidden flex flex-col">
+                    <div className={cn("w-full mx-auto bg-white dark:bg-gray-900 shadow-xl md:shadow-2xl rounded-2xl md:rounded-[2rem] overflow-hidden relative flex-1", UI_CONFIG.LAYOUT.CONTAINER_WIDTH_CLASS)}>
                         {children}
                     </div>
                 </div>

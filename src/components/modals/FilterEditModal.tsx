@@ -128,8 +128,10 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
         <Modal isOpen={isOpen} onClose={closeModal} title={isEditMode ? 'フィルター編集' : 'フィルター作成'} className="max-w-4xl">
             <div className="space-y-6">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">フィルター名</label>
+                    <label htmlFor="filter-name-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">フィルター名</label>
                     <input
+                        id="filter-name-input"
+                        name="filterName"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -216,6 +218,7 @@ const SelectionBox: React.FC<SelectionBoxProps> = ({ title, items, selectedItems
                 {items.map((item) => {
                     const id = item.id || item.toString();
                     const isChecked = selectedItems.includes(id);
+                    const inputId = `filter-${title}-${id}`;
                     return (
                         <div
                             key={id}
@@ -223,14 +226,16 @@ const SelectionBox: React.FC<SelectionBoxProps> = ({ title, items, selectedItems
                             onClick={() => onToggle(id)}
                         >
                             <input
+                                id={inputId}
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => { }}
                                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                                aria-label={`${title}: ${labelFn(item)}`}
                             />
-                            <span className="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
+                            <label htmlFor={inputId} className="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate flex-1 cursor-pointer pointer-events-none">
                                 {labelFn(item)}
-                            </span>
+                            </label>
                         </div>
                     );
                 })}
