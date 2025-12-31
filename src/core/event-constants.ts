@@ -27,14 +27,16 @@ export const APP_EVENTS = {
 
 export type AppEventName = typeof APP_EVENTS[keyof typeof APP_EVENTS];
 
+import { Workspace } from '../store/schema';
+
 /**
  * @typedef {object} WorkspaceChangedDetail
  * @property {string} workspaceId
- * @property {Array<object>} [workspaces]
+ * @property {Workspace[]} [workspaces]
  */
 export interface WorkspaceChangedDetail {
     workspaceId: string;
-    workspaces?: any[]; // 具体的な型は後ほど定義
+    workspaces?: Workspace[];
 }
 
 /**

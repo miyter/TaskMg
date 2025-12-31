@@ -21,7 +21,7 @@ import { areTaskArraysIdentical } from '../utils/compare';
 import { getNextRecurrenceDate } from '../utils/date';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
-import { Task } from './schema';
+import { Task, TaskSchema } from './schema';
 
 const toJSDate = (val: any): Date | undefined => (val instanceof Timestamp) ? val.toDate() : (val instanceof Date ? val : undefined);
 const toFirestoreDate = (val: any): Timestamp | Date | undefined => (val instanceof Date) ? Timestamp.fromDate(val) : val;
@@ -265,7 +265,7 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
 
     // Recurrence Logic: Create next task if completing a recurring one
     if (status === 'completed' && task?.recurrence && task.recurrence.type !== 'none') {
-        const nextDate = getNextRecurrenceDate(task.dueDate, task.recurrence);
+        const nextDate = getNextRecurrenceDate(task.dueDate ?? null, task.recurrence as import('../utils/date').RecurrenceConfig);
         if (nextDate) {
             // Keep critical fields for the next instance
             const nextTask: Partial<Task> = {

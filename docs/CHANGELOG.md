@@ -23,6 +23,26 @@
 - **ロジックの堅牢化**: OKR計算におけるゼロ除算防止、ソートロジックのフォールバック強化、リストレンダリングの安定キー採用。
 - **日付処理の柔軟性**: `getStartOfWeek` で週の開始日を指定可能にし、タイムゾーンに関する実装上の注釈を追加。
 
+### Grokレビュー対応 (品質改善) ✅
+- **Firebaseエラー防止**: `store-raw.ts` に `removeUndefined` ヘルパーを導入し、Firestore書き込み時の `undefined` 値を自動除去。`TaskDetailModal` の任意フィールドで `?? null` / `?? undefined` に統一。
+- **UI白抜けバグ修正**: `AppLayout.tsx` と `TaskList.tsx` に明示的な背景色 (`bg-white dark:bg-gray-900`) を追加。`index.css` の body にフォールバック背景を設定。
+- **CSS保守性向上**: 未使用CSS変数 (`--app-bg-light/dark`) を削除。グラデーション色の意図を明記するコメント追加。スクロールバー色をライト/ダーク両対応に修正。
+- **React最適化**: `TaskDetailModal` の `handleSave`/`handleDelete` から `useCallback` を削除し保守性向上。`TaskItem` の `React.memo` 比較関数で Timestamp/Date 混在に対応。
+- **コード整理**: `useLabels` 未使用インポート削除、`isNewTask` 判定を `startsWith('temp-')` に改善、`duration` キャッシュを `null` に正規化、toast通知のノイズ軽減。
+- **密度対応**: `TaskList.tsx` のパディングを CSS変数連動に変更。`AppLayout.tsx` から冗長な `h-full` を削除。
+
+### 開発基盤・品質向上 ✅
+- **エラー監視システム**: 自作エラーロギング (`error-logger.ts`) を実装。`window.onerror`/`unhandledrejection` のグローバルキャッチ、React Error Boundary (`ErrorBoundary.tsx`) による UI エラー捕捉。
+- **テスト環境整備**: Vitest を導入し `npm run test` / `npm run test:run` コマンドを追加。`filter-parser.test.ts` (25+ テストケース)、`search.test.ts` (15+ テストケース) を作成。
+- **タイムゾーン対応**: `date-fns` / `date-fns-tz` を導入。新規ユーティリティ `date-tz.ts` で UTC ↔ ローカル変換、日付比較、フォーマットを安全に実行。日本語ロケール対応。
+
+### 品質改善と保守性向上 (Priority: Low 対応) ✅
+- **スキーマと型の厳格化**: `schema.ts`, `event-constants.ts` の型定義を見直し、`WorkspaceChangedDetail` や `RecurrenceSchema` を最適化。
+- **データ整合性の強化**: `addTask`/`updateTask` に Zod の `safeParse` を導入し、ランタイムでの不正データ混入を防止。
+- **Toast 通知の堅牢化**: ID生成に `crypto.randomUUID` を採用し、タイプ別の表示時間制御とタイマークリーンアップを実装してメモリリークを防止。
+- **ストアの最適化**: `workspace-store` の永続化設定を変更し、ローカルとリモートの同期ずれリスクを排除。`filter-store` の初期値を `inbox` に統一。
+- **認証・DnDの改善**: 認証エラーの適切な伝播、DnD失敗時のユーザーフィードバック追加、TypeScript型の明示化 (`UserCredential`, `Partial<Task>`)。
+
 ---
 
 ## 2025-12-30
@@ -65,7 +85,5 @@
 - **データ整合性**: `writeBatch` を用いたプロジェクト並び替えのアトミック更新、ローカルキャッシュ更新時の競合回避策 (`isMounted` チェック)。
 - **スパゲッティ依存の解消**: モーダルコンポーネント (`ProjectEditModal` 等) の `activeModal` / `modalData` 依存を Props 経由にリファクタリングし、データフローを可視化。
 - **インフラ/SDK 整備**: Cloudflare Workers の SPA ルーティング標準化 (`serveSinglePageApp`)、Firebase SDK ラッパーの整理、設定ストア (`settings-store`) の永続化最適化。
-
-
 
 ---

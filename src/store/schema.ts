@@ -10,19 +10,24 @@ import { z } from 'zod';
 /**
  * FirestoreのTimestampまたはDateを受け入れるスキーマ
  * 最終的にDateオブジェクトに変換することを想定
+ * 文字列の場合はISO8601形式のみ許容
  */
-const DateLikeSchema = z.union([z.date(), z.instanceof(Timestamp), z.string()]).nullable().optional();
+const DateLikeSchema = z.union([
+    z.date(),
+    z.instanceof(Timestamp),
+    z.string().datetime({ offset: true }).or(z.string().datetime())
+]).nullable().optional();
 
 // --- Schemas ---
 
 export const RecurrenceSchema = z.object({
     type: z.enum(['none', 'daily', 'weekly', 'weekdays', 'monthly']).nullable(),
     days: z.array(z.number()).optional(), // 0-6 for Sunday-Saturday
-}).nullable().optional();
+}).nullable(); // optional()を削除し、nullable()のみに統一
 
 export const TaskSchema = z.object({
     id: z.string().optional(), // Firestore ID
-    title: z.string().min(1, "Title is required"),
+    title: z.string().min(1, "タイトルは必須です"),
     description: z.string().nullable().optional(),
     status: z.enum(['todo', 'completed', 'archived']).default('todo'),
     dueDate: DateLikeSchema,

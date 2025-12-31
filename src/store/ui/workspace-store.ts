@@ -22,9 +22,9 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         }),
         {
             name: 'workspace-storage',
+            // workspacesはFirestoreから取得するため永続化しない（同期ずれ防止）
             partialize: (state) => ({
                 currentWorkspaceId: state.currentWorkspaceId,
-                workspaces: state.workspaces
             }),
         }
     )

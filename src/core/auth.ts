@@ -9,7 +9,8 @@ import {
     signInWithEmailAndPassword,
     signOut,
     updatePassword,
-    User
+    User,
+    UserCredential
 } from "./firebase-sdk";
 
 import { auth } from './firebase';
@@ -66,7 +67,7 @@ export function initAuthListener(onLogin: (user: User) => void, onLogout: () => 
 /**
  * メールアドレスとパスワードによるログイン
  */
-export async function loginWithEmail(email: string, password: string): Promise<any> {
+export async function loginWithEmail(email: string, password: string): Promise<UserCredential> {
     return await signInWithEmailAndPassword(auth, email, password);
 }
 
@@ -78,6 +79,7 @@ export async function logout(): Promise<void> {
         await signOut(auth);
     } catch (e) {
         console.error("Logout failed", e);
+        throw e; // 呼び出し側が失敗を検知できるよう再スロー
     }
 }
 

@@ -6,7 +6,8 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { reorderProjects, updateTask } from '../store';
-import { Project } from '../store/schema';
+import { Project, Task } from '../store/schema';
+import { toast } from '../store/ui/toast-store';
 
 /** Optimistic Update オプション */
 interface UseAppDnDOptions {
@@ -43,7 +44,7 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
             const targetType = over.data.current?.type;
             const targetValue = over.data.current?.value;
 
-            const updates: any = {};
+            const updates: Partial<Task> = {};
             if (targetType === 'project') updates.projectId = targetValue;
             if (targetType === 'inbox') updates.projectId = null;
             if (targetType === 'timeblock') updates.timeBlockId = targetValue === 'unassigned' ? null : targetValue;
@@ -53,6 +54,7 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
                     await updateTask(taskId, updates);
                 } catch (err) {
                     console.error('Failed to update task via dnd', err);
+                    toast.error('タスクの移動に失敗しました');
                 }
             }
         }
@@ -73,6 +75,7 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
                     await reorderProjects(newProjects);
                 } catch (err) {
                     console.error('Failed to update project order', err);
+                    toast.error('並び替えに失敗しました');
                     // 失敗時: 元の状態にロールバック
                     options?.onRevertReorder?.(projects);
                 }

@@ -2,11 +2,29 @@ import { create } from 'zustand';
 
 export type ToastType = 'success' | 'error' | 'info';
 
+// Type別の表示時間 (ms)
+const TOAST_DURATIONS: Record<ToastType, number> = {
+    success: 3000,
+    info: 4000,
+    error: 6000, // エラーは長めに表示
+};
+
 interface Toast {
     id: string;
     message: string;
     type: ToastType;
 }
+
+// タイマー管理用 (メモリリーク防止)
+const _timers = new Map<string, ReturnType<typeof setTimeout>>();
+
+// 安全なID生成
+const generateId = (): string => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    return Math.random().toString(36).substring(2, 11);
+};
 
 interface ToastState {
     toasts: Toast[];
@@ -17,19 +35,30 @@ interface ToastState {
 export const useToastStore = create<ToastState>((set) => ({
     toasts: [],
     addToast: (message, type = 'info') => {
-        const id = Math.random().toString(36).substring(7);
+        const id = generateId();
         set((state) => ({ toasts: [...state.toasts, { id, message, type }] }));
 
-        // Auto remove
-        setTimeout(() => {
+        // Type別の表示時間でAuto remove
+        const duration = TOAST_DURATIONS[type];
+        const timer = setTimeout(() => {
             set((state) => ({
                 toasts: state.toasts.filter((t) => t.id !== id)
             }));
-        }, 4000);
+            _timers.delete(id);
+        }, duration);
+        _timers.set(id, timer);
     },
-    removeToast: (id) => set((state) => ({
-        toasts: state.toasts.filter((t) => t.id !== id)
-    })),
+    removeToast: (id) => {
+        // タイマーをクリア
+        const timer = _timers.get(id);
+        if (timer) {
+            clearTimeout(timer);
+            _timers.delete(id);
+        }
+        set((state) => ({
+            toasts: state.toasts.filter((t) => t.id !== id)
+        }));
+    },
 }));
 
 // Helper for usage outside React components (e.g., in store actions)

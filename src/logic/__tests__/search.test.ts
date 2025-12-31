@@ -19,6 +19,7 @@ function createTask(overrides: Partial<Task> = {}): Task {
         timeBlockId: null,
         duration: undefined,
         isImportant: false,
+        recurrence: null,
         ...overrides,
     };
 }

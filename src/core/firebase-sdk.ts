@@ -4,15 +4,16 @@
 
 // --- Authentication ---
 export {
-    deleteUser, EmailAuthProvider, getAuth, linkWithCredential, onAuthStateChanged, signInAnonymously,
+    EmailAuthProvider, deleteUser, getAuth, linkWithCredential, onAuthStateChanged, signInAnonymously,
     signInWithCustomToken, signInWithEmailAndPassword, signOut, updateEmail, updatePassword, updateProfile,
-    type User
+    type User,
+    type UserCredential
 } from "firebase/auth";
 
 // --- Firestore ---
 export {
-    addDoc, collection, deleteDoc, doc, getDoc,
-    getDocs, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch,
+    Timestamp, addDoc, collection, deleteDoc, doc, getDoc,
+    getDocs, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
     type Unsubscribe
 } from "firebase/firestore";
 

@@ -33,7 +33,7 @@ export const useFilterStore = create<FilterState>()(
 
             setFilter: (type, id = null) => set({ filterType: type, targetId: id, query: '' }),
             setSearchQuery: (query) => set({ query, filterType: 'search' }),
-            clearFilter: () => set({ filterType: 'all', targetId: null, query: '' }),
+            clearFilter: () => set({ filterType: 'inbox', targetId: null, query: '' }),
             setShowCompleted: (show) => set({ showCompleted: show }),
             setSortCriteria: (criteria) => set({ sortCriteria: criteria }),
         }),

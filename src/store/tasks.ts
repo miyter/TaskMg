@@ -1,5 +1,5 @@
 import { auth } from '../core/firebase';
-import { Task } from './schema';
+import { Task, TaskSchema } from './schema';
 import {
     addTaskRaw,
     deleteTaskRaw,
@@ -29,8 +29,16 @@ function requireAuthAndWorkspace() {
 export async function addTask(taskData: Partial<Task>) {
     try {
         const { userId, workspaceId } = requireAuthAndWorkspace();
+
+        // Zodバリデーション (titleのみ必須、他はpartialなので部分チェック)
+        const partialSchema = TaskSchema.partial().required({ title: true });
+        const validation = partialSchema.safeParse(taskData);
+        if (!validation.success) {
+            console.warn('[addTask] Validation warning:', validation.error.flatten());
+            // 警告のみで継続（データロスを防ぐため）
+        }
+
         await addTaskRaw(userId, workspaceId, taskData);
-        // toast.success("Task created"); // Optional: Success creates noise if used frequently
     } catch (error) {
         console.error("Failed to add task:", error);
         toast.error("タスクの作成に失敗しました");
@@ -58,6 +66,13 @@ export async function updateTaskStatus(taskId: string, status: string) {
 export async function updateTask(taskId: string, updates: Partial<Task>) {
     try {
         const { userId, workspaceId } = requireAuthAndWorkspace();
+
+        // Zodバリデーション (部分更新なのでpartialスキーマ)
+        const validation = TaskSchema.partial().safeParse(updates);
+        if (!validation.success) {
+            console.warn('[updateTask] Validation warning:', validation.error.flatten());
+        }
+
         await updateTaskRaw(userId, workspaceId, taskId, updates);
     } catch (error) {
         console.error("Failed to update task:", error);
