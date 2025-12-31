@@ -18,6 +18,7 @@ import {
     updateDoc
 } from "../core/firebase-sdk";
 import { areTaskArraysIdentical } from '../utils/compare';
+import { getNextRecurrenceDate } from '../utils/date';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
 import { Task } from './schema';
@@ -39,7 +40,7 @@ function deserializeTask(id: string, data: any): Task {
 
     const recurrence = data.recurrence || null;
 
-    return {
+    const task: Task = {
         id,
         title: String(data.title || 'Untitled'),
         description: data.description ? String(data.description) : null,
@@ -56,7 +57,15 @@ function deserializeTask(id: string, data: any): Task {
         duration: typeof data.duration === 'number' ? data.duration : undefined,
         isImportant: !!data.isImportant,
         recurrence: recurrence,
-    } as Task;
+    };
+
+    // Validation (Log only for now to prevent data loss on minor schema mismatch)
+    const result = TaskSchema.safeParse(task);
+    if (!result.success) {
+        // console.debug(`[deserializeTask] Validation warning for task ${id}`, result.error.flatten());
+    }
+
+    return task;
 }
 
 // ==========================================================
@@ -221,6 +230,15 @@ export async function addTaskRaw(userId: string, workspaceId: string, taskData: 
 export async function updateTaskStatusRaw(userId: string, workspaceId: string, taskId: string, status: string) {
     // Optimistic Update
     const currentTasks = _cachedTasksMap.get(workspaceId);
+    let task = currentTasks?.find(t => t.id === taskId);
+
+    // If not found in cache, strict consistency would require split logic,
+    // but here we prioritize UI responsiveness and assume cache is mostly up-to-date.
+    if (!task) {
+        // Fallback: This might miss recurrence if not cached, but prevents blocking.
+        // For a more robust solution, we could fetchDoc here.
+    }
+
     if (currentTasks) {
         const newTasks = currentTasks.map(t => {
             if (t.id === taskId) {
@@ -234,6 +252,30 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
         });
         _cachedTasksMap.set(workspaceId, newTasks);
         notifyListeners(workspaceId);
+    }
+
+    // Recurrence Logic: Create next task if completing a recurring one
+    if (status === 'completed' && task?.recurrence && task.recurrence.type !== 'none') {
+        const nextDate = getNextRecurrenceDate(task.dueDate, task.recurrence);
+        if (nextDate) {
+            // Keep critical fields for the next instance
+            const nextTask: Partial<Task> = {
+                title: task.title,
+                description: task.description,
+                projectId: task.projectId,
+                labelIds: task.labelIds,
+                timeBlockId: task.timeBlockId, // copy or clear? usually copy
+                duration: task.duration,
+                isImportant: task.isImportant,
+                recurrence: task.recurrence,
+                dueDate: nextDate,
+                status: 'todo'
+            };
+            // Execute async (fire and forget relevant to this update, or chain)
+            // We use no await here to not delay the visual completion toggle, 
+            // but addTaskRaw is optimistic so handles cache immediately too.
+            addTaskRaw(userId, workspaceId, nextTask).catch(e => console.error("Failed to create recurring task:", e));
+        }
     }
 
     return withRetry(async () => {

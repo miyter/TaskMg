@@ -7,10 +7,16 @@ import { Modal } from '../common/Modal';
 /**
  * ラベル編集/作成モーダル (React版)
  */
-export const LabelEditModal: React.FC = () => {
+interface LabelEditModalProps {
+    isOpen?: boolean;
+    data?: any;
+    zIndex?: number;
+}
+
+export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { activeModal, modalData, closeModal } = useModalStore();
-    const isOpen = activeModal === 'label-edit';
-    const label = modalData as Label | null;
+    const isOpen = propIsOpen ?? (activeModal === 'label-edit');
+    const label = (propData ?? modalData) as Label | null;
     const isEdit = !!label?.id;
 
     const [name, setName] = useState('');

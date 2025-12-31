@@ -48,6 +48,7 @@ export const ProjectSchema = z.object({
     color: z.string().optional(),
     ownerId: z.string(),
     createdAt: DateLikeSchema,
+    order: z.number().optional(),
 });
 
 export const LabelSchema = z.object({

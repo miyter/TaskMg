@@ -10,7 +10,8 @@ import {
     onSnapshot, orderBy,
     query,
     serverTimestamp, Unsubscribe,
-    updateDoc
+    updateDoc,
+    writeBatch
 } from "../core/firebase-sdk";
 
 import { db } from '../core/firebase';
@@ -155,5 +156,24 @@ export async function deleteProjectRaw(userId: string, workspaceId: string, proj
     return withRetry(async () => {
         const path = paths.projects(userId, workspaceId);
         await deleteDoc(doc(db, path, projectId));
+    });
+}
+
+/**
+ * プロジェクトの並び順を一括更新する (Batch)
+ */
+export async function reorderProjectsRaw(userId: string, workspaceId: string, projects: Project[]) {
+    return withRetry(async () => {
+        const batch = writeBatch(db);
+        const path = paths.projects(userId, workspaceId);
+
+        projects.forEach((p, index) => {
+            if (p.id) {
+                const ref = doc(db, path, p.id);
+                batch.update(ref, { order: index });
+            }
+        });
+
+        await batch.commit();
     });
 }

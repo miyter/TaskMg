@@ -7,10 +7,16 @@ import { Modal } from '../common/Modal';
 /**
  * ワークスペース編集/作成モーダル (React版)
  */
-export const WorkspaceEditModal: React.FC = () => {
+interface WorkspaceEditModalProps {
+    isOpen?: boolean;
+    data?: any;
+    zIndex?: number;
+}
+
+export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { activeModal, modalData, closeModal } = useModalStore();
-    const isOpen = activeModal === 'workspace-edit';
-    const workspace = modalData as Workspace | null;
+    const isOpen = propIsOpen ?? (activeModal === 'workspace-edit');
+    const workspace = (propData ?? modalData) as Workspace | null;
     const isEdit = !!workspace?.id;
 
     const [name, setName] = useState('');

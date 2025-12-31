@@ -8,12 +8,18 @@ import { Modal } from '../common/Modal';
 /**
  * プロジェクト編集/作成モーダル (React版)
  */
-export const ProjectEditModal: React.FC = () => {
+interface ProjectEditModalProps {
+    isOpen?: boolean;
+    data?: any;
+    zIndex?: number;
+}
+
+export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { activeModal, modalData, closeModal } = useModalStore();
     const { currentWorkspaceId } = useWorkspaceStore();
 
-    const isOpen = activeModal === 'project-edit';
-    const project = modalData as Project | null;
+    const isOpen = propIsOpen ?? (activeModal === 'project-edit');
+    const project = (propData ?? modalData) as Project | null;
     const isEdit = !!project?.id;
 
     const [name, setName] = useState('');

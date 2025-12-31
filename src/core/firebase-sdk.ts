@@ -1,4 +1,3 @@
-// @miyter:20251221
 // Firebase SDK Wrapper
 // インポート元をこのファイルに集約し、プロジェクト内でのバージョン不整合や二重ロードを防止
 // TypeScript化に伴い、CDN importを廃止してnpmパッケージを使用

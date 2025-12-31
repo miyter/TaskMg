@@ -38,8 +38,8 @@ export const useSettingsStore = create<SettingsState>()(
             name: 'app-settings',
             partialize: (state) => ({
                 themeMode: state.themeMode,
-                fontEn: state.fontEn,
-                fontJp: state.fontJp,
+                // fontEn: state.fontEn, // Not persisting fonts for now
+                // fontJp: state.fontJp,
                 fontSize: state.fontSize,
                 density: state.density,
             }),

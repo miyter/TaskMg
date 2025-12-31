@@ -41,10 +41,16 @@ const dateOptions = [
     { id: 'next-week', name: '来週' }
 ];
 
-export const FilterEditModal: React.FC = () => {
+interface FilterEditModalProps {
+    isOpen?: boolean;
+    data?: any;
+    zIndex?: number;
+}
+
+export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { activeModal, modalData, closeModal } = useModalStore();
-    const isOpen = activeModal === 'filter-edit';
-    const filterToEdit = modalData as Filter | null;
+    const isOpen = propIsOpen ?? (activeModal === 'filter-edit');
+    const filterToEdit = (propData ?? modalData) as Filter | null;
     const isEditMode = !!filterToEdit?.id;
 
     const { projects } = useProjects();

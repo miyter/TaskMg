@@ -5,7 +5,7 @@ import {
     useSensors
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { updateProject, updateTask } from '../store';
+import { reorderProjects, updateTask } from '../store';
 import { Project } from '../store/schema';
 
 /** Optimistic Update オプション */
@@ -70,10 +70,7 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
 
                 try {
                     // Firestore更新 (バックグラウンド)
-                    await Promise.all(newProjects.map((p, idx) => {
-                        if (p.id) return updateProject(p.id, { order: idx } as any);
-                        return Promise.resolve();
-                    }));
+                    await reorderProjects(newProjects);
                 } catch (err) {
                     console.error('Failed to update project order', err);
                     // 失敗時: 元の状態にロールバック

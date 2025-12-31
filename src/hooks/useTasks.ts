@@ -45,6 +45,7 @@ export const useTasks = () => {
         return () => {
             isMounted = false;
             unsubscribe();
+            // Optional: resetTasks or loading state if needed on unmount, but usually handled by effect re-run
         };
     }, [workspaceId, authLoading]);
 

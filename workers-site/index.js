@@ -1,16 +1,7 @@
-import { getAssetFromKV, NotFoundError } from '@cloudflare/kv-asset-handler';
+import { getAssetFromKV, NotFoundError, serveSinglePageApp } from '@cloudflare/kv-asset-handler';
 
 const ASSET_HANDLER_OPTIONS = {
-  mapRequestToAsset: (request) => {
-    const url = new URL(request.url);
-    
-    // ルートパスや拡張子のないパスへのアクセスは index.html を返す（SPA対応）
-    if (url.pathname.endsWith('/') || !url.pathname.includes('.')) {
-      url.pathname = '/index.html';
-    }
-    
-    return new Request(url.toString(), request);
-  },
+  mapRequestToAsset: serveSinglePageApp,
 };
 
 addEventListener('fetch', event => {
@@ -21,11 +12,33 @@ async function handleEvent(event) {
   try {
     return await getAssetFromKV(event, ASSET_HANDLER_OPTIONS);
   } catch (e) {
-    // ★修正: ファイルが見つからない場合は 404 を返す
     if (e instanceof NotFoundError) {
-      return new Response('Not Found', { status: 404 });
+      // Return a proper HTML 404 page instead of plain text
+      return new Response(
+        `<!DOCTYPE html>
+        <html>
+        <head>
+          <title>404 Not Found</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; text-align: center; padding: 50px 20px; color: #333; }
+            h1 { font-size: 24px; margin-bottom: 20px; }
+            p { margin-bottom: 30px; color: #666; }
+            a { color: #2563EB; text-decoration: none; font-weight: 500; }
+            a:hover { text-decoration: underline; }
+          </style>
+        </head>
+        <body>
+            <h1>Page Not Found</h1>
+            <p>The requested resource could not be found.</p>
+            <a href="/">Return to Home</a>
+        </body>
+        </html>`,
+        { status: 404, headers: { 'content-type': 'text/html' } }
+      );
     }
-    // その他のエラーは 500 を返す
+
+    // Internal Server Error
     return new Response(e.message || e.toString(), { status: 500 });
   }
 }

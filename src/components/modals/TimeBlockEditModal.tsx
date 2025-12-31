@@ -25,9 +25,15 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, 
 const MINUTE_OPTIONS = ['00', '15', '30', '45'];
 const PRESET_COLORS = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6'];
 
-export const TimeBlockEditModal: React.FC = () => {
+interface TimeBlockEditModalProps {
+    isOpen?: boolean;
+    data?: any;
+    zIndex?: number;
+}
+
+export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: propIsOpen, zIndex }) => {
     const { activeModal, closeModal } = useModalStore();
-    const isOpen = activeModal === 'timeblock-edit';
+    const isOpen = propIsOpen ?? (activeModal === 'timeblock-edit');
     const { timeBlocks: storeBlocks } = useTimeBlocks();
 
     const [blocks, setBlocks] = useState<Partial<TimeBlock>[]>([]);

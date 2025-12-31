@@ -10,7 +10,8 @@ export interface FilterConditions {
     durations: number[];
     dates: string[];
     status: string[];
-    isImportant?: boolean;
+    excludeStatus: string[];
+    isImportant?: boolean | null; // true: important, false: unimportant, null/undefined: any
 }
 
 export function parseFilterQuery(query: string): FilterConditions {
@@ -26,7 +27,8 @@ export function parseFilterQuery(query: string): FilterConditions {
         durations: [],
         dates: [],
         status: [],
-        isImportant: false
+        excludeStatus: [],
+        isImportant: undefined
     };
 
     if (!query) return conditions;
@@ -106,20 +108,20 @@ export function parseFilterQuery(query: string): FilterConditions {
                 case 'is':
                     const validStatus = ['completed', 'active', 'todo'];
                     if (validStatus.includes(lowerVal)) {
-                        conditions.status.push(lowerVal);
+                        if (isNegative) conditions.excludeStatus.push(lowerVal);
+                        else conditions.status.push(lowerVal);
                     }
                     if (lowerVal === 'important') {
-                        conditions.isImportant = true;
+                        conditions.isImportant = !isNegative;
                     }
-                    if (lowerVal === 'unimportant') { // Negation alias
-                        // Handle logic elsewhere or flag? 
-                        // Simplified: merely skipping isImportant=true is default, 
-                        // but explicit "is:unimportant" might mean filter ONLY unimportant.
-                        // For now staying compatible with current logic.
+                    if (lowerVal === 'unimportant') {
+                        conditions.isImportant = isNegative; // -is:unimportant -> isImportant=true
                     }
                     break;
                 default:
                     // Unknown prefix treated as keyword
+                    // e.g. unknown:value -> treat as keyword "unknown:value"
+                    // If negative, -unknown:value -> exclude "unknown:value"
                     if (isNegative) conditions.excludeKeywords.push(token.toLowerCase());
                     else conditions.keywords.push(token.toLowerCase());
                     break;

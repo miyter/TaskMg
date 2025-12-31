@@ -73,9 +73,20 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
             });
             if (!isMatch) return false;
         }
+        if (conditions.excludeStatus.length > 0) {
+            const status = task.status || 'todo';
+            const isMatch = conditions.excludeStatus.some(s => {
+                if (s === 'active' && status === 'todo') return true;
+                return s === status;
+            });
+            if (isMatch) return false;
+        }
 
         // 1.5 Important Check
-        if (conditions.isImportant && !task.isImportant) {
+        if (conditions.isImportant === true && !task.isImportant) {
+            return false;
+        }
+        if (conditions.isImportant === false && task.isImportant) {
             return false;
         }
 
@@ -178,7 +189,8 @@ function buildFilterConditions(config: SearchConfig): FilterConditions {
         durations: [],
         dates: [],
         status: [],
-        isImportant: false
+        excludeStatus: [],
+        isImportant: undefined
     };
 
     // UI選択からの条件追加
@@ -198,7 +210,10 @@ function buildFilterConditions(config: SearchConfig): FilterConditions {
 
     // 完了表示設定
     if (!showCompleted) {
-        conditions.status.push('active');
+        // Only add 'active' if not already explicitly filtering status
+        if (conditions.status.length === 0) {
+            conditions.status.push('active');
+        }
     }
 
     return conditions;

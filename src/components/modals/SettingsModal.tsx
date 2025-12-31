@@ -7,7 +7,13 @@ import { AccountSettingsTab } from './AccountSettingsTab';
 
 type SettingsTab = 'general' | 'appearance' | 'account';
 
-export const SettingsModal: React.FC = () => {
+interface SettingsModalProps {
+    isOpen?: boolean;
+    data?: any; // unused but consistent
+    zIndex?: number;
+}
+
+export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen, zIndex }) => {
     const { activeModal, closeModal } = useModalStore();
     const {
         themeMode, setThemeMode,
@@ -19,7 +25,7 @@ export const SettingsModal: React.FC = () => {
 
     const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
 
-    const isOpen = activeModal === 'settings';
+    const isOpen = propIsOpen ?? (activeModal === 'settings');
 
     return (
         <Modal isOpen={isOpen} onClose={closeModal} title="設定" className="max-w-3xl h-[650px]">

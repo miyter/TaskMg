@@ -13,6 +13,7 @@ import {
     deleteProjectRaw,
     getProjects as getProjectsRaw,
     isProjectsInitialized as isProjectsInitializedRaw,
+    reorderProjectsRaw,
     subscribeToProjectsRaw,
     updateProjectRaw,
     updateProjectsCacheRaw
@@ -99,4 +100,12 @@ export const updateProject = async (projectId: string, updates: Partial<Project>
 export const deleteProject = async (projectId: string) => {
     const { userId, workspaceId } = requireAuthAndWorkspace();
     return deleteProjectRaw(userId, workspaceId, projectId);
+};
+
+/**
+ * プロジェクトの順序を更新する
+ */
+export const reorderProjects = async (projects: Project[]) => {
+    const { userId, workspaceId } = requireAuthAndWorkspace();
+    return reorderProjectsRaw(userId, workspaceId, projects);
 };
