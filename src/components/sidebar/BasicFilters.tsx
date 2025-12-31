@@ -3,6 +3,7 @@ import React from 'react';
 import { useTasks } from '../../hooks/useTasks';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { cn } from '../../utils/cn';
+import { toDate } from '../../utils/date';
 
 const FILTER_ITEMS = [
     { id: 'inbox', name: 'インボックス', icon: '📥', color: 'text-blue-500', droppable: true },
@@ -37,12 +38,39 @@ const FilterItem: React.FC<{ item: typeof FILTER_ITEMS[number], tasks: any[] }> 
     const isActive = currentView === 'tasks' && filterType === item.id;
 
     // 件数計算
+    const { showCompleted } = useFilterStore();
     const count = tasks.filter(t => {
-        if (t.status === 'completed') return false;
+        if (t.status === 'completed' && !showCompleted) return false;
+        if (t.status === 'archived') return false; // Never count archived in basic filters
+
         if (item.id === 'all') return true;
         if (item.id === 'inbox') return !t.projectId || String(t.projectId) === 'unassigned' || t.projectId === 'none';
         if (item.id === 'important') return !!t.isImportant;
-        // today/upcoming は日付ロジックが必要だが、ここでは簡易化
+
+        // 日付関連
+        if (item.id === 'today' || item.id === 'upcoming') {
+            if (!t.dueDate) return false;
+            const targetDate = toDate(t.dueDate);
+            if (!targetDate) return false;
+
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+
+            if (item.id === 'today') {
+                return targetDate.getFullYear() === now.getFullYear() &&
+                    targetDate.getMonth() === now.getMonth() &&
+                    targetDate.getDate() === now.getDate();
+            }
+
+            if (item.id === 'upcoming') {
+                const tomorrow = new Date(now);
+                tomorrow.setDate(now.getDate() + 1);
+                const nextWeek = new Date(now);
+                nextWeek.setDate(now.getDate() + 8); // 1週間後
+                return targetDate >= tomorrow && targetDate < nextWeek;
+            }
+        }
+
         return false;
     }).length;
 

@@ -16,6 +16,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
 
     return (
         <div className="h-full flex overflow-hidden bg-premium-gradient text-gray-800 dark:text-white antialiased">
+            {/* Mobile Backdrop */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 md:hidden transition-opacity duration-300"
+                    onClick={toggleSidebar}
+                />
+            )}
+
             <Sidebar>
                 {sidebarContent}
             </Sidebar>
@@ -23,19 +31,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
             <main className="flex-1 flex flex-col relative overflow-hidden" id="main-content">
                 <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 sticky top-0">
                     <div className="flex items-center gap-3">
-                        {/* 
-                            サイドバーが開いているときは、サイドバー内の閉じるボタンを使用するため、
-                            ヘッダーのトグルボタンは非表示にする (Desktop)。
-                            MobileではサイドバーがOverlayなのでトグルは常にあっても良いが、
-                            SidebarOpen時は隠れるので問題ない。
-                         */}
                         {!isSidebarOpen && (
-                            <button onClick={toggleSidebar} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                            <button onClick={toggleSidebar} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="メニューを開く">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                             </button>
                         )}
                         <WorkspaceDropdown />
-                        <h1 className="font-bold text-lg border-l border-gray-300 dark:border-gray-700 pl-3 ml-1">{title}</h1>
+                        <h1 className="font-bold text-lg border-l border-gray-300 dark:border-gray-700 pl-3 ml-1 truncate">{title}</h1>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -48,8 +50,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
                         </button>
                     </div>
                 </header>
-                <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-                    <div className="max-w-4xl mx-auto h-full bg-white dark:bg-gray-900 shadow-sm rounded-xl overflow-hidden relative">
+                <div className="flex-1 p-4 lg:p-6 overflow-y-auto custom-scrollbar flex flex-col items-center">
+                    <div className="w-full max-w-5xl bg-white dark:bg-gray-900 shadow-xl md:shadow-2xl rounded-2xl md:rounded-[2rem] overflow-hidden relative flex-1">
                         {children}
                     </div>
                 </div>
@@ -57,3 +59,4 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
         </div>
     );
 };
+
