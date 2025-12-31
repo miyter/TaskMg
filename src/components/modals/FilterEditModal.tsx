@@ -48,9 +48,9 @@ interface FilterEditModalProps {
 }
 
 export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
-    const { activeModal, modalData, closeModal } = useModalStore();
-    const isOpen = propIsOpen ?? (activeModal === 'filter-edit');
-    const filterToEdit = (propData ?? modalData) as Filter | null;
+    const { closeModal } = useModalStore();
+    const isOpen = !!propIsOpen;
+    const filterToEdit = propData as Filter | null;
     const isEditMode = !!filterToEdit?.id;
 
     const { projects } = useProjects();

@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type SidebarDensity = 'compact' | 'normal' | 'comfortable' | 'spacious';
+import { SidebarDensity } from '../../core/ui-constants';
+
+// export type SidebarDensity = 'compact' | 'normal' | 'comfortable' | 'spacious';
 
 interface UIState {
     // Sidebar State

@@ -28,10 +28,13 @@ export const BasicFilters: React.FC = () => {
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { getDensityClass } from '../../utils/ui-utils';
 
+import { useViewStore } from '../../store/ui/view-store';
+
 const FilterItem: React.FC<{ item: typeof FILTER_ITEMS[number], tasks: any[] }> = ({ item, tasks }) => {
     const { filterType, setFilter } = useFilterStore();
+    const { currentView, setView } = useViewStore();
     const { density } = useSettingsStore();
-    const isActive = filterType === item.id;
+    const isActive = currentView === 'tasks' && filterType === item.id;
 
     // 件数計算
     const count = tasks.filter(t => {
@@ -53,10 +56,15 @@ const FilterItem: React.FC<{ item: typeof FILTER_ITEMS[number], tasks: any[] }> 
         }
     });
 
+    const handleClick = () => {
+        setView('tasks');
+        setFilter(item.id);
+    };
+
     return (
         <li ref={setNodeRef}>
             <button
-                onClick={() => setFilter(item.id)}
+                onClick={handleClick}
                 className={cn(
                     "w-full flex items-center px-3 text-sm rounded-md transition-colors text-left gap-3 group/item",
                     getDensityClass(density),

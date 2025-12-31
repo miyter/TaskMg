@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { addTarget } from '../../store';
-import { useFilterStore } from '../../store/ui/filter-store';
+import { useViewStore } from '../../store/ui/view-store';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
 import { WizardStep } from './WizardStep';
 import { WizardWelcome } from './WizardWelcome';
@@ -9,7 +9,14 @@ export const WizardApp: React.FC = () => {
     const [mode, setMode] = useState<WizardModeId>('backward');
     const [step, setStep] = useState(0); // 0: Welcome, 1+: Steps
     const [data, setData] = useState<Record<string, string>>({});
-    const { setFilter } = useFilterStore();
+    const { setView, viewData } = useViewStore();
+
+    useEffect(() => {
+        if (viewData?.mode) {
+            setMode(viewData.mode as WizardModeId);
+            setStep(0);
+        }
+    }, [viewData]);
 
     const handleNext = (stepData: Record<string, string>) => {
         setData(prev => ({ ...prev, ...stepData }));
@@ -33,7 +40,7 @@ export const WizardApp: React.FC = () => {
             setStep(0);
             setData({});
             // Navigate to dashboard
-            setFilter('target-dashboard');
+            setView('target-dashboard');
         } catch (error) {
             console.error("Failed to save wizard target:", error);
             alert("目標の保存に失敗しました。");

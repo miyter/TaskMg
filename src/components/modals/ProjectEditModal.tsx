@@ -15,11 +15,11 @@ interface ProjectEditModalProps {
 }
 
 export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
-    const { activeModal, modalData, closeModal } = useModalStore();
+    const { closeModal } = useModalStore();
     const { currentWorkspaceId } = useWorkspaceStore();
 
-    const isOpen = propIsOpen ?? (activeModal === 'project-edit');
-    const project = (propData ?? modalData) as Project | null;
+    const isOpen = !!propIsOpen;
+    const project = propData as Project | null;
     const isEdit = !!project?.id;
 
     const [name, setName] = useState('');

@@ -17,6 +17,13 @@ export const UI_CONFIG = {
         'comfortable': 'py-2.5',
         'spacious': 'py-3.5'
     },
+    DND: {
+        PREFIX_TASK: 'task:',
+        PREFIX_FILTER: 'filter:',
+        TYPE_PROJECT: 'project',
+        TYPE_INBOX: 'inbox',
+        TYPE_TIMEBLOCK: 'timeblock',
+    },
     STORAGE_KEYS: {
         WIDTH: 'sidebarWidth',
         DENSITY: 'sidebar_density',
@@ -36,4 +43,5 @@ export const UI_CONFIG = {
     }
 } as const;
 
-export type SidebarDensity = keyof typeof UI_CONFIG.DENSITY_CLASSES;
+export type Density = 'compact' | 'normal' | 'comfortable' | 'spacious';
+export type SidebarDensity = Density;

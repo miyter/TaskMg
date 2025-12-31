@@ -29,9 +29,9 @@ interface TaskDetailModalProps {
 }
 
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
-    const { activeModal, modalData, closeModal } = useModalStore();
-    const isOpen = propIsOpen ?? (activeModal === 'task-detail');
-    const task = (propData ?? modalData) as Task | null;
+    const { closeModal } = useModalStore();
+    const isOpen = !!propIsOpen;
+    const task = propData as Task | null;
     // 新規タスク判定: IDがない、または'temp-'で始まる一時IDの場合
     const isNewTask = !task?.id || task.id.startsWith('temp-');
 

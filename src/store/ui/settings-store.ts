@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { Density } from '../../core/ui-constants';
+export type { Density } from '../../core/ui-constants';
 
 export type FontSize = 'sm' | 'base' | 'md' | 'lg' | 'xl';
-export type Density = 'compact' | 'normal' | 'comfortable' | 'spacious';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 interface SettingsState {
@@ -38,8 +39,8 @@ export const useSettingsStore = create<SettingsState>()(
             name: 'app-settings',
             partialize: (state) => ({
                 themeMode: state.themeMode,
-                // fontEn: state.fontEn, // Not persisting fonts for now
-                // fontJp: state.fontJp,
+                fontEn: state.fontEn,
+                fontJp: state.fontJp,
                 fontSize: state.fontSize,
                 density: state.density,
             }),

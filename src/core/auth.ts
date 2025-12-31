@@ -35,12 +35,38 @@ export function getCurrentUserId(): string | null {
  * @param {Function} onLogin - ログイン時のコールバック
  * @param {Function} onLogout - ログアウト時のコールバック
  */
+let isListenerInitialized = false;
+
+/**
+ * 環境に応じた初期認証トークンを取得
+ */
+function getInitialAuthToken(): string | null {
+    if (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) {
+        return window.GLOBAL_INITIAL_AUTH_TOKEN;
+    }
+    // @ts-ignore
+    if (typeof __initial_auth_token !== 'undefined') {
+        // @ts-ignore
+        return __initial_auth_token;
+    }
+    return null;
+}
+
+/**
+ * 認証状態の監視リスナーを初期化
+ * @param {Function} onLogin - ログイン時のコールバック
+ * @param {Function} onLogout - ログアウト時のコールバック
+ */
 export function initAuthListener(onLogin: (user: User) => void, onLogout: () => void) {
+    if (isListenerInitialized) {
+        console.warn("[Auth] Auth listener already initialized. Skipping.");
+        return () => { };
+    }
+    isListenerInitialized = true;
+
     // 環境変数（Canvas等）からの初期トークンログイン
     // リスナー登録より先に実行することで、初期状態のちらつき（ログアウト→即ログイン）を抑制する
-    const initialToken = (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) ||
-        // @ts-ignore
-        (typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null);
+    const initialToken = getInitialAuthToken();
 
     if (initialToken) {
         signInWithCustomToken(auth, initialToken)
@@ -61,7 +87,10 @@ export function initAuthListener(onLogin: (user: User) => void, onLogout: () => 
         }
     });
 
-    return unsubscribe;
+    return () => {
+        isListenerInitialized = false;
+        unsubscribe();
+    };
 }
 
 /**

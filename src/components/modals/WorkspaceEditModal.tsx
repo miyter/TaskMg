@@ -14,9 +14,9 @@ interface WorkspaceEditModalProps {
 }
 
 export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
-    const { activeModal, modalData, closeModal } = useModalStore();
-    const isOpen = propIsOpen ?? (activeModal === 'workspace-edit');
-    const workspace = (propData ?? modalData) as Workspace | null;
+    const { closeModal } = useModalStore();
+    const isOpen = !!propIsOpen;
+    const workspace = propData as Workspace | null;
     const isEdit = !!workspace?.id;
 
     const [name, setName] = useState('');

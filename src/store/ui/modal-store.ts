@@ -13,37 +13,30 @@ export interface ModalInstance {
 
 interface ModalState {
     stack: ModalInstance[];
-    activeModal: ModalType; // Compat
-    modalData: ModalData;   // Compat
     openModal: (type: ModalType, data?: ModalData) => void;
     closeModal: () => void;
     closeAllModals: () => void;
 }
 
+import { generateId } from '../../utils/uuid';
+
 export const useModalStore = create<ModalState>((set) => ({
     stack: [],
-    activeModal: null, // @deprecated: Use stack for new components
-    modalData: null,   // @deprecated: Use stack for new components
     openModal: (type, data = null) => {
         if (!type) return;
-        const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(7);
+        const id = generateId();
         set((state) => ({
-            stack: [...state.stack, { id, type, data }],
-            activeModal: type,
-            modalData: data
+            stack: [...state.stack, { id, type, data }]
         }));
     },
     closeModal: () => set((state) => {
         if (state.stack.length === 0) return state;
         const newStack = state.stack.slice(0, -1);
-        const top = newStack[newStack.length - 1];
         return {
-            stack: newStack,
-            activeModal: top ? top.type : null,
-            modalData: top ? top.data : null
+            stack: newStack
         };
     }),
-    closeAllModals: () => set({ stack: [], activeModal: null, modalData: null }),
+    closeAllModals: () => set({ stack: [] }),
 }));
 
 // --- Helper functions for non-React code are removed to ensure React-lifecycle safety ---

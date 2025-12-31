@@ -3,6 +3,8 @@ import { Modal } from '../../components/common/Modal';
 import { useModalStore } from '../../store/ui/modal-store';
 import { WikiFramework } from './wiki-data';
 
+import { useViewStore } from '../../store/ui/view-store';
+
 interface WikiFrameworkModalProps {
     isOpen?: boolean;
     data?: any;
@@ -10,16 +12,13 @@ interface WikiFrameworkModalProps {
 }
 
 export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
-    const { activeModal, modalData, closeModal } = useModalStore();
-    const isOpen = propIsOpen ?? (activeModal === 'wiki-framework');
-    const framework = (propData ?? modalData) as WikiFramework;
+    const { closeModal } = useModalStore();
+    const isOpen = !!propIsOpen;
+    const framework = propData as WikiFramework;
 
     const handleApply = useCallback(() => {
-        // ウィザードに遷移 (既存のカスタムイベントを使用)
-        // Note: This relies on App.tsx listening to this event or a store subscription
-        window.dispatchEvent(new CustomEvent('change-view', {
-            detail: { view: 'wizard', mode: framework.id }
-        }));
+        // ウィザードに遷移
+        useViewStore.getState().setView('wizard', { mode: framework.id });
         closeModal();
     }, [framework, closeModal]);
 

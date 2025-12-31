@@ -14,7 +14,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen, zIndex }) => {
-    const { activeModal, closeModal } = useModalStore();
+    const { closeModal } = useModalStore();
     const {
         themeMode, setThemeMode,
         density, setDensity,
@@ -25,7 +25,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
 
     const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
 
-    const isOpen = propIsOpen ?? (activeModal === 'settings');
+    const isOpen = !!propIsOpen;
 
     return (
         <Modal isOpen={isOpen} onClose={closeModal} title="設定" className="max-w-3xl h-[650px]">

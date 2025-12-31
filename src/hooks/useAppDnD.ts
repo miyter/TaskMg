@@ -5,6 +5,7 @@ import {
     useSensors
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
+import { UI_CONFIG } from '../core/ui-constants';
 import { reorderProjects, updateTask } from '../store';
 import { Project, Task } from '../store/schema';
 import { toast } from '../store/ui/toast-store';
@@ -35,19 +36,20 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
         const { active, over } = event;
         if (!over) return;
 
+
         const activeId = String(active.id);
         const overId = String(over.id);
 
         // タスクをサイドバーへドラッグした場合の処理 (移動)
-        if (activeId.startsWith('task:')) {
+        if (activeId.startsWith(UI_CONFIG.DND.PREFIX_TASK)) {
             const taskId = activeId.split(':')[1];
             const targetType = over.data.current?.type;
             const targetValue = over.data.current?.value;
 
             const updates: Partial<Task> = {};
-            if (targetType === 'project') updates.projectId = targetValue;
-            if (targetType === 'inbox') updates.projectId = null;
-            if (targetType === 'timeblock') updates.timeBlockId = targetValue === 'unassigned' ? null : targetValue;
+            if (targetType === UI_CONFIG.DND.TYPE_PROJECT) updates.projectId = targetValue;
+            if (targetType === UI_CONFIG.DND.TYPE_INBOX) updates.projectId = null;
+            if (targetType === UI_CONFIG.DND.TYPE_TIMEBLOCK) updates.timeBlockId = targetValue === 'unassigned' ? null : targetValue;
 
             if (Object.keys(updates).length > 0) {
                 try {
@@ -60,7 +62,7 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
         }
 
         // プロジェクト自体の並び替え
-        if (activeId !== overId && !activeId.startsWith('task:')) {
+        if (activeId !== overId && !activeId.startsWith(UI_CONFIG.DND.PREFIX_TASK)) {
             const oldIndex = projects.findIndex(p => p.id === activeId);
             const newIndex = projects.findIndex(p => p.id === overId);
 

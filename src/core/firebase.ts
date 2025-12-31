@@ -41,7 +41,8 @@ function getConfiguration() {
 
     // 2. Vite環境変数 (import.meta.env)
     try {
-        const env = (import.meta as any).env as ImportMetaEnv | undefined;
+        // Note: vite-env.d.ts should handle this, but explicit cast here safeguards runtime
+        const env = import.meta.env as unknown as ImportMetaEnv;
         if (env && env.VITE_FIREBASE_API_KEY) {
             return {
                 apiKey: env.VITE_FIREBASE_API_KEY,
@@ -75,9 +76,10 @@ function getConfiguration() {
 // 設定取得
 const firebaseConfig = getConfiguration();
 
-if (!firebaseConfig?.apiKey) {
-    const msg = "[Firebase] Configuration is missing or invalid. Application cannot start.";
-    console.error(msg);
+// 必須フィールドのチェック (API Key と Project ID)
+if (!firebaseConfig?.apiKey || !firebaseConfig?.projectId) {
+    const msg = "[Firebase] Configuration is missing required fields (apiKey, projectId). Application cannot start.";
+    console.error(msg, firebaseConfig);
     throw new Error(msg);
 }
 

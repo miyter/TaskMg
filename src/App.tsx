@@ -19,10 +19,12 @@ import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
 import { useThemeEffect } from './hooks/useThemeEffect';
 import { useFilterStore } from './store/ui/filter-store';
+import { useViewStore } from './store/ui/view-store';
 
 const App: React.FC = () => {
     useThemeEffect();
     const { filterType, targetId, query } = useFilterStore();
+    const { currentView } = useViewStore();
     const { projects, setProjectsOverride } = useProjects();
     const { labels } = useLabels();
 
@@ -62,6 +64,10 @@ const App: React.FC = () => {
 
     // Compute Title
     const getTitle = () => {
+        if (currentView === 'wizard') return 'Goal Wizard';
+        if (currentView === 'target-dashboard') return 'Target Dashboard';
+        if (currentView === 'wiki') return 'Framework Wiki';
+
         if (filterType === 'project') return projects.find(p => p.id === targetId)?.name || 'Project';
         if (filterType === 'label') return labels.find(l => l.id === targetId)?.name || 'Label';
         if (filterType === 'search') return query ? `"${query}" の検索結果` : '検索';
@@ -92,11 +98,11 @@ const App: React.FC = () => {
                 title={getTitle()}
             >
                 {/* Main Content Routing */}
-                {filterType === 'wizard' ? (
+                {currentView === 'wizard' ? (
                     <WizardApp />
-                ) : filterType === 'target-dashboard' ? (
+                ) : currentView === 'target-dashboard' ? (
                     <DashboardApp />
-                ) : filterType === 'wiki' ? (
+                ) : currentView === 'wiki' ? (
                     <WikiApp />
                 ) : (
                     <TaskList />

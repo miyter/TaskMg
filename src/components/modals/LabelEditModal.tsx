@@ -14,9 +14,9 @@ interface LabelEditModalProps {
 }
 
 export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
-    const { activeModal, modalData, closeModal } = useModalStore();
-    const isOpen = propIsOpen ?? (activeModal === 'label-edit');
-    const label = (propData ?? modalData) as Label | null;
+    const { closeModal } = useModalStore();
+    const isOpen = !!propIsOpen;
+    const label = propData as Label | null;
     const isEdit = !!label?.id;
 
     const [name, setName] = useState('');

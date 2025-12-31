@@ -32,8 +32,8 @@ interface TimeBlockEditModalProps {
 }
 
 export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: propIsOpen, zIndex }) => {
-    const { activeModal, closeModal } = useModalStore();
-    const isOpen = propIsOpen ?? (activeModal === 'timeblock-edit');
+    const { closeModal } = useModalStore();
+    const isOpen = !!propIsOpen;
     const { timeBlocks: storeBlocks } = useTimeBlocks();
 
     const [blocks, setBlocks] = useState<Partial<TimeBlock>[]>([]);
