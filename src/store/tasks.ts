@@ -4,7 +4,8 @@ import { getTranslator } from '../core/translations';
 import { useSettingsStore } from './ui/settings-store';
 
 import { Task, TaskSchema } from './schema';
-addTaskRaw,
+import {
+    addTaskRaw,
     deleteTaskRaw,
     getTaskByIdRaw,
     getTaskFromCache,
