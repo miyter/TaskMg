@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../core/translations';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { useModalStore } from '../../store/ui/modal-store';
 import { useUIStore } from '../../store/ui/ui-store';
@@ -14,6 +15,7 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, children }) => {
     const { toggleSidebar, isSidebarOpen } = useUIStore();
+    const { t } = useTranslation();
     const { openModal } = useModalStore();
 
     return (
@@ -34,7 +36,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
                 <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 sticky top-0">
                     <div className="flex items-center gap-3">
                         {!isSidebarOpen && (
-                            <button onClick={toggleSidebar} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="メニューを開く" aria-label="メニューを開く">
+                            <button onClick={toggleSidebar} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={t('sidebar.menu_open')} aria-label={t('sidebar.menu_open')}>
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                             </button>
                         )}

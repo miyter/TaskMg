@@ -27,7 +27,6 @@ export const ModalManager: React.FC = () => {
                 const overlayStyle = isFirst ? undefined : "bg-black/20"; // undefined defaults to bg-black/50
 
                 const props = {
-                    key: modal.id, // modal.id is unique per instance
                     isOpen: true,
                     data: modal.data,
                     zIndex: 100 + index * 10,
@@ -35,15 +34,16 @@ export const ModalManager: React.FC = () => {
                 };
 
                 // Note: All modal components must accept StandardModalProps (isOpen, data, zIndex, overlayClassName)
+                // We pass key explicitly to avoid "key in spread" warnings
                 switch (modal.type) {
-                    case 'settings': return <SettingsModal {...props} />;
-                    case 'task-detail': return <TaskDetailModal {...props} />;
-                    case 'label-edit': return <LabelEditModal {...props} />;
-                    case 'project-edit': return <ProjectEditModal {...props} />;
-                    case 'workspace-edit': return <WorkspaceEditModal {...props} />;
-                    case 'filter-edit': return <FilterEditModal {...props} />;
-                    case 'timeblock-edit': return <TimeBlockEditModal {...props} />;
-                    case 'wiki-framework': return <WikiFrameworkModal {...props} />;
+                    case 'settings': return <SettingsModal key={modal.id} {...props} />;
+                    case 'task-detail': return <TaskDetailModal key={modal.id} {...props} />;
+                    case 'label-edit': return <LabelEditModal key={modal.id} {...props} />;
+                    case 'project-edit': return <ProjectEditModal key={modal.id} {...props} />;
+                    case 'workspace-edit': return <WorkspaceEditModal key={modal.id} {...props} />;
+                    case 'filter-edit': return <FilterEditModal key={modal.id} {...props} />;
+                    case 'timeblock-edit': return <TimeBlockEditModal key={modal.id} {...props} />;
+                    case 'wiki-framework': return <WikiFrameworkModal key={modal.id} {...props} />;
                     default: return null;
                 }
             })}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { auth } from '../../core/firebase';
+import { useTranslation } from '../../core/translations';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { createBackupData, importBackupData } from '../../store/backup';
 import { useModalStore } from '../../store/ui/modal-store';
@@ -37,6 +38,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen, zIndex, overlayClassName }) => {
+    const { t } = useTranslation();
     const { closeModal } = useModalStore();
     const {
         themeMode, setThemeMode,
@@ -56,7 +58,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
         <Modal
             isOpen={isOpen}
             onClose={closeModal}
-            title="設定"
+            title={t('settings_modal.title')}
             className="w-full max-w-4xl h-[90vh] md:h-[85vh] p-0 overflow-hidden"
             zIndex={zIndex}
             overlayClassName={overlayClassName}
@@ -65,13 +67,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                 {/* Sidebar (Tabs) */}
                 <div className="w-full md:w-64 bg-gray-50/50 dark:bg-gray-900/50 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 p-4 shrink-0 overflow-y-auto custom-scrollbar">
                     <div className="space-y-1 md:space-y-2">
-                        <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label="一般設定" icon="⚙️" />
-                        <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label="外観・表示" icon="🎨" />
-                        <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} label="アカウント" icon="👤" />
+                        <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label={t('settings_modal.tabs.general')} icon="⚙️" />
+                        <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label={t('settings_modal.tabs.appearance')} icon="🎨" />
+                        <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} label={t('settings_modal.tabs.account')} icon="👤" />
 
                         <hr className="my-2 border-gray-200 dark:border-gray-700 md:hidden" />
 
-                        <TabButton active={activeTab === 'advanced'} onClick={() => setActiveTab('advanced')} label="高度な設定" icon="⚡" />
+                        <TabButton active={activeTab === 'advanced'} onClick={() => setActiveTab('advanced')} label={t('settings_modal.tabs.advanced')} icon="⚡" />
                     </div>
                 </div>
 
@@ -80,7 +82,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                     {activeTab === 'appearance' && (
                         <div className="flex flex-col gap-4">
                             {/* Theme */}
-                            <AccordionSection title="テーマ" icon="🌓" defaultOpen={true}>
+                            <AccordionSection title={t('settings_modal.appearance.theme')} icon="🌓" defaultOpen={true}>
                                 <div className="grid grid-cols-3 gap-3">
                                     {(['light', 'dark', 'system'] as ThemeMode[]).map(mode => (
                                         <button
@@ -100,7 +102,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                             </AccordionSection>
 
                             {/* Density */}
-                            <AccordionSection title="表示密度" icon="📐" defaultOpen={true}>
+                            <AccordionSection title={t('settings_modal.appearance.density')} icon="📐" defaultOpen={true}>
                                 <div className="space-y-3">
                                     {(['compact', 'normal', 'comfortable', 'spacious'] as Density[]).map(d => (
                                         <label key={d} htmlFor={`density-${d}`} className={cn(
@@ -130,7 +132,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                             </AccordionSection>
 
                             {/* Font Size */}
-                            <AccordionSection title="文字サイズ" icon="Aa" defaultOpen={true}>
+                            <AccordionSection title={t('settings_modal.appearance.font_size')} icon="Aa" defaultOpen={true}>
                                 <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
                                     {(['sm', 'base', 'md', 'lg', 'xl'] as FontSize[]).map(s => (
                                         <button
@@ -150,10 +152,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                             </AccordionSection>
 
                             {/* Fonts */}
-                            <AccordionSection title="フォント設定" icon="Tt" defaultOpen={false}>
+                            <AccordionSection title={t('settings_modal.appearance.fonts')} icon="Tt" defaultOpen={false}>
                                 <div className="space-y-4">
                                     <div>
-                                        <label htmlFor="settings-font-en" className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">欧文フォント</label>
+                                        <label htmlFor="settings-font-en" className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">{t('settings_modal.appearance.font_en')}</label>
                                         <div className="relative">
                                             <select
                                                 id="settings-font-en"
@@ -172,7 +174,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                         </div>
                                     </div>
                                     <div>
-                                        <label htmlFor="settings-font-jp" className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">和文フォント</label>
+                                        <label htmlFor="settings-font-jp" className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">{t('settings_modal.appearance.font_jp')}</label>
                                         <div className="relative">
                                             <select
                                                 id="settings-font-jp"
@@ -192,7 +194,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                     </div>
                                 </div>
                             </AccordionSection>
-
                         </div>
                     )}
 
@@ -200,10 +201,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                         <div className="flex flex-col gap-4">
                             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
                                 <h4 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                                    <span>💾</span> バックアップと復元
+                                    <span>💾</span> {t('settings_modal.backup.title')}
                                 </h4>
                                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                                    現在のワークスペースのタスク、プロジェクト、ラベル、目標、設定などをJSONファイルとしてダウンロードしたり、バックアップファイルからデータを復元したりできます。
+                                    {t('settings_modal.backup.description')}
                                 </p>
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                                     <button
@@ -222,13 +223,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 URL.revokeObjectURL(url);
                                             } catch (e) {
                                                 console.error(e);
-                                                alert('バックアップの作成に失敗しました。');
+                                                alert(t('settings_modal.backup.create_fail'));
                                             }
                                         }}
                                         className="btn-premium w-full sm:w-auto text-sm flex items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 shadow-sm"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                        <span className="inline">バックアップを作成</span>
+                                        <span className="inline">{t('settings_modal.backup.create')}</span>
                                     </button>
                                     <div className="relative w-full sm:w-auto">
                                         <input
@@ -240,7 +241,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 const file = e.target.files?.[0];
                                                 if (!file || !auth.currentUser || !currentWorkspaceId) return;
 
-                                                if (!window.confirm('現在のワークスペースにデータをインポートしますか？\n既存のデータは保持されますが、重複データの作成を防ぐため一部のIDが変更される場合があります。')) {
+                                                if (!window.confirm(t('settings_modal.backup.import_confirm'))) {
                                                     e.target.value = '';
                                                     return;
                                                 }
@@ -250,11 +251,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                     try {
                                                         const json = JSON.parse(ev.target?.result as string);
                                                         const result = await importBackupData(auth.currentUser!.uid, currentWorkspaceId, json);
-                                                        alert(`インポートが完了しました。\nタスク: ${result.tasksCount}件\nプロジェクト: ${result.projectsCount}件`);
+                                                        alert(t('settings_modal.backup.import_success').replace('{tasks}', String(result.tasksCount)).replace('{projects}', String(result.projectsCount)));
                                                         window.location.reload(); // Refresh to reflect changes
                                                     } catch (err) {
                                                         console.error(err);
-                                                        alert('インポートに失敗しました。ファイル形式が正しいか確認してください。');
+                                                        alert(t('settings_modal.backup.import_fail'));
                                                     }
                                                 };
                                                 reader.readAsText(file);
@@ -266,15 +267,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                             className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer shadow-sm text-sm flex items-center justify-center gap-2 transition-colors"
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                                            インポート
+                                            {t('settings_modal.backup.import')}
                                         </label>
                                     </div>
                                 </div>
                             </div>
 
-                            <AccordionSection title="言語設定 (Language)" icon="🌐" defaultOpen={true}>
+                            <AccordionSection title={t('settings_modal.language.title')} icon="🌐" defaultOpen={true}>
                                 <div className="text-sm text-gray-500 p-2">
-                                    <p>現在、UIは日本語のみサポートされています。多言語対応は将来のアップデートで予定されています。</p>
+                                    <p>{t('settings_modal.language.description')}</p>
                                 </div>
                             </AccordionSection>
                         </div>
@@ -288,31 +289,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                         <div className="flex flex-col gap-4">
                             <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
                                 <h4 className="font-bold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
-                                    <span>🧹</span> データベースメンテナンス
+                                    <span>🧹</span> {t('settings_modal.maintenance.title')}
                                 </h4>
                                 <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-4">
-                                    データベース内の重複したデータを検出し、整理します。この操作は取り消せません。実行前にバックアップを作成することを強く推奨します。
+                                    {t('settings_modal.maintenance.description')}
                                 </p>
                                 <button
                                     onClick={async () => {
                                         if (!currentWorkspaceId) return;
-                                        if (!confirm('【警告】重複したタスクを削除します。\n実行前にバックアップを作成しましたか？\n（タイトルが同じタスクのうち、古いものを残して削除します）')) return;
-                                        if (!confirm('【最終確認】この操作は取り消せません。本当に実行しますか？')) return;
+                                        if (!confirm(t('settings_modal.maintenance.confirm_backup'))) return;
+                                        if (!confirm(t('settings_modal.maintenance.confirm_final'))) return;
 
                                         try {
                                             const count = await cleanupDuplicateTasks(currentWorkspaceId);
-                                            alert(`${count} 件の重複タスクを削除しました。`);
+                                            alert(t('settings_modal.maintenance.cleanup_success').replace('{count}', String(count)));
                                             if (count > 0) {
                                                 window.location.reload();
                                             }
                                         } catch (e: any) {
                                             console.error(e);
-                                            alert(`エラーが発生しました: ${e.message}`);
+                                            alert(t('settings_modal.maintenance.cleanup_fail').replace('{error}', e.message));
                                         }
                                     }}
                                     className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-95"
                                 >
-                                    重複タスクの削除（要確認）
+                                    {t('settings_modal.maintenance.cleanup_duplicate')}
                                 </button>
                             </div>
                         </div>

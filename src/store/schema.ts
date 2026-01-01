@@ -61,6 +61,7 @@ export const LabelSchema = z.object({
     name: z.string().min(1, "Label name is required"),
     color: z.string().optional(),
     ownerId: z.string(),
+    workspaceId: z.string().optional(), // Added for future migration
     createdAt: DateLikeSchema,
 });
 
@@ -74,6 +75,7 @@ export const FilterSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1),
     query: z.string(), // Filter expression
+    workspaceId: z.string().optional(), // Added for future migration
     createdAt: DateLikeSchema,
 });
 

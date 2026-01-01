@@ -1,43 +1,27 @@
-import { useLayoutEffect, useRef, useState } from 'react';
-
-import { subscribeToFilters } from '../store/filters';
+import { useCallback } from 'react';
+import { getFilters, subscribeToFilters } from '../store/filters';
 import { Filter } from '../store/schema';
-import { getCurrentWorkspaceId } from '../store/workspace';
+import { useFirestoreSubscription } from './useFirestoreSubscription';
+import { useWorkspace } from './useWorkspace';
 
 /**
  * カスタムフィルターを購読するカスタムフック
  */
 export const useFilters = () => {
-    const [filters, setFilters] = useState<Filter[]>([]);
-    const [loading, setLoading] = useState(true);
-    const workspaceId = getCurrentWorkspaceId();
-    const isCancelledRef = useRef(false);
+    const { workspaceId, loading: authLoading } = useWorkspace();
 
-    useLayoutEffect(() => {
-        isCancelledRef.current = false;
-
-        if (!workspaceId) {
-            setFilters([]);
-            setLoading(false);
-            return;
-        }
-
-        // Prevent stale data flicker
-        setFilters([]);
-        setLoading(true);
-
-        const unsubscribe = subscribeToFilters(workspaceId, (newFilters) => {
-            if (!isCancelledRef.current) {
-                setFilters(newFilters);
-                setLoading(false);
-            }
-        });
-
-        return () => {
-            isCancelledRef.current = true;
-            unsubscribe();
-        };
+    const subscribeFn = useCallback((onData: (data: Filter[]) => void) => {
+        if (!workspaceId) return () => { };
+        return subscribeToFilters(workspaceId, onData);
     }, [workspaceId]);
 
-    return { filters, loading };
+    const { data: filters, isPending } = useFirestoreSubscription<Filter[]>(
+        ['filters', workspaceId],
+        subscribeFn,
+        getFilters()
+    );
+
+    const loading = authLoading || (!!workspaceId && isPending && ((filters ?? []).length === 0));
+
+    return { filters: filters || [], loading };
 };

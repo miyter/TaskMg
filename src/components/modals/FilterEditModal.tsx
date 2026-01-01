@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
+import { useWorkspace } from '../../hooks/useWorkspace';
 import { parseFilterQuery as parseLogicQuery, stringifyFilterConditions } from '../../logic/filter-parser';
 import { addFilter, updateFilter } from '../../store';
 import { Filter } from '../../store/schema';
@@ -51,6 +52,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
 
     const { projects } = useProjects();
     const { timeBlocks } = useTimeBlocks();
+    const { workspaceId } = useWorkspace();
 
     const [name, setName] = useState('');
     const [state, setState] = useState<FilterState>({ project: [], timeblock: [], duration: [], date: [] });
@@ -98,11 +100,17 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
         setError(null);
 
         try {
+            if (!workspaceId) {
+                setError('ワークスペースが見つかりません');
+                setLoading(false);
+                return;
+            }
+
             const data: any = { name: trimmedName, query: queryStr, type: 'custom' };
             if (isEditMode && filterToEdit?.id) {
-                await updateFilter(filterToEdit.id, data);
+                await updateFilter(workspaceId, filterToEdit.id, data);
             } else {
-                await addFilter(data);
+                await addFilter({ ...data, workspaceId });
             }
 
             closeModal();

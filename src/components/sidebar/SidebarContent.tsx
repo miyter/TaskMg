@@ -22,7 +22,6 @@ import { BasicFilters } from './BasicFilters';
 import { CustomFilterList } from './CustomFilterList';
 import { DurationList } from './DurationList';
 import { ProjectList } from './ProjectList';
-import { SidebarSearch } from './SidebarSearch';
 import { SidebarSection } from './SidebarSection';
 import { TargetList } from './TargetList';
 import { TimeBlockList } from './TimeBlockList';
@@ -130,7 +129,6 @@ export const SidebarContent: React.FC = () => {
             title: t('general'),
             component: (
                 <>
-                    <SidebarSearch />
                     <BasicFilters />
                 </>
             ),

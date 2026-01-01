@@ -1,8 +1,10 @@
 import React from 'react';
 import logo from '../../assets/logo.png';
+import { useTranslation } from '../../core/translations';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { useUIStore } from '../../store/ui/ui-store';
 import { cn } from '../../utils/cn';
+import { SidebarSearch } from './SidebarSearch';
 
 interface SidebarProps {
     children?: React.ReactNode;
@@ -10,6 +12,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
     const { sidebarWidth, isSidebarOpen, sidebarDensity, toggleSidebar, setSidebarWidth } = useUIStore();
+    const { t } = useTranslation();
 
     // Map density to padding
     const densityClass = {
@@ -77,8 +80,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 <button
                     onClick={toggleSidebar}
                     className="text-gray-400 hover:text-gray-900 dark:hover:text-white p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-90"
-                    title={isSidebarOpen ? "サイドバーを閉じる" : "サイドバーを開く"}
-                    aria-label={isSidebarOpen ? "サイドバーを閉じる" : "サイドバーを開く"}
+                    title={isSidebarOpen ? t('sidebar.toggle_collapse') : t('sidebar.toggle_expand')}
+                    aria-label={isSidebarOpen ? t('sidebar.toggle_collapse') : t('sidebar.toggle_expand')}
                 >
                     <svg className={cn("w-5 h-5 transition-transform duration-300", !isSidebarOpen && "rotate-180")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
@@ -86,7 +89,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 </button>
             </div>
 
-            <div className={cn("flex-1 overflow-y-auto custom-scrollbar pt-4", densityClass)}>
+            <div className="px-3 pb-2 pt-2">
+                <SidebarSearch />
+            </div>
+
+            <div className={cn("flex-1 overflow-y-auto custom-scrollbar pt-2", densityClass)}>
                 {children}
             </div>
 
@@ -94,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
             <div
                 role="separator"
                 aria-orientation="vertical"
-                aria-label="サイドバーの幅調整"
+                aria-label={t('sidebar.resizer_label')}
                 aria-valuenow={sidebarWidth}
                 aria-valuemin={UI_CONFIG.SIDEBAR.MIN_WIDTH}
                 aria-valuemax={UI_CONFIG.SIDEBAR.MAX_WIDTH}
@@ -111,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                     "absolute top-0 right-0 w-3 h-full cursor-col-resize z-40 transition-colors hidden lg:flex items-center justify-center outline-none focus:bg-blue-500",
                     "hover:bg-blue-500/30 active:bg-blue-600/50 group/resizer"
                 )}
-                title="ドラッグまたは矢印キーでリサイズ"
+                title={t('sidebar.resizer_hint')}
             >
                 {/* Visual Indicator - More visible */}
                 <div className="absolute w-1 h-12 bg-gray-400 dark:bg-gray-500 rounded-full opacity-0 group-hover/resizer:opacity-100 group-focus/resizer:opacity-100 transition-opacity pointer-events-none" />

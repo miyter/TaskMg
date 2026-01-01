@@ -9,7 +9,11 @@ export const useTargets = () => {
     const [targets, setTargets] = useState<Target[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const isCancelledRef = useRef(false);
+
     useEffect(() => {
+        isCancelledRef.current = false;
+
         if (!workspaceId) {
             setTargets([]);
             if (!authLoading) setLoading(false);
@@ -17,9 +21,6 @@ export const useTargets = () => {
         }
 
         setLoading(true);
-        const isCancelledRef = useRef(false);
-        isCancelledRef.current = false;
-
 
         const unsubscribe = subscribeToTargets(
             workspaceId,
@@ -39,7 +40,6 @@ export const useTargets = () => {
 
         return () => {
             isCancelledRef.current = true;
-
             unsubscribe();
         };
     }, [workspaceId, authLoading]);

@@ -31,13 +31,13 @@ export function getLabels(): Label[] {
 /**
  * ラベルデータのリアルタイムリスナーを開始する (RAW)
  */
-export function subscribeToLabelsRaw(userId: string, onUpdate: (labels: Label[]) => void): Unsubscribe {
-    if (!userId) {
+export function subscribeToLabelsRaw(userId: string, workspaceId: string, onUpdate: (labels: Label[]) => void): Unsubscribe {
+    if (!userId || !workspaceId) {
         onUpdate([]);
         return () => { };
     }
 
-    const path = paths.labels(userId);
+    const path = paths.labels(userId, workspaceId);
     // db is directly imported from firebase.ts
     const q = query(collection(db, path));
 
@@ -55,14 +55,15 @@ export function subscribeToLabelsRaw(userId: string, onUpdate: (labels: Label[])
 /**
  * 新しいラベルを追加する (RAW)
  */
-export async function addLabelRaw(userId: string, name: string, color: string) {
-    const path = paths.labels(userId);
+export async function addLabelRaw(userId: string, workspaceId: string, name: string, color: string) {
+    const path = paths.labels(userId, workspaceId);
     // db is directly imported from firebase.ts
 
     await addDoc(collection(db, path), {
         name,
         color,
         ownerId: userId,
+        workspaceId,
         createdAt: serverTimestamp() // 修正: サーバー時刻を使用
     });
 }
@@ -70,8 +71,8 @@ export async function addLabelRaw(userId: string, name: string, color: string) {
 /**
  * ラベルを更新する (RAW)
  */
-export async function updateLabelRaw(userId: string, labelId: string, updates: Partial<Label>) {
-    const path = paths.labels(userId);
+export async function updateLabelRaw(userId: string, workspaceId: string, labelId: string, updates: Partial<Label>) {
+    const path = paths.labels(userId, workspaceId);
     // db is directly imported from firebase.ts
     const ref = doc(db, path, labelId);
     return updateDoc(ref, updates);
@@ -80,8 +81,8 @@ export async function updateLabelRaw(userId: string, labelId: string, updates: P
 /**
  * ラベルを削除する (RAW)
  */
-export async function deleteLabelRaw(userId: string, labelId: string) {
-    const path = paths.labels(userId);
+export async function deleteLabelRaw(userId: string, workspaceId: string, labelId: string) {
+    const path = paths.labels(userId, workspaceId);
     // db is directly imported from firebase.ts
     await deleteDoc(doc(db, path, labelId));
 }

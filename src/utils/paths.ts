@@ -40,14 +40,13 @@ function getWorkspaceBasePath(userId: string, workspaceId: string): string {
  * 各種コレクションへのパスを生成する
  */
 export const paths = {
-    // ユーザー共通データ
     users: (userId: string) => getUserBasePath(userId),
-    filters: (userId: string) => `${getUserBasePath(userId)}/filters`,
-    labels: (userId: string) => `${getUserBasePath(userId)}/labels`,
     workspaces: (userId: string) => `${getUserBasePath(userId)}/workspaces`,
-    timeblocks: (userId: string) => `${getUserBasePath(userId)}/timeblocks`,
 
     // ワークスペース依存データ
+    filters: (userId: string, workspaceId: string) => `${getWorkspaceBasePath(userId, workspaceId)}/filters`,
+    labels: (userId: string, workspaceId: string) => `${getWorkspaceBasePath(userId, workspaceId)}/labels`,
+    timeblocks: (userId: string, workspaceId: string) => `${getWorkspaceBasePath(userId, workspaceId)}/timeblocks`,
     tasks: (userId: string, workspaceId: string) => `${getWorkspaceBasePath(userId, workspaceId)}/tasks`,
     projects: (userId: string, workspaceId: string) => `${getWorkspaceBasePath(userId, workspaceId)}/projects`,
     targets: (userId: string, workspaceId: string) => `${getWorkspaceBasePath(userId, workspaceId)}/targets`,

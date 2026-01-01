@@ -36,11 +36,11 @@ function requireAuth() {
  * @param _workspaceId 現在は未使用（ラベルは全WS共通、将来のマルチワークスペース対応用）
  * @param onUpdate ラベル更新時のコールバック
  */
-export function subscribeToLabels(_workspaceId: string, onUpdate: (labels: Label[]) => void): Unsubscribe {
+export function subscribeToLabels(workspaceId: string, onUpdate: (labels: Label[]) => void): Unsubscribe {
     const userId = auth.currentUser?.uid;
 
-    if (userId) {
-        return subscribeToLabelsRaw(userId, onUpdate);
+    if (userId && workspaceId) {
+        return subscribeToLabelsRaw(userId, workspaceId, onUpdate);
     } else {
         onUpdate([]);
         return () => { };
@@ -50,23 +50,26 @@ export function subscribeToLabels(_workspaceId: string, onUpdate: (labels: Label
 /**
  * 新しいラベルを追加する
  */
-export async function addLabel(name: string, color: string) {
+export async function addLabel(workspaceId: string, name: string, color: string) {
     const userId = requireAuth();
-    return addLabelRaw(userId, name, color);
+    if (!workspaceId) throw new Error("Workspace ID required");
+    return addLabelRaw(userId, workspaceId, name, color);
 }
 
 /**
  * ラベルを更新する
  */
-export async function updateLabel(labelId: string, updates: Partial<Label>) {
+export async function updateLabel(workspaceId: string, labelId: string, updates: Partial<Label>) {
     const userId = requireAuth();
-    return updateLabelRaw(userId, labelId, updates);
+    if (!workspaceId) throw new Error("Workspace ID required");
+    return updateLabelRaw(userId, workspaceId, labelId, updates);
 }
 
 /**
  * ラベルを削除する
  */
-export async function deleteLabel(labelId: string) {
+export async function deleteLabel(workspaceId: string, labelId: string) {
     const userId = requireAuth();
-    return deleteLabelRaw(userId, labelId);
+    if (!workspaceId) throw new Error("Workspace ID required");
+    return deleteLabelRaw(userId, workspaceId, labelId);
 }

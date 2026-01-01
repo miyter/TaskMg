@@ -74,6 +74,11 @@ const ja = {
         target_dashboard: '目標ダッシュボード',
         framework_wiki: 'フレームワークWiki',
         unassigned: '未定',
+        toggle_collapse: 'サイドバーを閉じる',
+        toggle_expand: 'サイドバーを開く',
+        resizer_label: 'サイドバーの幅調整',
+        resizer_hint: 'ドラッグまたは矢印キーでリサイズ',
+        menu_open: 'メニューを開く',
     },
 
     modal: {
@@ -113,6 +118,61 @@ const ja = {
         thu: '木',
         fri: '金',
         sat: '土',
+    },
+
+    settings_modal: {
+        title: '設定',
+        tabs: {
+            general: '一般設定',
+            appearance: '外観・表示',
+            account: 'アカウント',
+            advanced: '高度な設定',
+        },
+        appearance: {
+            theme: 'テーマ',
+            density: '表示密度',
+            font_size: '文字サイズ',
+            fonts: 'フォント設定',
+            font_en: '欧文フォント',
+            font_jp: '和文フォント',
+        },
+        backup: {
+            title: 'バックアップと復元',
+            description: '現在のワークスペースのタスク、プロジェクト、ラベル、目標、設定などをJSONファイルとしてダウンロードしたり、バックアップファイルからデータを復元したりできます。',
+            create: 'バックアップを作成',
+            import: 'インポート',
+            import_confirm: '現在のワークスペースにデータをインポートしますか？\n既存のデータは保持されますが、重複データの作成を防ぐため一部のIDが変更される場合があります。',
+            import_success: 'インポートが完了しました。\nタスク: {tasks}件\nプロジェクト: {projects}件',
+            import_fail: 'インポートに失敗しました。ファイル形式が正しいか確認してください。',
+            create_fail: 'バックアップの作成に失敗しました。',
+        },
+        language: {
+            title: '言語設定 (Language)',
+            description: 'UIの言語設定を変更します。',
+        },
+        maintenance: {
+            title: 'データベースメンテナンス',
+            description: 'データベース内の重複したデータを検出し、整理します。この操作は取り消せません。実行前にバックアップを作成することを強く推奨します。',
+            cleanup_duplicate: '重複タスクの削除（要確認）',
+            confirm_backup: '【警告】重複したタスクを削除します。\n実行前にバックアップを作成しましたか？\n（タイトルが同じタスクのうち、古いものを残して削除します）',
+            confirm_final: '【最終確認】この操作は取り消せません。本当に実行しますか？',
+            cleanup_success: '{count} 件の重複タスクを削除しました。',
+            cleanup_fail: 'エラーが発生しました: {error}',
+        }
+    },
+
+    inline_input: {
+        placeholder: 'タスク名を入力...',
+        label: 'タスク名',
+        tooltip_today: '今日やる',
+        tooltip_today_remove: '今日の設定を解除',
+        tooltip_important: '重要',
+        tooltip_important_remove: '重要を解除',
+        aria_today: '今日やるタスクに設定',
+        aria_today_remove: '今日の日付を解除',
+        aria_important: '重要に設定',
+        aria_important_remove: '重要を解除',
+        adding: '追加中...',
     }
 };
 
@@ -182,6 +242,11 @@ const en = {
         target_dashboard: 'Target Dashboard',
         framework_wiki: 'Framework Wiki',
         unassigned: 'Unassigned',
+        toggle_collapse: 'Collapse Sidebar',
+        toggle_expand: 'Expand Sidebar',
+        resizer_label: 'Resize Sidebar',
+        resizer_hint: 'Drag or use arrow keys to resize',
+        menu_open: 'Open Menu',
     },
 
     modal: {
@@ -221,6 +286,61 @@ const en = {
         thu: 'Thu',
         fri: 'Fri',
         sat: 'Sat',
+    },
+
+    settings_modal: {
+        title: 'Settings',
+        tabs: {
+            general: 'General',
+            appearance: 'Appearance',
+            account: 'Account',
+            advanced: 'Advanced',
+        },
+        appearance: {
+            theme: 'Theme',
+            density: 'Density',
+            font_size: 'Font Size',
+            fonts: 'Fonts',
+            font_en: 'English Font',
+            font_jp: 'Japanese Font',
+        },
+        backup: {
+            title: 'Backup & Restore',
+            description: 'Download workspace data (tasks, projects, settings) as JSON or restore from backup.',
+            create: 'Create Backup',
+            import: 'Import',
+            import_confirm: 'Import data into current workspace?\nExisting data remains, but some IDs may change to prevent duplicates.',
+            import_success: 'Import completed.\nTasks: {tasks}\nProjects: {projects}',
+            import_fail: 'Import failed. Please check the file format.',
+            create_fail: 'Failed to create backup.',
+        },
+        language: {
+            title: 'Language',
+            description: 'Change the UI language.',
+        },
+        maintenance: {
+            title: 'Database Maintenance',
+            description: 'Detect and clean up duplicate data. This action cannot be undone. Please backup before running.',
+            cleanup_duplicate: 'Clean Up Duplicates (Confirm)',
+            confirm_backup: '[Warning] Deleting duplicate tasks.\nDid you create a backup?\n(Older duplicates will be removed)',
+            confirm_final: '[Final Confirm] This cannot be undone. Execute?',
+            cleanup_success: 'Deleted {count} duplicate tasks.',
+            cleanup_fail: 'Error occurred: {error}',
+        }
+    },
+
+    inline_input: {
+        placeholder: 'Enter task name...',
+        label: 'Task Name',
+        tooltip_today: 'Do Today',
+        tooltip_today_remove: 'Remove Today',
+        tooltip_important: 'Mark Important',
+        tooltip_important_remove: 'Unmark Important',
+        aria_today: 'Set for today',
+        aria_today_remove: 'Remove from today',
+        aria_important: 'Mark as important',
+        aria_important_remove: 'Unmark as important',
+        adding: 'Adding...',
     }
 };
 

@@ -25,13 +25,11 @@ import { auth, db } from "../core/firebase";
 
 import { paths } from '../utils/paths';
 
-import { APP_EVENTS } from '../core/event-constants';
+
 
 import { Workspace, WorkspaceSchema } from './schema';
 
 import { useWorkspaceStore } from "./ui/workspace-store";
-
-const CHANGE_EVENT = APP_EVENTS.WORKSPACE_CHANGED;
 
 let unsubscribe: Unsubscribe | null = null;
 
@@ -69,7 +67,6 @@ export function subscribeToWorkspaces(userId: string, onUpdate?: (workspaces: Wo
         } else {
             const currentId = validateCurrentWorkspace(items);
             if (onUpdate) onUpdate(items);
-            dispatchWorkspaceEvent(currentId, items);
         }
     }, (error) => {
         console.error("[Workspace] Subscription error:", error);
@@ -116,15 +113,9 @@ export function setCurrentWorkspaceId(id: string) {
     const store = useWorkspaceStore.getState();
     if (store.currentWorkspaceId === id) return;
     store.setCurrentWorkspaceId(id);
-    dispatchWorkspaceEvent(id, store.workspaces);
 }
 
-function dispatchWorkspaceEvent(id: string | null, workspaces: Workspace[]) {
-    const event = new CustomEvent(CHANGE_EVENT, {
-        detail: { workspaceId: id, workspaces: workspaces }
-    });
-    document.dispatchEvent(event);
-}
+
 
 export async function addWorkspace(name: string): Promise<{ id: string, name: string }> {
     try {

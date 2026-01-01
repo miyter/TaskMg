@@ -11,7 +11,6 @@ import { getDensityClass } from '../../utils/ui-utils';
 
 const FILTER_ITEMS = [
     { id: 'inbox', i18nKey: 'inbox', icon: '📥', color: 'text-blue-500', droppable: true },
-    { id: 'search', i18nKey: 'search', icon: '🔍', color: 'text-gray-500' },
     { id: 'today', i18nKey: 'today', icon: '📅', color: 'text-green-500' },
     { id: 'upcoming', i18nKey: 'upcoming', icon: '🗓️', color: 'text-purple-500' },
     { id: 'important', i18nKey: 'important', icon: '⭐', color: 'text-amber-400' },

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useWorkspace } from '../../hooks/useWorkspace';
 import { addLabel, deleteLabel, updateLabel } from '../../store/labels';
 import { Label } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
@@ -28,6 +29,7 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
     const isOpen = !!propIsOpen;
     const label = propData as Label | null;
     const isEdit = !!label?.id;
+    const { workspaceId } = useWorkspace();
 
     const [name, setName] = useState('');
     const [color, setColor] = useState('#42A5F5');
@@ -55,10 +57,16 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
         setError(null);
 
         try {
+            if (!workspaceId) {
+                setError('ワークスペースが見つかりません');
+                setLoading(false);
+                return;
+            }
+
             if (isEdit && label?.id) {
-                await updateLabel(label.id, { name: trimmedName, color });
+                await updateLabel(workspaceId, label.id, { name: trimmedName, color });
             } else {
-                await addLabel(trimmedName, color);
+                await addLabel(workspaceId, trimmedName, color);
             }
             closeModal();
         } catch (err: any) {
@@ -73,7 +81,9 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
 
         setLoading(true);
         try {
-            await deleteLabel(label.id);
+            if (workspaceId && label?.id) {
+                await deleteLabel(workspaceId, label.id);
+            }
             closeModal();
         } catch (err: any) {
             setError('削除に失敗しました');

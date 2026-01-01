@@ -2,9 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../core/translations';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useModalStore } from '../../store/ui/modal-store';
-import { getCurrentWorkspaceId, setCurrentWorkspaceId } from '../../store/workspace';
+import { setCurrentWorkspaceId } from '../../store/workspace';
 
 import { cn } from '../../utils/cn';
+
+import { useWorkspace } from '../../hooks/useWorkspace';
 
 export const WorkspaceDropdown: React.FC = () => {
     const { t } = useTranslation();
@@ -12,7 +14,7 @@ export const WorkspaceDropdown: React.FC = () => {
     const { openModal } = useModalStore();
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const currentId = getCurrentWorkspaceId();
+    const { workspaceId: currentId } = useWorkspace();
     const currentWorkspace = workspaces.find(w => w.id === currentId);
 
     useEffect(() => {

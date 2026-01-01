@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import React, { useEffect, useState } from 'react';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
+import { useWorkspace } from '../../hooks/useWorkspace';
 import { TimeBlock } from '../../store/schema';
 import { deleteTimeBlock, saveTimeBlock } from '../../store/timeblocks';
 import { useModalStore } from '../../store/ui/modal-store';
@@ -45,6 +46,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
     const { closeModal } = useModalStore();
     const isOpen = !!propIsOpen;
     const { timeBlocks: storeBlocks } = useTimeBlocks();
+    const { workspaceId } = useWorkspace();
 
     const [blocks, setBlocks] = useState<Partial<TimeBlock>[]>([]);
     const [loading, setLoading] = useState(false);
@@ -95,7 +97,9 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
         if (!id.startsWith('new-')) {
             if (!confirm('この時間帯を削除しますか？')) return;
             try {
-                await deleteTimeBlock(id);
+                if (workspaceId) {
+                    await deleteTimeBlock(workspaceId, id);
+                }
             } catch (err) {
                 setError('削除に失敗しました');
                 return;
@@ -164,11 +168,12 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                     order: index,
                     name: `${b.start}-${b.end}`
                 } as any;
-                return saveTimeBlock(data);
+                if (!workspaceId) throw new Error("No workspace");
+                return saveTimeBlock(workspaceId, data);
             });
 
             await Promise.all(promises);
-            document.dispatchEvent(new CustomEvent('timeblocks-updated'));
+            await Promise.all(promises);
             closeModal();
         } catch (err: any) {
             setError(err.message || '保存に失敗しました');

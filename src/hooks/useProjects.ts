@@ -1,64 +1,36 @@
-import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { getProjects, isProjectsInitialized, subscribeToProjects, updateProjectsCache } from '../store/projects';
 import { Project } from '../store/schema';
+import { useFirestoreSubscription } from './useFirestoreSubscription';
 import { useWorkspace } from './useWorkspace';
 
 export const useProjects = () => {
     const { workspaceId, loading: authLoading } = useWorkspace();
-    const isCancelledRef = useRef(false);
+    const queryClient = useQueryClient();
 
-    const [projects, setProjects] = useState<Project[]>(() => {
-        if (workspaceId) return getProjects(workspaceId);
-        return [];
-    });
+    const subscribeFn = useCallback((onData: (data: Project[]) => void) => {
+        if (!workspaceId) return () => { };
+        return subscribeToProjects(workspaceId, onData);
+    }, [workspaceId]);
 
-    const [loading, setLoading] = useState(() => {
-        if (!workspaceId) return true;
-        return !isProjectsInitialized(workspaceId);
-    });
+    const { data: projects, isPending } = useFirestoreSubscription<Project[]>(
+        ['projects', workspaceId],
+        subscribeFn,
+        workspaceId ? getProjects(workspaceId) : []
+    );
 
-    useEffect(() => {
-        isCancelledRef.current = false;
+    const isCacheReady = workspaceId ? isProjectsInitialized(workspaceId) : false;
+    const loading = authLoading || (!!workspaceId && !isCacheReady && isPending);
 
-        if (!workspaceId) {
-            setProjects([]);
-            if (!authLoading) setLoading(false);
-            return;
-        }
-
-        // Initialize from cache if available to avoid loading state
-        if (isProjectsInitialized(workspaceId)) {
-            setProjects(getProjects(workspaceId));
-            setLoading(false);
-        } else {
-            setLoading(true);
-        }
-
-        const unsubscribe = subscribeToProjects(workspaceId, (newProjects) => {
-            if (!isCancelledRef.current) {
-                setProjects(newProjects);
-                setLoading(false);
-            }
-        });
-
-        return () => {
-            isCancelledRef.current = true;
-            unsubscribe();
-        };
-    }, [workspaceId, authLoading]);
-
-    /**
-     * Optimistic Update用: ローカル状態を一時的に上書きする
-     * Firestoreの購読が次のデータを受け取ると自動的に上書きされる
-     */
     const setProjectsOverride = (updatedProjects: Project[]) => {
         if (workspaceId) {
-            // Update local state immediately
-            setProjects(updatedProjects);
-            // Update store cache
+            // Update React Query cache
+            queryClient.setQueryData(['projects', workspaceId], updatedProjects);
+            // Update store cache (for non-hook consumers)
             updateProjectsCache(updatedProjects, workspaceId);
         }
     };
 
-    return { projects, loading: loading || authLoading, setProjectsOverride };
+    return { projects: projects || [], loading, setProjectsOverride };
 };

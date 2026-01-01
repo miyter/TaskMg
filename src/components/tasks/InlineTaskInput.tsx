@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../core/translations';
 import { addTask } from '../../store';
 import { toast } from '../../store/ui/toast-store';
 import { cn } from '../../utils/cn';
@@ -11,7 +12,10 @@ interface InlineTaskInputProps {
     initialValue?: string;
 }
 
-export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onCancel, onSuccess, placeholder = "タスク名を入力...", initialValue = '' }) => {
+export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onCancel, onSuccess, placeholder, initialValue = '' }) => {
+    const { t } = useTranslation();
+    const effectivePlaceholder = placeholder || t('inline_input.placeholder');
+
     const [title, setTitle] = useState(initialValue);
     const [isImportant, setIsImportant] = useState(false);
     const [isToday, setIsToday] = useState(false);
@@ -34,7 +38,7 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
             onSuccess?.();
         } catch (error) {
             console.error(error);
-            toast.error('タスクの追加に失敗しました');
+            toast.error(t('msg.task.create_fail'));
         } finally {
             setIsSubmitting(false);
         }
@@ -74,14 +78,14 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
     }, [onCancel, title]);
 
     return (
-        <div ref={containerRef} className={cn("glass-effect rounded-xl shadow-xl p-3 sm:p-4 border-blue-500/20 dark:border-blue-400/20 animate-in slide-in-from-top-2 duration-300", className)}>
-            <label htmlFor="inline-task-input" className="sr-only">タスク名</label>
+        <div ref={containerRef} className={cn("glass-effect rounded-xl shadow-xl p-3 sm:p-4 border border-blue-500/30 dark:border-blue-400/30 animate-in slide-in-from-top-2 duration-300 w-full", className)}>
+            <label htmlFor="inline-task-input" className="sr-only">{t('inline_input.label')}</label>
             <input
                 id="inline-task-input"
                 type="text"
                 autoFocus
-                className="w-full bg-transparent text-base font-medium text-gray-800 dark:text-gray-100 placeholder-gray-400 outline-none mb-3 sm:mb-4 focus:bg-white/50 dark:focus:bg-gray-800/50 p-2 -ml-2 rounded-lg transition-colors border border-transparent focus:border-blue-500/30"
-                placeholder={placeholder}
+                className="w-full bg-white/50 dark:bg-gray-800/50 text-base sm:text-lg font-medium text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 outline-none mb-3 sm:mb-4 focus:bg-white/80 dark:focus:bg-gray-800/80 p-3 rounded-lg transition-all border border-transparent focus:border-blue-500/30 focus:ring-2 focus:ring-blue-500/20"
+                placeholder={effectivePlaceholder}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -93,13 +97,13 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
                         type="button"
                         onClick={() => setIsToday(!isToday)}
                         className={cn(
-                            "transition-colors p-1.5 rounded-lg",
+                            "transition-colors p-2 rounded-lg",
                             isToday
                                 ? "text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30 dark:hover:bg-blue-900/50"
                                 : "text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                         )}
-                        aria-label={isToday ? "今日の日付を解除" : "今日やるタスクに設定"}
-                        title={isToday ? "今日の設定を解除" : "今日やる"}
+                        aria-label={isToday ? t('inline_input.aria_today_remove') : t('inline_input.aria_today')}
+                        title={isToday ? t('inline_input.tooltip_today_remove') : t('inline_input.tooltip_today')}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </button>
@@ -107,13 +111,13 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
                         type="button"
                         onClick={() => setIsImportant(!isImportant)}
                         className={cn(
-                            "transition-colors p-1.5 rounded-lg",
+                            "transition-colors p-2 rounded-lg",
                             isImportant
                                 ? "text-amber-500 bg-amber-50 hover:bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30 dark:hover:bg-amber-900/50"
                                 : "text-gray-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                         )}
-                        aria-label={isImportant ? "重要を解除" : "重要に設定"}
-                        title={isImportant ? "重要を解除" : "重要"}
+                        aria-label={isImportant ? t('inline_input.aria_important_remove') : t('inline_input.aria_important')}
+                        title={isImportant ? t('inline_input.tooltip_important_remove') : t('inline_input.tooltip_important')}
                     >
                         <svg className={cn("w-5 h-5", isImportant && "fill-current")} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
                     </button>
@@ -124,19 +128,19 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
                             type="button"
                             onClick={onCancel}
                             disabled={isSubmitting}
-                            className="px-3 py-1.5 sm:px-4 sm:py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all"
-                            aria-label="キャンセル"
+                            className="px-3 py-2 sm:px-4 sm:py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all"
+                            aria-label={t('modal.cancel')}
                         >
-                            キャンセル
+                            {t('modal.cancel')}
                         </button>
                     )}
                     <button
                         onClick={() => handleSubmit()}
                         disabled={!title.trim() || isSubmitting}
-                        className="px-4 py-1.5 sm:px-5 sm:py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-                        aria-label="タスクを追加"
+                        className="px-4 py-2 sm:px-5 sm:py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-1"
+                        aria-label={t('add_task')}
                     >
-                        {isSubmitting ? '追加中...' : 'タスクを追加'}
+                        {isSubmitting ? t('inline_input.adding') : t('add')}
                     </button>
                 </div>
             </div>

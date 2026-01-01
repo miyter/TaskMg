@@ -7,7 +7,7 @@
 **「目標（Target）から逆算して、日々の行動（Task）を設計する」** というコンセプトの元、OKR、WOOP、バックワード・デザインといった複数のフレームワークをシームレスに利用できます。
 
 ファイル総数: 117 ファイル (src/ 配下)
-総行数(LOC): 10,268 行 (src/ 配下)
+総行数(LOC): 11,925 行 (src/ 配下)
 
 ### 主な機能
 - **高度なタスク管理**: プロジェクト・ラベル・時間帯フィルタに加え、AND/OR 複合条件による柔軟な検索が可能。
@@ -28,6 +28,7 @@
 | **Hosting** | Cloudflare Workers | 高速なエッジネットワーク配信 |
 | **Styling** | Tailwind CSS 3 | プレミアムなデザインシステムとレスポンシブ対応 |
 | **DnD** | @dnd-kit/core 6, @dnd-kit/sortable 10 | タスク・セクションのドラッグ&ドロップ |
+| **Cache** | @tanstack/react-query 5 | 効率的なデータ取得とキャッシュ管理 |
 | **Date** | date-fns 4, date-fns-tz 3 | 日付操作とタイムゾーン管理 |
 
 ---
@@ -57,15 +58,15 @@ src/
 - **Core層** (`core/`): インフラ設定、認証、国際化などの基盤機能。
 
 ### 状態管理戦略
-- **Server State**: Firestore のリアルタイム購読 (`onSnapshot`) で常に最新データを維持。
+- **Server State**: Firestore のリアルタイム購読 (`onSnapshot`) + React Query によるキャッシュ管理。
 - **UI State**: Zustand + `persist` middleware で localStorage に永続化。
 - **Derived State**: `useMemo` / セレクタで計算。不要な再レンダリングを抑制。
 
 ### データフロー
 ```
-Firestore → subscribeToXxx() → Hook (useState) → Component
-     ↑                                    ↓
-     └──────── addXxx() / updateXxx() ←───┘
+Firestore → subscribeToXxx() → React Query Cache → Hook → Component
+     ↑                                                ↓
+     └──────── addXxx() / updateXxx() ←───────────────┘
 ```
 
 ### 設計原則
@@ -81,8 +82,8 @@ Firestore → subscribeToXxx() → Hook (useState) → Component
 
 💎 **健全性: 極めて良好**
 
-2026-01-01 の大規模リファクタリング後の統合確認により、Firebase SDK のエクスポート不備が発見されましたが、即座に修正（`src/core/firebase-sdk.ts`）され、現在はブラウザでの正常動作が確認されています。
+2026-01-01、アーキテクチャの刷新（Multi-Workspaceの完全実装、TanStack Queryの導入、カスタムイベントシステムの廃止）を完了しました。コードベースは非常にモダンかつメンテナンス性の高い状態に保たれています。
 
 - **フェーズ**: 機能安定化 / メンテナンスフェーズ
-- **最新の確認**: 2026-01-01 ブラウザテスト合格（ホワイトスクリーン解消）
-- **残存課題**: [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) (長期改善項目のみ)
+- **最新の確認**: 2026-01-01 技術的負債の解消完了 (TSC Error 0件)
+- **残存課題**: [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) (なし)

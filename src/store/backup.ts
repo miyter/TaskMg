@@ -25,10 +25,10 @@ export async function createBackupData(userId: string, workspaceId: string) {
     try {
         const tasksRef = collection(db, paths.tasks(userId, workspaceId));
         const projectsRef = collection(db, paths.projects(userId, workspaceId));
-        const labelsRef = collection(db, paths.labels(userId));
+        const labelsRef = collection(db, paths.labels(userId, workspaceId));
         const targetsRef = collection(db, paths.targets(userId, workspaceId));
-        const timeBlocksRef = collection(db, paths.timeblocks(userId));
-        const filtersRef = collection(db, paths.filters(userId));
+        const timeBlocksRef = collection(db, paths.timeblocks(userId, workspaceId));
+        const filtersRef = collection(db, paths.filters(userId, workspaceId));
 
         const [tasksSnap, projectsSnap, labelsSnap, targetsSnap, timeBlocksSnap, filtersSnap] = await Promise.all([
             getDocs(tasksRef),
@@ -89,7 +89,7 @@ export async function importBackupData(userId: string, workspaceId: string, back
         const labelMap = new Map<string, string>();   // OldID -> NewID
 
         // 1. ラベルのインポート (名前重複チェック)
-        const currentLabelsSnap = await getDocs(collection(db, paths.labels(userId)));
+        const currentLabelsSnap = await getDocs(collection(db, paths.labels(userId, workspaceId)));
         const currentLabelNames = new Map<string, string>();
         currentLabelsSnap.forEach(doc => currentLabelNames.set(doc.data().name, doc.id));
 
@@ -101,7 +101,7 @@ export async function importBackupData(userId: string, workspaceId: string, back
             } else {
                 const newLabelData = { ...label };
                 delete newLabelData.id;
-                const docRef = await addDoc(collection(db, paths.labels(userId)), newLabelData);
+                const docRef = await addDoc(collection(db, paths.labels(userId, workspaceId)), newLabelData);
                 labelMap.set(label.id, docRef.id);
                 currentLabelNames.set(label.name, docRef.id);
             }
@@ -124,7 +124,7 @@ export async function importBackupData(userId: string, workspaceId: string, back
         for (const tb of timeBlocks) {
             const newTbData = { ...tb };
             delete newTbData.id;
-            await addDoc(collection(db, paths.timeblocks(userId)), newTbData);
+            await addDoc(collection(db, paths.timeblocks(userId, workspaceId)), newTbData);
         }
 
         // 4. Custom Filtersのインポート
@@ -134,7 +134,7 @@ export async function importBackupData(userId: string, workspaceId: string, back
             if (typeof newFilterData.createdAt === 'string') {
                 newFilterData.createdAt = new Date(newFilterData.createdAt);
             }
-            await addDoc(collection(db, paths.filters(userId)), newFilterData);
+            await addDoc(collection(db, paths.filters(userId, workspaceId)), newFilterData);
         }
 
         // 5. Targetsのインポート

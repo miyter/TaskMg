@@ -38,13 +38,15 @@ const defaultTimeBlocks: TimeBlock[] = [
 export function subscribeToTimeBlocks(workspaceId: string, callback: (blocks: TimeBlock[]) => void): Unsubscribe {
     const userId = auth.currentUser?.uid;
 
-    if (!userId) {
-        timeBlocks = [...defaultTimeBlocks];
+    if (!userId || !workspaceId) {
+        // Return default blocks if no workspace ID (e.g. initial load or error)
+        // Ideally we should wait for workspaceId
+        timeBlocks = [];
         if (typeof callback === 'function') callback(timeBlocks);
         return () => { };
     }
 
-    const path = paths.timeblocks(userId);
+    const path = paths.timeblocks(userId, workspaceId);
     const q = query(collection(db, path), orderBy('order', 'asc'));
 
     return onSnapshot(q, (snapshot) => {
@@ -72,10 +74,10 @@ export function clearTimeBlocksCache() {
     timeBlocks = [];
 }
 
-export async function saveTimeBlock(block: Partial<TimeBlock>): Promise<boolean | undefined> {
+export async function saveTimeBlock(workspaceId: string, block: Partial<TimeBlock>): Promise<boolean | undefined> {
     const userId = auth.currentUser?.uid;
-    if (!userId) {
-        console.error('Authentication required for TimeBlock operation.');
+    if (!userId || !workspaceId) {
+        console.error('Authentication and WorkspaceID required for TimeBlock operation.');
         return;
     }
 
@@ -83,7 +85,7 @@ export async function saveTimeBlock(block: Partial<TimeBlock>): Promise<boolean 
         // Validate partial block if needed, but for now we trust mostly
         // TimeBlockSchema.partial().parse(block);
 
-        const path = paths.timeblocks(userId);
+        const path = paths.timeblocks(userId, workspaceId);
         const id = block.id || crypto.randomUUID();
         const nextOrder = block.order !== undefined
             ? block.order
@@ -108,11 +110,11 @@ export async function saveTimeBlock(block: Partial<TimeBlock>): Promise<boolean 
     }
 }
 
-export async function deleteTimeBlock(id: string): Promise<boolean | undefined> {
+export async function deleteTimeBlock(workspaceId: string, id: string): Promise<boolean | undefined> {
     const userId = auth.currentUser?.uid;
-    if (!userId) return;
+    if (!userId || !workspaceId) return;
     try {
-        const path = paths.timeblocks(userId);
+        const path = paths.timeblocks(userId, workspaceId);
         await deleteDoc(doc(db, path, id));
         return true;
     } catch (e) {
@@ -120,11 +122,11 @@ export async function deleteTimeBlock(id: string): Promise<boolean | undefined> 
     }
 }
 
-export async function updateTimeBlockOrder(orderedIds: string[]) {
+export async function updateTimeBlockOrder(workspaceId: string, orderedIds: string[]) {
     const userId = auth.currentUser?.uid;
-    if (!userId) return;
+    if (!userId || !workspaceId) return;
     try {
-        const path = paths.timeblocks(userId);
+        const path = paths.timeblocks(userId, workspaceId);
         const batch = writeBatch(db);
         orderedIds.forEach((id, index) => {
             const ref = doc(db, path, id);
