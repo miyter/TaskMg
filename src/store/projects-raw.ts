@@ -126,12 +126,13 @@ export function getProjects(workspaceId: string): Project[] {
 /**
  * 新しいプロジェクトを追加する (RAW)
  */
-export async function addProjectRaw(userId: string, workspaceId: string, name: string) {
+export async function addProjectRaw(userId: string, workspaceId: string, name: string, color?: string) {
     return withRetry(async () => {
         const path = paths.projects(userId, workspaceId);
 
         await addDoc(collection(db, path), {
             name,
+            color,
             ownerId: userId,
             createdAt: serverTimestamp()
         });

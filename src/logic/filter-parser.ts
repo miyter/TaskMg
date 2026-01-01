@@ -123,49 +123,55 @@ export function parseFilterQuery(query: string): FilterConditions {
             switch (key) {
                 case 'project':
                 case 'p':
-                    if (isNegative) conditions.excludeProjects.push(val);
-                    else conditions.projects.push(val);
+                    if (isNegative) val.split(',').forEach(v => conditions.excludeProjects.push(v));
+                    else val.split(',').forEach(v => conditions.projects.push(v));
                     break;
                 case 'label':
                 case 'l':
-                    if (isNegative) conditions.excludeLabels.push(val);
-                    else conditions.labels.push(val);
+                    if (isNegative) val.split(',').forEach(v => conditions.excludeLabels.push(v));
+                    else val.split(',').forEach(v => conditions.labels.push(v));
                     break;
                 case 'timeblock':
                 case 'tb':
-                    if (isNegative) conditions.excludeTimeBlocks.push(val);
-                    else conditions.timeBlocks.push(val);
+                    if (isNegative) val.split(',').forEach(v => conditions.excludeTimeBlocks.push(v));
+                    else val.split(',').forEach(v => conditions.timeBlocks.push(v));
                     break;
                 case 'duration':
                 case 'd':
-                    const d = parseInt(val, 10);
-                    if (!isNaN(d)) conditions.durations.push(d);
+                    val.split(',').forEach(v => {
+                        const d = parseInt(v, 10);
+                        if (!isNaN(d)) conditions.durations.push(d);
+                    });
                     break;
                 case 'date':
                 case 'due':
-                    const validDates = ['today', 'tomorrow', 'week', 'upcoming', 'overdue'];
-                    if (validDates.includes(lowerVal)) {
-                        conditions.dates.push(lowerVal);
-                    }
+                    const validDates = ['today', 'tomorrow', 'week', 'upcoming', 'overdue', 'next-week'];
+                    val.split(',').forEach(v => {
+                        const lowerV = v.toLowerCase();
+                        if (validDates.includes(lowerV)) {
+                            conditions.dates.push(lowerV);
+                        }
+                    });
                     break;
                 case 'status':
                 case 'is':
                     const validStatus = ['completed', 'active', 'todo'];
-                    if (validStatus.includes(lowerVal)) {
-                        if (isNegative) conditions.excludeStatus.push(lowerVal);
-                        else conditions.status.push(lowerVal);
-                    }
-                    if (lowerVal === 'important') {
-                        conditions.isImportant = !isNegative;
-                    }
-                    if (lowerVal === 'unimportant') {
-                        conditions.isImportant = isNegative; // -is:unimportant -> isImportant=true
-                    }
+                    val.split(',').forEach(v => {
+                        const lowerV = v.toLowerCase();
+                        if (validStatus.includes(lowerV)) {
+                            if (isNegative) conditions.excludeStatus.push(lowerV);
+                            else conditions.status.push(lowerV);
+                        }
+                        if (lowerV === 'important') {
+                            conditions.isImportant = !isNegative;
+                        }
+                        if (lowerV === 'unimportant') {
+                            conditions.isImportant = isNegative; // -is:unimportant -> isImportant=true
+                        }
+                    });
                     break;
                 default:
                     // Unknown prefix treated as keyword
-                    // e.g. unknown:value -> treat as keyword "unknown:value"
-                    // If negative, -unknown:value -> exclude "unknown:value"
                     if (isNegative) conditions.excludeKeywords.push(tokenStr.toLowerCase());
                     else conditions.keywords.push(tokenStr.toLowerCase());
                     break;
@@ -178,4 +184,40 @@ export function parseFilterQuery(query: string): FilterConditions {
     });
 
     return conditions;
+}
+
+export function stringifyFilterConditions(conditions: Partial<FilterConditions>): string {
+    const parts: string[] = [];
+
+    // Keywords
+    if (conditions.keywords?.length) parts.push(...conditions.keywords.map(k => Array.isArray(k) ? k.join(' OR ') : k.includes(' ') ? `"${k}"` : k));
+    if (conditions.excludeKeywords?.length) parts.push(...conditions.excludeKeywords.map(k => `-${k}`));
+
+    // Projects
+    if (conditions.projects?.length) parts.push(`project:${conditions.projects.join(',')}`);
+    if (conditions.excludeProjects?.length) parts.push(`-project:${conditions.excludeProjects.join(',')}`);
+
+    // Labels
+    if (conditions.labels?.length) parts.push(`label:${conditions.labels.join(',')}`);
+    if (conditions.excludeLabels?.length) parts.push(`-label:${conditions.excludeLabels.join(',')}`);
+
+    // TimeBlocks
+    if (conditions.timeBlocks?.length) parts.push(`timeblock:${conditions.timeBlocks.join(',')}`);
+    if (conditions.excludeTimeBlocks?.length) parts.push(`-timeblock:${conditions.excludeTimeBlocks.join(',')}`);
+
+    // Durations
+    if (conditions.durations?.length) parts.push(`duration:${conditions.durations.join(',')}`);
+
+    // Dates
+    if (conditions.dates?.length) parts.push(`date:${conditions.dates.join(',')}`);
+
+    // Status
+    if (conditions.status?.length) parts.push(`status:${conditions.status.join(',')}`);
+    if (conditions.excludeStatus?.length) parts.push(`-status:${conditions.excludeStatus.join(',')}`);
+
+    // Important
+    if (conditions.isImportant === true) parts.push('is:important');
+    if (conditions.isImportant === false) parts.push('is:unimportant');
+
+    return parts.join(' ');
 }

@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 import { auth } from '../../core/firebase';
 import { EmailAuthProvider, linkWithCredential, signOut } from '../../core/firebase-sdk';
+import { useAuth } from '../../hooks/useAuth';
 import { toast } from '../../store/ui/toast-store';
 
 export const AccountSettingsTab: React.FC = () => {
-    const user = auth.currentUser;
+    const { user } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-
-    // 強制再レンダリング用（auth.currentUserの変更を検知するため、あるいは単純に表示用）
-    // note: auth.currentUserはリアクティブではないため、onAuthStateChangedが必要だが
-    // SettingsModalが開いている間に状態が変わるケースは少ないため、今回は簡易実装。
-    // link成功後にUIを更新するためにstateを使用。
-    const [isAnonymous, setIsAnonymous] = useState(user?.isAnonymous ?? false);
     const [error, setError] = useState<string | null>(null);
 
     if (!user) return <div className="text-center text-gray-500">ログインしていません</div>;
+
+    const isAnonymous = user.isAnonymous;
 
     const handleLinkAccount = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,14 +23,13 @@ export const AccountSettingsTab: React.FC = () => {
             const credential = EmailAuthProvider.credential(email, password);
             await linkWithCredential(user, credential);
             toast.success("アカウントを登録しました！");
-            setIsAnonymous(false); // UI更新
+            // isAnonymous will update automatically via useAuth
         } catch (error: any) {
             console.error("Link account error:", error);
             let msg = "登録に失敗しました";
             if (error.code === 'auth/email-already-in-use') msg = "このメールアドレスは既に使用されています";
             if (error.code === 'auth/weak-password') msg = "パスワードが弱すぎます";
             setError(msg); // Set inline error
-            toast.error(msg); // Keep toast for visibility
         } finally {
             setLoading(false);
         }
@@ -82,8 +78,8 @@ export const AccountSettingsTab: React.FC = () => {
                         <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                             <span>🔐</span> アカウントを永続化
                         </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                            現在のアカウントは一時的なものです。<br />
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-6 leading-relaxed whitespace-pre-wrap">
+                            現在のアカウントは一時的なものです。
                             メールアドレスを登録すると、別のデバイスでもログインしてデータを引き継ぐことができます。
                         </p>
 
@@ -104,6 +100,7 @@ export const AccountSettingsTab: React.FC = () => {
                                     onChange={e => setEmail(e.target.value)}
                                     className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                     placeholder="mail@example.com"
+                                    autoComplete="email"
                                 />
                             </div>
                             <div>
@@ -117,6 +114,7 @@ export const AccountSettingsTab: React.FC = () => {
                                     onChange={e => setPassword(e.target.value)}
                                     className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                     placeholder="••••••••"
+                                    autoComplete="new-password"
                                 />
                             </div>
                             <button

@@ -14,11 +14,12 @@ interface ModalProps {
     title?: string;
     children: React.ReactNode;
     className?: string;
+    overlayClassName?: string;
     zIndex?: number;
     size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className, zIndex = 100, size = 'md' }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className, overlayClassName, zIndex = 100, size = 'md' }) => {
     const modalRef = useRef<HTMLDivElement>(null);
 
     const sizeClasses = {
@@ -95,7 +96,14 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             aria-modal="true"
             aria-labelledby={title ? "modal-title" : undefined}
         >
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={onClose} aria-hidden="true" />
+            <div
+                className={cn(
+                    "fixed inset-0 backdrop-blur-sm transition-opacity",
+                    overlayClassName ?? "bg-black/50"
+                )}
+                onClick={onClose}
+                aria-hidden="true"
+            />
             <div
                 ref={modalRef}
                 tabIndex={-1} // Allow focus fallack

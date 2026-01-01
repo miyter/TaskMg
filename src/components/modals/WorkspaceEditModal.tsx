@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Workspace } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
 import { addWorkspace, getWorkspaces, setCurrentWorkspaceId, updateWorkspaceName } from '../../store/workspace';
+import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
 
 /**
@@ -105,9 +106,7 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
                 </p>
 
                 {/* Error */}
-                {error && (
-                    <p className="text-sm text-red-500 text-center">{error}</p>
-                )}
+                <ErrorMessage message={error} />
 
                 {/* Footer */}
                 <div className="flex justify-end items-center pt-4 border-t border-gray-200 dark:border-gray-700 gap-3">

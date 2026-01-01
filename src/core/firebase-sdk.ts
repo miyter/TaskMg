@@ -4,9 +4,8 @@
 
 // --- 認証 (Authentication) ---
 export {
-    getAuth, onAuthStateChanged,
-    signInWithCustomToken, signInWithEmailAndPassword, signOut, updatePassword,
-    type User,
+    EmailAuthProvider, getAuth, linkWithCredential, onAuthStateChanged,
+    signInWithCustomToken, signInWithEmailAndPassword, signOut, updatePassword, type User,
     type UserCredential
 } from "firebase/auth";
 

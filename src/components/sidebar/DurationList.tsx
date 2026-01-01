@@ -1,47 +1,35 @@
-import { useDroppable } from '@dnd-kit/core';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { useTasks } from '../../hooks/useTasks';
-import { useFilterStore } from '../../store/ui/filter-store';
-import { SidebarItem } from './SidebarItem';
+import { DurationItem } from './DurationItem';
 
 export const DurationList: React.FC = () => {
     const { tasks } = useTasks();
     const durations = UI_CONFIG.SIDEBAR.DURATIONS;
 
+    // Memoize counts
+    const counts = useMemo(() => {
+        const map = new Map<number, number>();
+        tasks.forEach(t => {
+            if (t.status !== 'completed' && t.duration) {
+                const d = Number(t.duration);
+                if (!isNaN(d)) {
+                    map.set(d, (map.get(d) || 0) + 1);
+                }
+            }
+        });
+        return map;
+    }, [tasks]);
+
     return (
         <div className="space-y-0.5 py-1">
             {durations.map(mins => (
-                <DurationItem key={mins} mins={mins} tasks={tasks} />
+                <DurationItem
+                    key={mins}
+                    mins={mins}
+                    count={counts.get(mins) || 0}
+                />
             ))}
-        </div>
-    );
-};
-
-const DurationItem: React.FC<{ mins: number, tasks: any[] }> = ({ mins, tasks }) => {
-    const { filterType, targetId, setFilter } = useFilterStore();
-    const isActive = filterType === 'duration' && targetId === mins.toString();
-
-    const count = tasks.filter(t => t.status !== 'completed' && Number(t.duration) === mins).length;
-
-    const { setNodeRef, isOver } = useDroppable({
-        id: `duration:${mins}`,
-        data: {
-            type: 'duration',
-            value: mins.toString()
-        }
-    });
-
-    return (
-        <div ref={setNodeRef}>
-            <SidebarItem
-                label={`${mins} min`}
-                icon={<span>⏱️</span>}
-                count={count}
-                isActive={isActive}
-                isOver={isOver}
-                onClick={() => setFilter('duration', mins.toString())}
-            />
         </div>
     );
 };

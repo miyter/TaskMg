@@ -76,14 +76,14 @@ export const subscribeToProjects = (workspaceId: string | ((projects: Project[])
 /**
  * 新しいプロジェクトを追加する
  */
-export const addProject = async (name: string, workspaceId: string | null = null) => {
+export const addProject = async (name: string, workspaceId: string | null = null, color?: string) => {
     const user = auth.currentUser;
     if (!user) throw new Error('Authentication required.');
 
     const targetWorkspaceId = workspaceId || getCurrentWorkspaceId();
     if (!targetWorkspaceId) throw new Error('Workspace selection required.');
 
-    return addProjectRaw(user.uid, targetWorkspaceId, name);
+    return addProjectRaw(user.uid, targetWorkspaceId, name, color);
 };
 
 /**

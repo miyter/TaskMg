@@ -1,13 +1,13 @@
 # TaskMg プロジェクト状況ドキュメント
 
-**最終更新**: 2025-12-31
+**最終更新**: 2026-01-01
 
 ## 📝 プロダクト概要
 **TaskMg** は、目標達成とタスク管理を統合した先進的な Web アプリケーションです。
 **「目標（Target）から逆算して、日々の行動（Task）を設計する」** というコンセプトの元、OKR、WOOP、バックワード・デザインといった複数のフレームワークをシームレスに利用できます。
 
-ファイル総数: 110 ファイル
-総行数(LOC): 9,694 行
+ファイル総数: 159 ファイル (推定)
+総行数(LOC): 10,129 行 (src/ 配下)
 
 ### 主な機能
 - **高度なタスク管理**: プロジェクト・ラベル・時間帯フィルタに加え、AND/OR 複合条件による柔軟な検索が可能。
@@ -38,7 +38,7 @@ src/
 ├── features/        # 機能モジュール (target-dashboard, wiki, wizard)
 ├── hooks/           # カスタムフック (データ購読, DnD, テーマ管理)
 ├── store/           # 状態管理 (Zustand ストアおよび Firestore CRUD)
-├── core/            # Firebase 設定・認証
+├── core/            # Firebase 設定・認証・i18n
 ├── logic/           # 純粋なビジネスロジック (検索, フィルタ解析)
 └── utils/           # 汎用ユーティリティ
 ```
@@ -52,6 +52,7 @@ src/
 - **Hook層** (`hooks/`): データ購読とコンポーネントへの橋渡し。副作用の管理。
 - **Store層** (`store/`): Zustand による UI 状態 + Firestore CRUD 操作のカプセル化。
 - **Logic層** (`logic/`): 純粋関数によるビジネスロジック。テスト容易性を確保。
+- **Core層** (`core/`): インフラ設定、認証、国際化などの基盤機能。
 
 ### 状態管理戦略
 - **Server State**: Firestore のリアルタイム購読 (`onSnapshot`) で常に最新データを維持。
@@ -70,6 +71,7 @@ Firestore → subscribeToXxx() → Hook (useState) → Component
 2. **関心の分離**: `store/xxx.ts` (公開API) と `store/xxx-raw.ts` (内部実装) の分離。
 3. **統一シグネチャ**: 全 subscribe 関数は `(workspaceId, callback)` 形式に統一。
 4. **エラー可視化**: Toast 通知によるユーザーフィードバック。
+5. **i18n**: ネストされたキー構造による型安全な翻訳管理。
 
 ---
 
@@ -77,8 +79,9 @@ Firestore → subscribeToXxx() → Hook (useState) → Component
 
 💎 **健全性: 極めて良好**
 
-主要な技術的負債、UI/UX の不整合、および機能不足はすべて解消されました。
+2026-01-01 の大規模リファクタリングにより、コンポーネントの安定性、型安全性、i18n対応が完了しました。
 React Hooks による適切なデータ購読、Zustand による状態管理、および Zod による型安全性が確立されています。
 
+- **フェーズ**: リファクタリング完了 / 機能安定化フェーズ
 - **変更履歴**: AIコンテキスト（トークン）節約のため、詳細な変更履歴は Git ログを参照してください。
-- **残存課題**: [KNOWN_ISSUES.md](./KNOWN_ISSUES.md)
+- **残存課題**: [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) (長期的改善項目のみ)

@@ -35,6 +35,7 @@ export const SidebarSection: React.FC<SidebarSectionProps & { action?: React.Rea
                     <svg
                         className={cn("w-3 h-3 mr-1 transition-transform", isExpanded ? "rotate-90" : "")}
                         fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        aria-hidden="true"
                     >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
                     </svg>

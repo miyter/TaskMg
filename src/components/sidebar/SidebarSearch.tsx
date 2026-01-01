@@ -74,6 +74,7 @@ export const SidebarSearch: React.FC = () => {
                         type="button"
                         onClick={handleClear}
                         className="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        aria-label="検索をクリア"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

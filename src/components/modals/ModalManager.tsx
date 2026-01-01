@@ -21,18 +21,20 @@ export const ModalManager: React.FC = () => {
     return (
         <>
             {stack.map((modal, index) => {
-                const isLast = index === stack.length - 1;
-                // For now, most components ignore props and read store. 
-                // They will only render if they match activeModal (which is the last item).
-                // To enable true stacking, components must be refactored to accept 'isOpen' and 'data' props.
-                // We pass them here in preparation.
+                const isFirst = index === 0;
+                // スタック内の順序に応じてz-indexとオーバーレイを調整
+                // 2枚目以降は背景を少しだけ暗くする（完全な透明だと重なりが分かりにくい、濃すぎると見づらい）
+                const overlayStyle = isFirst ? undefined : "bg-black/20"; // undefined defaults to bg-black/50
+
                 const props = {
-                    key: modal.id,
-                    isOpen: true, // Force open if we want stacking (requires component update)
+                    key: modal.id, // modal.id is unique per instance
+                    isOpen: true,
                     data: modal.data,
-                    zIndex: 100 + index * 10
+                    zIndex: 100 + index * 10,
+                    overlayClassName: overlayStyle
                 };
 
+                // Note: All modal components must accept StandardModalProps (isOpen, data, zIndex, overlayClassName)
                 switch (modal.type) {
                     case 'settings': return <SettingsModal {...props} />;
                     case 'task-detail': return <TaskDetailModal {...props} />;

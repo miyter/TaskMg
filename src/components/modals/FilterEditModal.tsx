@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
+import { parseFilterQuery as parseLogicQuery, stringifyFilterConditions } from '../../logic/filter-parser';
 import { addFilter, updateFilter } from '../../store';
 import { Filter } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
+import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
+import { SelectionBox } from '../common/SelectionBox';
 
 const UNASSIGNED_ID = 'none';
 
@@ -15,22 +18,14 @@ interface FilterState {
     date: string[];
 }
 
-const parseFilterQuery = (query: string): FilterState => {
-    const result: FilterState = { project: [], timeblock: [], duration: [], date: [] };
-    if (!query) return result;
-
-    query.split(/\s+/).forEach(part => {
-        if (!part.includes(':')) return;
-        const [key, val] = part.split(':');
-        if (Object.prototype.hasOwnProperty.call(result, key)) {
-            const values = val.split(',').map(v => {
-                if (key === 'timeblock' && (v === 'null' || v === 'none')) return UNASSIGNED_ID;
-                return v;
-            });
-            result[key as keyof FilterState] = [...result[key as keyof FilterState], ...values];
-        }
-    });
-    return result;
+const mapQueryToState = (query: string): FilterState => {
+    const conditions = parseLogicQuery(query);
+    return {
+        project: conditions.projects,
+        timeblock: conditions.timeBlocks.map(tb => (tb === 'null' || tb === 'none') ? UNASSIGNED_ID : tb),
+        duration: conditions.durations.map(d => d.toString()),
+        date: conditions.dates
+    };
 };
 
 const durations = [30, 45, 60, 75, 90];
@@ -45,9 +40,10 @@ interface FilterEditModalProps {
     isOpen?: boolean;
     data?: any;
     zIndex?: number;
+    overlayClassName?: string;
 }
 
-export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
+export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex, overlayClassName }) => {
     const { closeModal } = useModalStore();
     const isOpen = !!propIsOpen;
     const filterToEdit = propData as Filter | null;
@@ -64,7 +60,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
     useEffect(() => {
         if (isOpen) {
             setName(filterToEdit?.name || '');
-            setState(parseFilterQuery(filterToEdit?.query || ''));
+            setState(mapQueryToState(filterToEdit?.query || ''));
             setError(null);
             setLoading(false);
         }
@@ -87,23 +83,17 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
             return;
         }
 
-        const queryMap = {
-            project: state.project,
-            timeblock: state.timeblock.map(v => v === UNASSIGNED_ID ? 'null' : v),
-            duration: state.duration,
-            date: state.date
-        };
+        const queryStr = stringifyFilterConditions({
+            projects: state.project,
+            timeBlocks: state.timeblock.map(v => v === UNASSIGNED_ID ? 'null' : v),
+            durations: state.duration.map(Number),
+            dates: state.date
+        });
 
-        const queryParts = Object.entries(queryMap)
-            .filter(([_, v]) => v.length > 0)
-            .map(([k, v]) => `${k}:${v.join(',')}`);
-
-        if (queryParts.length === 0) {
+        if (!queryStr) {
             setError('少なくとも1つの条件を選択してください');
             return;
         }
-
-        const queryStr = queryParts.join(' ');
         setLoading(true);
         setError(null);
 
@@ -114,7 +104,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
             } else {
                 await addFilter(data);
             }
-            document.dispatchEvent(new CustomEvent('filters-updated'));
+
             closeModal();
         } catch (err: any) {
             setError('保存に失敗しました: ' + (err.message || '不明なエラー'));
@@ -125,7 +115,14 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
     if (!isOpen) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} title={isEditMode ? 'フィルター編集' : 'フィルター作成'} className="max-w-4xl">
+        <Modal
+            isOpen={isOpen}
+            onClose={closeModal}
+            title={isEditMode ? 'フィルター編集' : 'フィルター作成'}
+            className="max-w-4xl"
+            zIndex={zIndex}
+            overlayClassName={overlayClassName}
+        >
             <div className="space-y-6">
                 <div>
                     <label htmlFor="filter-name-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">フィルター名</label>
@@ -141,7 +138,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Project Selection */}
                     <SelectionBox
                         title="プロジェクト"
@@ -176,9 +173,8 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
                     />
                 </div>
 
-                {error && (
-                    <p className="text-sm text-red-500 text-center">{error}</p>
-                )}
+                {/* Error */}
+                <ErrorMessage message={error} />
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                     <button
@@ -197,49 +193,5 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
                 </div>
             </div>
         </Modal>
-    );
-};
-
-interface SelectionBoxProps {
-    title: string;
-    items: any[];
-    selectedItems: string[];
-    onToggle: (id: string) => void;
-    labelFn?: (item: any) => string;
-}
-
-const SelectionBox: React.FC<SelectionBoxProps> = ({ title, items, selectedItems, onToggle, labelFn = (i: any) => i.name }) => {
-    return (
-        <div className="flex flex-col h-64 border border-gray-100 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
-            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                {title}
-            </div>
-            <div className="p-2 overflow-y-auto space-y-1 custom-scrollbar">
-                {items.map((item) => {
-                    const id = item.id || item.toString();
-                    const isChecked = selectedItems.includes(id);
-                    const inputId = `filter-${title}-${id}`;
-                    return (
-                        <div
-                            key={id}
-                            className="flex items-center px-2 py-1.5 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
-                            onClick={() => onToggle(id)}
-                        >
-                            <input
-                                id={inputId}
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => { }}
-                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                                aria-label={`${title}: ${labelFn(item)}`}
-                            />
-                            <label htmlFor={inputId} className="ml-2 text-sm text-gray-700 dark:text-gray-300 truncate flex-1 cursor-pointer pointer-events-none">
-                                {labelFn(item)}
-                            </label>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
     );
 };

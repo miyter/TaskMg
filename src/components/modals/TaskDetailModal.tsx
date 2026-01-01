@@ -8,6 +8,7 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { cn } from '../../utils/cn';
 import { formatDateForInput, getInitialDueDateFromRecurrence, parseDateInput, toDate } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
+import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
 
 // --- 定数 ---
@@ -30,9 +31,10 @@ interface TaskDetailModalProps {
     isOpen?: boolean;
     data?: any;
     zIndex?: number;
+    overlayClassName?: string;
 }
 
-export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
+export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex, overlayClassName }) => {
     const { closeModal } = useModalStore();
     const isOpen = !!propIsOpen;
     const task = propData as Task | null;
@@ -55,7 +57,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     const [duration, setDuration] = useState<number | null>(null);
     const [showPreview, setShowPreview] = useState(false);
     const [scheduleOpen, setScheduleOpen] = useState(false);
-    const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // --- 初期化 ---
     useEffect(() => {
@@ -82,26 +84,26 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             }
 
             // スケジュールセクションの開閉判定
+            // 新規タスク時またはデータがある場合は開く
             const hasScheduleData = !!(parsedDueDate || rec?.type !== 'none' || task.timeBlockId || task.duration);
-            setScheduleOpen(hasScheduleData);
+            setScheduleOpen(hasScheduleData || isNewTask);
 
             // プレビュー: 内容があればプレビュー、なければ編集モード
             setShowPreview(!!(task.description?.trim()));
-
-            setIsDeleteConfirming(false);
         }
-    }, [task, isOpen]);
+    }, [task, isOpen]); // isNewTask is derived from task
 
     // --- Handlers ---
     const handleSave = useCallback(async () => {
+        setError(null);
         if (!title.trim()) {
-            alert('タイトルを入力してください');
+            setError('タイトルを入力してください');
             return;
         }
 
         // 繰り返しがweeklyなのに曜日未選択の場合
         if (recurrence?.type === 'weekly' && (!recurrence.days || recurrence.days.length === 0)) {
-            alert('曜日を選択してください');
+            setError('曜日を選択してください');
             return;
         }
 
@@ -129,30 +131,27 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             closeModal();
         } catch (e) {
             console.error('Failed to save task', e);
-            alert('保存に失敗しました');
+            setError('保存に失敗しました');
         }
     }, [title, description, projectId, status, isImportant, dueDate, recurrence, timeBlockId, duration, isNewTask, task, closeModal]);
 
     const handleDelete = useCallback(async (e?: React.MouseEvent) => {
         e?.preventDefault();
         e?.stopPropagation();
+        setError(null);
 
         if (!task?.id || isNewTask) return;
 
-        if (!isDeleteConfirming) {
-            setIsDeleteConfirming(true);
-            return;
-        }
+        if (!confirm('本当にこのタスクを削除しますか？')) return;
 
         try {
             await deleteTask(task.id);
             closeModal();
         } catch (e) {
             console.error('Failed to delete task', e);
-            alert('削除に失敗しました');
-            setIsDeleteConfirming(false);
+            setError('削除に失敗しました');
         }
-    }, [task?.id, isNewTask, isDeleteConfirming, closeModal]);
+    }, [task?.id, isNewTask, closeModal]);
 
     const handleRecurrenceTypeChange = useCallback((type: string) => {
         let newDays: number[] = [];
@@ -187,7 +186,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     if (!isOpen) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} zIndex={zIndex} className="max-w-4xl h-[95vh] sm:h-[85vh] w-full mx-2 sm:mx-auto mt-4 sm:mt-0 pb-safe">
+        <Modal
+            isOpen={isOpen}
+            onClose={closeModal}
+            zIndex={zIndex}
+            className="max-w-4xl h-[95vh] sm:h-[85vh] w-full mx-2 sm:mx-auto mt-4 sm:mt-0 pb-safe"
+            overlayClassName={overlayClassName}
+        >
             <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4 shrink-0">
@@ -227,9 +232,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                    <ErrorMessage message={error} className="mb-4" />
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
-                        {/* Left Column: Memo (Mobile: order-last if needed, but standard is top) */}
-                        <div className="md:col-span-8 flex flex-col h-full min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+                        {/* Left Column: Memo (Desktop: Left, Mobile: Second) */}
+                        <div className="md:col-span-8 flex flex-col h-full min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 order-last md:order-first">
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -268,8 +274,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             </div>
                         </div>
 
-                        {/* Right Column: Settings */}
-                        <div className="md:col-span-4 space-y-4">
+                        {/* Right Column: Settings (Desktop: Right, Mobile: First) */}
+                        <div className="md:col-span-4 space-y-4 order-first md:order-last">
                             {/* Schedule Section */}
                             <details open={scheduleOpen} onToggle={(e) => setScheduleOpen(e.currentTarget.open)} className="group border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
                                 <summary
@@ -409,36 +415,16 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
                     {!isNewTask && (
                         <div className="flex items-center gap-2">
-                            {isDeleteConfirming ? (
-                                <>
-                                    <span className="text-sm font-bold text-red-600 animate-pulse">本当によろしいですか？</span>
-                                    <button
-                                        type="button"
-                                        onClick={handleDelete}
-                                        className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded transition font-medium text-sm"
-                                    >
-                                        削除を実行
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsDeleteConfirming(false)}
-                                        className="px-3 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition text-sm"
-                                    >
-                                        やめる
-                                    </button>
-                                </>
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={handleDelete}
-                                    className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition flex items-center gap-1.5"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                    削除
-                                </button>
-                            )}
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition flex items-center gap-1.5"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                削除
+                            </button>
                         </div>
                     )}
                     <div className={`flex gap-2 ${isNewTask ? 'ml-auto' : ''}`}>

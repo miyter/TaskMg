@@ -14,13 +14,29 @@ import { cleanupDuplicateTasks } from '../../store/maintenance';
 
 type SettingsTab = 'general' | 'appearance' | 'account' | 'advanced';
 
+const TabButton: React.FC<{ active: boolean; onClick: () => void; label: string; icon: string }> = ({ active, onClick, label, icon }) => (
+    <button
+        onClick={onClick}
+        className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 md:py-2 text-sm rounded-lg transition-all text-left whitespace-nowrap min-w-0 justify-start",
+            active
+                ? "bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 font-bold border border-gray-100 dark:border-gray-700"
+                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200"
+        )}
+    >
+        <span className="text-xl md:text-base">{icon}</span>
+        <span className="truncate font-medium">{label}</span>
+    </button>
+);
+
 interface SettingsModalProps {
     isOpen?: boolean;
-    data?: any; // unused but consistent
+    data?: any;
     zIndex?: number;
+    overlayClassName?: string;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen, zIndex }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen, zIndex, overlayClassName }) => {
     const { closeModal } = useModalStore();
     const {
         themeMode, setThemeMode,
@@ -37,18 +53,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
     const isOpen = !!propIsOpen;
 
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} title="設定" className="w-full max-w-3xl h-[85vh]">
-            <div className="flex flex-col md:flex-row h-full -m-6">
-                {/* Sidebar */}
-                <div className="w-full md:w-56 bg-white dark:bg-gray-900 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700/50 p-2 md:p-4 flex md:block overflow-x-auto gap-2 md:gap-1 md:space-y-1 shrink-0 scrollbar-hide">
-                    <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label="一般" icon="⚙️" />
-                    <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label="外観" icon="🎨" />
-                    <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} label="アカウント" icon="👤" />
-                    <TabButton active={activeTab === 'advanced'} onClick={() => setActiveTab('advanced')} label="高度な設定" icon="⚡" />
+        <Modal
+            isOpen={isOpen}
+            onClose={closeModal}
+            title="設定"
+            className="w-full max-w-4xl h-[90vh] md:h-[85vh] p-0 overflow-hidden"
+            zIndex={zIndex}
+            overlayClassName={overlayClassName}
+        >
+            <div className="flex flex-col md:flex-row h-full">
+                {/* Sidebar (Tabs) */}
+                <div className="w-full md:w-64 bg-gray-50/50 dark:bg-gray-900/50 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 p-4 shrink-0 overflow-y-auto custom-scrollbar">
+                    <div className="space-y-1 md:space-y-2">
+                        <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label="一般設定" icon="⚙️" />
+                        <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label="外観・表示" icon="🎨" />
+                        <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} label="アカウント" icon="👤" />
+
+                        <hr className="my-2 border-gray-200 dark:border-gray-700 md:hidden" />
+
+                        <TabButton active={activeTab === 'advanced'} onClick={() => setActiveTab('advanced')} label="高度な設定" icon="⚡" />
+                    </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-modal overflow-y-auto custom-scrollbar bg-gray-50/50 dark:bg-gray-800/20">
+                <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-900">
                     {activeTab === 'appearance' && (
                         <div className="flex flex-col gap-4">
                             {/* Theme */}
@@ -132,13 +160,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 name="fontEn"
                                                 value={fontEn}
                                                 onChange={(e) => setFontEn(e.target.value)}
-                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                                className="w-full pl-3 pr-10 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none relative z-10 bg-transparent"
                                             >
                                                 {UI_CONFIG.FONTS.EU.map(f => (
                                                     <option key={f.value} value={f.value}>{f.label}</option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 z-0">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                             </div>
                                         </div>
@@ -151,13 +179,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 name="fontJp"
                                                 value={fontJp}
                                                 onChange={(e) => setFontJp(e.target.value)}
-                                                className="w-full pl-3 pr-8 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                                className="w-full pl-3 pr-10 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none relative z-10 bg-transparent"
                                             >
                                                 {UI_CONFIG.FONTS.JP.map(f => (
                                                     <option key={f.value} value={f.value}>{f.label}</option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 z-0">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                             </div>
                                         </div>
@@ -177,7 +205,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                                     現在のワークスペースのタスク、プロジェクト、ラベル、目標、設定などをJSONファイルとしてダウンロードしたり、バックアップファイルからデータを復元したりできます。
                                 </p>
-                                <div className="flex items-center gap-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                                     <button
                                         onClick={async () => {
                                             if (!auth.currentUser || !currentWorkspaceId) return;
@@ -197,13 +225,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 alert('バックアップの作成に失敗しました。');
                                             }
                                         }}
-                                        className="btn-premium text-sm flex items-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 shadow-sm"
+                                        className="btn-premium w-full sm:w-auto text-sm flex items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 shadow-sm"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                        <span className="hidden sm:inline">バックアップを作成</span>
-                                        <span className="sm:hidden">DL</span>
+                                        <span className="inline">バックアップを作成</span>
                                     </button>
-                                    <div className="relative">
+                                    <div className="relative w-full sm:w-auto">
                                         <input
                                             type="file"
                                             accept=".json"
@@ -236,7 +263,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                         />
                                         <label
                                             htmlFor="backup-import-input"
-                                            className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer shadow-sm text-sm flex items-center gap-2 transition-colors"
+                                            className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer shadow-sm text-sm flex items-center justify-center gap-2 transition-colors"
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                                             インポート
@@ -269,7 +296,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                 <button
                                     onClick={async () => {
                                         if (!currentWorkspaceId) return;
-                                        if (!window.confirm('重複したタスクを削除しますか？\n（タイトルが同じタスクのうち、古いものを残して削除します）')) return;
+                                        if (!confirm('【警告】重複したタスクを削除します。\n実行前にバックアップを作成しましたか？\n（タイトルが同じタスクのうち、古いものを残して削除します）')) return;
+                                        if (!confirm('【最終確認】この操作は取り消せません。本当に実行しますか？')) return;
 
                                         try {
                                             const count = await cleanupDuplicateTasks(currentWorkspaceId);
@@ -282,9 +310,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                             alert(`エラーが発生しました: ${e.message}`);
                                         }
                                     }}
-                                    className="px-4 py-2 bg-white text-red-600 border border-red-200 hover:bg-red-50 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-colors"
+                                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-95"
                                 >
-                                    重複タスクの削除
+                                    重複タスクの削除（要確認）
                                 </button>
                             </div>
                         </div>
@@ -295,17 +323,4 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
     );
 };
 
-const TabButton: React.FC<{ active: boolean; onClick: () => void; label: string; icon: string }> = ({ active, onClick, label, icon }) => (
-    <button
-        onClick={onClick}
-        className={cn(
-            "w-auto md:w-full flex-1 md:flex-none flex items-center gap-2 md:gap-3 px-3 py-2 text-sm rounded-lg transition-all text-left whitespace-nowrap min-w-0 justify-center md:justify-start",
-            active
-                ? "bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 font-bold"
-                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200"
-        )}
-    >
-        <span className="text-base">{icon}</span>
-        <span className="truncate">{label}</span>
-    </button>
-);
+

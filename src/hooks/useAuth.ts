@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { authService, initAuthListener } from '../core/auth';
 import { auth } from '../core/firebase';
+import { User } from '../core/firebase-sdk';
 
 
 /**
@@ -9,6 +10,7 @@ import { auth } from '../core/firebase';
  */
 export const useAuth = () => {
     const [userId, setUserId] = useState<string | null>(auth.currentUser?.uid || null);
+    const [user, setUser] = useState<User | null>(auth.currentUser);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -22,10 +24,12 @@ export const useAuth = () => {
             unsubscribe = initAuthListener(
                 (user) => {
                     setUserId(user.uid);
+                    setUser(user);
                     setLoading(false);
                 },
                 () => {
                     setUserId(null);
+                    setUser(null);
                     setLoading(false);
                 }
             );
@@ -37,5 +41,5 @@ export const useAuth = () => {
     }, []);
 
 
-    return { userId, loading };
+    return { userId, user, loading };
 };

@@ -1,6 +1,8 @@
 import {
     DndContext,
     DragEndEvent,
+    DragOverlay,
+    DragStartEvent,
     KeyboardSensor,
     PointerSensor,
     closestCenter,
@@ -18,20 +20,28 @@ import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { TimeBlock } from '../../store/schema';
 import { deleteTimeBlock, saveTimeBlock } from '../../store/timeblocks';
 import { useModalStore } from '../../store/ui/modal-store';
+import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
 import { SortableItem } from '../common/SortableItem';
 
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTE_OPTIONS = ['00', '15', '30', '45'];
-const PRESET_COLORS = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6'];
+// Expanded Palette
+const PRESET_COLORS = [
+    '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16',
+    '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#0EA5E9',
+    '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF',
+    '#EC4899', '#F43F5E', '#64748B'
+];
 
 interface TimeBlockEditModalProps {
     isOpen?: boolean;
     data?: any;
     zIndex?: number;
+    overlayClassName?: string;
 }
 
-export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: propIsOpen, zIndex }) => {
+export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: propIsOpen, zIndex, overlayClassName }) => {
     const { closeModal } = useModalStore();
     const isOpen = !!propIsOpen;
     const { timeBlocks: storeBlocks } = useTimeBlocks();
@@ -39,6 +49,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
     const [blocks, setBlocks] = useState<Partial<TimeBlock>[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [activeId, setActiveId] = useState<string | null>(null); // For DragOverlay
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -55,10 +66,25 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
 
     const handleAdd = () => {
         if (blocks.length >= 10) return;
+
+        let nextStart = '09:00';
+        let nextEnd = '10:00';
+
+        if (blocks.length > 0) {
+            const lastBlock = blocks[blocks.length - 1];
+            if (lastBlock.end) {
+                const [h, m] = lastBlock.end.split(':').map(Number);
+                nextStart = lastBlock.end;
+                // Add 1 hour
+                const nextH = (h + 1) % 24;
+                nextEnd = `${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            }
+        }
+
         const newBlock: Partial<TimeBlock> = {
             id: `new-${Date.now()}`,
-            start: '09:00',
-            end: '10:00',
+            start: nextStart,
+            end: nextEnd,
             color: PRESET_COLORS[blocks.length % PRESET_COLORS.length],
             order: blocks.length
         };
@@ -82,8 +108,14 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
         setBlocks(blocks.map(b => b.id === id ? { ...b, ...updates } : b));
     };
 
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(event.active.id as string);
+    };
+
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
+        setActiveId(null);
+
         if (over && active.id !== over.id) {
             setBlocks((items) => {
                 const oldIndex = items.findIndex((i) => i.id === active.id);
@@ -98,13 +130,30 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
         setError(null);
 
         try {
-            // Validate
             for (const b of blocks) {
                 if (!b.start || !b.end) continue;
                 const [sh, sm] = b.start.split(':').map(Number);
                 const [eh, em] = b.end.split(':').map(Number);
                 if (sh * 60 + sm >= eh * 60 + em) {
-                    throw new Error(`不正な時間設定があります: ${b.start}-${b.end}`);
+                    throw new Error(`不正な時間設定があります（開始≧終了）: ${b.start}-${b.end}`);
+                }
+            }
+
+            // Overlap check
+            const sortedBlocks = [...blocks].sort((a, b) => {
+                return (a.start || '').localeCompare(b.start || '');
+            });
+
+            for (let i = 0; i < sortedBlocks.length - 1; i++) {
+                const current = sortedBlocks[i];
+                const next = sortedBlocks[i + 1];
+                if (!current.end || !next.start) continue;
+
+                const [ch, cm] = current.end.split(':').map(Number);
+                const [nh, nm] = next.start.split(':').map(Number);
+
+                if (nh * 60 + nm < ch * 60 + cm) {
+                    throw new Error(`時間が重複しています: [${current.start}-${current.end}] と [${next.start}-${next.end}]`);
                 }
             }
 
@@ -129,13 +178,23 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
 
     if (!isOpen) return null;
 
+    const activeBlock = activeId ? blocks.find(b => b.id === activeId) : null;
+
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} title="時間帯設定" className="max-w-2xl h-[600px]">
+        <Modal
+            isOpen={isOpen}
+            onClose={closeModal}
+            title="時間帯設定"
+            className="max-w-2xl h-[600px]"
+            zIndex={zIndex}
+            overlayClassName={overlayClassName}
+        >
             <div className="flex flex-col h-full">
                 <div className="flex-1 overflow-y-auto p-2 space-y-3 custom-scrollbar">
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
+                        onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                     >
                         <SortableContext
@@ -144,14 +203,32 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                         >
                             {blocks.map((block) => (
                                 <SortableItem key={block.id} id={block.id!}>
+                                    {/* 
+                                        Note: We pass a simple static version during drag for the original item? 
+                                        Actually SortableItem handles opacity. 
+                                        But we can style the row to look "dragged" if we used useSortable.isDragging.
+                                        SortableItem implementation is: <div ref={setNodeRef} style={style} {...attrs} {...listeners}>{children}</div>
+                                      */}
                                     <TimeBlockRow
                                         block={block}
                                         onDelete={() => handleDelete(block.id!)}
                                         onUpdate={(upd) => handleUpdate(block.id!, upd)}
+                                        isOverlay={false}
                                     />
                                 </SortableItem>
                             ))}
                         </SortableContext>
+
+                        <DragOverlay>
+                            {activeBlock ? (
+                                <TimeBlockRow
+                                    block={activeBlock}
+                                    onDelete={() => { }}
+                                    onUpdate={() => { }}
+                                    isOverlay
+                                />
+                            ) : null}
+                        </DragOverlay>
                     </DndContext>
 
                     {blocks.length < 10 ? (
@@ -165,7 +242,10 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                             時間帯を追加
                         </button>
                     ) : (
-                        <div className="text-center py-4 text-xs text-gray-400">最大10個まで登録できます</div>
+                        <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-sm rounded-lg flex items-center justify-center gap-2 border border-yellow-100 dark:border-yellow-900/30">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            最大10個まで登録できます
+                        </div>
                     )}
 
                     <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -175,7 +255,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                     </div>
                 </div>
 
-                {error && <p className="text-sm text-red-500 text-center mb-4">{error}</p>}
+                <ErrorMessage message={error} className="mb-4" />
 
                 <div className="pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-end">
                     <button
@@ -195,9 +275,10 @@ interface TimeBlockRowProps {
     block: Partial<TimeBlock>;
     onDelete: () => void;
     onUpdate: (upd: Partial<TimeBlock>) => void;
+    isOverlay?: boolean;
 }
 
-const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate }) => {
+const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, isOverlay }) => {
     const [showColorPicker, setShowColorPicker] = useState(false);
 
     const startTime = block.start || '09:00';
@@ -206,7 +287,7 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate }
     const [eh, em] = endTime.split(':');
 
     return (
-        <div className="flex items-center gap-4 p-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-sm group">
+        <div className={`flex items-center gap-4 p-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-sm group ${isOverlay ? 'shadow-xl ring-2 ring-blue-500 scale-105 opacity-90 cursor-grabbing' : ''}`}>
             <div className="relative">
                 <button
                     onClick={() => setShowColorPicker(!showColorPicker)}
