@@ -19,7 +19,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
     const { openModal } = useModalStore();
 
     return (
-        <div className="h-full flex overflow-hidden bg-premium-gradient text-gray-800 dark:text-white antialiased">
+        <div className="w-full h-full flex overflow-hidden bg-premium-gradient text-gray-800 dark:text-white antialiased">
             {/* Mobile Backdrop */}
             {isSidebarOpen && (
                 <div
