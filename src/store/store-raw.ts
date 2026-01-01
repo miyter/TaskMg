@@ -260,35 +260,36 @@ function removeUndefined<T extends Record<string, any>>(obj: T): T {
 import { writeBatch } from "../core/firebase-sdk";
 
 export async function reorderTasksRaw(userId: string, workspaceId: string, orderedTaskIds: string[]) {
+    // Build index map for O(1) lookup (avoid O(n^2) indexOf calls)
+    const orderMap = new Map<string, number>();
+    orderedTaskIds.forEach((id, index) => orderMap.set(id, index));
+
     // Optimistic Update
     const currentTasks = taskCache.getTasks(workspaceId);
     if (currentTasks) {
         const newTasks = currentTasks.map(t => {
-            const newIndex = orderedTaskIds.indexOf(t.id!);
-            if (newIndex !== -1) {
+            const newIndex = orderMap.get(t.id!);
+            if (newIndex !== undefined) {
                 return { ...t, order: newIndex };
             }
             return t;
         });
-        // Sort in cache immediately? No, wait for list re-render logic to sort by order.
         taskCache.setCache(workspaceId, newTasks);
     }
 
     return withRetry(async () => {
-        const batch = writeBatch(db);
         const path = paths.tasks(userId, workspaceId);
 
         // Limit batch size to 500
-        const chunks = [];
+        const chunks: string[][] = [];
         for (let i = 0; i < orderedTaskIds.length; i += 500) {
             chunks.push(orderedTaskIds.slice(i, i + 500));
         }
 
         for (const chunk of chunks) {
             const batch = writeBatch(db);
-            chunk.forEach((id, index) => {
-                // Global index calculation
-                const globalIndex = orderedTaskIds.indexOf(id);
+            chunk.forEach((id) => {
+                const globalIndex = orderMap.get(id)!;
                 const ref = doc(db, path, id);
                 batch.update(ref, { order: globalIndex });
             });

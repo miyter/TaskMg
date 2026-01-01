@@ -49,6 +49,8 @@ export function subscribeToTimeBlocks(workspaceId: string, callback: (blocks: Ti
     const path = paths.timeblocks(userId, workspaceId);
     const q = query(collection(db, path), orderBy('order', 'asc'));
 
+    let isFirstSnapshot = true;
+
     return onSnapshot(q, (snapshot) => {
         // Validation could be added here
         timeBlocks = snapshot.docs.map(doc => ({
@@ -56,10 +58,40 @@ export function subscribeToTimeBlocks(workspaceId: string, callback: (blocks: Ti
             ...doc.data()
         })) as TimeBlock[];
 
+        // Auto-create default time blocks if empty on first load (not pending writes)
+        if (isFirstSnapshot && timeBlocks.length === 0 && !snapshot.metadata.hasPendingWrites) {
+            isFirstSnapshot = false;
+            createDefaultTimeBlocks(userId, workspaceId).catch(err =>
+                console.error('[TimeBlocks] Failed to create defaults:', err)
+            );
+            return; // Wait for next snapshot with created blocks
+        }
+        isFirstSnapshot = false;
+
         if (typeof callback === 'function') callback(timeBlocks);
     }, (error) => {
         console.error("[TimeBlocks] Subscription error:", error);
     });
+}
+
+/** Create default time blocks for a new workspace */
+async function createDefaultTimeBlocks(userId: string, workspaceId: string): Promise<void> {
+    const path = paths.timeblocks(userId, workspaceId);
+    const batch = writeBatch(db);
+
+    defaultTimeBlocks.forEach((block) => {
+        const ref = doc(db, path, block.id!);
+        batch.set(ref, {
+            name: block.name,
+            start: block.start,
+            end: block.end,
+            color: block.color,
+            order: block.order,
+            updatedAt: serverTimestamp()
+        });
+    });
+
+    await batch.commit();
 }
 
 export function getTimeBlocks(): TimeBlock[] {

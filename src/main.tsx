@@ -14,12 +14,16 @@ initErrorLogger();
 const rootElement = document.getElementById('app');
 if (!rootElement) throw new Error('Failed to find the root element');
 
+// Conditionally wrap with StrictMode only in development
+// StrictMode causes double-mounting which can impact performance and cause issues with subscriptions
+const AppTree = (
+    <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+            <App />
+        </QueryClientProvider>
+    </ErrorBoundary>
+);
+
 ReactDOM.createRoot(rootElement).render(
-    <React.StrictMode>
-        <ErrorBoundary>
-            <QueryClientProvider client={queryClient}>
-                <App />
-            </QueryClientProvider>
-        </ErrorBoundary>
-    </React.StrictMode>
+    import.meta.env.DEV ? <React.StrictMode>{AppTree}</React.StrictMode> : AppTree
 );

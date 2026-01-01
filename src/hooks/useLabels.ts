@@ -15,7 +15,7 @@ export const useLabels = () => {
     const { data: labels, isPending } = useFirestoreSubscription<Label[]>(
         ['labels', workspaceId],
         subscribeFn,
-        getLabels()
+        getLabels(workspaceId ?? undefined)
     );
 
     const loading = authLoading || (!!workspaceId && isPending && ((labels ?? []).length === 0));

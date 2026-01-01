@@ -22,10 +22,12 @@ import { Label } from './schema';
 // ★ RAW FUNCTIONS (userId必須)
 // ==========================================================
 
-let _cachedLabels: Label[] = [];
+// Map<workspaceId, Label[]> to prevent data mixing between workspaces
+const _cachedLabelsMap = new Map<string, Label[]>();
 
-export function getLabels(): Label[] {
-    return _cachedLabels;
+export function getLabels(workspaceId?: string): Label[] {
+    if (!workspaceId) return [];
+    return _cachedLabelsMap.get(workspaceId) || [];
 }
 
 /**
@@ -43,11 +45,11 @@ export function subscribeToLabelsRaw(userId: string, workspaceId: string, onUpda
 
     return onSnapshot(q, (snapshot) => {
         const labels = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Label[];
-        _cachedLabels = labels;
+        _cachedLabelsMap.set(workspaceId, labels);
         onUpdate(labels);
     }, (error) => {
         console.error("[Labels] Subscription error:", error);
-        _cachedLabels = [];
+        _cachedLabelsMap.set(workspaceId, []);
         onUpdate([]);
     });
 }

@@ -9,6 +9,32 @@
 
 ---
 
+## 🩺 Grok Code Review (2026-01-01)
+以下の項目は、コードベース全体の監査結果です。**モバイル環境での安定性、パフォーマンス、UX、データ整合性**を特に重視しています。次回の開発サイクルで順次対応してください。
+
+
+### 🛡️ Stability & Offline Support
+不安定なネットワーク環境やオフライン時の挙動改善、エラーハンドリング。
+- **Retry & Recovery**:
+    - 各種Hooks/Store (`useAppDnD`, `useTasks`, `workspace.ts`, `timeblocks.ts`, `targets-raw.ts`) にリトライ機構、失敗時のロールバック（Optimistic UpdateのRevert）、およびユーザーへのToast通知を追加。
+    - `src/store/store-raw.ts`: `updateTaskStatusRaw`等のfire-and-forget処理にキューイングや信頼性向上策を導入。
+
+### 🎨 UX & Loading States (Anti-Flicker)
+スケルトン表示、ロード中のちらつき（Flickering）防止、初期状態の改善。
+- **Loading Logic**:
+    - 各種Hooks/Store (`useFilters`, `useTasks`, `useTimeBlocks`, `store/workspace.ts`, `store/targets.ts`, `store/projects.ts`) で、`loading`判定ロジックを見直し。`workspaceId`切り替え時や初期ロード時に、空リストや古いデータが一瞬表示される問題を解消する（`isCacheReady`フラグの活用等）。
+
+### 💾 Data Integrity & Schema Validation
+データの破損防止、型安全性の向上。
+- **Consistency**:
+    - Store全体: 外部からのStore更新関数の直接呼び出しを制限し、単一方向データフローを強制。
+
+### 🧹 Code Maintenance
+- **Refactoring**:
+    - `src/store/*`: Store関数の引数統一（`workspaceId`必須化によるSafety向上）。
+
+---
+
 ## 🏗️ Technical Debt & Long-Term Roadmap
 将来的なアーキテクチャの健全性のための長期課題です。
 

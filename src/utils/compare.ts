@@ -37,10 +37,15 @@ export function areTaskArraysIdentical(a: any[] | undefined, b: any[] | undefine
         if (ta.timeBlockId !== tb.timeBlockId) return false;
         if (ta.duration !== tb.duration) return false;
         if (ta.isImportant !== tb.isImportant) return false;
-        // 日付の比較
-        const dueDateA = ta.dueDate instanceof Date ? ta.dueDate.getTime() : ta.dueDate;
-        const dueDateB = tb.dueDate instanceof Date ? tb.dueDate.getTime() : tb.dueDate;
-        if (dueDateA !== dueDateB) return false;
+        // 日付の比較 (Date / Firestore Timestamp の両方に対応)
+        const toMs = (val: any): number | null | undefined => {
+            if (val === null || val === undefined) return val;
+            if (val instanceof Date) return val.getTime();
+            if (typeof val?.toMillis === 'function') return val.toMillis(); // Firestore Timestamp
+            if (typeof val === 'number') return val;
+            return val;
+        };
+        if (toMs(ta.dueDate) !== toMs(tb.dueDate)) return false;
     }
 
     return true;

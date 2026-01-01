@@ -20,26 +20,32 @@ import { paths } from '../utils/paths';
 import { Filter, FilterSchema } from './schema';
 import { toast } from './ui/toast-store';
 
-let _cachedFilters: Filter[] = [];
+// Map<workspaceId, Filter[]> to prevent data mixing between workspaces
+const _cachedFiltersMap = new Map<string, Filter[]>();
 
-export function getFilters(): Filter[] {
-    return _cachedFilters;
+export function getFilters(workspaceId?: string): Filter[] {
+    if (!workspaceId) return [];
+    return _cachedFiltersMap.get(workspaceId) || [];
 }
 
-export function clearFiltersCache() {
-    _cachedFilters = [];
+export function clearFiltersCache(workspaceId?: string) {
+    if (workspaceId) {
+        _cachedFiltersMap.delete(workspaceId);
+    } else {
+        _cachedFiltersMap.clear();
+    }
 }
 
 /**
  * フィルターのリアルタイム購読
- * @param _workspaceId 現在は未使用（将来のマルチワークスペース対応用）
+ * @param workspaceId ワークスペースID
  * @param onUpdate フィルター更新時のコールバック
  */
 export function subscribeToFilters(workspaceId: string, onUpdate: (filters: Filter[]) => void): Unsubscribe {
     const userId = auth.currentUser?.uid;
 
     if (!userId || !workspaceId) {
-        _cachedFilters = [];
+        _cachedFiltersMap.set(workspaceId || '', []);
         onUpdate([]);
         return () => { };
     }
@@ -49,11 +55,11 @@ export function subscribeToFilters(workspaceId: string, onUpdate: (filters: Filt
 
     return onSnapshot(q, (snapshot) => {
         const filters = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Filter[];
-        _cachedFilters = filters;
+        _cachedFiltersMap.set(workspaceId, filters);
         onUpdate(filters);
     }, (error) => {
         console.error("[Filters] Subscription error:", error);
-        _cachedFilters = [];
+        _cachedFiltersMap.set(workspaceId, []);
         onUpdate([]);
     });
 }

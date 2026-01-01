@@ -39,9 +39,13 @@ export function useTaskCounts() {
             // But if query exists, we need to decide if matched count respects completed/archived?
             // Usually 'Search' view shows completed tasks too if settings allow.
             // But 'Active' tasks search?
-            // Let's count matches of all non-archived for search badge
-            if (normalizedQuery && task.title?.toLowerCase().includes(normalizedQuery)) {
-                acc.search++;
+            // Count search matches: include title and description for consistency with SearchView
+            if (normalizedQuery) {
+                const titleMatch = task.title?.toLowerCase().includes(normalizedQuery);
+                const descMatch = task.description?.toLowerCase().includes(normalizedQuery);
+                if (titleMatch || descMatch) {
+                    acc.search++;
+                }
             }
 
             // Exclude archived/trash from main counters

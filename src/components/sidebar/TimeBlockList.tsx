@@ -1,20 +1,21 @@
 import { useDroppable } from '@dnd-kit/core';
-import React, { useState } from 'react'; // useState追加
+import React, { useState } from 'react';
 import { useTranslation } from '../../core/translations';
 import { useTasks } from '../../hooks/useTasks';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
-import { deleteTimeBlock } from '../../store'; // 追加
+import { useWorkspace } from '../../hooks/useWorkspace';
+import { deleteTimeBlock } from '../../store';
 import { TimeBlock } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
-import { useModalStore } from '../../store/ui/modal-store'; // 追加
+import { useModalStore } from '../../store/ui/modal-store';
 import { SidebarLoadingState } from '../common/SidebarLoadingState';
-import { ContextMenu, ContextMenuItem } from '../ui/ContextMenu'; // 追加
+import { ContextMenu, ContextMenuItem } from '../ui/ContextMenu';
 import { SidebarItem } from './SidebarItem';
 
 export const TimeBlockList: React.FC = () => {
-
     const { timeBlocks, loading } = useTimeBlocks();
     const { tasks } = useTasks();
+    const { workspaceId } = useWorkspace();
 
     // Optimize count calculation (Issue #29)
     const counts = React.useMemo(() => {
@@ -41,6 +42,7 @@ export const TimeBlockList: React.FC = () => {
                     key={block.id}
                     block={block}
                     count={counts.map.get(block.id || '') || 0}
+                    workspaceId={workspaceId}
                 />
             ))}
             <UnassignedTimeBlockItem count={counts.unassignedCount} />
@@ -49,7 +51,7 @@ export const TimeBlockList: React.FC = () => {
 };
 
 
-const TimeBlockItem: React.FC<{ block: TimeBlock, count: number }> = ({ block, count }) => {
+const TimeBlockItem: React.FC<{ block: TimeBlock, count: number, workspaceId: string | null }> = ({ block, count, workspaceId }) => {
     const { t } = useTranslation(); // 追加
     const { filterType, targetId, setFilter } = useFilterStore();
     const { openModal } = useModalStore(); // 追加
@@ -73,8 +75,8 @@ const TimeBlockItem: React.FC<{ block: TimeBlock, count: number }> = ({ block, c
     const handleDelete = async () => {
         setMenuPosition(null);
         if (confirm(`${t('timeblock')}: ${block.start} - ${block.end}\n${t('msg.confirm_delete')}`)) {
-            if (block.id) {
-                await deleteTimeBlock(block.id);
+            if (block.id && workspaceId) {
+                await deleteTimeBlock(workspaceId, block.id);
             }
         }
     };

@@ -73,9 +73,14 @@ export function useFirestoreSubscription<T>(
             if (initialData !== undefined) {
                 return Promise.resolve(initialData);
             }
-            // If no initialData, return a promise that never resolves (or waits for subscription).
-            // This keeps the status as 'pending' until setQueryData is called by the subscription.
-            return new Promise<T>(() => { });
+            // If no initialData, wait for subscription with a timeout to prevent infinite pending.
+            // After 30 seconds, resolve with empty array (safe default for list subscriptions).
+            return new Promise<T>((resolve) => {
+                setTimeout(() => {
+                    console.warn('[useFirestoreSubscription] Timeout waiting for subscription data, resolving with default');
+                    resolve([] as unknown as T);
+                }, 30000);
+            });
         },
         initialData: initialData,
         staleTime: Infinity, // Data pushed by subscription is always fresh

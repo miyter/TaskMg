@@ -1,30 +1,32 @@
-import React, { useState } from 'react'; // Update import
-import { useTranslation } from '../../core/translations'; // Add import
+import React, { useState } from 'react';
+import { useTranslation } from '../../core/translations';
 import { useFilters } from '../../hooks/useFilters';
 import { useTasks } from '../../hooks/useTasks';
+import { useWorkspace } from '../../hooks/useWorkspace';
 import { getProcessedTasks } from '../../logic/search';
-import { deleteFilter } from '../../store'; // Add import
+import { deleteFilter } from '../../store';
 import { useFilterStore } from '../../store/ui/filter-store';
-import { useModalStore } from '../../store/ui/modal-store'; // Add import
-import { ContextMenu, ContextMenuItem } from '../ui/ContextMenu'; // Add import
+import { useModalStore } from '../../store/ui/modal-store';
+import { ContextMenu, ContextMenuItem } from '../ui/ContextMenu';
 import { SidebarItem } from './SidebarItem';
 
 export const CustomFilterList: React.FC = () => {
     const { filters, loading } = useFilters();
     const { tasks } = useTasks();
+    const { workspaceId } = useWorkspace();
 
     if (loading) return null;
 
     return (
         <div className="space-y-0.5 py-1">
             {filters.map(filter => (
-                <CustomFilterItem key={filter.id} filter={filter} tasks={tasks} />
+                <CustomFilterItem key={filter.id} filter={filter} tasks={tasks} workspaceId={workspaceId} />
             ))}
         </div>
     );
 };
 
-const CustomFilterItem: React.FC<{ filter: any, tasks: any[] }> = ({ filter, tasks }) => {
+const CustomFilterItem: React.FC<{ filter: any, tasks: any[], workspaceId: string | null }> = ({ filter, tasks, workspaceId }) => {
     const { t } = useTranslation();
     const { filterType, targetId, setFilter } = useFilterStore();
     const { openModal } = useModalStore();
@@ -50,8 +52,8 @@ const CustomFilterItem: React.FC<{ filter: any, tasks: any[] }> = ({ filter, tas
     const handleDelete = async () => {
         setMenuPosition(null);
         if (confirm(`${t('filter')}: ${filter.name}\n${t('msg.confirm_delete')}`)) {
-            if (filter.id) {
-                await deleteFilter(filter.id);
+            if (filter.id && workspaceId) {
+                await deleteFilter(workspaceId, filter.id);
             }
         }
     };

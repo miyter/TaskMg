@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useWorkspace } from '../../hooks/useWorkspace';
 import { addTarget } from '../../store';
 import { useViewStore } from '../../store/ui/view-store';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
@@ -10,6 +11,7 @@ export const WizardApp: React.FC = () => {
     const [step, setStep] = useState(0); // 0: Welcome, 1+: Steps
     const [data, setData] = useState<Record<string, string>>({});
     const { setView, viewData } = useViewStore();
+    const { workspaceId } = useWorkspace();
 
     useEffect(() => {
         if (viewData?.mode) {
@@ -28,8 +30,13 @@ export const WizardApp: React.FC = () => {
     const handleFinish = async (stepData: Record<string, string>) => {
         const finalData = { ...data, ...stepData };
 
+        if (!workspaceId) {
+            alert('ワークスペースが選択されていません。');
+            return;
+        }
+
         try {
-            await addTarget({
+            await addTarget(workspaceId, {
                 mode: mode,
                 data: finalData
             });

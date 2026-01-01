@@ -11,15 +11,14 @@ import {
 import { getCurrentWorkspaceId } from './workspace';
 
 /**
- * 認証とワークスペース選択のガード
+ * 認証ガード
  */
-function requireAuthAndWorkspace() {
+function requireAuth() {
     const userId = auth.currentUser?.uid;
-    const workspaceId = getCurrentWorkspaceId();
-    if (!userId || !workspaceId) {
-        throw new Error('Authentication or Workspace required.');
+    if (!userId) {
+        throw new Error('Authentication required.');
     }
-    return { userId, workspaceId };
+    return userId;
 }
 
 // 同期取得用のエクスポート
@@ -62,24 +61,34 @@ export const subscribeToTargets = (workspaceId: string | ((targets: Target[]) =>
 
 /**
  * 新しいターゲットを追加する
+ * @param workspaceId ワークスペースID
+ * @param targetData ターゲットデータ
  */
-export const addTarget = async (targetData: Partial<Target>) => {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
+export const addTarget = async (workspaceId: string, targetData: Partial<Target>) => {
+    const userId = requireAuth();
+    if (!workspaceId) throw new Error('Workspace ID required.');
     return addTargetRaw(userId, workspaceId, targetData);
 };
 
 /**
  * ターゲットを更新する
+ * @param workspaceId ワークスペースID
+ * @param targetId ターゲットID
+ * @param updates 更新データ
  */
-export const updateTarget = async (targetId: string, updates: Partial<Target>) => {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
+export const updateTarget = async (workspaceId: string, targetId: string, updates: Partial<Target>) => {
+    const userId = requireAuth();
+    if (!workspaceId) throw new Error('Workspace ID required.');
     return updateTargetRaw(userId, workspaceId, targetId, updates);
 };
 
 /**
  * ターゲットを削除する
+ * @param workspaceId ワークスペースID
+ * @param targetId ターゲットID
  */
-export const deleteTarget = async (targetId: string) => {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
+export const deleteTarget = async (workspaceId: string, targetId: string) => {
+    const userId = requireAuth();
+    if (!workspaceId) throw new Error('Workspace ID required.');
     return deleteTargetRaw(userId, workspaceId, targetId);
 };

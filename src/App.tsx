@@ -2,7 +2,7 @@ import {
     closestCenter,
     DndContext
 } from '@dnd-kit/core';
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { LoginPage } from './components/auth/LoginPage';
 import { ToastContainer } from './components/common/ToastContainer';
 import { AppLayout } from './components/layout/AppLayout';
@@ -34,22 +34,22 @@ const App: React.FC = () => {
 
     const [user, setUser] = React.useState<any>(null);
 
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        const target = e.target as HTMLElement;
+        const isInput = ['INPUT', 'TEXTAREA'].includes(target.tagName) || target.closest('[contenteditable]');
+        const hasModal = document.querySelector('[role="dialog"]');
+
+        if (e.key === '/' && !isInput && !hasModal) {
+            e.preventDefault();
+            setFilter('search');
+            setView('search');
+        }
+    }, [setFilter, setView]);
+
     React.useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setUser(user);
         });
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            const target = e.target as HTMLElement;
-            const isInput = ['INPUT', 'TEXTAREA'].includes(target.tagName) || target.closest('[contenteditable]');
-            const hasModal = document.querySelector('[role="dialog"]');
-
-            if (e.key === '/' && !isInput && !hasModal) {
-                e.preventDefault();
-                setFilter('search');
-                setView('search');
-            }
-        };
 
         document.addEventListener('keydown', handleKeyDown);
 
@@ -57,15 +57,15 @@ const App: React.FC = () => {
             unsubscribe();
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, []);
+    }, [handleKeyDown]);
 
     const { sensors, handleDragEnd } = useAppDnD(projects, {
         onOptimisticReorder: setProjectsOverride,
         onRevertReorder: setProjectsOverride,
     });
 
-    // Compute Title
-    const getTitle = () => {
+    // Compute Title (memoized)
+    const title = useMemo(() => {
         if (currentView === 'wizard') return 'Goal Wizard';
         if (currentView === 'target-dashboard') return 'Target Dashboard';
         if (currentView === 'wiki') return 'Framework Wiki';
@@ -82,7 +82,7 @@ const App: React.FC = () => {
             case 'custom': return 'All Tasks';
             default: return 'TaskMg';
         }
-    };
+    }, [currentView, query, filterType, targetId, projects, labels]);
 
     if (!user) {
         return <LoginPage />;
@@ -98,7 +98,7 @@ const App: React.FC = () => {
             <ModalManager />
             <AppLayout
                 sidebarContent={<SidebarContent />}
-                title={getTitle()}
+                title={title}
             >
                 {/* Main Content Routing */}
                 {currentView === 'wizard' ? (

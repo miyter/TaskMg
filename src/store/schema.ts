@@ -41,7 +41,7 @@ export const TaskSchema = z.object({
     timeBlockId: z.string().nullable().optional(),
 
     // Metadata
-    duration: z.number().optional(), // minutes
+    duration: z.number().min(0, '所要時間は0以上の数値で指定してください').optional(),
     isImportant: z.boolean().default(false),
     recurrence: RecurrenceSchema,
     order: z.number().optional(), // For custom ordering
@@ -49,7 +49,7 @@ export const TaskSchema = z.object({
 
 export const ProjectSchema = z.object({
     id: z.string().optional(),
-    name: z.string().min(1, "Project name is required"),
+    name: z.string().min(1, "プロジェクト名は必須です"),
     color: z.string().optional(),
     ownerId: z.string(),
     createdAt: DateLikeSchema,
@@ -58,7 +58,7 @@ export const ProjectSchema = z.object({
 
 export const LabelSchema = z.object({
     id: z.string().optional(),
-    name: z.string().min(1, "Label name is required"),
+    name: z.string().min(1, "ラベル名は必須です"),
     color: z.string().optional(),
     ownerId: z.string(),
     workspaceId: z.string().optional(), // Added for future migration
@@ -67,29 +67,29 @@ export const LabelSchema = z.object({
 
 export const WorkspaceSchema = z.object({
     id: z.string().optional(),
-    name: z.string().min(1, "Workspace name is required"),
+    name: z.string().min(1, "ワークスペース名は必須です"),
     createdAt: DateLikeSchema,
 });
 
 export const FilterSchema = z.object({
     id: z.string().optional(),
-    name: z.string().min(1),
-    query: z.string(), // Filter expression
-    workspaceId: z.string().optional(), // Added for future migration
+    name: z.string().min(1, "フィルター名は必須です"),
+    query: z.string(),
+    workspaceId: z.string().optional(),
     createdAt: DateLikeSchema,
 });
 
 /** HH:mm format regex (00:00 to 23:59) */
 const TimeStringSchema = z.string().regex(
     /^([01]\d|2[0-3]):([0-5]\d)$/,
-    "Time must be in HH:mm format (e.g., 09:00, 14:30)"
+    "時刻はHH:mm形式で入力してください（例: 09:00, 14:30）"
 );
 
 export const TimeBlockSchema = z.object({
     id: z.string().optional(),
-    name: z.string(), // Display name
-    start: TimeStringSchema, // "HH:mm"
-    end: TimeStringSchema,   // "HH:mm"
+    name: z.string().min(1, "時間帯の名前は必須です"),
+    start: TimeStringSchema,
+    end: TimeStringSchema,
     color: z.string().optional(),
     order: z.number().optional(),
 });

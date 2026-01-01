@@ -43,8 +43,9 @@ export async function createBackupData(userId: string, workspaceId: string) {
             const data = d.data();
             const serialized: any = { id: d.id };
             for (const key in data) {
+                // Use toMillis() for consistent Timestamp serialization
                 serialized[key] = (data[key] instanceof Timestamp)
-                    ? data[key].toDate().toISOString()
+                    ? data[key].toMillis()
                     : data[key];
             }
             return serialized;
@@ -94,16 +95,18 @@ export async function importBackupData(userId: string, workspaceId: string, back
         currentLabelsSnap.forEach(doc => currentLabelNames.set(doc.data().name, doc.id));
 
         for (const label of labels) {
-            if (!label.name) continue;
+            // Normalize label name (trim whitespace)
+            const normalizedName = label.name?.trim();
+            if (!normalizedName) continue;
 
-            if (currentLabelNames.has(label.name)) {
-                labelMap.set(label.id, currentLabelNames.get(label.name)!);
+            if (currentLabelNames.has(normalizedName)) {
+                labelMap.set(label.id, currentLabelNames.get(normalizedName)!);
             } else {
-                const newLabelData = { ...label };
+                const newLabelData = { ...label, name: normalizedName };
                 delete newLabelData.id;
                 const docRef = await addDoc(collection(db, paths.labels(userId, workspaceId)), newLabelData);
                 labelMap.set(label.id, docRef.id);
-                currentLabelNames.set(label.name, docRef.id);
+                currentLabelNames.set(normalizedName, docRef.id);
             }
         }
 
@@ -112,7 +115,10 @@ export async function importBackupData(userId: string, workspaceId: string, back
             const newProjectData = { ...project };
             delete newProjectData.id;
 
+            // Handle both ISO string and milliseconds timestamp
             if (typeof newProjectData.createdAt === 'string') {
+                newProjectData.createdAt = new Date(newProjectData.createdAt);
+            } else if (typeof newProjectData.createdAt === 'number') {
                 newProjectData.createdAt = new Date(newProjectData.createdAt);
             }
 
@@ -131,7 +137,10 @@ export async function importBackupData(userId: string, workspaceId: string, back
         for (const filter of customFilters) {
             const newFilterData = { ...filter };
             delete newFilterData.id;
+            // Handle both ISO string and milliseconds timestamp
             if (typeof newFilterData.createdAt === 'string') {
+                newFilterData.createdAt = new Date(newFilterData.createdAt);
+            } else if (typeof newFilterData.createdAt === 'number') {
                 newFilterData.createdAt = new Date(newFilterData.createdAt);
             }
             await addDoc(collection(db, paths.filters(userId, workspaceId)), newFilterData);
@@ -157,10 +166,15 @@ export async function importBackupData(userId: string, workspaceId: string, back
             const newTaskData = { ...task };
             delete newTaskData.id;
 
+            // Handle both ISO string and milliseconds timestamp
             if (typeof newTaskData.createdAt === 'string') {
+                newTaskData.createdAt = new Date(newTaskData.createdAt);
+            } else if (typeof newTaskData.createdAt === 'number') {
                 newTaskData.createdAt = new Date(newTaskData.createdAt);
             }
             if (typeof newTaskData.dueDate === 'string') {
+                newTaskData.dueDate = new Date(newTaskData.dueDate);
+            } else if (typeof newTaskData.dueDate === 'number') {
                 newTaskData.dueDate = new Date(newTaskData.dueDate);
             }
             if (newTaskData.dueDate) {
