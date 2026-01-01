@@ -1,99 +1,79 @@
-[KNOWN_ISSUES.md]
-## ⏳ Future Improvements & Long-Term Roadmap
+# TaskMg Known Issues & Roadmap
 
-以下の課題は優先度は低いものの、将来的なアーキテクチャ改善のために認識されている項目です。
+## 🚀 High Priority: Feature Requests & Improvements (2026-01-01)
+ユーザーからのフィードバックに基づく、最優先の機能拡張および改善項目です。
 
-### 1. Multi-Workspace & Store Architecture
-- **Path Logic**: `filters` and `labels` は `userId` 配下に保存されているが、真のマルチワークスペース対応には `workspaceId` スコープが必要。
+### 1. サイドバー (Sidebar)
+- **検索システムの刷新**:
+    - サイドバー上の入力フィールドを削除し、検索ボタン（項目）のクリックで独立した検索画面/ビューを開くように変更。
+    - **AI向け補足**: `SidebarSearch.tsx` を修正し、`ViewStore` に `search` ビュータイプを追加して、メインコンテンツエリアで検索UIを表示する設計にする。
+- **セクションの作成機能追加**:
+    - **タイムブロック**: セクション名の横に「＋」ボタンを設置し、モーダル経由で新しい時間帯セットを新設可能にする。
+    - **カスタムフィルター**: 同様に「＋」ボタンを設置し、モーダル経由でフィルターを作成可能にする。
+    - **AI向け補足**: `SidebarSection.tsx` に `onAdd` プロップを追加。`ModalStore` の `openModal` を使用して `TIME_BLOCK_EDIT` または `FILTER_EDIT` をデータなし（新規作成モード）で呼び出す。
+- **ドラッグ＆ドロップ移動**:
+    - サイドバー内の各セクション（プロジェクト、ラベル、タイムブロック等）をドラッグして並べ替え可能にする。
+    - **AI向け補足**: 既に導入済みの `@dnd-kit/sortable` を使用。`SidebarContent.tsx` でセクション順序を管理する状態（または `UIStore` 内）を導入する。
 
-### 2. UI/UX & Responsive Design
-- **Mobile**: キーボードショートカット `/` はモバイルで動作しない。
-- **Navigation**: `currentView` の永続化がURL/Router状態と非同期になり、ブラウザ履歴が不整合になる（SPAとブラウザバックの整合性）。
-- **Feedback**: 残りのStoreにToastエラー統合が必要（主要なStoreには対応済み）。
+### 2. タスク編集モーダル (Task Edit Modal)
+- **ステータス項目の削除**: モーダル内のステータス表示/変更フィールドを削除。
+- **所要時間（Duration）のカスタマイズ**:
+    - 15分と120分の選択肢をデフォルトから削除。
+    - 設定画面で所要時間のリストを複数選択・カスタマイズ可能にし、その設定が編集モーダルと同期されるようにする。
+    - **AI向け補足**: `UIStore` に `customDurations` (number[]) 状態を追加。`TaskDetailModal.tsx` では `UIStore` からこのリストを読み取ってチップを表示する。
+- **日付設定の操作性改善**:
+    - カレンダーアイコンだけでなく、日付入力フィールド全体をクリッカブルにしてカレンダーが表示されるようにする。
+    - **AI向け補足**: `input type="date"` を透明化してラップするか、親要素のクリックイベントで `showPicker()` (モダンブラウザ) を呼び出す実装を検討。
+- **繰り返し設定のラベル簡略化**:
+    - 「平日(月)～(金)」を「平日」という表記に変更。
+    - **AI向け補足**: `src/core/i18n/` 内の翻訳リソース（`ja.json` 等）の該当キーを修正。
 
-### 11. TanStack Query への移行検討
-**対象**: `useProjects.ts`, `useTasks.ts`
-- **問題**: リアルタイム性とキャッシュ管理の複雑さからカスタム実装が肥大化。
-- **解決策**: 長期的に TanStack Query への移行を検討。ただし、リアルタイム購読との統合方法を事前調査。
-
-### 12. グローバル density と sidebar density の統合
-**対象**: `useThemeEffect.ts`
-- **問題**: `setSidebarDensity(density)` で UIStore を更新しているが、グローバル density と sidebar density が分離されている設計の臭い。
-- **解決策**: 長期的に stores を統合すべきか検討。
-
-### 22. カスタムイベントシステムの刷新
-**対象**: `src/core/event-constants.ts`
-- **問題**: カスタムイベントシステムより Zustand slice や Mitt の方が型安全。
-- **解決策**: 長期的に型安全な Pub/Sub への移行を検討。
-
----
-
-## 🚀 Grok Review Refactoring Targets (2026-01-01)
-以下は、コードレビュー（Grok）により指摘された改善点です。保守性、UI/UX、アクセシビリティの向上を目的としています。
-
-### 🛠️ Refactoring Strategy & Priorities
-AIエージェント向けの注記: 以下のタスクは、**コンポーネントの分割**（保守性）、**レスポンシブ対応**（モバイル体験）、**状態管理の適正化**（バグ防止）に大別されます。
-
-1.  **High Priority (Core Integrity & Mobile)**:
-    -   (Completed) `WorkspaceDropdown` Mobile overflow
-    -   (Completed) `FilterEditModal` Logic deduplication
-    -   (Completed) `AccountSettingsTab` useAuth
-    -   (Completed) `TimeBlockEditModal` Overlap check
-
-2.  **Medium Priority (UX & Maintainability)**:
-
-    -   (Completed) Modal error display enhancement (Standardized `ErrorMessage` component)
-    -   (Completed) Accessibility (`aria-label`, `aria-hidden`)
-    -   (Partial) Keyboard Navigation (Focus trap in Modals is present, further improvements possible)
-
-3.  **Low Priority (Visual Polish)**:
-    -   ホバーエフェクト、アニメーション強化、アイコン差し替え
-
-### Detailed Task List by Component
-
-#### src/components/sidebar/WorkspaceDropdown.tsx
-
-
-
-#### src/components/modals/AccountSettingsTab.tsx
-
-
-
-#### src/components/modals/FilterEditModal.tsx
-
-- [x] ロジック重複排除 (parseFilterQuery 共通化) - Completed
-
-
-
-
-#### src/components/modals/LabelEditModal.tsx
-
-
-
-
-
-
-#### src/components/modals/SettingsModal.tsx
-
-
-
-
-#### src/components/modals/TaskDetailModal.tsx
-- [ ] Markdownプレビューにproseクラス使用だが、テーブルやコードブロック対応不足 → カスタムprose設定またはsimpleMarkdownToHtmlの強化検討
-- [ ] 期限日入力がtype="date"でネイティブピッカー → カスタムカレンダー検討（将来的）
-
-#### src/components/modals/TimeBlockEditModal.tsx
-
+### 3. 設定・国際化 (Settings & i18n)
+- **完全な英語対応**:
+    - 英語モードにおいて、サイドバー、モーダルの見出し、ボタン、メッセージ等すべてを翻訳。
+    - **AI向け補足**: 現在ハードコードされている文字列を抽出し、`src/core/i18n/` の各言語ファイルに移行。サイドバーのセクションタイトル等も翻訳対象に含める。
+- **言語別レイアウトプリセット**:
+    - 日本語と英語で、表示密度（Density）や文字サイズの最適値が異なるため、言語ごとにパターンのプリセットを作成し、切り替え時に自動適用・または個別設定可能にする。
+    - **AI向け補足**: `useThemeEffect.ts` または `UIStore` で、`language` の変更を検知して `density` や `fontSize` のデフォルト値を切り替えるロジックを実装。
 
 ---
 
-## 📝 Design Decisions (WontFix / By Design)
+## 🔍 Browser Test & UX Issues
+ブラウザテストにより特定された、機能性および使い勝手の改善項目です。
 
-- **Legacy Exports**: `auth.ts` の関数エクスポートはシングルトンへのプロキシとして維持（API一貫性のため）。
-- **Inline Styles**: 色指定（`block.color`）などの動的スタイルには Tailwind ではなくインラインスタイル（`style` 属性）を使用。
-- **SidebarSection ID Logic**: モバイル初期状態は折りたたみをデフォルトとする。
+### 1. UI/UX 改善
+- **TaskDetailModal: Markdownレンダリング**:
+    - プレビューモードにおいて、見出し(`#`)、リスト(`-`)、テーブル(`|`)などが正しく描画されず、生テキストで表示される問題の修正。
+- **検索のリアルタイム性**:
+    - サイドバー検索（または新設予定の検索ビュー）において、入力と同時にリストが絞り込まれる反応速度の向上。
+- **インライン追加の応答性**:
+    - `inline-task-input` で Enter キーや保存ボタンが反応しない、または遅延する事象の解決。
+- **メインカラムのレイアウト**:
+    - コンテンツ幅の制限を緩和し、Max width を活かしたゆとりのあるレイアウトへの調整。
+- **サイドバーリサイズ**:
+    - リサイズハンドルの感度と操作性の向上。
+
+---
+
+## 🏗️ Technical Debt & Long-Term Roadmap
+将来的なアーキテクチャの健全性のための長期課題です。
+
+- **Multi-Workspace スコープの適正化**: `filters`, `labels` の保存先を `workspaceId` スコープへ移行。
+- **TanStack Query への移行**: `useProjects`, `useTasks` 等のデータ購読・キャッシュ管理をライブラリ化。
+- **グローバル状態の整理**: グローバル density と sidebar density の不自然な分離の解消。
+- **イベントシステムの刷新**: カスタムイベントを Zustand slice や型安全な Pub/Sub (Mitt 等) へ移行。
+
+---
+
+## 📝 Design Decisions (By Design)
+- **Legacy Exports**: API互換性のため、`auth.ts` のプロキシ関数は維持。
+- **Inline Styles**: 動的な色指定には Tailwind ではなく `style` 属性を使用。
+- **Mobile Behavior**: サイドバーはモバイルでの初期状態を「折りたたみ」とする。
 
 ---
 
 ## 🔄 Previously Resolved
-(History removed as requested. See Git log.)
+- Firebase SDK (`signInAnonymously`) のエクスポート漏れ修正 (2026-01-01)
+- モーダルエラー通知の共通化 (`ErrorMessage` コンポーネント導入)
+- アクセシビリティ対応 (`aria-label` 等の付加)
+- 特定コンポーネントのロジック重複排除
