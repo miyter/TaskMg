@@ -5,6 +5,7 @@ import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { addTask, deleteTask, updateTask } from '../../store';
 import { Recurrence, Task } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
+import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
 import { formatDateForInput, getInitialDueDateFromRecurrence, parseDateInput, toDate } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
@@ -12,11 +13,10 @@ import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
 
 // --- 定数 ---
-const DURATION_OPTIONS = [15, 30, 45, 60, 75, 90, 120];
 const RECURRENCE_OPTIONS = [
     { value: 'none', label: 'なし' },
     { value: 'daily', label: '毎日' },
-    { value: 'weekdays', label: '平日 (月-金)' },
+    { value: 'weekdays', label: '平日' },
     { value: 'weekly', label: '毎週' },
     { value: 'monthly', label: '毎月' },
 ];
@@ -44,6 +44,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     // --- Hooks ---
     const { projects } = useProjects();
     const { timeBlocks } = useTimeBlocks();
+    const { customDurations } = useSettingsStore();
 
     // --- State ---
     const [title, setTitle] = useState('');
@@ -299,13 +300,21 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                     {/* Due Date */}
                                     <div>
                                         <label htmlFor="task-due-date" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">期限日</label>
-                                        <input
-                                            type="date"
-                                            id="task-due-date"
-                                            value={formatDateForInput(dueDate)}
-                                            onChange={(e) => setDueDate(parseDateInput(e.target.value))}
-                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-                                        />
+                                        <div
+                                            className="relative cursor-pointer"
+                                            onClick={() => {
+                                                const input = document.getElementById('task-due-date') as HTMLInputElement;
+                                                input?.showPicker?.();
+                                            }}
+                                        >
+                                            <input
+                                                type="date"
+                                                id="task-due-date"
+                                                value={formatDateForInput(dueDate)}
+                                                onChange={(e) => setDueDate(parseDateInput(e.target.value))}
+                                                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm cursor-pointer"
+                                            />
+                                        </div>
                                     </div>
 
                                     {/* Recurrence */}
@@ -369,7 +378,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
                                         >
                                             <option value="">指定なし</option>
-                                            {DURATION_OPTIONS.map(d => (
+                                            {customDurations.map(d => (
                                                 <option key={d} value={d}>{d} min</option>
                                             ))}
                                         </select>
@@ -390,21 +399,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                     {projects.map(p => (
                                         <option key={p.id} value={p.id}>{p.name}</option>
                                     ))}
-                                </select>
-                            </div>
-
-                            {/* Status */}
-                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
-                                <label htmlFor="task-status" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">ステータス</label>
-                                <select
-                                    id="task-status"
-                                    value={status}
-                                    onChange={(e) => setStatus(e.target.value)}
-                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
-                                >
-                                    <option value={TASK_STATUS.TODO}>To Do</option>
-                                    <option value={TASK_STATUS.COMPLETED}>完了</option>
-                                    <option value="archived">アーカイブ</option>
                                 </select>
                             </div>
                         </div>

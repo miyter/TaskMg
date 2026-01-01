@@ -6,8 +6,8 @@
 **TaskMg** は、目標達成とタスク管理を統合した先進的な Web アプリケーションです。
 **「目標（Target）から逆算して、日々の行動（Task）を設計する」** というコンセプトの元、OKR、WOOP、バックワード・デザインといった複数のフレームワークをシームレスに利用できます。
 
-ファイル総数: 159 ファイル (推定)
-総行数(LOC): 10,129 行 (src/ 配下)
+ファイル総数: 117 ファイル (src/ 配下)
+総行数(LOC): 10,268 行 (src/ 配下)
 
 ### 主な機能
 - **高度なタスク管理**: プロジェクト・ラベル・時間帯フィルタに加え、AND/OR 複合条件による柔軟な検索が可能。
@@ -21,12 +21,14 @@
 
 | カテゴリ | 技術 | ポイント |
 |----------|------|------------|
-| **Frontend** | React, TypeScript, Vite | 型安全性 100% の堅牢なコードベース |
-| **State** | Zustand | グローバル状態と UI 状態の一元管理 |
-| **Backend** | Firebase Firestore | リアルタイム同期とオフライン対応 |
-| **Auth** | Firebase Auth | 堅牢な認証システム |
+| **Frontend** | React 18, TypeScript 5, Vite 6 | 型安全性 100% の堅牢なコードベース |
+| **State** | Zustand 5 | グローバル状態と UI 状態の一元管理 |
+| **Backend** | Firebase Firestore 10 | リアルタイム同期とオフライン対応 |
+| **Auth** | Firebase Auth 10 | 堅牢な認証システム |
 | **Hosting** | Cloudflare Workers | 高速なエッジネットワーク配信 |
-| **Styling** | Tailwind CSS | プレミアムなデザインシステムとレスポンシブ対応 |
+| **Styling** | Tailwind CSS 3 | プレミアムなデザインシステムとレスポンシブ対応 |
+| **DnD** | @dnd-kit/core 6, @dnd-kit/sortable 10 | タスク・セクションのドラッグ&ドロップ |
+| **Date** | date-fns 4, date-fns-tz 3 | 日付操作とタイムゾーン管理 |
 
 ---
 

@@ -65,7 +65,23 @@ export function simpleMarkdownToHtml(markdownText: string | null | undefined): s
             const content = processInline(contentText);
             htmlResult.push(`<li>${content}</li>`);
         } else if (line.trim()) {
-            htmlResult.push(`<p class="mb-2">${processInline(line)}</p>`);
+            // 見出しの検出
+            const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+            if (headingMatch) {
+                const level = headingMatch[1].length;
+                const text = processInline(headingMatch[2]);
+                const headingClasses: Record<number, string> = {
+                    1: 'text-2xl font-bold mb-3',
+                    2: 'text-xl font-bold mb-2',
+                    3: 'text-lg font-semibold mb-2',
+                    4: 'text-base font-semibold mb-1',
+                    5: 'text-sm font-semibold mb-1',
+                    6: 'text-xs font-semibold mb-1',
+                };
+                htmlResult.push(`<h${level} class="${headingClasses[level]}">${text}</h${level}>`);
+            } else {
+                htmlResult.push(`<p class="mb-2">${processInline(line)}</p>`);
+            }
         } else {
             // 空行はリスト内でなければ無視、リスト内なら終了させるロジックは上記elseに入らないのでここで処理が必要か？
             // 上記 else に入るので listType があれば閉じられる。

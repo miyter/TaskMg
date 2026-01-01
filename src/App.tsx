@@ -9,6 +9,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ModalManager } from './components/modals/ModalManager';
 import { SidebarContent } from './components/sidebar/SidebarContent';
 import { TaskList } from './components/tasks/TaskList';
+import { SearchView } from './components/views/SearchView';
 import { auth } from './core/firebase';
 import { onAuthStateChanged } from './core/firebase-sdk';
 import { DashboardApp } from './features/target-dashboard/DashboardApp';
@@ -26,7 +27,8 @@ const App: React.FC = () => {
     useThemeEffect();
     const { filterType, targetId, query } = useFilterStore();
 
-    const { currentView } = useViewStore();
+    const { currentView, setView } = useViewStore();
+    const { setFilter } = useFilterStore();
     const { projects, setProjectsOverride } = useProjects();
     const { labels } = useLabels();
 
@@ -43,11 +45,9 @@ const App: React.FC = () => {
             const hasModal = document.querySelector('[role="dialog"]');
 
             if (e.key === '/' && !isInput && !hasModal) {
-                const searchInput = document.getElementById('page-search-input');
-                if (searchInput) {
-                    e.preventDefault();
-                    searchInput.focus();
-                }
+                e.preventDefault();
+                setFilter('search');
+                setView('search');
             }
         };
 
@@ -69,6 +69,7 @@ const App: React.FC = () => {
         if (currentView === 'wizard') return 'Goal Wizard';
         if (currentView === 'target-dashboard') return 'Target Dashboard';
         if (currentView === 'wiki') return 'Framework Wiki';
+        if (currentView === 'search') return query ? `"${query}" の検索結果` : '検索';
 
         if (filterType === 'project') return projects.find(p => p.id === targetId)?.name || 'Project';
         if (filterType === 'label') return labels.find(l => l.id === targetId)?.name || 'Label';
@@ -106,6 +107,8 @@ const App: React.FC = () => {
                     <DashboardApp />
                 ) : currentView === 'wiki' ? (
                     <WikiApp />
+                ) : currentView === 'search' ? (
+                    <SearchView />
                 ) : (
                     <TaskList />
                 )}

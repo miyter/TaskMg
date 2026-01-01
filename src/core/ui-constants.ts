@@ -45,7 +45,7 @@ export const UI_CONFIG = {
     },
     LAYOUT: {
         // Tailwind class for main content width
-        CONTAINER_WIDTH_CLASS: 'max-w-5xl',
+        CONTAINER_WIDTH_CLASS: 'max-w-6xl',
         MOBILE_SIDEBAR_WIDTH_PX: 280,
     },
     FONTS: {

@@ -90,7 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 {children}
             </div>
 
-            {/* Resizer Handle */}
+            {/* Resizer Handle - Improved hit area */}
             <div
                 role="separator"
                 aria-orientation="vertical"
@@ -108,13 +108,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                     }
                 }}
                 className={cn(
-                    "absolute top-0 right-0 w-1 h-full cursor-col-resize z-40 transition-colors hidden lg:flex items-center justify-center outline-none focus:bg-blue-500",
-                    "hover:bg-blue-500/50 active:bg-blue-600 group/resizer"
+                    "absolute top-0 right-0 w-3 h-full cursor-col-resize z-40 transition-colors hidden lg:flex items-center justify-center outline-none focus:bg-blue-500",
+                    "hover:bg-blue-500/30 active:bg-blue-600/50 group/resizer"
                 )}
                 title="ドラッグまたは矢印キーでリサイズ"
             >
-                {/* Visual Indicator */}
-                <div className="absolute w-1.5 h-8 bg-gray-300 dark:bg-gray-600 rounded-full opacity-0 group-hover/resizer:opacity-100 group-focus/resizer:opacity-100 transition-opacity pointer-events-none" />
+                {/* Visual Indicator - More visible */}
+                <div className="absolute w-1 h-12 bg-gray-400 dark:bg-gray-500 rounded-full opacity-0 group-hover/resizer:opacity-100 group-focus/resizer:opacity-100 transition-opacity pointer-events-none" />
             </div>
             {/* Permanent subtle indicator for the resizer */}
             <div className="absolute top-0 right-0 w-[1px] h-full bg-gray-200/50 dark:bg-gray-700/30 hidden lg:block" />

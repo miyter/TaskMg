@@ -5,9 +5,17 @@ interface SidebarSectionProps {
     title: string;
     children: React.ReactNode;
     defaultExpanded?: boolean;
+    action?: React.ReactNode;
+    dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
 }
 
-export const SidebarSection: React.FC<SidebarSectionProps & { action?: React.ReactNode }> = ({ title, children, defaultExpanded = true, action }) => {
+export const SidebarSection: React.FC<SidebarSectionProps> = ({
+    title,
+    children,
+    defaultExpanded = true,
+    action,
+    dragHandleProps
+}) => {
     // Mobile: Default collapsed if not explicitly set (Issue #32)
     const [isExpanded, setIsExpanded] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -26,6 +34,18 @@ export const SidebarSection: React.FC<SidebarSectionProps & { action?: React.Rea
     return (
         <div className="mb-2 group/section">
             <div className="flex items-center justify-between px-2 py-1">
+                {/* Drag Handle */}
+                {dragHandleProps && (
+                    <div
+                        {...dragHandleProps}
+                        className="p-1 mr-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover/section:opacity-100 transition-opacity touch-none"
+                        aria-label="ドラッグして並び替え"
+                    >
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+                        </svg>
+                    </div>
+                )}
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
                     aria-expanded={isExpanded}
