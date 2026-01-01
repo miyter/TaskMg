@@ -33,7 +33,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
             </Sidebar>
 
             <main className="flex-1 flex flex-col relative overflow-hidden" id="main-content">
-                <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 sticky top-0">
+                <header className="h-12 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 sticky top-0">
                     <div className="flex items-center gap-3">
                         {!isSidebarOpen && (
                             <button onClick={toggleSidebar} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={t('sidebar.menu_open')} aria-label={t('sidebar.menu_open')}>
@@ -55,8 +55,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
                         </button>
                     </div>
                 </header>
-                <div className="flex-1 p-2 md:p-4 lg:p-6 overflow-hidden flex flex-col">
-                    <div className={cn("w-full mx-auto bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-xl md:shadow-2xl rounded-2xl md:rounded-[2rem] overflow-hidden relative flex-1 border border-white/20 dark:border-gray-700/30", UI_CONFIG.LAYOUT.CONTAINER_WIDTH_CLASS)}>
+                <div className="flex-1 overflow-hidden flex flex-col">
+                    <div className={cn("w-full h-full bg-white dark:bg-gray-900 relative flex-1", UI_CONFIG.LAYOUT.CONTAINER_WIDTH_CLASS)}>
                         {children}
                     </div>
                 </div>

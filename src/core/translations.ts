@@ -64,9 +64,13 @@ const ja = {
         },
         project: {
             reorder_fail: 'プロジェクトの並び替えに失敗しました',
-        }
+        },
+        confirm_delete: '本当に削除しますか？\n削除されたデータは元に戻せません。',
     },
 
+    delete: '削除',
+    timeblock: 'タイムブロック',
+    filter: 'フィルター',
     sidebar: {
         add_workspace: 'ワークスペースを追加',
         search_placeholder: '検索 (/)',
@@ -79,6 +83,7 @@ const ja = {
         resizer_label: 'サイドバーの幅調整',
         resizer_hint: 'ドラッグまたは矢印キーでリサイズ',
         menu_open: 'メニューを開く',
+        reorder_section: 'セクションを並び替え',
     },
 
     modal: {
@@ -145,6 +150,19 @@ const ja = {
             import_success: 'インポートが完了しました。\nタスク: {tasks}件\nプロジェクト: {projects}件',
             import_fail: 'インポートに失敗しました。ファイル形式が正しいか確認してください。',
             create_fail: 'バックアップの作成に失敗しました。',
+        },
+        options: {
+            theme: {
+                light: 'ライト',
+                dark: 'ダーク',
+                system: 'システム'
+            },
+            density: {
+                compact: 'コンパクト',
+                normal: '通常',
+                comfortable: 'ゆったり',
+                spacious: '広め'
+            }
         },
         language: {
             title: '言語設定 (Language)',
@@ -232,9 +250,13 @@ const en = {
         },
         project: {
             reorder_fail: 'Failed to reorder projects',
-        }
+        },
+        confirm_delete: 'Are you sure you want to delete this item?\nThis action cannot be undone.',
     },
 
+    delete: 'Delete',
+    timeblock: 'Time Block',
+    filter: 'Filter',
     sidebar: {
         add_workspace: 'Add Workspace',
         search_placeholder: 'Search (/)',
@@ -247,6 +269,7 @@ const en = {
         resizer_label: 'Resize Sidebar',
         resizer_hint: 'Drag or use arrow keys to resize',
         menu_open: 'Open Menu',
+        reorder_section: 'Reorder Section',
     },
 
     modal: {
@@ -313,6 +336,19 @@ const en = {
             import_success: 'Import completed.\nTasks: {tasks}\nProjects: {projects}',
             import_fail: 'Import failed. Please check the file format.',
             create_fail: 'Failed to create backup.',
+        },
+        options: {
+            theme: {
+                light: 'Light',
+                dark: 'Dark',
+                system: 'System'
+            },
+            density: {
+                compact: 'Compact',
+                normal: 'Normal',
+                comfortable: 'Comfortable',
+                spacious: 'Spacious'
+            }
         },
         language: {
             title: 'Language',

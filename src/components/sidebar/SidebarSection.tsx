@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../core/translations'; // Add
 import { cn } from '../../utils/cn';
 
 interface SidebarSectionProps {
@@ -16,6 +17,7 @@ export const SidebarSection: React.FC<SidebarSectionProps> = ({
     action,
     dragHandleProps
 }) => {
+    const { t } = useTranslation(); // Add
     // Mobile: Default collapsed if not explicitly set (Issue #32)
     const [isExpanded, setIsExpanded] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -38,8 +40,8 @@ export const SidebarSection: React.FC<SidebarSectionProps> = ({
                 {dragHandleProps && (
                     <div
                         {...dragHandleProps}
-                        className="p-1 mr-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover/section:opacity-100 transition-opacity touch-none"
-                        aria-label="ドラッグして並び替え"
+                        className="p-1 mr-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-30 group-hover/section:opacity-100 transition-opacity touch-none"
+                        aria-label={t('sidebar.reorder_section')} // Use translation
                     >
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
@@ -62,8 +64,8 @@ export const SidebarSection: React.FC<SidebarSectionProps> = ({
                     {title}
                 </button>
                 {action && (
-                    // Mobile: Always visible (opacity-100). Desktop: Hover only (md:opacity-0 ...) (Issue #27)
-                    <div className="opacity-100 md:opacity-0 md:group-hover/section:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                    // Mobile: Always visible. Desktop: Always visible per user feedback (Issue #27 fix)
+                    <div className="opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                         {action}
                     </div>
 

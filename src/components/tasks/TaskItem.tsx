@@ -1,4 +1,3 @@
-import { useDraggable } from '@dnd-kit/core';
 import React from 'react';
 import { toggleTaskStatus, updateTask } from '../../store';
 import { Task } from '../../store/schema';
@@ -8,17 +7,15 @@ import { formatDateCompact, getTaskDateColor } from '../../utils/date';
 
 interface TaskItemProps {
     task: Task;
+    style?: React.CSSProperties;
+    className?: string;
+    dragHandleProps?: any;
 }
 
-export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
+export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dragHandleProps }) => {
     const isCompleted = task.status === 'completed';
     const isImportant = !!task.isImportant;
     const { openModal } = useModalStore();
-
-    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-        id: `task:${task.id}`,
-        data: { task }
-    });
 
     const handleToggle = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -34,22 +31,15 @@ export const TaskItem = React.memo<TaskItemProps>(({ task }) => {
         }
     };
 
-    const style = transform ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        zIndex: 50,
-    } : undefined;
-
     return (
         <li
-            ref={setNodeRef}
             style={style}
-            {...listeners}
-            {...attributes}
             onClick={() => openModal('task-detail', task)}
             className={cn(
                 "group flex items-start gap-3 p-[var(--task-p)] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-xl hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 cursor-pointer hover-lift",
-                isDragging && "opacity-70 border-blue-500 shadow-lg"
+                className
             )}
+            {...dragHandleProps}
         >
             {/* Checkbox */}
             <button

@@ -1,14 +1,15 @@
 import { useDroppable } from '@dnd-kit/core';
-import React from 'react';
+import React, { useState } from 'react'; // useState追加
+import { useTranslation } from '../../core/translations';
 import { useTasks } from '../../hooks/useTasks';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
+import { deleteTimeBlock } from '../../store'; // 追加
 import { TimeBlock } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
-import { SidebarItem } from './SidebarItem';
-
-
-import { useTranslation } from '../../core/translations';
+import { useModalStore } from '../../store/ui/modal-store'; // 追加
 import { SidebarLoadingState } from '../common/SidebarLoadingState';
+import { ContextMenu, ContextMenuItem } from '../ui/ContextMenu'; // 追加
+import { SidebarItem } from './SidebarItem';
 
 export const TimeBlockList: React.FC = () => {
 
@@ -49,8 +50,12 @@ export const TimeBlockList: React.FC = () => {
 
 
 const TimeBlockItem: React.FC<{ block: TimeBlock, count: number }> = ({ block, count }) => {
+    const { t } = useTranslation(); // 追加
     const { filterType, targetId, setFilter } = useFilterStore();
+    const { openModal } = useModalStore(); // 追加
     const isActive = filterType === 'timeblock' && targetId === block.id;
+
+    const [menuPosition, setMenuPosition] = useState<{ x: number, y: number } | null>(null);
 
     const { setNodeRef, isOver } = useDroppable({
         id: `timeblock:${block.id}`,
@@ -60,8 +65,28 @@ const TimeBlockItem: React.FC<{ block: TimeBlock, count: number }> = ({ block, c
         }
     });
 
+    const handleEdit = () => {
+        setMenuPosition(null);
+        openModal('timeblock-edit', block);
+    };
+
+    const handleDelete = async () => {
+        setMenuPosition(null);
+        if (confirm(`${t('timeblock')}: ${block.start} - ${block.end}\n${t('msg.confirm_delete')}`)) {
+            if (block.id) {
+                await deleteTimeBlock(block.id);
+            }
+        }
+    };
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setMenuPosition({ x: e.clientX, y: e.clientY });
+    };
+
     return (
-        <div ref={setNodeRef}>
+        <div ref={setNodeRef} onContextMenu={handleContextMenu}>
             <SidebarItem
                 label={`${block.start} - ${block.end}`}
                 icon={<span className="w-2 rounded-full aspect-square" style={{ backgroundColor: block.color }} />}
@@ -70,6 +95,20 @@ const TimeBlockItem: React.FC<{ block: TimeBlock, count: number }> = ({ block, c
                 isOver={isOver}
                 onClick={() => setFilter('timeblock', block.id || '')}
             />
+            {menuPosition && (
+                <ContextMenu x={menuPosition.x} y={menuPosition.y} onClose={() => setMenuPosition(null)}>
+                    <ContextMenuItem onClick={handleEdit} icon={
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    }>
+                        {t('edit')}
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={handleDelete} variant="danger" icon={
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    }>
+                        {t('delete')}
+                    </ContextMenuItem>
+                </ContextMenu>
+            )}
         </div>
     );
 };

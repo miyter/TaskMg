@@ -35,9 +35,14 @@ export function sortTasks(tasks: Task[], criteria: SortCriteria = 'createdAt_des
                 valA = a.isImportant ? 1 : 0;
                 valB = b.isImportant ? 1 : 0;
                 break;
+            case 'manual':
+                // order is ascending (smaller first)
+                valA = a.order !== undefined ? a.order : Number.MAX_SAFE_INTEGER;
+                valB = b.order !== undefined ? b.order : Number.MAX_SAFE_INTEGER;
+                break;
             default:
                 // 不明な criteria の場合は createdAt にフォールバック
-                console.warn(`[sortTasks] Unknown criteria: ${field}, falling back to createdAt`);
+                // console.debug(`[sortTasks] Unknown criteria: ${field}, falling back to createdAt`);
                 valA = toDate(a.createdAt)?.getTime();
                 valB = toDate(b.createdAt)?.getTime();
         }

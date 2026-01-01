@@ -45,7 +45,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
         density, setDensity,
         fontSize, setFontSize,
         fontEn, setFontEn,
-        fontJp, setFontJp
+        fontJp, setFontJp,
+        language, setLanguage
     } = useSettingsStore();
 
     const { currentWorkspaceId } = useWorkspaceStore();
@@ -95,7 +96,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                     : "border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400"
                                             )}
                                         >
-                                            <span className="capitalize">{mode}</span>
+                                            <span className="capitalize">{t(`settings_modal.options.theme.${mode}` as any)}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -125,7 +126,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 onChange={() => setDensity(d)}
                                                 className="hidden"
                                             />
-                                            <span className="capitalize text-sm font-medium text-gray-700 dark:text-gray-300">{d}</span>
+                                            <span className="capitalize text-sm font-medium text-gray-700 dark:text-gray-300">{t(`settings_modal.options.density.${d}` as any)}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -274,8 +275,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                             </div>
 
                             <AccordionSection title={t('settings_modal.language.title')} icon="🌐" defaultOpen={true}>
-                                <div className="text-sm text-gray-500 p-2">
-                                    <p>{t('settings_modal.language.description')}</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { code: 'ja', label: '日本語' },
+                                        { code: 'en', label: 'English' }
+                                    ].map(lang => (
+                                        <button
+                                            key={lang.code}
+                                            onClick={() => setLanguage(lang.code as any)}
+                                            className={cn(
+                                                "p-3 border rounded-xl text-sm font-medium transition-all",
+                                                language === lang.code
+                                                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-2 ring-blue-200 dark:ring-blue-800"
+                                                    : "border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400"
+                                            )}
+                                        >
+                                            <span className="text-xl mr-2">{lang.code === 'ja' ? '🇯🇵' : '🇺🇸'}</span>
+                                            {lang.label}
+                                        </button>
+                                    ))}
                                 </div>
                             </AccordionSection>
                         </div>

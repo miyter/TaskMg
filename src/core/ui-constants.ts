@@ -45,11 +45,12 @@ export const UI_CONFIG = {
     },
     LAYOUT: {
         // Tailwind class for main content width
-        CONTAINER_WIDTH_CLASS: 'max-w-6xl',
+        CONTAINER_WIDTH_CLASS: 'w-full max-w-full',
         MOBILE_SIDEBAR_WIDTH_PX: 280,
     },
     FONTS: {
         EU: [
+            { label: 'Google Sans', value: '"Google Sans", Inter, sans-serif' },
             { label: 'Inter', value: 'Inter, sans-serif' },
             { label: 'Roboto', value: 'Roboto, sans-serif' },
             { label: 'System UI', value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }

@@ -1,6 +1,24 @@
+import {
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    closestCenter,
+    useSensor,
+    useSensors
+} from '@dnd-kit/core';
+import {
+    SortableContext,
+    arrayMove,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import React, { useMemo } from 'react';
 import { useTasks } from '../../hooks/useTasks';
 import { getProcessedTasks } from '../../logic/search';
+import { reorderTasks } from '../../store';
 import { Task } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { useModalStore } from '../../store/ui/modal-store';
@@ -8,7 +26,36 @@ import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
 import { AddTaskButton } from './AddTaskButton';
 import { TaskItem } from './TaskItem';
-import { TaskStats } from './TaskStats'; // New component
+import { TaskStats } from './TaskStats';
+
+// --- Sortable Item Wrapper ---
+const SortableTaskItem = ({ task, className }: { task: Task; className?: string }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: task.id || '' });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 50 : 'auto',
+        position: 'relative' as const,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="touch-manipulation">
+            <TaskItem
+                task={task}
+                className={cn(className, isDragging && "opacity-80 shadow-lg border-blue-400 bg-blue-50/50")}
+                dragHandleProps={{ ...attributes, ...listeners }}
+            />
+        </div>
+    );
+};
 
 export const TaskList: React.FC = () => {
     const { tasks, loading } = useTasks();
@@ -45,7 +92,7 @@ export const TaskList: React.FC = () => {
             timeBlockId: filterType === 'timeblock' ? targetId : null,
             duration: filterType === 'duration' ? targetId : null,
             filterType: filterType,
-            savedFilter: null, // Custom filters logic can be added later
+            savedFilter: null,
             sortCriteria: sortCriteria,
         };
     }, [filterType, targetId, query, showCompleted, sortCriteria]);
@@ -63,6 +110,35 @@ export const TaskList: React.FC = () => {
         spacious: 'space-y-4'
     }[density];
 
+    // DnD Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8, // Prevent accidental drags
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = processedTasks.findIndex(t => t.id === active.id);
+        const newIndex = processedTasks.findIndex(t => t.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+            // Firestoreへの反映指示
+            // arrayMoveで新しい順序の配列を作り、そのIDリストを渡す
+            const reordered = arrayMove(processedTasks, oldIndex, newIndex);
+            const orderedIds = reordered.map(t => t.id!).filter(Boolean);
+
+            await reorderTasks(orderedIds);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -72,12 +148,13 @@ export const TaskList: React.FC = () => {
     }
 
     const isSearching = !!(query && query.trim().length > 0);
+    const isManualSort = sortCriteria === 'manual';
 
     return (
         <div className="flex flex-col h-full overflow-hidden relative">
             {/* Task List Container */}
             <div className="flex-1 overflow-y-auto custom-scrollbar px-1 pb-24">
-                <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm pt-1 pb-4 mb-4 flex items-center gap-2">
+                <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm pt-2 pb-4 mb-4 flex items-center gap-2">
                     <div className="flex-1">
                         {!isSearching ? (
                             <AddTaskButton initialValue="" />
@@ -96,6 +173,7 @@ export const TaskList: React.FC = () => {
                             onChange={(e) => setSortCriteria(e.target.value)}
                             className="text-xs bg-transparent border-none outline-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer font-medium"
                         >
+                            <option value="manual">手動 (並び替え)</option>
                             <option value="createdAt_desc">作成日順</option>
                             <option value="dueDate_asc">期限が近い順</option>
                             <option value="important_desc">重要度順</option>
@@ -140,11 +218,30 @@ export const TaskList: React.FC = () => {
                         </button>
                     </div>
                 ) : (
-                    <ul className={cn("transition-all duration-200", densityClass)}>
-                        {processedTasks.map((task: Task) => (
-                            <TaskItem key={task.id} task={task} />
-                        ))}
-                    </ul>
+                    isManualSort ? (
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={processedTasks.map(t => t.id || '')}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className={cn("transition-all duration-200", densityClass)}>
+                                    {processedTasks.map(task => (
+                                        <SortableTaskItem key={task.id} task={task} />
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
+                    ) : (
+                        <ul className={cn("transition-all duration-200", densityClass)}>
+                            {processedTasks.map((task: Task) => (
+                                <TaskItem key={task.id} task={task} />
+                            ))}
+                        </ul>
+                    )
                 )}
             </div>
 

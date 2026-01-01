@@ -4,13 +4,13 @@ import { getTranslator } from '../core/translations';
 import { useSettingsStore } from './ui/settings-store';
 
 import { Task, TaskSchema } from './schema';
-import {
-    addTaskRaw,
+addTaskRaw,
     deleteTaskRaw,
     getTaskByIdRaw,
     getTaskFromCache,
     getTasksFromCache as getTasksFromCacheRaw,
     isTasksInitialized as isTasksInitializedRaw,
+    reorderTasksRaw,
     subscribeToTasksRaw,
     updateTaskRaw,
     updateTaskStatusRaw
@@ -93,6 +93,20 @@ export async function updateTask(taskId: string, updates: Partial<Task>) {
         console.error("Failed to update task:", error);
         toast.error(getT()('msg.task.update_fail'));
 
+        throw error;
+    }
+}
+
+/**
+ * タスクの並び順を更新する
+ */
+export async function reorderTasks(orderedTaskIds: string[]) {
+    try {
+        const { userId, workspaceId } = requireAuthAndWorkspace();
+        await reorderTasksRaw(userId, workspaceId, orderedTaskIds);
+    } catch (error) {
+        console.error("Failed to reorder tasks:", error);
+        toast.error(getT()('msg.task.update_fail'));
         throw error;
     }
 }

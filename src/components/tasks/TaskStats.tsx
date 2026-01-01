@@ -14,8 +14,10 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
 
     // Calculate total duration in minutes
     const totalTaskMinutes = tasks.reduce((sum, task) => {
-        const duration = task.duration || 0;
-        return sum + Number(duration);
+        // Ensure duration is treated as a number, handle potential string values from legacy data
+        const rawDuration = task.duration;
+        const duration = typeof rawDuration === 'number' ? rawDuration : Number(rawDuration);
+        return sum + (isNaN(duration) ? 0 : duration);
     }, 0);
 
     const formatTime = (mins: number) => (mins / 60).toFixed(2) + 'h';
