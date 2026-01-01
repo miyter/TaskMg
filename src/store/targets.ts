@@ -32,13 +32,28 @@ export const getTargets = (workspaceId?: string): Target[] => {
 /**
  * ターゲットのリアルタイム購読
  */
-export const subscribeToTargets = (workspaceId: string | ((targets: Target[]) => void), onUpdate?: (targets: Target[]) => void): Unsubscribe => {
-    const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
-    const targetWorkspaceId = typeof workspaceId === 'string' ? workspaceId : getCurrentWorkspaceId();
+export const subscribeToTargets = (workspaceId: string | ((targets: Target[]) => void), onUpdate?: (targets: Target[]) => void, onError?: (error: any) => void): Unsubscribe => {
+    // 引数解決のロジックが少し複雑（オーバーロード風）
+    // パターン1: subscribeToTargets(callback)
+    // パターン2: subscribeToTargets(workspaceId, callback, onError)
+    let callback: ((targets: Target[]) => void) | undefined;
+    let targetWorkspaceId: string | undefined;
+    let errorCallback: ((error: any) => void) | undefined;
+
+    if (typeof workspaceId === 'function') {
+        callback = workspaceId;
+        targetWorkspaceId = getCurrentWorkspaceId() || undefined;
+        // errorCallback is undefined in this pattern
+    } else {
+        targetWorkspaceId = workspaceId;
+        callback = onUpdate;
+        errorCallback = onError;
+    }
+
     const user = auth.currentUser;
 
     if (user && targetWorkspaceId && typeof callback === 'function') {
-        return subscribeToTargetsRaw(user.uid, targetWorkspaceId, callback);
+        return subscribeToTargetsRaw(user.uid, targetWorkspaceId, callback, errorCallback);
     } else {
         if (typeof callback === 'function') callback([]);
         return () => { };

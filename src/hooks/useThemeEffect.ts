@@ -1,20 +1,16 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { useSettingsStore } from '../store/ui/settings-store';
 import { useUIStore } from '../store/ui/ui-store';
 
 /**
  * Applies global theme settings (fonts, density, sizes) to the DOM.
- * This replaces the legacy ui-settings-manager.ts logic.
  */
-/**
- * Applies global theme settings (fonts, density, sizes) to the DOM.
- */
-export const useApplyTheme = () => {
+export const useThemeEffect = () => {
     const { fontEn, fontJp, fontSize, density, themeMode } = useSettingsStore();
     const { setSidebarDensity } = useUIStore();
 
     // Apply Theme (Light / Dark)
-    useEffect(() => {
+    useLayoutEffect(() => {
         const root = document.documentElement;
         const applyDark = () => {
             if (themeMode === 'dark') {
@@ -43,31 +39,27 @@ export const useApplyTheme = () => {
     }, [themeMode]);
 
     // Apply Fonts
-    useEffect(() => {
+    useLayoutEffect(() => {
         const root = document.documentElement;
         root.style.setProperty('--font-en', `"${fontEn}"`);
         root.style.setProperty('--font-jp', `"${fontJp}"`);
     }, [fontEn, fontJp]);
 
     // Apply Font Size
-    useEffect(() => {
+    useLayoutEffect(() => {
         const sizeClasses = ['font-app-sm', 'font-app-base', 'font-app-md', 'font-app-lg', 'font-app-xl'];
         document.body.classList.remove(...sizeClasses);
         document.body.classList.add(`font-app-${fontSize}`);
     }, [fontSize]);
 
     // Apply Density (Global)
-    useEffect(() => {
-        // UI_CONFIG.DENSITY_LEVELS is gone, use values directly or loop manually if needed.
-        // Actually we just need to remove old classes and add new one.
-        // We know density values from type Density.
+    useLayoutEffect(() => {
         const classes = ['app-density-compact', 'app-density-normal', 'app-density-comfortable', 'app-density-spacious'];
 
         document.body.classList.remove(...classes);
         document.body.classList.add(`app-density-${density}`);
 
-        // Sync density to sidebar store as well (if sidebar uses separate store, but ideally they should merge)
-        // For now, we update the legacy ui-store sidebarDensity to match global density
+        // Sync density to sidebar store as well
         setSidebarDensity(density);
     }, [density, setSidebarDensity]);
 };

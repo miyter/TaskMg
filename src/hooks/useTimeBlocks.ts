@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+
+
 import { TimeBlock } from '../store/schema';
 import { subscribeToTimeBlocks } from '../store/timeblocks';
 import { getCurrentWorkspaceId } from '../store/workspace';
@@ -11,26 +13,36 @@ export const useTimeBlocks = () => {
     const [loading, setLoading] = useState(true);
     const workspaceId = getCurrentWorkspaceId();
 
-    useEffect(() => {
+    const isCancelledRef = useRef(false);
+
+    useLayoutEffect(() => {
+        isCancelledRef.current = false;
+
         if (!workspaceId) {
             setTimeBlocks([]);
             setLoading(false);
             return;
         }
 
-        let mounted = true;
+        // Reset state for new workspace to prevent flicker of old data
+        // Ideally we would check cache like isTasksInitialized(workspaceId)
+        // But for now, explicit reset ensures correctness
+        setTimeBlocks([]);
+        setLoading(true);
+
         const unsubscribe = subscribeToTimeBlocks(workspaceId, (newBlocks) => {
-            if (mounted) {
+            if (!isCancelledRef.current) {
                 setTimeBlocks(newBlocks);
                 setLoading(false);
             }
         });
 
         return () => {
-            mounted = false;
+            isCancelledRef.current = true;
             unsubscribe();
         };
     }, [workspaceId]);
+
 
     return { timeBlocks, loading };
 };

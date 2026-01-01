@@ -35,7 +35,11 @@ export function useTaskCounts() {
             // Count search matches regardless of status filters? 
             // Usually search results include completed if showCompleted is true, but count needs to match filtered view.
             // Here we count all matches or filtered? 
-            // Let's count filtered-like logic for search badge if query exists and matches
+            // count is undefined or 0 if matched only
+            // But if query exists, we need to decide if matched count respects completed/archived?
+            // Usually 'Search' view shows completed tasks too if settings allow.
+            // But 'Active' tasks search?
+            // Let's count matches of all non-archived for search badge
             if (normalizedQuery && task.title?.toLowerCase().includes(normalizedQuery)) {
                 acc.search++;
             }
@@ -45,19 +49,17 @@ export function useTaskCounts() {
 
             const isCompleted = task.status === 'completed';
 
-            // "All Tasks" count usually includes completed? Or just active?
-            // "Inbox" usually implies active tasks?
-            // Let's stick to Active tasks for sidebar badges unless specified otherwise
-
+            // Issue #8: Search badge vs Filter view inconsistency
+            // 'Today', 'Upcoming', 'Inbox', 'Important' badges usually show ACTIVE tasks count only.
+            // If we include completed, the badge is confusing (e.g. 'Today: 5' but all done).
             if (isCompleted) {
-                // If we want badges to show ONLY active tasks implies skipping completed
-                // but let's assume badges count Active tasks only.
                 continue;
             }
 
             // --- Active Tasks Only Below ---
 
             acc.all++;
+
 
             // Inbox: No Project or 'unassigned'
             if (!task.projectId || task.projectId === 'unassigned' || task.projectId === 'none') {

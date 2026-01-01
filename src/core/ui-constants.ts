@@ -11,13 +11,22 @@ export const UI_CONFIG = {
         'comfortable': 'py-2.5',
         'spacious': 'py-3.5'
     },
+    // Issue #10: Explicitly scoped constants
+    SIDEBAR_DENSITY: {
+        'compact': 'py-0.5',
+        'normal': 'py-1.5',
+        'comfortable': 'py-2.5',
+        'spacious': 'py-3.5'
+    },
     DND: {
         PREFIX_TASK: 'task:',
         PREFIX_FILTER: 'filter:',
         TYPE_PROJECT: 'project',
         TYPE_INBOX: 'inbox',
         TYPE_TIMEBLOCK: 'timeblock',
+        TOUCH_DELAY: 250, // Issue #9
     },
+
     STORAGE_KEYS: {
         WIDTH: 'sidebarWidth',
         DENSITY: 'sidebar_density',

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+
 import { subscribeToFilters } from '../store/filters';
 import { Filter } from '../store/schema';
 import { getCurrentWorkspaceId } from '../store/workspace';
@@ -10,29 +11,30 @@ export const useFilters = () => {
     const [filters, setFilters] = useState<Filter[]>([]);
     const [loading, setLoading] = useState(true);
     const workspaceId = getCurrentWorkspaceId();
-    const isInitialized = useRef(false);
+    const isCancelledRef = useRef(false);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
+        isCancelledRef.current = false;
+
         if (!workspaceId) {
             setFilters([]);
             setLoading(false);
             return;
         }
 
-        let mounted = true;
+        // Prevent stale data flicker
+        setFilters([]);
+        setLoading(true);
 
         const unsubscribe = subscribeToFilters(workspaceId, (newFilters) => {
-            if (mounted) {
+            if (!isCancelledRef.current) {
                 setFilters(newFilters);
                 setLoading(false);
             }
         });
 
-        // Error handling is managed inside subscribeToFilters (logs to console)
-        // Future improvement: expose onError in subscribeToFilters
-
         return () => {
-            mounted = false;
+            isCancelledRef.current = true;
             unsubscribe();
         };
     }, [workspaceId]);

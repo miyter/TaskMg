@@ -40,8 +40,8 @@ function getConfiguration() {
     }
 
     // 2. Vite環境変数 (import.meta.env)
+    // Note: vite-env.d.ts で型定義推奨
     try {
-        // Note: vite-env.d.ts should handle this, but explicit cast here safeguards runtime
         const env = import.meta.env as unknown as ImportMetaEnv;
         if (env && env.VITE_FIREBASE_API_KEY) {
             return {
@@ -57,6 +57,7 @@ function getConfiguration() {
     } catch (e) {
         // 無視して次へ
     }
+
 
     // 3. レガシー注入変数 (__firebase_config)
     if (typeof __firebase_config !== 'undefined') {
@@ -87,11 +88,12 @@ if (!firebaseConfig?.apiKey || !firebaseConfig?.projectId) {
 let appInstance: FirebaseApp;
 if (getApps().length > 0) {
     appInstance = getApps()[0];
-    console.log("[Firebase] Using existing app instance.");
+    if (import.meta.env.DEV) console.log("[Firebase] Using existing app instance.");
 } else {
     appInstance = initializeApp(firebaseConfig);
-    console.log("[Firebase] Initialized new app instance.");
+    if (import.meta.env.DEV) console.log("[Firebase] Initialized new app instance.");
 }
+
 
 // サービスのエクスポート
 export const app: FirebaseApp = appInstance;

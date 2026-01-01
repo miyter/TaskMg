@@ -24,7 +24,7 @@ const _cachedTargetsMap = new Map<string, Target[]>();
 /**
  * ターゲット（目標）データのリアルタイムリスナーを開始する (RAW)
  */
-export function subscribeToTargetsRaw(userId: string, workspaceId: string, onUpdate: (targets: Target[]) => void): Unsubscribe {
+export function subscribeToTargetsRaw(userId: string, workspaceId: string, onUpdate: (targets: Target[]) => void, onError?: (error: any) => void): Unsubscribe {
     const path = paths.targets(userId, workspaceId);
 
     // 作成日順（新しいものが上）
@@ -51,7 +51,8 @@ export function subscribeToTargetsRaw(userId: string, workspaceId: string, onUpd
     }, (error) => {
         console.error("Error subscribing to targets:", error);
         _cachedTargetsMap.set(workspaceId, []);
-        onUpdate([]);
+        onUpdate([]); // Still clear UI
+        if (onError) onError(error);
     });
 }
 

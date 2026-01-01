@@ -2,32 +2,55 @@ import { useDroppable } from '@dnd-kit/core';
 import React from 'react';
 import { useTasks } from '../../hooks/useTasks';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
+import { TimeBlock } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { SidebarItem } from './SidebarItem';
 
+
+import { useTranslation } from '../../core/translations';
 import { SidebarLoadingState } from '../common/SidebarLoadingState';
 
 export const TimeBlockList: React.FC = () => {
+
     const { timeBlocks, loading } = useTimeBlocks();
     const { tasks } = useTasks();
+
+    // Optimize count calculation (Issue #29)
+    const counts = React.useMemo(() => {
+        const map = new Map<string, number>();
+        let unassignedCount = 0;
+
+        tasks.forEach(t => {
+            if (t.status === 'completed') return;
+            if (!t.timeBlockId || t.timeBlockId === 'unassigned' || t.timeBlockId === 'null') {
+                unassignedCount++;
+            } else {
+                map.set(t.timeBlockId, (map.get(t.timeBlockId) || 0) + 1);
+            }
+        });
+        return { map, unassignedCount };
+    }, [tasks]);
 
     if (loading) return <SidebarLoadingState />;
 
     return (
         <div className="space-y-0.5 py-1">
             {timeBlocks.map(block => (
-                <TimeBlockItem key={block.id} block={block} tasks={tasks} />
+                <TimeBlockItem
+                    key={block.id}
+                    block={block}
+                    count={counts.map.get(block.id || '') || 0}
+                />
             ))}
-            <UnassignedTimeBlockItem tasks={tasks} />
+            <UnassignedTimeBlockItem count={counts.unassignedCount} />
         </div>
     );
 };
 
-const TimeBlockItem: React.FC<{ block: any, tasks: any[] }> = ({ block, tasks }) => {
+
+const TimeBlockItem: React.FC<{ block: TimeBlock, count: number }> = ({ block, count }) => {
     const { filterType, targetId, setFilter } = useFilterStore();
     const isActive = filterType === 'timeblock' && targetId === block.id;
-
-    const count = tasks.filter(t => t.status !== 'completed' && t.timeBlockId === block.id).length;
 
     const { setNodeRef, isOver } = useDroppable({
         id: `timeblock:${block.id}`,
@@ -45,17 +68,19 @@ const TimeBlockItem: React.FC<{ block: any, tasks: any[] }> = ({ block, tasks })
                 count={count}
                 isActive={isActive}
                 isOver={isOver}
-                onClick={() => setFilter('timeblock', block.id)}
+                onClick={() => setFilter('timeblock', block.id || '')}
             />
         </div>
     );
 };
 
-const UnassignedTimeBlockItem: React.FC<{ tasks: any[] }> = ({ tasks }) => {
+
+const UnassignedTimeBlockItem: React.FC<{ count: number }> = ({ count }) => {
+    const { t } = useTranslation();
     const { filterType, targetId, setFilter } = useFilterStore();
+
     const isActive = filterType === 'timeblock' && targetId === 'unassigned';
 
-    const count = tasks.filter(t => t.status !== 'completed' && (!t.timeBlockId || t.timeBlockId === 'unassigned' || t.timeBlockId === 'null')).length;
 
     const { setNodeRef, isOver } = useDroppable({
         id: `timeblock:unassigned`,
@@ -68,7 +93,9 @@ const UnassignedTimeBlockItem: React.FC<{ tasks: any[] }> = ({ tasks }) => {
     return (
         <div ref={setNodeRef}>
             <SidebarItem
-                label="未定"
+                label={t('sidebar.unassigned')}
+
+
                 icon={<span className="w-2 rounded-full aspect-square bg-gray-400" />}
                 count={count}
                 isActive={isActive}

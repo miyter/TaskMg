@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
 import { Target } from '../store/schema';
 import { subscribeToTargets } from '../store/targets';
 import { useWorkspace } from './useWorkspace';
@@ -16,17 +17,29 @@ export const useTargets = () => {
         }
 
         setLoading(true);
-        let mounted = true;
+        const isCancelledRef = useRef(false);
+        isCancelledRef.current = false;
 
-        const unsubscribe = subscribeToTargets(workspaceId, (newTargets) => {
-            if (mounted) {
-                setTargets(newTargets);
-                setLoading(false);
+
+        const unsubscribe = subscribeToTargets(
+            workspaceId,
+            (newTargets) => {
+                if (!isCancelledRef.current) {
+                    setTargets(newTargets);
+                    setLoading(false);
+                }
+            },
+            (error) => {
+                if (!isCancelledRef.current) {
+                    console.error("Target subscription error:", error);
+                    setLoading(false);
+                }
             }
-        });
+        );
 
         return () => {
-            mounted = false;
+            isCancelledRef.current = true;
+
             unsubscribe();
         };
     }, [workspaceId, authLoading]);

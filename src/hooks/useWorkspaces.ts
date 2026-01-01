@@ -1,30 +1,32 @@
 import { useEffect, useState } from 'react';
-import { auth } from '../core/firebase';
-import { onAuthStateChanged } from '../core/firebase-sdk';
 import { useWorkspaceStore } from '../store/ui/workspace-store';
 import { subscribeToWorkspaces } from '../store/workspace';
+import { useAuth } from './useAuth';
 
 /**
  * ワークスペース一覧を購読するカスタムフック
  */
 export const useWorkspaces = () => {
     const workspaces = useWorkspaceStore((state) => state.workspaces);
+    const setWorkspaces = useWorkspaceStore((state) => state.setWorkspaces);
+    const { userId, loading: authLoading } = useAuth();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubAuth = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                const unsubscribe = subscribeToWorkspaces(user.uid, () => {
-                    setLoading(false);
-                });
-                return () => unsubscribe();
-            } else {
-                setLoading(false);
-            }
+        if (authLoading) return;
+
+        if (!userId) {
+            setWorkspaces([]); // Clear data on logout
+            setLoading(false);
+            return;
+        }
+
+        const unsubscribe = subscribeToWorkspaces(userId, () => {
+            setLoading(false);
         });
 
-        return () => unsubAuth();
-    }, []);
+        return () => unsubscribe();
+    }, [userId, authLoading, setWorkspaces]);
 
-    return { workspaces, loading };
+    return { workspaces, loading: loading || authLoading };
 };

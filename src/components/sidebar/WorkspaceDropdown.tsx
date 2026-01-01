@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from '../../core/translations';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useModalStore } from '../../store/ui/modal-store';
 import { getCurrentWorkspaceId, setCurrentWorkspaceId } from '../../store/workspace';
+
 import { cn } from '../../utils/cn';
 
 export const WorkspaceDropdown: React.FC = () => {
+    const { t } = useTranslation();
     const { workspaces, loading } = useWorkspaces();
     const { openModal } = useModalStore();
     const [isOpen, setIsOpen] = useState(false);
@@ -34,9 +37,10 @@ export const WorkspaceDropdown: React.FC = () => {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md px-2 py-1 transition-colors group"
             >
-                <span className="text-sm font-bold text-gray-800 dark:text-gray-200 max-w-[140px] truncate">
-                    {currentWorkspace ? currentWorkspace.name : "読み込み中..."}
+                <span className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate max-w-[140px] md:max-w-[180px]">
+                    {currentWorkspace ? currentWorkspace.name : t('loading')}
                 </span>
+
                 <svg
                     className={cn("w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-transform", isOpen ? "rotate-180" : "")}
                     fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -46,7 +50,8 @@ export const WorkspaceDropdown: React.FC = () => {
             </button>
 
             {isOpen && (
-                <div className="absolute left-0 mt-2 w-60 origin-top-left rounded-lg shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black/5 z-50 border border-gray-100 dark:border-gray-700 overflow-hidden animate-fade-in">
+                <div className="absolute left-0 mt-2 w-64 max-w-[90vw] origin-top-left rounded-lg shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black/5 z-50 border border-gray-100 dark:border-gray-700 overflow-hidden animate-fade-in">
+
                     <div className="py-1 max-h-[300px] overflow-y-auto custom-scrollbar">
                         {workspaces.map(ws => {
                             const isCurrent = ws.id === currentId;
@@ -86,7 +91,8 @@ export const WorkspaceDropdown: React.FC = () => {
                             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
                             </svg>
-                            ワークスペースを追加
+                            {t('sidebar.add_workspace')}
+
                         </button>
                     </div>
                 </div>

@@ -159,7 +159,7 @@ class TaskCache {
     /**
      * Subscribe to tasks
      */
-    public subscribe(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void): Unsubscribe {
+    public subscribe(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void, onError?: (error: any) => void): Unsubscribe {
         if (!userId || !workspaceId) {
             onUpdate([]);
             return () => { };
@@ -198,6 +198,7 @@ class TaskCache {
                 this.notifyListeners(workspaceId);
             }, (error) => {
                 console.error("[Tasks] Subscription error:", error);
+                if (onError) onError(error);
             });
 
             this.unsubscribes.set(workspaceId, unsub);
@@ -245,8 +246,8 @@ export function isTasksInitialized(workspaceId: string): boolean {
     return taskCache.isInitialized(workspaceId);
 }
 
-export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void): Unsubscribe {
-    return taskCache.subscribe(userId, workspaceId, onUpdate);
+export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void, onError?: (error: any) => void): Unsubscribe {
+    return taskCache.subscribe(userId, workspaceId, onUpdate, onError);
 }
 
 // ヘルパー: undefinedを除去する

@@ -11,6 +11,7 @@ interface SidebarItemProps {
     isOver?: boolean;
     onClick?: () => void;
     onContextMenu?: (e: React.MouseEvent) => void;
+    showZero?: boolean;
 }
 
 export const SidebarItem: React.FC<SidebarItemProps> = ({
@@ -20,8 +21,10 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
     isActive,
     isOver,
     onClick,
-    onContextMenu
+    onContextMenu,
+    showZero = false
 }) => {
+
     const { density } = useSettingsStore();
 
     return (
@@ -42,11 +45,15 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
                 {icon && <span className="flex-shrink-0 w-5 flex justify-center text-sm">{icon}</span>}
                 <span className="text-sm truncate">{label}</span>
             </div>
-            {count !== undefined && count > 0 && (
-                <span className="text-gray-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700/50">
+            {count !== undefined && (count > 0 || (showZero && count === 0)) && (
+                <span className={cn(
+                    "text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700/50",
+                    isActive ? "text-blue-700 dark:text-blue-300 bg-white" : "text-gray-400"
+                )}>
                     {count}
                 </span>
             )}
+
         </button>
     );
 };

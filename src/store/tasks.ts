@@ -1,6 +1,8 @@
 import { auth } from '../core/firebase';
 import { Unsubscribe } from '../core/firebase-sdk';
-import { MESSAGES } from '../core/messages';
+import { getTranslator } from '../core/translations';
+import { useSettingsStore } from './ui/settings-store';
+
 import { Task, TaskSchema } from './schema';
 import {
     addTaskRaw,
@@ -15,6 +17,11 @@ import {
 } from './store-raw';
 import { toast } from './ui/toast-store';
 import { getCurrentWorkspaceId } from './workspace';
+
+/**
+ * 翻訳ヘルパー
+ */
+const getT = () => getTranslator(useSettingsStore.getState().language).t;
 
 /**
  * 認証とワークスペース選択のガード
@@ -47,7 +54,8 @@ export async function addTask(taskData: Partial<Task>) {
         // toast.success(MESSAGES.TASK_CREATE_SUCCESS); // Optional: toaster for creation
     } catch (error) {
         console.error("Failed to add task:", error);
-        toast.error(MESSAGES.TASK_CREATE_FAIL);
+        toast.error(getT()('msg.task.create_fail'));
+
         throw error;
     }
 }
@@ -61,7 +69,8 @@ export async function updateTaskStatus(taskId: string, status: string) {
         await updateTaskStatusRaw(userId, workspaceId, taskId, status);
     } catch (error) {
         console.error("Failed to update status:", error);
-        toast.error(MESSAGES.TASK_STATUS_UPDATE_FAIL);
+        toast.error(getT()('msg.task.status_update_fail'));
+
         throw error;
     }
 }
@@ -82,7 +91,8 @@ export async function updateTask(taskId: string, updates: Partial<Task>) {
         await updateTaskRaw(userId, workspaceId, taskId, updates);
     } catch (error) {
         console.error("Failed to update task:", error);
-        toast.error(MESSAGES.TASK_UPDATE_FAIL);
+        toast.error(getT()('msg.task.update_fail'));
+
         throw error;
     }
 }
@@ -94,10 +104,12 @@ export async function deleteTask(taskId: string) {
     try {
         const { userId, workspaceId } = requireAuthAndWorkspace();
         await deleteTaskRaw(userId, workspaceId, taskId);
-        toast.success(MESSAGES.TASK_DELETE_SUCCESS);
+        toast.success(getT()('msg.task.delete_success'));
+
     } catch (error) {
         console.error("Failed to delete task:", error);
-        toast.error(MESSAGES.TASK_DELETE_FAIL);
+        toast.error(getT()('msg.task.delete_fail'));
+
         throw error;
     }
 }
@@ -118,11 +130,13 @@ export async function toggleTaskStatus(taskId: string, _legacyStatus?: string) {
         await updateTaskStatusRaw(userId, workspaceId, taskId, newStatus);
 
         if (newStatus === 'completed') {
-            toast.success(MESSAGES.TASK_COMPLETE_SUCCESS);
+            toast.success(getT()('msg.task.complete_success'));
+
         }
     } catch (error) {
         console.error("Failed to toggle status:", error);
-        toast.error(MESSAGES.TASK_STATUS_UPDATE_FAIL);
+        toast.error(getT()('msg.task.status_update_fail'));
+
         throw error;
     }
 }
@@ -135,21 +149,17 @@ export async function getTaskById(taskId: string): Promise<Task | null> {
     return getTaskByIdRaw(userId, workspaceId, taskId);
 }
 
-
-
-
-
 /**
  * タスク一覧の購読
  * DataSyncManager からの呼び出しに対応
  */
-export function subscribeToTasks(workspaceId: string, callback: (tasks: Task[]) => void): Unsubscribe {
+export function subscribeToTasks(workspaceId: string, callback: (tasks: Task[]) => void, onError?: (error: any) => void): Unsubscribe {
     const user = auth.currentUser;
     if (!user || !workspaceId) {
         if (typeof callback === 'function') callback([]);
         return () => { };
     }
-    return subscribeToTasksRaw(user.uid, workspaceId, callback);
+    return subscribeToTasksRaw(user.uid, workspaceId, callback, onError);
 }
 
 /**

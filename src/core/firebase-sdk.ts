@@ -4,7 +4,7 @@
 
 // --- 認証 (Authentication) ---
 export {
-    EmailAuthProvider, getAuth, linkWithCredential, onAuthStateChanged, signInAnonymously,
+    getAuth, onAuthStateChanged,
     signInWithCustomToken, signInWithEmailAndPassword, signOut, updatePassword,
     type User,
     type UserCredential
@@ -12,8 +12,8 @@ export {
 
 // --- Firestore (Database) ---
 export {
-    Timestamp, addDoc, collection, deleteDoc, doc, getDoc,
-    getDocs, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
+    addDoc, collection, deleteDoc, doc, getDoc,
+    getDocs, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch,
     type Unsubscribe
 } from "firebase/firestore";
 

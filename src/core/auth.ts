@@ -39,15 +39,24 @@ class AuthService {
     /**
      * 環境に応じた初期認証トークンを取得
      */
+    public hasInitialToken(): boolean {
+        if (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) return true;
+        try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) return true;
+        } catch (e) { }
+        return false;
+    }
+
+    /**
+     * 環境に応じた初期認証トークンを取得
+     */
     private getInitialAuthToken(): string | null {
         if (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) {
             return window.GLOBAL_INITIAL_AUTH_TOKEN;
         }
 
         try {
-            // @ts-ignore
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                // @ts-ignore
                 return __initial_auth_token;
             }
         } catch (e) {
@@ -56,10 +65,14 @@ class AuthService {
         return null;
     }
 
+
     /**
      * 初期トークンによるログインを試行 (一度だけ実行)
      */
-    private async tryInitialTokenLogin(): Promise<void> {
+    /**
+     * 初期トークンによるログインを試行 (一度だけ実行)
+     */
+    public async tryInitialTokenLogin(): Promise<void> {
         if (this.isListenerInitialized) return;
         this.isListenerInitialized = true;
 
@@ -68,6 +81,8 @@ class AuthService {
             try {
                 await signInWithCustomToken(auth, initialToken);
                 console.log("[Auth] Initial token login success");
+                // TODO: useTranslation hook cannot be used easily outside React
+                // toast.success("Token login success");
             } catch (err: any) {
                 logError({
                     timestamp: new Date().toISOString(),
@@ -81,6 +96,7 @@ class AuthService {
         }
     }
 
+
     /**
      * 認証状態の監視リスナーを初期化
      * @param {Function} onLogin - ログイン時のコールバック
@@ -88,8 +104,11 @@ class AuthService {
      * @returns unsubscribe function
      */
     public initAuthListener(onLogin: (user: User) => void, onLogout: () => void): () => void {
-        // 初期トークンログインの試行（初回のみ実行される）
-        this.tryInitialTokenLogin();
+        // 初期トークンログインの試行（呼び出し側で待機していない場合のフォールバック）
+        if (!this.isListenerInitialized) {
+            this.tryInitialTokenLogin();
+        }
+
 
         // 認証状態の監視 (常に新しいリスナーを登録し、その解除関数を返す)
         const unsubscribe = onAuthStateChanged(auth, (user) => {

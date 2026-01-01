@@ -8,9 +8,20 @@ interface SidebarSectionProps {
 }
 
 export const SidebarSection: React.FC<SidebarSectionProps & { action?: React.ReactNode }> = ({ title, children, defaultExpanded = true, action }) => {
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    // Mobile: Default collapsed if not explicitly set (Issue #32)
+    const [isExpanded, setIsExpanded] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const isMobile = window.innerWidth < 768;
+            if (isMobile) return false;
+        }
+        return defaultExpanded;
+    });
 
-    const sectionId = `section-${title.toLowerCase().replace(/\s+/g, '-')}`;
+
+    // 安全なID生成 (Issue #30)
+    const safeTitle = encodeURIComponent(title.replace(/\s+/g, '-').toLowerCase());
+    const sectionId = `section-${safeTitle}`;
+
 
     return (
         <div className="mb-2 group/section">
@@ -30,9 +41,11 @@ export const SidebarSection: React.FC<SidebarSectionProps & { action?: React.Rea
                     {title}
                 </button>
                 {action && (
-                    <div className="opacity-0 group-hover/section:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                    // Mobile: Always visible (opacity-100). Desktop: Hover only (md:opacity-0 ...) (Issue #27)
+                    <div className="opacity-100 md:opacity-0 md:group-hover/section:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                         {action}
                     </div>
+
                 )}
             </div>
             {isExpanded && (

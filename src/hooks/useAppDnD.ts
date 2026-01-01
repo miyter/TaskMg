@@ -36,9 +36,10 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
         }),
         useSensor(TouchSensor, {
             activationConstraint: {
-                delay: 250, // Prevent accidental drags while scrolling
+                delay: UI_CONFIG.DND.TOUCH_DELAY, // Prevent accidental drags while scrolling
                 tolerance: 5,
             },
+
         })
     );
 

@@ -1,10 +1,11 @@
-import { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { getTasks, isTasksInitialized, subscribeToTasks } from '../store';
 import { Task } from '../store/schema';
 import { useWorkspace } from './useWorkspace';
 
 export const useTasks = () => {
     const { workspaceId, loading: authLoading } = useWorkspace();
+    const isCancelledRef = useRef(false);
 
     const [tasks, setTasks] = useState<Task[]>(() => {
         if (workspaceId) return getTasks(workspaceId);
@@ -17,7 +18,7 @@ export const useTasks = () => {
     });
 
     useLayoutEffect(() => {
-        let isMounted = true;
+        isCancelledRef.current = false;
 
         if (!workspaceId) {
             setTasks([]);
@@ -34,15 +35,25 @@ export const useTasks = () => {
             setLoading(true);
         }
 
-        const unsubscribe = subscribeToTasks(workspaceId, (newTasks) => {
-            if (isMounted) {
-                setTasks(newTasks);
-                setLoading(false);
+        const unsubscribe = subscribeToTasks(
+            workspaceId,
+            (newTasks) => {
+                if (!isCancelledRef.current) {
+                    setTasks(newTasks);
+                    setLoading(false);
+                }
+            },
+            (error) => {
+                if (!isCancelledRef.current) {
+                    console.error("Task subscription error:", error);
+                    setLoading(false);
+                    // Toast is optional here depending on UX policy, but ensuring loading=false is critical
+                }
             }
-        });
+        );
 
         return () => {
-            isMounted = false;
+            isCancelledRef.current = true;
             unsubscribe();
         };
     }, [workspaceId, authLoading]);

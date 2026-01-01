@@ -1,7 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from '../../core/translations';
 import { useFilterStore } from '../../store/ui/filter-store';
 
+
 export const SidebarSearch: React.FC = () => {
+    const INPUT_CLASSES = "w-full bg-gray-100 dark:bg-gray-700/50 border border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-gray-700 rounded-lg py-1.5 pl-9 pr-8 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-500 outline-none transition-all";
+
+    const { t } = useTranslation();
+
     const { query, setSearchQuery } = useFilterStore();
     const [localQuery, setLocalQuery] = useState(query);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -55,11 +61,14 @@ export const SidebarSearch: React.FC = () => {
                     ref={inputRef}
                     id="page-search-input"
                     type="text"
-                    placeholder="検索 (/)"
+                    placeholder={t('sidebar.search_placeholder')}
+
                     value={localQuery}
                     onChange={handleChange}
-                    className="w-full bg-gray-100 dark:bg-gray-700/50 border border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-gray-700 rounded-lg py-1.5 pl-9 pr-8 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-500 outline-none transition-all"
+
+                    className={INPUT_CLASSES}
                 />
+
                 {localQuery && (
                     <button
                         type="button"

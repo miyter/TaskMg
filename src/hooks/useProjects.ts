@@ -1,16 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getProjects, isProjectsInitialized, subscribeToProjects, updateProjectsCache } from '../store/projects';
 import { Project } from '../store/schema';
 import { useWorkspace } from './useWorkspace';
-// Note: TanStack Query is great for async data, but for Realtime listeners (Firebase onSnapshot), 
-// standard useEffect + useState (or useSyncExternalStore) is often simpler unless we wrap the listener in a query.
-// Given existing 'subscribeToProjects', we can wrap it easily.
 
 export const useProjects = () => {
     const { workspaceId, loading: authLoading } = useWorkspace();
-
-
-
+    const isCancelledRef = useRef(false);
 
     const [projects, setProjects] = useState<Project[]>(() => {
         if (workspaceId) return getProjects(workspaceId);
@@ -23,6 +18,8 @@ export const useProjects = () => {
     });
 
     useEffect(() => {
+        isCancelledRef.current = false;
+
         if (!workspaceId) {
             setProjects([]);
             if (!authLoading) setLoading(false);
@@ -37,16 +34,15 @@ export const useProjects = () => {
             setLoading(true);
         }
 
-        let mounted = true;
         const unsubscribe = subscribeToProjects(workspaceId, (newProjects) => {
-            if (mounted) {
+            if (!isCancelledRef.current) {
                 setProjects(newProjects);
                 setLoading(false);
             }
         });
 
         return () => {
-            mounted = false;
+            isCancelledRef.current = true;
             unsubscribe();
         };
     }, [workspaceId, authLoading]);
