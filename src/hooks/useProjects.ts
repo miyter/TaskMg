@@ -14,14 +14,16 @@ export const useProjects = () => {
         return subscribeToProjects(workspaceId, onData);
     }, [workspaceId]);
 
+    const isCacheReady = workspaceId ? isProjectsInitialized(workspaceId) : false;
+    const initialData = (isCacheReady && workspaceId) ? getProjects(workspaceId) : undefined;
+
     const { data: projects, isPending } = useFirestoreSubscription<Project[]>(
-        ['projects', workspaceId],
+        ['projects', workspaceId || undefined],
         subscribeFn,
-        workspaceId ? getProjects(workspaceId) : []
+        initialData
     );
 
-    const isCacheReady = workspaceId ? isProjectsInitialized(workspaceId) : false;
-    const loading = authLoading || (!!workspaceId && !isCacheReady && isPending);
+    const loading = authLoading || (!!workspaceId && isPending);
 
     const setProjectsOverride = (updatedProjects: Project[]) => {
         if (workspaceId) {

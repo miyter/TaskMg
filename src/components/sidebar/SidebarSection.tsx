@@ -7,7 +7,7 @@ interface SidebarSectionProps {
     children: React.ReactNode;
     defaultExpanded?: boolean;
     action?: React.ReactNode;
-    dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+    dragHandleProps?: React.HTMLAttributes<HTMLElement>;
 }
 
 export const SidebarSection: React.FC<SidebarSectionProps> = ({
@@ -36,23 +36,13 @@ export const SidebarSection: React.FC<SidebarSectionProps> = ({
     return (
         <div className="mb-2 group/section">
             <div className="flex items-center justify-between px-2 py-1">
-                {/* Drag Handle */}
-                {dragHandleProps && (
-                    <div
-                        {...dragHandleProps}
-                        className="p-1 mr-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-30 group-hover/section:opacity-100 transition-opacity touch-none"
-                        aria-label={t('sidebar.reorder_section')} // Use translation
-                    >
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
-                        </svg>
-                    </div>
-                )}
                 <button
+                    {...(dragHandleProps as any)}
                     onClick={() => setIsExpanded(!isExpanded)}
                     aria-expanded={isExpanded}
                     aria-controls={sectionId}
-                    className="flex items-center flex-1 text-xs font-semibold text-gray-500 uppercase hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-left"
+                    className="flex items-center flex-1 text-xs font-semibold text-gray-500 uppercase hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-left cursor-grab active:cursor-grabbing touch-none select-none"
+                    title={t('sidebar.reorder_section')}
                 >
                     <svg
                         className={cn("w-3 h-3 mr-1 transition-transform", isExpanded ? "rotate-90" : "")}

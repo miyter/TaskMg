@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { TimeBlock } from '../store/schema';
-import { getTimeBlocks, subscribeToTimeBlocks } from '../store/timeblocks';
+import { subscribeToTimeBlocks } from '../store/timeblocks';
 import { useFirestoreSubscription } from './useFirestoreSubscription';
 import { useWorkspace } from './useWorkspace';
 
@@ -18,10 +18,10 @@ export const useTimeBlocks = () => {
     const { data: timeBlocks, isPending } = useFirestoreSubscription<TimeBlock[]>(
         ['timeblocks', workspaceId],
         subscribeFn,
-        getTimeBlocks()
+        undefined
     );
 
-    const loading = authLoading || (!!workspaceId && isPending && ((timeBlocks ?? []).length === 0));
+    const loading = authLoading || (!!workspaceId && isPending);
 
     return { timeBlocks: timeBlocks || [], loading };
 };
