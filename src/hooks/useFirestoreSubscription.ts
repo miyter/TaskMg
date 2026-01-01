@@ -68,10 +68,14 @@ export function useFirestoreSubscription<T>(
         queryKey,
         queryFn: () => {
             // This function is only called if cache is empty and staleTime expired.
-            // Since we rely on subscription to push data, we ideally return a promise that never resolves?
-            // Or just return undefined and wait for subscription.
-            // For now, let's return initialData or [] if array.
-            return (initialData || []) as T;
+            // Since we rely on subscription to push data, we assume data will come from subscription.
+            // If we have initialData, return it synchronously.
+            if (initialData !== undefined) {
+                return Promise.resolve(initialData);
+            }
+            // If no initialData, return a promise that never resolves (or waits for subscription).
+            // This keeps the status as 'pending' until setQueryData is called by the subscription.
+            return new Promise<T>(() => { });
         },
         initialData: initialData,
         staleTime: Infinity, // Data pushed by subscription is always fresh
