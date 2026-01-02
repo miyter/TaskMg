@@ -4,6 +4,10 @@
  */
 
 
+
+import { useMemo } from 'react';
+import { useSettingsStore } from '../store/ui/settings-store';
+
 const ja = {
     dashboard: 'ダッシュボード',
     inbox: 'インボックス',
@@ -903,5 +907,18 @@ export const getTranslator = (language: 'ja' | 'en') => {
     }
 
     return { t };
+};
+
+/**
+ * React Hook for translations
+ * Uses settings store to get current language
+ */
+export const useTranslation = () => {
+    const language = useSettingsStore((state) => state.language);
+
+    // Issue #18: Memoized
+    const translator = useMemo(() => getTranslator(language), [language]);
+
+    return translator;
 };
 

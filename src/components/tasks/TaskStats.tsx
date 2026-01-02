@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { Task } from '../../store/schema';
 import { cn } from '../../utils/cn';
@@ -107,6 +107,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
         </div>
     );
 };
+
 
 
 

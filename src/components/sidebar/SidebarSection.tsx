@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { useTranslation } from '../../hooks/useTranslation'; // Add
+import { useTranslation } from '../../core/translations'; // Add
 import { cn } from '../../utils/cn';
 
 interface SidebarSectionProps {
@@ -69,5 +69,6 @@ export const SidebarSection: React.FC<SidebarSectionProps> = ({
         </div>
     );
 };
+
 
 

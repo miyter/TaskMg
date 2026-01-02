@@ -17,7 +17,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 
 const TASK_STATUS = {
     TODO: 'todo',
@@ -481,5 +481,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
         </Modal>
     );
 };
+
 
 

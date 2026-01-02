@@ -1,6 +1,6 @@
 ﻿import React, { useCallback } from 'react';
 import { Modal } from '../../components/common/Modal';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 import { useModalStore } from '../../store/ui/modal-store';
 import { WikiFramework } from './wiki-data';
 
@@ -145,5 +145,6 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: 
         </Modal>
     );
 };
+
 
 

@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { useViewStore } from '../../store/ui/view-store';
 import { IconSearch } from '../common/Icons';
@@ -33,5 +33,6 @@ export const SidebarSearch: React.FC = () => {
         </button>
     );
 };
+
 
 

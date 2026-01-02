@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { useTranslation } from '../../../hooks/useTranslation';
+import { useTranslation } from '../../../core/translations';
 import { BackwardData } from '../dashboard-types';
 
 interface BackwardViewProps {
@@ -67,5 +67,6 @@ export const BackwardView: React.FC<BackwardViewProps> = React.memo(({ data }) =
         </div>
     );
 });
+
 
 

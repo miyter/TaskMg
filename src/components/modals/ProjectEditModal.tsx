@@ -10,7 +10,7 @@ import { Modal } from '../common/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 import { COLOR_PALETTE } from '../../core/ui-constants';
 
 /**
@@ -212,5 +212,6 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
         </Modal>
     );
 };
+
 
 

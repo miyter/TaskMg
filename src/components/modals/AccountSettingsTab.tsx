@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { auth } from '../../core/firebase';
 import { EmailAuthProvider, linkWithCredential, signOut } from '../../core/firebase-sdk';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 import { useAuth } from '../../hooks/useAuth';
 import { useModalStore } from '../../store/ui/modal-store';
 import { toast } from '../../store/ui/toast-store';
@@ -163,5 +163,6 @@ export const AccountSettingsTab: React.FC = () => {
         </div>
     );
 };
+
 
 

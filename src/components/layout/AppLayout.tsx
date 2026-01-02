@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { useModalStore } from '../../store/ui/modal-store';
 import { useUIStore } from '../../store/ui/ui-store';
@@ -65,6 +65,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
         </div>
     );
 };
+
 
 
 

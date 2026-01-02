@@ -10,7 +10,7 @@ import { SidebarLoadingState } from '../common/SidebarLoadingState';
 
 import { ProjectItem } from './ProjectItem';
 
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 
 export const ProjectList: React.FC = () => {
     const { t } = useTranslation();
@@ -39,5 +39,6 @@ export const ProjectList: React.FC = () => {
         </SortableContext>
     );
 };
+
 
 

@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { auth } from '../../core/firebase';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { createBackupData, importBackupData } from '../../store/backup';
 import { useModalStore } from '../../store/ui/modal-store';
@@ -376,6 +376,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
         </Modal>
     );
 };
+
 
 
 

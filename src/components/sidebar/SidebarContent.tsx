@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import React, { useEffect } from 'react';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { BasicFilters } from './BasicFilters';
 import { CustomFilterList } from './CustomFilterList';
@@ -234,5 +234,6 @@ export const SidebarContent: React.FC = () => {
         </DndContext>
     );
 };
+
 
 

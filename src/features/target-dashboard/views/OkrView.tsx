@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { useTranslation } from '../../../hooks/useTranslation';
+import { useTranslation } from '../../../core/translations';
 import { OkrData } from '../dashboard-types';
 
 interface OkrViewProps {
@@ -76,5 +76,6 @@ export const OkrView: React.FC<OkrViewProps> = React.memo(({ data }) => {
         </div>
     );
 });
+
 
 

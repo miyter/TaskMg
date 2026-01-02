@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { useTranslation } from '../../../hooks/useTranslation';
+import { useTranslation } from '../../../core/translations';
 import { WoopData } from '../dashboard-types';
 
 interface WoopViewProps {
@@ -68,5 +68,6 @@ export const WoopView: React.FC<WoopViewProps> = React.memo(({ data }) => {
         </div>
     );
 });
+
 
 

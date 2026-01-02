@@ -4,7 +4,7 @@ import { useFilterStore } from '../../store/ui/filter-store';
 import { IconClock } from '../common/Icons';
 import { SidebarItem } from './SidebarItem';
 
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 
 interface DurationItemProps {
     mins: number;
@@ -39,5 +39,6 @@ export const DurationItem: React.FC<DurationItemProps> = React.memo(({ mins, cou
         </div>
     );
 });
+
 
 

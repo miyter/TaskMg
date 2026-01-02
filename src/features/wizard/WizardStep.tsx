@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
 import { WizardProgressBar } from './WizardProgressBar';
 
@@ -108,5 +108,6 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
         </div>
     );
 };
+
 
 

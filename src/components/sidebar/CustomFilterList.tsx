@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../core/translations';
 import { useFilters } from '../../hooks/useFilters';
 import { useTasks } from '../../hooks/useTasks';
 import { useWorkspace } from '../../hooks/useWorkspace';
@@ -97,5 +97,6 @@ const CustomFilterItem: React.FC<{ filter: Filter, tasks: Task[], workspaceId: s
         </>
     );
 };
+
 
 
