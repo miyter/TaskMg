@@ -1,5 +1,5 @@
-import React from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { ConfirmationData, useModalStore } from '../../store/ui/modal-store';
 import { Modal } from '../common/Modal';
 
@@ -69,3 +69,5 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, da
         </Modal>
     );
 };
+
+

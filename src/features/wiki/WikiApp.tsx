@@ -1,4 +1,4 @@
-import { useTranslation } from '../../core/translations';
+﻿import { useTranslation } from '../../hooks/useTranslation';
 import { useModalStore } from '../../store/ui/modal-store'; // Update import path if necessary
 import { WIKI_DATA } from './wiki-data';
 import { WikiFrameworkCard } from './WikiFrameworkCard';
@@ -34,3 +34,5 @@ export const WikiApp: React.FC = () => {
         </div>
     );
 };
+
+

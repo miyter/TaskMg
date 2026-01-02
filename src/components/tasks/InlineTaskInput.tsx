@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React, { useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { addTask } from '../../store';
 import { toast } from '../../store/ui/toast-store';
 import { cn } from '../../utils/cn';
@@ -147,3 +147,5 @@ export const InlineTaskInput: React.FC<InlineTaskInputProps> = ({ className, onC
         </div>
     );
 };
+
+

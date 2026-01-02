@@ -1,4 +1,4 @@
-import {
+﻿import {
     SortableContext,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
@@ -10,7 +10,7 @@ import { SidebarLoadingState } from '../common/SidebarLoadingState';
 
 import { ProjectItem } from './ProjectItem';
 
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export const ProjectList: React.FC = () => {
     const { t } = useTranslation();
@@ -39,3 +39,5 @@ export const ProjectList: React.FC = () => {
         </SortableContext>
     );
 };
+
+

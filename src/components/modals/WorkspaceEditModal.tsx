@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { Workspace } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
 import { addWorkspace, getWorkspaces, setCurrentWorkspaceId, updateWorkspaceName } from '../../store/workspace';
@@ -153,3 +153,5 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
         </Modal>
     );
 };
+
+

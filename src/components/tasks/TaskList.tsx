@@ -1,4 +1,4 @@
-import {
+﻿import {
     DndContext,
     DragEndEvent,
     KeyboardSensor,
@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import React, { useMemo } from 'react';
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useTasks } from '../../hooks/useTasks';
 import { getProcessedTasks } from '../../logic/search';
 import { reorderTasks } from '../../store';
@@ -253,3 +253,5 @@ export const TaskList: React.FC = () => {
         </div>
     );
 };
+
+

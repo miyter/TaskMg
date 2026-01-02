@@ -1,6 +1,6 @@
-import { useDroppable } from '@dnd-kit/core';
+﻿import { useDroppable } from '@dnd-kit/core';
 import React, { useState } from 'react';
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 import { deleteProject } from '../../store'; // インポート追加
 import { Project } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
@@ -112,3 +112,5 @@ export const ProjectItem = React.memo<ProjectItemProps>(({ project }) => {
         </>
     );
 });
+
+

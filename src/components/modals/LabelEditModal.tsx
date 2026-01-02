@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { useWorkspace } from '../../hooks/useWorkspace';
 import { addLabel, deleteLabel, updateLabel } from '../../store/labels';
 import { Label } from '../../store/schema';
@@ -10,7 +10,7 @@ import { Modal } from '../common/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 import { COLOR_PALETTE } from '../../core/ui-constants';
 
 /**
@@ -220,3 +220,5 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
         </Modal>
     );
 };
+
+

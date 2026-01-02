@@ -90,7 +90,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(({ kgi
                     <button
                         onClick={onToggleCollapse}
                         className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        title={collapsed ? "Expand Header" : "Collapse Header"}
+                        title={collapsed ? t('target_dashboard.header_expand') : t('target_dashboard.header_collapse')}
                     >
                         <svg
                             className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`}

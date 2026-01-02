@@ -1,5 +1,5 @@
-import React from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { cn } from '../../utils/cn';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
 
@@ -95,3 +95,5 @@ export const WizardWelcome: React.FC<WizardWelcomeProps> = ({ currentMode, onMod
         </div>
     );
 };
+
+

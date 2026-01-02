@@ -1,5 +1,5 @@
-import React from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { WikiFramework } from './wiki-data';
 
 interface WikiFrameworkCardProps {
@@ -33,3 +33,5 @@ export const WikiFrameworkCard: React.FC<WikiFrameworkCardProps> = React.memo(({
         </div>
     );
 });
+
+

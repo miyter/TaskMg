@@ -1,6 +1,6 @@
-import React from 'react';
+﻿import React from 'react';
 import logo from '../../assets/logo.png';
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { useUIStore } from '../../store/ui/ui-store';
 import { cn } from '../../utils/cn';
@@ -127,4 +127,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         </aside>
     );
 };
+
+
 

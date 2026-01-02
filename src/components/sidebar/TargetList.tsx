@@ -1,5 +1,5 @@
-import React from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useViewStore } from '../../store/ui/view-store';
 
 import { IconDashboard, IconWiki, IconWizard } from '../common/Icons';
@@ -37,3 +37,5 @@ export const TargetList: React.FC = () => {
         </div>
     );
 };
+
+

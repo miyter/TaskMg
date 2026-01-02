@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { useViewStore } from '../../store/ui/view-store';
 import { TaskList } from '../tasks/TaskList';
@@ -152,4 +152,6 @@ export const SearchView: React.FC = () => {
         </div>
     );
 };
+
+
 

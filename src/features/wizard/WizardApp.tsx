@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React, { useEffect, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useWorkspace } from '../../hooks/useWorkspace';
 import { addTarget } from '../../store';
 import { toast } from '../../store/ui/toast-store';
@@ -81,3 +81,5 @@ export const WizardApp: React.FC = () => {
         />
     );
 };
+
+

@@ -5,7 +5,9 @@
  */
 
 import { auth } from '../core/firebase';
-
+import { getTranslator } from '../core/translations';
+import { useSettingsStore } from './ui/settings-store';
+import { toast } from './ui/toast-store';
 
 import { Unsubscribe } from '../core/firebase-sdk';
 import {
@@ -24,6 +26,11 @@ export const isLabelsInitialized = (workspaceId?: string): boolean => {
     if (!workspaceId) return false;
     return isLabelsInitializedRaw(workspaceId);
 };
+
+/**
+ * 翻訳ヘルパー
+ */
+const getT = () => getTranslator(useSettingsStore.getState().language).t;
 
 /**
  * 認証ガード
@@ -57,25 +64,49 @@ export function subscribeToLabels(workspaceId: string, onUpdate: (labels: Label[
  * 新しいラベルを追加する
  */
 export async function addLabel(workspaceId: string, name: string, color: string) {
-    const userId = requireAuth();
-    if (!workspaceId) throw new Error("Workspace ID required");
-    return addLabelRaw(userId, workspaceId, name, color);
+    try {
+        const userId = requireAuth();
+        if (!workspaceId) throw new Error("Workspace ID required");
+        const result = await addLabelRaw(userId, workspaceId, name, color);
+        // toast.success(getT()('msg.label.create_success')); // Optional
+        return result;
+    } catch (error) {
+        console.error("Failed to add label:", error);
+        toast.error(getT()('msg.label.create_fail'));
+        throw error;
+    }
 }
 
 /**
  * ラベルを更新する
  */
 export async function updateLabel(workspaceId: string, labelId: string, updates: Partial<Label>) {
-    const userId = requireAuth();
-    if (!workspaceId) throw new Error("Workspace ID required");
-    return updateLabelRaw(userId, workspaceId, labelId, updates);
+    try {
+        const userId = requireAuth();
+        if (!workspaceId) throw new Error("Workspace ID required");
+        const result = await updateLabelRaw(userId, workspaceId, labelId, updates);
+        // toast.success(getT()('msg.label.update_success')); // Optional
+        return result;
+    } catch (error) {
+        console.error("Failed to update label:", error);
+        toast.error(getT()('msg.label.update_fail'));
+        throw error;
+    }
 }
 
 /**
  * ラベルを削除する
  */
 export async function deleteLabel(workspaceId: string, labelId: string) {
-    const userId = requireAuth();
-    if (!workspaceId) throw new Error("Workspace ID required");
-    return deleteLabelRaw(userId, workspaceId, labelId);
+    try {
+        const userId = requireAuth();
+        if (!workspaceId) throw new Error("Workspace ID required");
+        const result = await deleteLabelRaw(userId, workspaceId, labelId);
+        toast.success(getT()('msg.label.delete_success'));
+        return result;
+    } catch (error) {
+        console.error("Failed to delete label:", error);
+        toast.error(getT()('msg.label.delete_fail'));
+        throw error;
+    }
 }

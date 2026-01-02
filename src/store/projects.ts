@@ -5,6 +5,9 @@
  */
 
 import { auth } from '../core/firebase';
+import { getTranslator } from '../core/translations';
+import { useSettingsStore } from './ui/settings-store';
+import { toast } from './ui/toast-store';
 import { getCurrentWorkspaceId } from './workspace';
 
 import { Unsubscribe } from '../core/firebase-sdk';
@@ -19,6 +22,11 @@ import {
     updateProjectsCacheRaw
 } from './projects-raw';
 import { Project } from './schema';
+
+/**
+ * 翻訳ヘルパー
+ */
+const getT = () => getTranslator(useSettingsStore.getState().language).t;
 
 /**
  * 認証とワークスペース選択のガード
@@ -77,35 +85,63 @@ export const subscribeToProjects = (workspaceId: string | ((projects: Project[])
  * 新しいプロジェクトを追加する
  */
 export const addProject = async (name: string, workspaceId: string | null = null, color?: string) => {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Authentication required.');
+    try {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Authentication required.');
 
-    const targetWorkspaceId = workspaceId || getCurrentWorkspaceId();
-    if (!targetWorkspaceId) throw new Error('Workspace selection required.');
+        const targetWorkspaceId = workspaceId || getCurrentWorkspaceId();
+        if (!targetWorkspaceId) throw new Error('Workspace selection required.');
 
-    return addProjectRaw(user.uid, targetWorkspaceId, name, color);
+        const result = await addProjectRaw(user.uid, targetWorkspaceId, name, color);
+        // toast.success(getT()('msg.project.create_success')); // Optional if needed
+        return result;
+    } catch (error) {
+        console.error("Failed to add project:", error);
+        toast.error(getT()('msg.project.create_fail'));
+        throw error;
+    }
 };
 
 /**
  * プロジェクトを更新する
  */
 export const updateProject = async (projectId: string, updates: Partial<Project>) => {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    return updateProjectRaw(userId, workspaceId, projectId, updates);
+    try {
+        const { userId, workspaceId } = requireAuthAndWorkspace();
+        await updateProjectRaw(userId, workspaceId, projectId, updates);
+        // toast.success(getT()('msg.project.update_success')); // Optional for minor updates
+    } catch (error) {
+        console.error("Failed to update project:", error);
+        toast.error(getT()('msg.project.update_fail'));
+        throw error;
+    }
 };
 
 /**
  * プロジェクトを削除する
  */
 export const deleteProject = async (projectId: string) => {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    return deleteProjectRaw(userId, workspaceId, projectId);
+    try {
+        const { userId, workspaceId } = requireAuthAndWorkspace();
+        await deleteProjectRaw(userId, workspaceId, projectId);
+        toast.success(getT()('msg.project.delete_success'));
+    } catch (error) {
+        console.error("Failed to delete project:", error);
+        toast.error(getT()('msg.project.delete_fail'));
+        throw error;
+    }
 };
 
 /**
  * プロジェクトの順序を更新する
  */
 export const reorderProjects = async (projects: Project[]) => {
-    const { userId, workspaceId } = requireAuthAndWorkspace();
-    return reorderProjectsRaw(userId, workspaceId, projects);
+    try {
+        const { userId, workspaceId } = requireAuthAndWorkspace();
+        await reorderProjectsRaw(userId, workspaceId, projects);
+    } catch (error) {
+        console.error("Failed to reorder projects:", error);
+        toast.error(getT()('msg.project.reorder_fail'));
+        throw error;
+    }
 };

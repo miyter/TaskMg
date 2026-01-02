@@ -3,8 +3,6 @@
  * UIの文言を一元管理する (Nested Structure)
  */
 
-import { useMemo } from 'react';
-import { useSettingsStore } from '../store/ui/settings-store';
 
 const ja = {
     dashboard: 'ダッシュボード',
@@ -67,7 +65,21 @@ const ja = {
             reorderFailed: '並び替えに失敗しました',
         },
         project: {
+            create_success: 'プロジェクトを作成しました',
+            create_fail: 'プロジェクトの作成に失敗しました',
+            update_success: 'プロジェクトを更新しました',
+            update_fail: 'プロジェクトの保存に失敗しました',
+            delete_success: 'プロジェクトを削除しました',
+            delete_fail: 'プロジェクトの削除に失敗しました',
             reorder_fail: 'プロジェクトの並び替えに失敗しました',
+        },
+        label: {
+            create_success: 'ラベルを作成しました',
+            create_fail: 'ラベルの作成に失敗しました',
+            update_success: 'ラベルを更新しました',
+            update_fail: 'ラベルの保存に失敗しました',
+            delete_success: 'ラベルを削除しました',
+            delete_fail: 'ラベルの削除に失敗しました',
         },
         confirm_delete: '本当に削除しますか？\n削除されたデータは元に戻せません。',
     },
@@ -84,6 +96,7 @@ const ja = {
         unassigned: '未定',
         toggle_collapse: 'サイドバーを閉じる',
         toggle_expand: 'サイドバーを開く',
+        no_labels: 'ラベルはありません',
         resizer_label: 'サイドバーの幅調整',
         resizer_hint: 'ドラッグまたは矢印キーでリサイズ',
         menu_open: 'メニューを開く',
@@ -302,6 +315,8 @@ const ja = {
         label_workspace_required: 'ワークスペースが見つかりません',
         workspace_confirm_switch: '新しいワークスペースに切り替えますか？',
         select_days: '曜日を選択してください',
+        auth_required: '認証が必要です',
+        validation_error: 'バリデーションエラー',
     },
 
     date_options: {
@@ -413,7 +428,9 @@ const ja = {
             if_badge: 'IF',
             score_label: 'Score',
             add_obstacle: '+ 障害を追加する',
-        }
+        },
+        header_expand: 'ヘッダーを展開',
+        header_collapse: 'ヘッダーを折りたたむ',
     }
 };
 
@@ -476,7 +493,21 @@ const en = {
             reorderFailed: 'Failed to reorder',
         },
         project: {
+            create_success: 'Project created',
+            create_fail: 'Failed to create project',
+            update_success: 'Project updated',
+            update_fail: 'Failed to save project',
+            delete_success: 'Project deleted',
+            delete_fail: 'Failed to delete project',
             reorder_fail: 'Failed to reorder projects',
+        },
+        label: {
+            create_success: 'Label created',
+            create_fail: 'Failed to create label',
+            update_success: 'Label updated',
+            update_fail: 'Failed to save label',
+            delete_success: 'Label deleted',
+            delete_fail: 'Failed to delete label',
         },
         confirm_delete: 'Are you sure you want to delete this item?\nThis action cannot be undone.',
     },
@@ -498,6 +529,7 @@ const en = {
         menu_open: 'Open Menu',
         reorder_section: 'Reorder Section',
         no_projects: 'No projects',
+        no_labels: 'No labels',
         duration_format: '{min} min',
     },
 
@@ -711,6 +743,8 @@ const en = {
         label_workspace_required: 'Workspace not found',
         workspace_confirm_switch: 'Switch to new workspace?',
         select_days: 'Please select days',
+        auth_required: 'Authentication required',
+        validation_error: 'Validation error',
     },
 
     date_options: {
@@ -798,6 +832,8 @@ const en = {
         kgi_default: 'Undefined KGI',
         wish_default: 'Undefined WISH',
         obj_default: 'Undefined Objective',
+        header_expand: 'Expand Header',
+        header_collapse: 'Collapse Header',
         target_default: 'Target',
         created_at: 'Created: {date}',
         no_targets: 'No {mode} targets found.',
@@ -837,6 +873,7 @@ type NestedKeyOf<ObjectType extends object> = {
 
 export type I18nKeys = NestedKeyOf<typeof ja>;
 
+
 /**
  * 翻訳ヘルパー関数
  * ストアから言語設定を受け取って翻訳関数を返す
@@ -868,15 +905,3 @@ export const getTranslator = (language: 'ja' | 'en') => {
     return { t };
 };
 
-/**
- * React Hook for translations
- * Uses settings store to get current language
- */
-export const useTranslation = () => {
-    const language = useSettingsStore((state) => state.language);
-
-    // Issue #18: Memoized
-    const translator = useMemo(() => getTranslator(language), [language]);
-
-    return translator;
-};

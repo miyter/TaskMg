@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { useWorkspace } from '../../hooks/useWorkspace';
@@ -225,3 +225,5 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
         </Modal>
     );
 };
+
+

@@ -16,12 +16,16 @@ import {
     serverTimestamp, Unsubscribe,
     updateDoc
 } from "../core/firebase-sdk";
+import { getTranslator } from '../core/translations';
 import { paths } from '../utils/paths';
 import { Filter, FilterSchema } from './schema';
+import { useSettingsStore } from './ui/settings-store';
 import { toast } from './ui/toast-store';
 
 // Map<workspaceId, Filter[]> to prevent data mixing between workspaces
 const _cachedFiltersMap = new Map<string, Filter[]>();
+
+const getT = () => getTranslator(useSettingsStore.getState().language).t;
 
 export function getFilters(workspaceId?: string): Filter[] {
     if (!workspaceId) return [];
@@ -72,15 +76,16 @@ export function subscribeToFilters(workspaceId: string, onUpdate: (filters: Filt
  * フィルターを追加
  */
 export async function addFilter(filterData: Partial<Filter> & { workspaceId: string }) {
+    const t = getT();
     const userId = auth.currentUser?.uid;
     if (!userId) {
-        toast.error('認証が必要です');
+        toast.error(t('validation.auth_required'));
         throw new Error("Authentication required");
     }
 
     const { workspaceId, ...rest } = filterData;
     if (!workspaceId) {
-        toast.error('ワークスペースIDが必要です');
+        toast.error(t('validation.workspace_required'));
         throw new Error("Workspace ID required");
     }
 
@@ -89,7 +94,7 @@ export async function addFilter(filterData: Partial<Filter> & { workspaceId: str
     if (!result.success) {
         const errorMsg = result.error.issues.map((e) => e.message).join(', ');
         console.error("[Filters] Validation failed:", result.error.flatten());
-        toast.error(`バリデーションエラー: ${errorMsg}`);
+        toast.error(`${t('validation.validation_error')}: ${errorMsg}`);
         throw new Error(`Validation failed: ${errorMsg}`);
     }
 
@@ -108,9 +113,10 @@ export async function addFilter(filterData: Partial<Filter> & { workspaceId: str
  * フィルターを更新
  */
 export async function updateFilter(workspaceId: string, filterId: string, filterData: Partial<Filter>) {
+    const t = getT();
     const userId = auth.currentUser?.uid;
     if (!userId || !workspaceId) {
-        toast.error('認証が必要です');
+        toast.error(t('validation.auth_required'));
         throw new Error("Authentication required");
     }
 
@@ -119,7 +125,7 @@ export async function updateFilter(workspaceId: string, filterId: string, filter
     if (!result.success) {
         const errorMsg = result.error.issues.map((e) => e.message).join(', ');
         console.error("[Filters] Validation failed:", result.error.flatten());
-        toast.error(`バリデーションエラー: ${errorMsg}`);
+        toast.error(`${t('validation.validation_error')}: ${errorMsg}`);
         throw new Error(`Validation failed: ${errorMsg}`);
     }
 
@@ -137,9 +143,10 @@ export async function updateFilter(workspaceId: string, filterId: string, filter
  * フィルターを削除
  */
 export async function deleteFilter(workspaceId: string, filterId: string) {
+    const t = getT();
     const userId = auth.currentUser?.uid;
     if (!userId || !workspaceId) {
-        toast.error('認証が必要です');
+        toast.error(t('validation.auth_required'));
         throw new Error("Authentication required");
     }
 

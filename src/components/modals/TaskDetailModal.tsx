@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+﻿import { Timestamp } from 'firebase/firestore';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
@@ -17,7 +17,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 
 const TASK_STATUS = {
     TODO: 'todo',
@@ -481,3 +481,5 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
         </Modal>
     );
 };
+
+

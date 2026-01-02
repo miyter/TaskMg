@@ -1,10 +1,10 @@
-import { useDroppable } from '@dnd-kit/core';
+﻿import { useDroppable } from '@dnd-kit/core';
 import React from 'react';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { IconClock } from '../common/Icons';
 import { SidebarItem } from './SidebarItem';
 
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface DurationItemProps {
     mins: number;
@@ -39,3 +39,5 @@ export const DurationItem: React.FC<DurationItemProps> = React.memo(({ mins, cou
         </div>
     );
 });
+
+

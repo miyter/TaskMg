@@ -1,6 +1,6 @@
-import { useDroppable } from '@dnd-kit/core';
+﻿import { useDroppable } from '@dnd-kit/core';
 import React, { useState } from 'react';
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useTasks } from '../../hooks/useTasks';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { useWorkspace } from '../../hooks/useWorkspace';
@@ -149,3 +149,5 @@ const UnassignedTimeBlockItem: React.FC<{ count: number }> = ({ count }) => {
         </div>
     );
 };
+
+

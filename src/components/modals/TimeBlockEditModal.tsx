@@ -1,4 +1,4 @@
-import {
+﻿import {
     DndContext,
     DragEndEvent,
     DragOverlay,
@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import React, { useEffect, useState } from 'react';
 import { SYSTEM_CONSTANTS } from '../../core/constants';
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 import { COLOR_PALETTE } from '../../core/ui-constants';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { useWorkspace } from '../../hooks/useWorkspace';
@@ -406,3 +406,5 @@ const TimeSelect: React.FC<{ options: string[]; value: string; onChange: (val: s
         </select>
     );
 };
+
+

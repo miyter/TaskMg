@@ -2,7 +2,17 @@
 
 ## 🚀 残存課題
 
-**現在、既知の重大な課題はありません。** ✅
+### 【優先度: 高】アーキテクチャ・型安全性の債務
+- **レイヤー分離の不徹底 (-raw.ts の欠如)**: `store/timeblocks.ts`, `store/filters.ts` など、一部のストアで Firestore インフラ層とビジネスロジックが分離されておらず、設計思想 (`PROJECT_STATUS.md`) から乖離している。
+- **機能実装の不備 (Optimistic Update/Validation)**:
+    - `store/timeblocks.ts` において、設計思想で謳われている「Optimistic Update」が未実装であり、保存時の Zod によるランタイムバリデーションも欠如している。
+    - `store/projects.ts` および `store/labels.ts` においても、`xxxSchema.safeParse()` による書き込み前のバリデーションが実施されていない。
+
+### 【優先度: 中】UI/UXリファクタリング課題
+- **原子コンポーネント（Atoms）の適用漏れ**: `SettingsModal.tsx` 等で、共通の `Select` や `Input` コンポーネントを使用せず、生の HTML 要素に Tailwind クラスを直接指定している。
+- **言語切り替え時の強制プリセット更新**: `settings-store.ts` の `setLanguage` にて、ユーザーが設定した density や fontSize を上書きしてしまう挙動の検討。
+- **統一シグネチャの不徹底**: 設計思想 (#81) では全 subscribe 関数を `(workspaceId, callback)` 形式に統一するとしているが、`store/targets.ts` などで依然として引数パターンが複数存在し、複雑化している。
+- **ロジックの重複と散在**: `DashboardApp.tsx` で独自の `formatDate` が定義されているなど、`utils/` 配下の共通関数を使用せず、コンポーネント内に閉じているロジックが散見される。
 
 ---
 

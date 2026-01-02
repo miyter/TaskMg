@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useModalStore } from '../../store/ui/modal-store';
 import { setCurrentWorkspaceId } from '../../store/workspace';
@@ -110,3 +110,5 @@ export const WorkspaceDropdown: React.FC = () => {
         </div>
     );
 };
+
+

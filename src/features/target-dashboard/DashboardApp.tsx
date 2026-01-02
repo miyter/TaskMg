@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React, { useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useTargets } from '../../hooks/useTargets';
 import { Target } from '../../store/schema';
 import { DashboardHeader } from './DashboardHeader';
@@ -118,3 +118,5 @@ export const DashboardApp: React.FC = () => {
         </div>
     );
 };
+
+

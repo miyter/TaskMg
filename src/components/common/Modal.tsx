@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 import { cn } from '../../utils/cn';
 
 // フォーカス可能な要素のセレクター
@@ -126,4 +126,6 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
         document.body
     );
 };
+
+
 

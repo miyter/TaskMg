@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { auth } from '../../core/firebase';
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { createBackupData, importBackupData } from '../../store/backup';
 import { useModalStore } from '../../store/ui/modal-store';
@@ -336,7 +336,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                         onChange={(e) => setBackupConfirmed(e.target.checked)}
                                     />
                                     <span className="text-sm font-bold text-red-700 dark:text-red-400">
-                                        {t('settings_modal.maintenance.confirm_backup') || 'バックアップを作成しました（必須）'}
+                                        {t('settings_modal.maintenance.confirm_backup')}
                                     </span>
                                 </label>
 
@@ -376,5 +376,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
         </Modal>
     );
 };
+
+
 
 

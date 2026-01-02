@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { addProject, deleteProject, updateProject } from '../../store/projects';
 import { Project } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
@@ -10,7 +10,7 @@ import { Modal } from '../common/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
-import { useTranslation } from '../../core/translations';
+import { useTranslation } from '../../hooks/useTranslation';
 import { COLOR_PALETTE } from '../../core/ui-constants';
 
 /**
@@ -212,3 +212,5 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
         </Modal>
     );
 };
+
+

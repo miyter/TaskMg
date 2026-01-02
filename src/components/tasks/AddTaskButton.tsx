@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useTranslation } from '../../core/translations';
+﻿import React, { useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { InlineTaskInput } from './InlineTaskInput';
 
 interface AddTaskButtonProps {
@@ -50,4 +50,6 @@ export const AddTaskButton: React.FC<AddTaskButtonProps> = ({ initialValue = '' 
         </button>
     );
 };
+
+
 
