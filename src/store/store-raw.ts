@@ -22,6 +22,7 @@ import { getNextRecurrenceDate } from '../utils/date';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
 import { Task, TaskSchema } from './schema';
+import { toast } from './ui/toast-store';
 
 const toJSDate = (val: any): Date | undefined => (val instanceof Timestamp) ? val.toDate() : (val instanceof Date ? val : undefined);
 const toFirestoreDate = (val: any): Timestamp | Date | undefined => (val instanceof Date) ? Timestamp.fromDate(val) : val;
@@ -264,17 +265,26 @@ export async function reorderTasksRaw(userId: string, workspaceId: string, order
     const orderMap = new Map<string, number>();
     orderedTaskIds.forEach((id, index) => orderMap.set(id, index));
 
-    // Optimistic Update
+    // Optimistic Update: Update order field AND sort the array
     const currentTasks = taskCache.getTasks(workspaceId);
-    if (currentTasks) {
-        const newTasks = currentTasks.map(t => {
+    if (currentTasks && currentTasks.length > 0) {
+        // Update order field for each task
+        const updatedTasks = currentTasks.map(t => {
             const newIndex = orderMap.get(t.id!);
             if (newIndex !== undefined) {
                 return { ...t, order: newIndex };
             }
             return t;
         });
-        taskCache.setCache(workspaceId, newTasks);
+
+        // Sort by order field to reflect the new arrangement immediately
+        updatedTasks.sort((a, b) => {
+            const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+            const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+            return orderA - orderB;
+        });
+
+        taskCache.setCache(workspaceId, updatedTasks);
     }
 
     return withRetry(async () => {
@@ -322,19 +332,13 @@ export async function addTaskRaw(userId: string, workspaceId: string, taskData: 
 }
 
 export async function updateTaskStatusRaw(userId: string, workspaceId: string, taskId: string, status: string) {
+    // Save original state for potential rollback
+    const originalTasks = taskCache.getTasks(workspaceId);
+    const originalTask = originalTasks?.find(t => t.id === taskId);
+
     // Optimistic Update
-    const currentTasks = taskCache.getTasks(workspaceId);
-    let task = currentTasks?.find(t => t.id === taskId);
-
-    // If not found in cache, strict consistency would require split logic,
-    // but here we prioritize UI responsiveness and assume cache is mostly up-to-date.
-    if (!task) {
-        // Fallback: This might miss recurrence if not cached, but prevents blocking.
-        // For a more robust solution, we could fetchDoc here.
-    }
-
-    if (currentTasks) {
-        const newTasks = currentTasks.map(t => {
+    if (originalTasks) {
+        const newTasks = originalTasks.map(t => {
             if (t.id === taskId) {
                 return {
                     ...t,
@@ -348,25 +352,21 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
     }
 
     // Recurrence Logic: Create next task if completing a recurring one
-    if (status === 'completed' && task?.recurrence && task.recurrence.type !== 'none') {
-        const nextDate = getNextRecurrenceDate(task.dueDate ?? null, task.recurrence as import('../utils/date').RecurrenceConfig);
+    if (status === 'completed' && originalTask?.recurrence && originalTask.recurrence.type !== 'none') {
+        const nextDate = getNextRecurrenceDate(originalTask.dueDate ?? null, originalTask.recurrence as import('../utils/date').RecurrenceConfig);
         if (nextDate) {
-            // Keep critical fields for the next instance
             const nextTask: Partial<Task> = {
-                title: task.title,
-                description: task.description,
-                projectId: task.projectId,
-                labelIds: task.labelIds,
-                timeBlockId: task.timeBlockId, // copy or clear? usually copy
-                duration: task.duration,
-                isImportant: task.isImportant,
-                recurrence: task.recurrence,
+                title: originalTask.title,
+                description: originalTask.description,
+                projectId: originalTask.projectId,
+                labelIds: originalTask.labelIds,
+                timeBlockId: originalTask.timeBlockId,
+                duration: originalTask.duration,
+                isImportant: originalTask.isImportant,
+                recurrence: originalTask.recurrence,
                 dueDate: nextDate,
                 status: 'todo'
             };
-            // Execute async (fire and forget relevant to this update, or chain)
-            // We use no await here to not delay the visual completion toggle, 
-            // but addTaskRaw is optimistic so handles cache immediately too.
             addTaskRaw(userId, workspaceId, nextTask).catch(e => console.error("Failed to create recurring task:", e));
         }
     }
@@ -380,16 +380,24 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
             updates.completedAt = null;
         }
         await updateDoc(doc(db, path, taskId), updates);
+    }, {
+        onFinalFailure: () => {
+            // Rollback on failure
+            if (originalTasks) {
+                taskCache.setCache(workspaceId, originalTasks);
+            }
+            toast.error('タスクの更新に失敗しました');
+        }
     });
 }
 
 export async function updateTaskRaw(userId: string, workspaceId: string, taskId: string, updates: Partial<Task>) {
+    // Save original state for rollback
+    const originalTasks = taskCache.getTasks(workspaceId);
+
     // Optimistic Update
-    // Note: Shallow merge only - nested objects are replaced, not deep-merged.
-    // For Task type, this is acceptable as nested properties are rare.
-    const currentTasks = taskCache.getTasks(workspaceId);
-    if (currentTasks) {
-        const newTasks = currentTasks.map(t => {
+    if (originalTasks) {
+        const newTasks = originalTasks.map(t => {
             if (t.id === taskId) {
                 return { ...t, ...updates };
             }
@@ -400,25 +408,40 @@ export async function updateTaskRaw(userId: string, workspaceId: string, taskId:
 
     return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
-        // undefinedを削除して安全にする
         const safeUpdates = removeUndefined({ ...updates });
 
         if (safeUpdates.dueDate !== undefined) safeUpdates.dueDate = toFirestoreDate(safeUpdates.dueDate);
         await updateDoc(doc(db, path, taskId), safeUpdates);
+    }, {
+        onFinalFailure: () => {
+            if (originalTasks) {
+                taskCache.setCache(workspaceId, originalTasks);
+            }
+            toast.error('タスクの更新に失敗しました');
+        }
     });
 }
 
 export async function deleteTaskRaw(userId: string, workspaceId: string, taskId: string) {
+    // Save original state for rollback
+    const originalTasks = taskCache.getTasks(workspaceId);
+
     // Optimistic Update
-    const currentTasks = taskCache.getTasks(workspaceId);
-    if (currentTasks) {
-        const newTasks = currentTasks.filter(t => t.id !== taskId);
+    if (originalTasks) {
+        const newTasks = originalTasks.filter(t => t.id !== taskId);
         taskCache.setCache(workspaceId, newTasks);
     }
 
     return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
         await deleteDoc(doc(db, path, taskId));
+    }, {
+        onFinalFailure: () => {
+            if (originalTasks) {
+                taskCache.setCache(workspaceId, originalTasks);
+            }
+            toast.error('タスクの削除に失敗しました');
+        }
     });
 }
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../core/translations';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { Task } from '../../store/schema';
 import { cn } from '../../utils/cn';
@@ -10,6 +11,7 @@ interface TaskStatsProps {
 }
 
 export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
+    const { t } = useTranslation();
     const { timeBlocks } = useTimeBlocks();
 
     // Calculate total duration in minutes
@@ -73,7 +75,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
                         {Math.round(rawPercent)}<span className="text-xs font-normal opacity-70">%</span>
                     </div>
                     <div className={cn("text-xs whitespace-nowrap text-right w-[100px]", isOver ? "text-red-500" : "text-green-500")}>
-                        ({isOver ? '超過' : '残り'} {absDiffHours}h)
+                        ({isOver ? t('task_stats.over') : t('task_stats.remaining')} {absDiffHours}h)
                     </div>
                 </div>
             </div>
@@ -83,23 +85,26 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
     // B. General Mode
     const count = tasks.length;
     const avgMinutes = count > 0 ? (totalTaskMinutes / count) : 0;
+    const countUnit = t('task_stats.count_unit');
+    const avgUnit = t('task_stats.avg_unit');
 
     return (
         <div className="glass-card flex items-center justify-evenly py-3 px-4 my-2">
             <div className="flex flex-row items-baseline gap-2">
-                <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold">COUNT</span>
-                <span className="font-bold text-sm text-gray-700 dark:text-gray-200">{count}<span className="text-xs font-normal ml-0.5 text-gray-400">件</span></span>
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold">{t('task_stats.count_label')}</span>
+                <span className="font-bold text-sm text-gray-700 dark:text-gray-200">{count}{countUnit && <span className="text-xs font-normal ml-0.5 text-gray-400">{countUnit}</span>}</span>
             </div>
             <div className="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
             <div className="flex flex-row items-baseline gap-2">
-                <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold">TOTAL</span>
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold">{t('task_stats.total_label')}</span>
                 <span className="font-bold text-sm text-gray-700 dark:text-gray-200 text-blue-600 dark:text-blue-400">{formatTime(totalTaskMinutes)}</span>
             </div>
             <div className="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
             <div className="flex flex-row items-baseline gap-2">
-                <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold">AVG</span>
-                <span className="font-medium text-sm">{formatTime(avgMinutes)}<span className="text-xs ml-0.5">/件</span></span>
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold">{t('task_stats.avg_label')}</span>
+                <span className="font-medium text-sm">{formatTime(avgMinutes)}<span className="text-xs ml-0.5">{avgUnit}</span></span>
             </div>
         </div>
     );
 };
+

@@ -226,7 +226,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
         >
             <div className="flex flex-col h-full" onKeyDown={handleContainerKeyDown}>
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4 shrink-0">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 shrink-0">
                     <input
                         id="task-title"
                         name="title"
@@ -263,9 +263,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                    <ErrorMessage message={error} className="mb-4" />
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
+                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                    <ErrorMessage message={error} className="mb-3" />
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
                         {/* Left Column: Memo */}
                         <div className="md:col-span-8 flex flex-col h-full min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
                             <div className="flex justify-between items-center mb-2">
@@ -368,8 +368,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                             <span className="block text-xs font-semibold text-gray-500 mb-2 uppercase">{t('task_detail.recurrence_days')}</span>
                                             <div className="flex flex-wrap gap-2">
                                                 {dayLabels.map((day, idx) => (
-                                                    <label key={idx} className="flex items-center gap-1 cursor-pointer select-none">
+                                                    <label key={idx} htmlFor={`recurrence-day-${idx}`} className="flex items-center gap-1 cursor-pointer select-none">
                                                         <input
+                                                            id={`recurrence-day-${idx}`}
+                                                            name={`recurrenceDay${idx}`}
                                                             type="checkbox"
                                                             checked={recurrence.days?.includes(idx) || false}
                                                             onChange={() => handleDayToggle(idx)}
@@ -436,7 +438,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
+                <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
                     {!isNewTask && (
                         <div className="flex items-center gap-2">
                             <button

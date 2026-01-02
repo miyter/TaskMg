@@ -30,11 +30,14 @@ export function logError(log: ErrorLog): void {
         errorBuffer.shift();
     }
 
-    // コンソール出力（開発時）
+    // コンソール出力（開発時）- 読みやすいフォーマットで出力
+    const prefix = `[ErrorLogger] [${log.type.toUpperCase()}]`;
+    const details = log.stack ? `\n${log.stack}` : '';
+
     if (log.type === 'warn') {
-        console.warn('[ErrorLogger]', log);
+        console.warn(`${prefix} ${log.message}${details}`);
     } else {
-        console.error('[ErrorLogger]', log);
+        console.error(`${prefix} ${log.message}${details}`);
     }
 
     // TODO: 将来的にFirestoreや外部サービスに送信可能

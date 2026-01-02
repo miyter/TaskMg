@@ -50,37 +50,37 @@
 
     /* UI密度設定 (Global Variables) */
     :root {
-        --modal-p: 1.5rem;
-        /* normal equivalent */
-        --modal-gap: 1rem;
+        --modal-p: 1.25rem;
+        /* normal equivalent - slightly more compact */
+        --modal-gap: 0.875rem;
     }
 
     body.app-density-compact {
-        --modal-p: 1rem;
-        --modal-gap: 0.75rem;
+        --modal-p: 0.75rem;
+        --modal-gap: 0.5rem;
         --task-line-clamp: 1;
-        --task-p: 0.5rem;
+        --task-p: 0.375rem;
     }
 
     body.app-density-normal {
-        --modal-p: 1.5rem;
-        --modal-gap: 1.5rem;
+        --modal-p: 1.25rem;
+        --modal-gap: 1rem;
         --task-line-clamp: 2;
-        --task-p: 0.75rem;
+        --task-p: 0.625rem;
     }
 
     body.app-density-comfortable {
-        --modal-p: 2rem;
-        --modal-gap: 2rem;
+        --modal-p: 1.5rem;
+        --modal-gap: 1.25rem;
         --task-line-clamp: 3;
-        --task-p: 1rem;
+        --task-p: 0.875rem;
     }
 
     body.app-density-spacious {
-        --modal-p: 2.5rem;
-        --modal-gap: 2.5rem;
+        --modal-p: 2rem;
+        --modal-gap: 1.75rem;
         --task-line-clamp: 999;
-        --task-p: 1.5rem;
+        --task-p: 1.25rem;
     }
 
     /* Density Utilities */
@@ -158,7 +158,7 @@
     }
 
     .glass-card {
-        @apply glass-effect rounded-2xl p-6 transition-all;
+        @apply glass-effect rounded-2xl p-4 transition-all;
     }
 
     .btn-premium {

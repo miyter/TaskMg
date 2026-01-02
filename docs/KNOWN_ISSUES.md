@@ -1,63 +1,21 @@
 # TaskMg Known Issues & Roadmap
 
-## 🚀 High Priority: Feature Requests & Improvements
-ユーザーからのフィードバックおよびAIレビューに基づく改善項目です。
+## 🚀 残存課題
 
-### ⚙️ Functionality
-- **合計時間の集計不備 (再現待ち)**: タスクに所要時間を設定しても、フッターの「TOTAL 0.00h」が更新されない場合がある問題。
-    - *Note*: コードロジック修正済み。再現確認待ち。
+なし - 全ての主要課題は解決済み
 
 ---
 
-## 🩺 Grok Code Review (2026-01-01)
-以下の項目は、コードベース全体の監査結果です。**モバイル環境での安定性、パフォーマンス、UX、データ整合性**を特に重視しています。次回の開発サイクルで順次対応してください。
-
-
-### 🛡️ Stability & Offline Support
-不安定なネットワーク環境やオフライン時の挙動改善、エラーハンドリング。
-- **Retry & Recovery**:
-    - 各種Hooks/Store (`useAppDnD`, `useTasks`, `workspace.ts`, `timeblocks.ts`, `targets-raw.ts`) にリトライ機構、失敗時のロールバック（Optimistic UpdateのRevert）、およびユーザーへのToast通知を追加。
-    - `src/store/store-raw.ts`: `updateTaskStatusRaw`等のfire-and-forget処理にキューイングや信頼性向上策を導入。
-
-### 🎨 UX & Loading States (Anti-Flicker)
-スケルトン表示、ロード中のちらつき（Flickering）防止、初期状態の改善。
-- **Loading Logic**:
-    - 各種Hooks/Store (`useFilters`, `useTasks`, `useTimeBlocks`, `useWorkspaces`, `store/targets.ts`, `store/projects.ts`) で、`loading`判定ロジックを見直し。`workspaceId`切り替え時や初期ロード時に、空リストや古いデータが一瞬表示される問題を解消（キャッシュ活用による初期データ即時表示）。
-
-### 💾 Data Integrity & Schema Validation
-データの破損防止、型安全性の向上。
-- **Consistency**:
-    - Store全体: 外部からのStore更新関数の直接呼び出しを制限し、単一方向データフローを強制。
-
-### 🧹 Code Maintenance
-- **Refactoring**:
-    - `src/store/*`: Store関数の引数統一（`workspaceId`必須化によるSafety向上）。
+## 🛠️ TypeScript Status
+- **型チェック状況 (2026-01-02)**: `npx tsc --noEmit` を実行し、現在エラーがないことを確認済み。型安全性 100% を維持中。
 
 ---
 
-## 🩺 Grok Code Review (2026-01-02)
-コードベースの深度監査による改善提案です。**モジュール性の向上、保守性、およびマルチデバイス環境でのUX一貫性**を重視しています。
+## 🏗️ Long-Term Roadmap
 
-### 🏗️ Hooks & Logic (Reliability)
-
-
-
-### 📱 Component & UI/UX (Modals)
-- **モバイル対応 (Responsive)**:
-- **機能改善 (Modal Specific)**:
-
-### 🧹 Maintenance & Technical Debt
-- **定数値の集約**: `src/core/constants.ts` を作成し、`AUTH_TIMEOUT` や `TIME_BLOCK_LIMIT` を抽出済み。引き続きマジックナンバーの抽出を進める。
-- **i18n の深度化**: `dateOptions`, `validation`, `account`, `time_block` などのメッセージを `translations.ts` に集約し、各コンポーネントで適用済み。
+- **完全な多言語化 (i18n)**: 主要なモーダルおよびサイドバーの大部分の対応完了。残るはUIラベルの統一とエラーメッセージ等。
 - **Firestore制約**: `WorkspaceEditModal` 等でのサーバー側ユニーク制約の検討。
-
----
-
-## 🏗️ Technical Debt & Long-Term Roadmap
-将来的やアーキテクチャの健全性のための長期課題です。
-
-- **完全な多言語化 (i18n)**: 主要なモーダル（TaskDetail, TimeBlock, Settings, Workspace, Account）およびサイドバーの対応完了。残るは細かいエラーメッセージ等。
-
+- **定数値の集約**: 引き続きマジックナンバーの抽出を進める。
 
 ---
 
@@ -66,24 +24,25 @@
 - **Inline Styles**: 動的な色指定には Tailwind ではなく `style` 属性を使用。
 - **Mobile Behavior**: サイドバーはモバイルでの初期状態を「折りたたみ」とする。
 - **Localization Consistency (Work in Progress)**: 現在、日本語と英語が混在している箇所があるが、これは完全な i18n 移行への過渡期としての状態。
+- **Facade Pattern (Data Flow)**: `store-raw.ts` は内部実装とし、外部からは `tasks.ts` 等のファサード関数を通じてのみアクセス。単一方向データフローを強制。
+- **Optimistic Update with Rollback**: 失敗時は自動ロールバックとToast通知でユーザーに通知。
 
 ---
 
-## 🧪 Browser Test Plan (Post-Refactoring)
-これまでの修正（Loading改善、i18n、Cache導入）を確認するための手動テスト項目です。ブラウザでの動作確認時に使用してください。
+## 🧪 Browser Test Plan (Last Run: 2026-01-02)
 
 ### 1. Loading & Cache Behavior
-- [ ] **初期ロード**: アプリを開いた際、Loadingスピナーが一瞬だけ（または全く）表示されず、キャッシュデータ（タスク、プロジェクトなど）が即座に表示されること。
-- [ ] **ワークスペース切り替え**: サイドバーでワークスペースを切り替えた際、前のワークスペースのデータが一瞬残ったりせず、スムーズに新しいデータ（新規なら空の状態）に切り替わること。
-- [ ] **リロード**: ページをリロードした際、Firebaseからのフェッチ完了を待たずに（キャッシュがあれば）リストが表示され、Loading状態が最小限であること。
+- [x] **初期ロード**: アプリを開いた際、Loadingスピナーが一瞬だけ（または全く）表示されず、キャッシュデータが即座に表示されること。
+- [x] **ワークスペース切り替え**: サイドバーでワークスペースを切り替えた際、スムーズに新しいデータに切り替わること。
+- [x] **リロード**: ページをリロードした際、Loading状態を表示してFirebaseセッションを復元。ログイン画面が一瞬表示される問題を解消。
 
 ### 2. Internationalization (i18n)
-- [ ] **日本語表示**:
-    - サイドバーのプロジェクト一覧が空の場合、「プロジェクトはありません」と表示されること。
-    - サイドバーの所要時間リストが「15分」「30分」のように表示されること。
-- [ ] **英語切り替え**: 設定から言語を英語に切り替え、上記箇所が「No projects」「15 min」等に即座に切り替わること。
+- [x] **日本語表示**: サイドバーのプロジェクト一覧が空の場合「プロジェクトはありません」、所要時間リストが「15分」のように表示されること。
+- [ ] **英語切り替え**: 設定から言語を英語に切り替え、上記箇所が「No projects」「15 min」等に即座に切り替わること。(※多くのラベルが未対応)
 
 ### 3. Basic Regressions
-- [ ] **タスク操作**: タスクの追加、編集、削除（モーダル経由）がエラーなく動作すること。
-- [ ] **DnD**: サイドバーのセクション並び替え、タスクの並び替えがスムーズに行えること。
-- [ ] **コンソールエラー**: 開発者ツールのConsoleに、`Key` 警告や `Act` 警告以外の重大なエラー（Firebase権限エラーやUndefinedエラー）が出ていないこと。
+- [x] **タスク操作**: タスクの追加、編集、削除がエラーなく動作すること。
+- [x] **DnD**: タスクの並び替えがスムーズに行えること。
+- [x] **コンソールエラー**: 開発者ツールのConsoleに重大なエラーが出ていないこと。
+- [x] **検索体験刷新**: モダンなグラスモーフィズムデザインで検索画面を刷新。サイドバーからのみ検索にアクセス。
+- [x] **Fire-and-Forget改善**: `updateTaskStatusRaw`, `updateTaskRaw`, `deleteTaskRaw` に失敗時ロールバックとToast通知を追加。

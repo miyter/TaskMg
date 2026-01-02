@@ -1,7 +1,6 @@
 import { QueryKey, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Unsubscribe } from '../core/firebase-sdk';
-import { logWarn } from '../utils/error-logger';
 
 // Global subscription registry to prevent duplicate listeners
 // Map key: JSON stringified queryKey
@@ -85,13 +84,21 @@ export function useFirestoreSubscription<T>(
             if (initialData !== undefined) {
                 return Promise.resolve(initialData);
             }
-            // If no initialData, wait for subscription with a timeout to prevent infinite pending.
-            // After 30 seconds, resolve with empty array (safe default for list subscriptions).
+            // If no initialData, wait for subscription with a timeout.
+            // After timeout, silently resolve with empty array (safe default for list subscriptions).
+            // This prevents "pending forever" state while allowing subscription to push data later.
             return new Promise<T>((resolve) => {
-                setTimeout(() => {
-                    logWarn('[useFirestoreSubscription] Timeout waiting for subscription data, resolving with default', { queryKey });
+                const timeoutId = setTimeout(() => {
+                    // Silently resolve - subscription will update cache when data arrives
                     resolve(initialData as unknown as T);
                 }, 10000);
+
+                // Check if data already exists in cache (race condition handling)
+                const existingData = queryClient.getQueryData<T>(queryKey);
+                if (existingData !== undefined) {
+                    clearTimeout(timeoutId);
+                    resolve(existingData);
+                }
             });
         },
         initialData: initialData,

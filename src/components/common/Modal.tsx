@@ -1,10 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from '../../core/translations';
 import { cn } from '../../utils/cn';
 
-
-
-// フォーカス可能な要素のセレクター
 // フォーカス可能な要素のセレクター
 const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -20,14 +18,16 @@ interface ModalProps {
 }
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className, overlayClassName, zIndex = 100, size = 'md' }) => {
+    const { t } = useTranslation();
     const modalRef = useRef<HTMLDivElement>(null);
 
+    // Responsive size classes: full width on mobile, constrained on larger screens
     const sizeClasses = {
-        sm: 'max-w-sm',
-        md: 'max-w-lg',
-        lg: 'max-w-3xl',
-        xl: 'max-w-5xl',
-        full: 'max-w-full m-4 h-[calc(100vh-2rem)]'
+        sm: 'max-w-full sm:max-w-sm',
+        md: 'max-w-full sm:max-w-lg',
+        lg: 'max-w-full sm:max-w-3xl',
+        xl: 'max-w-full sm:max-w-5xl',
+        full: 'max-w-full m-0 sm:m-4 h-[100dvh] sm:h-[calc(100vh-2rem)]'
     };
 
     useEffect(() => {
@@ -49,13 +49,11 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             const lastElement = focusableElements[focusableElements.length - 1];
 
             if (e.shiftKey) {
-                // Shift+Tab: 最初の要素にいたら最後に移動
                 if (document.activeElement === firstElement) {
                     e.preventDefault();
                     lastElement.focus();
                 }
             } else {
-                // Tab: 最後の要素にいたら最初に移動
                 if (document.activeElement === lastElement) {
                     e.preventDefault();
                     firstElement.focus();
@@ -68,13 +66,12 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             window.addEventListener('keydown', handleTab);
             document.body.style.overflow = 'hidden';
 
-            // モーダルオープン時に最初のフォーカス可能要素にフォーカス
             const timer = setTimeout(() => {
                 const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
                 if (focusableElements && focusableElements.length > 0) {
                     focusableElements[0].focus();
                 } else if (modalRef.current) {
-                    modalRef.current.focus(); // Fallback to modal itself
+                    modalRef.current.focus();
                 }
             }, 50);
             return () => clearTimeout(timer);
@@ -90,7 +87,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
 
     return createPortal(
         <div
-            className="fixed inset-0 flex items-center justify-center p-4 sm:p-6 animate-fade-in"
+            className="fixed inset-0 flex items-center justify-center p-0 sm:p-4 animate-fade-in"
             style={{ zIndex }}
             role="dialog"
             aria-modal="true"
@@ -106,22 +103,22 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             />
             <div
                 ref={modalRef}
-                tabIndex={-1} // Allow focus fallack
+                tabIndex={-1}
                 className={cn(
-                    "relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full overflow-hidden flex flex-col transform transition-all animate-scale-in outline-none",
+                    "relative bg-white dark:bg-gray-800 rounded-none sm:rounded-xl shadow-2xl w-full overflow-hidden flex flex-col transform transition-all animate-scale-in outline-none max-h-[100dvh] sm:max-h-[90vh]",
                     sizeClasses[size],
                     className
                 )}
             >
                 {title && (
-                    <div className="px-modal py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center shrink-0">
-                        <h3 id="modal-title" className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="閉じる">
+                    <div className="px-3 py-2 sm:px-modal sm:py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center shrink-0">
+                        <h3 id="modal-title" className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{title}</h3>
+                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 shrink-0" aria-label={t('close')}>
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
                 )}
-                <div className="flex-1 overflow-y-auto p-modal custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-3 sm:p-modal custom-scrollbar">
                     {children}
                 </div>
             </div>
@@ -129,3 +126,4 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
         document.body
     );
 };
+

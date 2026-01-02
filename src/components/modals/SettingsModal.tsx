@@ -318,8 +318,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                     {t('settings_modal.maintenance.description')}
                                 </p>
 
-                                <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                                <label htmlFor="backup-confirm-checkbox" className="flex items-center gap-2 mb-4 cursor-pointer">
                                     <input
+                                        id="backup-confirm-checkbox"
+                                        name="backupConfirmed"
                                         type="checkbox"
                                         className="w-4 h-4 text-red-600 rounded border-red-300 focus:ring-red-500"
                                         checked={backupConfirmed}

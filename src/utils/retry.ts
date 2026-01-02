@@ -10,20 +10,36 @@ const NON_RETRYABLE_ERRORS = [
     'failed-precondition',
 ];
 
+interface RetryOptions {
+    maxRetries?: number;
+    initialDelay?: number;
+    onError?: (error: any, attempt: number) => void;
+    onFinalFailure?: (error: any) => void;
+}
+
 /**
  * 失敗した非同期操作を指数バックオフで再試行する
  * 
  * @param operation - 実行する非同期操作
- * @param maxRetries - 最大再試行回数（デフォルト: 3）
- * @param initialDelay - 初期待機時間（ミリ秒、デフォルト: 1000）
- * @param enableLogging - ログ出力を有効化（開発環境のみ推奨）
+ * @param options - リトライオプション
  */
 export async function withRetry<T>(
     operation: () => Promise<T>,
-    maxRetries: number = 3,
-    initialDelay: number = 1000,
-    enableLogging: boolean = import.meta.env?.DEV ?? false
+    options: RetryOptions | number = {}
 ): Promise<T> {
+    // 後方互換性: 数値が渡された場合はmaxRetriesとして扱う
+    const opts: RetryOptions = typeof options === 'number'
+        ? { maxRetries: options }
+        : options;
+
+    const {
+        maxRetries = 3,
+        initialDelay = 1000,
+        onError,
+        onFinalFailure
+    } = opts;
+
+    const enableLogging = import.meta.env?.DEV ?? false;
     let lastError: any;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -32,6 +48,11 @@ export async function withRetry<T>(
         } catch (error: any) {
             lastError = error;
 
+            // エラーコールバック実行
+            if (onError) {
+                onError(error, attempt);
+            }
+
             // 最後の試行なら再試行しない
             if (attempt === maxRetries) break;
 
@@ -39,6 +60,9 @@ export async function withRetry<T>(
             const errorCode = error?.code || '';
             const isNonRetryable = NON_RETRYABLE_ERRORS.some(code => errorCode.includes(code));
             if (isNonRetryable) {
+                if (onFinalFailure) {
+                    onFinalFailure(error);
+                }
                 throw error;
             }
 
@@ -53,5 +77,11 @@ export async function withRetry<T>(
         }
     }
 
+    // 最終失敗コールバック実行
+    if (onFinalFailure) {
+        onFinalFailure(lastError);
+    }
+
     throw lastError;
 }
+

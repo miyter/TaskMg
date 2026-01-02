@@ -32,7 +32,11 @@ const App: React.FC = () => {
     const { projects, setProjectsOverride } = useProjects();
     const { labels } = useLabels();
 
-    const [user, setUser] = React.useState<any>(null);
+    // Auth state: null = not determined yet, false = explicitly logged out
+    const [authState, setAuthState] = React.useState<{ user: any; loading: boolean }>({
+        user: auth.currentUser,
+        loading: !auth.currentUser // Only loading if no cached user
+    });
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         const target = e.target as HTMLElement;
@@ -48,7 +52,7 @@ const App: React.FC = () => {
 
     React.useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user);
+            setAuthState({ user, loading: false });
         });
 
         document.addEventListener('keydown', handleKeyDown);
@@ -84,7 +88,19 @@ const App: React.FC = () => {
         }
     }, [currentView, query, filterType, targetId, projects, labels]);
 
-    if (!user) {
+    // Show loading spinner while Firebase restores auth state
+    if (authState.loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">読み込み中...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!authState.user) {
         return <LoginPage />;
     }
 

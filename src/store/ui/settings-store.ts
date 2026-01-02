@@ -33,7 +33,7 @@ export const useSettingsStore = create<SettingsState>()(
             fontSize: 'md',
             density: 'normal',
             language: 'ja',
-            customDurations: [30, 45, 60, 75, 90],
+            customDurations: [15, 30, 45, 60, 75, 90, 120],
 
             setThemeMode: (mode) => set({ themeMode: mode }),
             setFontEn: (font) => set({ fontEn: font }),

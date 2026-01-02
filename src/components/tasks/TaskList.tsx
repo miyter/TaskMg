@@ -16,6 +16,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import React, { useMemo } from 'react';
+import { useTranslation } from '../../core/translations';
 import { useTasks } from '../../hooks/useTasks';
 import { getProcessedTasks } from '../../logic/search';
 import { reorderTasks } from '../../store';
@@ -58,6 +59,7 @@ const SortableTaskItem = ({ task, className }: { task: Task; className?: string 
 };
 
 export const TaskList: React.FC = () => {
+    const { t } = useTranslation();
     const { tasks, loading } = useTasks();
     const {
         filterType, targetId, query,
@@ -130,11 +132,8 @@ export const TaskList: React.FC = () => {
         const newIndex = processedTasks.findIndex(t => t.id === over.id);
 
         if (oldIndex !== -1 && newIndex !== -1) {
-            // Firestoreへの反映指示
-            // arrayMoveで新しい順序の配列を作り、そのIDリストを渡す
             const reordered = arrayMove(processedTasks, oldIndex, newIndex);
             const orderedIds = reordered.map(t => t.id!).filter(Boolean);
-
             await reorderTasks(orderedIds);
         }
     };
@@ -142,7 +141,7 @@ export const TaskList: React.FC = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div className="text-gray-400 text-sm animate-pulse">タスクを読み込み中...</div>
+                <div className="text-gray-400 text-sm animate-pulse">{t('task_list.loading')}</div>
             </div>
         );
     }
@@ -161,7 +160,7 @@ export const TaskList: React.FC = () => {
                         ) : (
                             <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                検索結果を表示中: "{query}"
+                                {t('task_list.searching_results', { query: query || '' })}
                             </div>
                         )}
                     </div>
@@ -173,11 +172,11 @@ export const TaskList: React.FC = () => {
                             onChange={(e) => setSortCriteria(e.target.value)}
                             className="text-xs bg-transparent border-none outline-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer font-medium"
                         >
-                            <option value="manual">手動 (並び替え)</option>
-                            <option value="createdAt_desc">作成日順</option>
-                            <option value="dueDate_asc">期限が近い順</option>
-                            <option value="important_desc">重要度順</option>
-                            <option value="title_asc">名前順</option>
+                            <option value="manual">{t('task_list.sort_manual')}</option>
+                            <option value="createdAt_desc">{t('task_list.sort_created')}</option>
+                            <option value="dueDate_asc">{t('task_list.sort_due')}</option>
+                            <option value="important_desc">{t('task_list.sort_important')}</option>
+                            <option value="title_asc">{t('task_list.sort_title')}</option>
                         </select>
                     </div>
 
@@ -189,9 +188,9 @@ export const TaskList: React.FC = () => {
                                 ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300"
                                 : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400"
                         )}
-                        title={showCompleted ? "Hide completed tasks" : "Show completed tasks"}
+                        title={showCompleted ? t('task_list.hide_completed') : t('task_list.show_completed')}
                     >
-                        {showCompleted ? '完了を非表示' : '完了を表示'}
+                        {showCompleted ? t('task_list.hide_completed') : t('task_list.show_completed')}
                     </button>
                 </div>
 
@@ -205,16 +204,16 @@ export const TaskList: React.FC = () => {
                                 </svg>
                             </div>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">タスクが見つかりません</h3>
+                        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">{t('task_list.no_tasks_title')}</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mb-8">
-                            {showCompleted ? "フィルタを変更するか、新しいタスクを作成して一日を始めましょう。" : "完了したタスクを表示するか、新しいタスクを追加してください。"}
+                            {showCompleted ? t('task_list.no_tasks_desc_showing') : t('task_list.no_tasks_desc_hiding')}
                         </p>
                         <button
                             onClick={() => openModal('task-detail', { title: '' })}
                             className="btn-premium flex items-center gap-2"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                            新しいタスクを追加
+                            {t('task_list.add_new_task')}
                         </button>
                     </div>
                 ) : (

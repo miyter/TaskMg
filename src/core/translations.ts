@@ -308,6 +308,38 @@ const ja = {
         tomorrow: '明日',
         week: '今週',
         next_week: '来週',
+    },
+
+    task_list: {
+        searching_results: '検索結果を表示中: "{query}"',
+        sort_manual: '手動 (並び替え)',
+        sort_created: '作成日順',
+        sort_due: '期限が近い順',
+        sort_important: '重要度順',
+        sort_title: '名前順',
+        show_completed: '完了を表示',
+        hide_completed: '完了を非表示',
+        no_tasks_title: 'タスクが見つかりません',
+        no_tasks_desc_showing: 'フィルタを変更するか、新しいタスクを作成して一日を始めましょう。',
+        no_tasks_desc_hiding: '完了したタスクを表示するか、新しいタスクを追加してください。',
+        add_new_task: '新しいタスクを追加',
+        loading: 'タスクを読み込み中...',
+    },
+
+    task_stats: {
+        count_label: 'COUNT',
+        count_unit: '件',
+        total_label: 'TOTAL',
+        avg_label: 'AVG',
+        avg_unit: '/件',
+        over: '超過',
+        remaining: '残り',
+    },
+
+    add_task_button: {
+        add_task: 'タスクを追加',
+        add_with_title: '「{title}」をタスクに追加',
+        aria_label: '新しいタスクを追加',
     }
 };
 
@@ -611,6 +643,38 @@ const en = {
         tomorrow: 'Tomorrow',
         week: 'This Week',
         next_week: 'Next Week',
+    },
+
+    task_list: {
+        searching_results: 'Showing results for: "{query}"',
+        sort_manual: 'Manual (Reorder)',
+        sort_created: 'Date Created',
+        sort_due: 'Due Date',
+        sort_important: 'Importance',
+        sort_title: 'Title',
+        show_completed: 'Show Completed',
+        hide_completed: 'Hide Completed',
+        no_tasks_title: 'No tasks found',
+        no_tasks_desc_showing: 'Try changing filters or create a new task to start your day.',
+        no_tasks_desc_hiding: 'Show completed tasks or add a new task.',
+        add_new_task: 'Add New Task',
+        loading: 'Loading tasks...',
+    },
+
+    task_stats: {
+        count_label: 'COUNT',
+        count_unit: '',
+        total_label: 'TOTAL',
+        avg_label: 'AVG',
+        avg_unit: '/task',
+        over: 'Over',
+        remaining: 'Left',
+    },
+
+    add_task_button: {
+        add_task: 'Add Task',
+        add_with_title: 'Add "{title}" as task',
+        aria_label: 'Add new task',
     }
 };
 
