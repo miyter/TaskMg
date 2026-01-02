@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { subscribeToFilters } from '../store/filters';
+import { getFilters, isFiltersInitialized, subscribeToFilters } from '../store/filters';
 import { Filter } from '../store/schema';
 import { useFirestoreSubscription } from './useFirestoreSubscription';
 import { useWorkspace } from './useWorkspace';
@@ -15,13 +15,15 @@ export const useFilters = () => {
         return subscribeToFilters(workspaceId, onData);
     }, [workspaceId]);
 
+    const isCacheReady = workspaceId ? isFiltersInitialized(workspaceId) : false;
+
     const { data: filters, isPending } = useFirestoreSubscription<Filter[]>(
-        ['filters', workspaceId],
+        ['filters', workspaceId || 'pending'],
         subscribeFn,
-        undefined
+        (workspaceId && isCacheReady) ? getFilters(workspaceId) : undefined
     );
 
     const loading = authLoading || (!!workspaceId && isPending);
 
-    return { filters: filters || [], loading };
+    return { filters: filters!, loading };
 };

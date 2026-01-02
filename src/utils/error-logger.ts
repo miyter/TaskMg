@@ -7,7 +7,7 @@
 
 interface ErrorLog {
     timestamp: string;
-    type: 'error' | 'unhandledrejection' | 'react';
+    type: 'error' | 'unhandledrejection' | 'react' | 'warn';
     message: string;
     stack?: string;
     url?: string;
@@ -31,7 +31,11 @@ export function logError(log: ErrorLog): void {
     }
 
     // コンソール出力（開発時）
-    console.error('[ErrorLogger]', log);
+    if (log.type === 'warn') {
+        console.warn('[ErrorLogger]', log);
+    } else {
+        console.error('[ErrorLogger]', log);
+    }
 
     // TODO: 将来的にFirestoreや外部サービスに送信可能
     // await saveErrorToFirestore(log);
@@ -86,5 +90,17 @@ export function logReactError(error: Error, componentStack?: string): void {
         message: error.message,
         stack: error.stack,
         componentStack,
+    });
+}
+
+/**
+ * 警告をログに記録
+ */
+export function logWarn(message: string, context?: Record<string, any>): void {
+    logError({
+        timestamp: new Date().toISOString(),
+        type: 'warn',
+        message,
+        stack: context ? JSON.stringify(context) : undefined
     });
 }

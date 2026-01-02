@@ -5,6 +5,7 @@ import {
     addTargetRaw,
     deleteTargetRaw,
     getTargets as getTargetsRaw,
+    isTargetsInitialized as isTargetsInitializedRaw,
     subscribeToTargetsRaw,
     updateTargetRaw
 } from './targets-raw';
@@ -26,6 +27,12 @@ export const getTargets = (workspaceId?: string): Target[] => {
     const targetId = workspaceId || getCurrentWorkspaceId();
     if (!targetId) return [];
     return getTargetsRaw(targetId);
+};
+
+export const isTargetsInitialized = (workspaceId?: string): boolean => {
+    const targetId = workspaceId || getCurrentWorkspaceId();
+    if (!targetId) return false;
+    return isTargetsInitializedRaw(targetId);
 };
 
 /**

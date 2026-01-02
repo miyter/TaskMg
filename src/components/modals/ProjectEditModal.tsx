@@ -7,11 +7,8 @@ import { cn } from '../../utils/cn';
 import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
 
-const PROJECT_COLORS = [
-    '#7E57C2', '#5C6BC0', '#42A5F5', '#29B6F6', '#26C6DA',
-    '#26A69A', '#66BB6A', '#9CCC65', '#D4E157', '#FFEE58',
-    '#FFCA28', '#FFA726', '#FF7043', '#8D6E63', '#BDBDBD'
-];
+import { useTranslation } from '../../core/translations';
+import { COLOR_PALETTE } from '../../core/ui-constants';
 
 /**
  * プロジェクト編集/作成モーダル (React版)
@@ -24,6 +21,7 @@ interface ProjectEditModalProps {
 }
 
 export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex, overlayClassName }) => {
+    const { t } = useTranslation();
     const { closeModal } = useModalStore();
     const { currentWorkspaceId } = useWorkspaceStore();
 
@@ -36,25 +34,34 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
     // 初期化
     useEffect(() => {
         if (isOpen) {
             setName(project?.name || '');
-            setColor(project?.color || PROJECT_COLORS[0]);
+            setColor(project?.color || COLOR_PALETTE[3].value); // Default to a nice purple
             setError(null);
             setLoading(false);
         }
     }, [isOpen, project]);
 
+    // Error auto-focus
+    useEffect(() => {
+        if (error) {
+            inputRef.current?.focus();
+        }
+    }, [error]);
+
     const handleSave = useCallback(async () => {
         const trimmedName = name.trim();
         if (!trimmedName) {
-            setError('プロジェクト名を入力してください');
+            setError(t('validation.project_name_required'));
             return;
         }
 
         if (!currentWorkspaceId && !isEdit) {
-            setError('ワークスペースが選択されていません。再度お試しください。');
+            setError(t('validation.workspace_required'));
             return;
         }
 
@@ -69,24 +76,24 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
             }
             closeModal();
         } catch (err: any) {
-            setError('保存に失敗しました: ' + (err.message || '不明なエラー'));
+            setError(t('validation.save_fail') + ': ' + (err.message || 'Error'));
             setLoading(false);
         }
-    }, [name, color, isEdit, project, currentWorkspaceId, closeModal]);
+    }, [name, color, isEdit, project, currentWorkspaceId, closeModal, t]);
 
     const handleDelete = useCallback(async () => {
         if (!project?.id) return;
-        if (!confirm(`プロジェクト「${project.name}」を削除しますか？`)) return;
+        if (!confirm(t('modal.project_delete_confirm').replace('{name}', project.name))) return;
 
         setLoading(true);
         try {
             await deleteProject(project.id);
             closeModal();
         } catch (err: any) {
-            setError('削除に失敗しました');
+            setError(t('validation.delete_fail'));
             setLoading(false);
         }
-    }, [project, closeModal]);
+    }, [project, closeModal, t]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
@@ -117,16 +124,17 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
                     </div>
                     <div>
                         <label htmlFor="project-name-input" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
-                            プロジェクト名
+                            {t('modal.project_name')}
                         </label>
                         <input
+                            ref={inputRef}
                             id="project-name-input"
                             name="projectName"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="名前を入力..."
+                            placeholder={t('modal.project_name_placeholder')}
                             className="w-full text-lg font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 p-0"
                             autoFocus
                             aria-describedby={error ? "project-error-msg" : undefined}
@@ -137,21 +145,21 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
                 {/* Color Selection (Previously missing) */}
                 <div>
                     <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
-                        テーマカラー
+                        {t('modal.theme_color')}
                     </label>
                     <div className="flex flex-wrap gap-2">
-                        {PROJECT_COLORS.map(c => (
+                        {COLOR_PALETTE.map(c => (
                             <button
-                                key={c}
+                                key={c.value}
                                 type="button"
-                                onClick={() => setColor(c)}
+                                onClick={() => setColor(c.value)}
                                 className={cn(
                                     "w-6 h-6 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800",
-                                    color === c ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800 scale-110" : ""
+                                    color === c.value ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800 scale-110" : ""
                                 )}
-                                style={{ backgroundColor: c }}
-                                aria-label={`色を選択: ${c}`}
-                                aria-pressed={color === c}
+                                style={{ backgroundColor: c.value }}
+                                aria-label={t(`colors.${c.key}` as any)}
+                                aria-pressed={color === c.value}
                             />
                         ))}
                     </div>
@@ -168,8 +176,8 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
                                 onClick={handleDelete}
                                 disabled={loading}
                                 className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
-                                aria-label="プロジェクトを削除"
-                                title="プロジェクトを削除"
+                                aria-label={t('modal.delete_project')}
+                                title={t('modal.delete_project')}
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -178,31 +186,19 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
                         )}
                     </div>
                     <div className="flex gap-3">
-                        {!isEdit ? (
-                            // 新規作成時はキャンセルを隠すことも検討されたが、明示的なキャンセルのほうが親切な場合もある
-                            // 要件: "isNewTask時はキャンセル非表示検討" -> 控えめな表示にする
-                            <button
-                                onClick={closeModal}
-                                disabled={loading}
-                                className="text-sm text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition"
-                            >
-                                キャンセル
-                            </button>
-                        ) : (
-                            <button
-                                onClick={closeModal}
-                                disabled={loading}
-                                className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition disabled:opacity-50"
-                            >
-                                キャンセル
-                            </button>
-                        )}
+                        <button
+                            onClick={closeModal}
+                            disabled={loading}
+                            className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition disabled:opacity-50"
+                        >
+                            {t('modal.cancel')}
+                        </button>
                         <button
                             onClick={handleSave}
                             disabled={loading}
                             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-md transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? '処理中...' : isEdit ? '保存' : '作成'}
+                            {loading ? '...' : isEdit ? t('modal.save') : t('modal.create')}
                         </button>
                     </div>
                 </div>

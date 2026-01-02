@@ -63,6 +63,10 @@ export function getTargets(workspaceId: string): Target[] {
     return _cachedTargetsMap.get(workspaceId) || [];
 }
 
+export function isTargetsInitialized(workspaceId: string): boolean {
+    return _cachedTargetsMap.has(workspaceId);
+}
+
 /**
  * 新しいターゲットを追加する (RAW)
  */

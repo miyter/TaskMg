@@ -36,6 +36,10 @@ export function clearFiltersCache(workspaceId?: string) {
     }
 }
 
+export function isFiltersInitialized(workspaceId: string): boolean {
+    return _cachedFiltersMap.has(workspaceId);
+}
+
 /**
  * フィルターのリアルタイム購読
  * @param workspaceId ワークスペースID

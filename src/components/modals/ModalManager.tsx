@@ -24,7 +24,7 @@ export const ModalManager: React.FC = () => {
                 const isFirst = index === 0;
                 // スタック内の順序に応じてz-indexとオーバーレイを調整
                 // 2枚目以降は背景を少しだけ暗くする（完全な透明だと重なりが分かりにくい、濃すぎると見づらい）
-                const overlayStyle = isFirst ? undefined : "bg-black/20"; // undefined defaults to bg-black/50
+                const overlayStyle = isFirst ? undefined : "bg-black/30"; // undefined defaults to bg-black/50
 
                 const props = {
                     isOpen: true,

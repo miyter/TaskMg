@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { getLabels, subscribeToLabels } from '../store/labels';
+import { getLabels, isLabelsInitialized, subscribeToLabels } from '../store/labels';
 import { Label } from '../store/schema';
 import { useFirestoreSubscription } from './useFirestoreSubscription';
 import { useWorkspace } from './useWorkspace';
@@ -12,13 +12,15 @@ export const useLabels = () => {
         return subscribeToLabels(workspaceId, onData);
     }, [workspaceId]);
 
+    const isCacheReady = workspaceId ? isLabelsInitialized(workspaceId) : false;
+
     const { data: labels, isPending } = useFirestoreSubscription<Label[]>(
         ['labels', workspaceId],
         subscribeFn,
-        getLabels(workspaceId ?? undefined)
+        (workspaceId && isCacheReady) ? getLabels(workspaceId) : undefined
     );
 
-    const loading = authLoading || (!!workspaceId && isPending && ((labels ?? []).length === 0));
+    const loading = authLoading || (!!workspaceId && isPending);
 
     return { labels: labels || [], loading };
 };

@@ -29,6 +29,8 @@ const ja = {
     search: '検索',
     no_tasks: 'タスクがありません',
     loading: '読み込み中...',
+    saving: '保存中...',
+    done: '完了',
     error: 'エラーが発生しました',
     backup_restore: 'バックアップと復元',
     general: '一般',
@@ -59,8 +61,10 @@ const ja = {
         },
         auth: {
             login_success: 'ログインしました',
-            login_fail: 'ログインに失敗しました',
             logout_success: 'ログアウトしました',
+        },
+        dnd: {
+            reorderFailed: '並び替えに失敗しました',
         },
         project: {
             reorder_fail: 'プロジェクトの並び替えに失敗しました',
@@ -84,10 +88,13 @@ const ja = {
         resizer_hint: 'ドラッグまたは矢印キーでリサイズ',
         menu_open: 'メニューを開く',
         reorder_section: 'セクションを並び替え',
+        no_projects: 'プロジェクトはありません',
+        duration_format: '{min}分',
     },
 
     modal: {
         task_title_placeholder: 'タスクのタイトル',
+        filter_name_placeholder: '例: 今週の重要タスク',
         memo_markdown: 'メモ (Markdown)',
         edit: '編集',
         preview: 'プレビュー',
@@ -105,6 +112,51 @@ const ja = {
         delete: '削除',
         delete_confirm: '本当にこのタスクを削除しますか？',
         no_memo: 'メモがありません',
+        workspace_edit_title: 'ワークスペース名の変更',
+        workspace_create_title: '新規ワークスペース',
+        workspace_name_label: 'ワークスペース名',
+        workspace_name_placeholder: 'ワークスペース名を入力...',
+        workspace_desc_edit: 'ワークスペースの名前を変更します。',
+        workspace_desc_create: '新しいワークスペースを作成します。プロジェクトやタスクを個別に管理できるようになります。',
+        label_name: 'ラベル名',
+        label_name_placeholder: 'ラベル名',
+        label_create_placeholder: '新しいラベル名',
+        project_name: 'プロジェクト名',
+        project_name_placeholder: '名前を入力...',
+        project_delete_confirm: 'プロジェクト「{name}」を削除しますか？',
+        label_delete_confirm: 'ラベル「{name}」を削除しますか？',
+        theme_color: 'テーマカラー',
+
+        delete_label: 'ラベルを削除',
+        delete_project: 'プロジェクトを削除',
+    },
+
+    task_detail: {
+        recurrence_label: '繰り返し',
+        recurrence_days: '繰り返す曜日',
+        time_block_label: '時間帯',
+        time_block_unspecified: '未定',
+        duration_label: '所要時間',
+        duration_none: '指定なし',
+        project_label: 'プロジェクト',
+        project_none: 'プロジェクトなし',
+        due_date_label: '期限日',
+        schedule_label: 'スケジュール',
+        title_placeholder: 'タスクのタイトル',
+        delete_button: '削除',
+    },
+
+    time_block: {
+        add_button: '時間帯を追加',
+        max_limit: '最大10個まで登録できます',
+        unspecified: '未定',
+        default_zone_desc: 'デフォルトのゾーン',
+        change_color: '色を変更',
+        error_invalid_time: '時間設定が不正です: {start} ～ {end}',
+        error_overlap: '時間が重複しています: [{range1}] と [{range2}]',
+        time_select: '時間を選択',
+        delete_confirm: 'この時間帯を削除しますか？',
+        settings_title: '時間帯設定',
     },
 
     recurrence: {
@@ -123,6 +175,28 @@ const ja = {
         thu: '木',
         fri: '金',
         sat: '土',
+    },
+
+    colors: {
+        red: '赤',
+        pink: 'ピンク',
+        purple: '紫',
+        deep_purple: '濃い紫',
+        indigo: '藍色',
+        blue: '青',
+        light_blue: '水色',
+        cyan: 'シアン',
+        teal: 'ティール',
+        green: '緑',
+        light_green: '明るい緑',
+        lime: 'ライム',
+        yellow: '黄',
+        amber: '琥珀色',
+        orange: 'オレンジ',
+        deep_orange: '濃いオレンジ',
+        brown: '茶',
+        grey: 'グレー',
+        blue_grey: 'ブルーグレー',
     },
 
     settings_modal: {
@@ -176,6 +250,26 @@ const ja = {
             confirm_final: '【最終確認】この操作は取り消せません。本当に実行しますか？',
             cleanup_success: '{count} 件の重複タスクを削除しました。',
             cleanup_fail: 'エラーが発生しました: {error}',
+        },
+        account: {
+            guest_user: 'ゲストユーザー',
+            registered_user: '登録ユーザー',
+            not_logged_in: 'ログインしていません',
+            logout: 'ログアウト',
+            logout_confirm: 'ログアウトしますか？',
+            persist_account: 'アカウントを永続化',
+            persist_desc: '現在のアカウントは一時的なものです。\nメールアドレスを登録すると、別のデバイスでもログインしてデータを引き継ぐことができます。',
+            register: 'アカウントを登録',
+            registering: '登録処理中...',
+            register_success: 'アカウントを登録しました！',
+            register_fail: '登録に失敗しました',
+            already_in_use: 'このメールアドレスは既に使用されています',
+            weak_password: 'パスワードが弱すぎます',
+            email_label: 'Email',
+            password_label: 'Password',
+            hide_password: 'パスワードを隠す',
+            show_password: 'パスワードを表示',
+            registered_msg: 'アカウントは正常に登録されています。',
         }
     },
 
@@ -191,6 +285,29 @@ const ja = {
         aria_important: '重要に設定',
         aria_important_remove: '重要を解除',
         adding: '追加中...',
+    },
+
+    validation: {
+        required: '入力してください',
+        workspace_name_required: 'ワークスペース名を入力してください',
+        workspace_duplicate: 'その名前は既に使われています',
+        project_name_required: 'プロジェクト名を入力してください',
+        workspace_required: 'ワークスペースが選択されていません',
+        filter_name_required: 'フィルター名を入力してください',
+        filter_condition_required: '少なくとも1つの条件を選択してください',
+        save_fail: '保存に失敗しました',
+        delete_fail: '削除に失敗しました',
+        label_name_required: '名前を入力してください',
+        label_workspace_required: 'ワークスペースが見つかりません',
+        workspace_confirm_switch: '新しいワークスペースに切り替えますか？',
+        select_days: '曜日を選択してください',
+    },
+
+    date_options: {
+        today: '今日',
+        tomorrow: '明日',
+        week: '今週',
+        next_week: '来週',
     }
 };
 
@@ -216,6 +333,8 @@ const en = {
     search: 'Search',
     no_tasks: 'No tasks found',
     loading: 'Loading...',
+    saving: 'Saving...',
+    done: 'Done',
     error: 'An error occurred',
     backup_restore: 'Backup & Restore',
     general: 'General',
@@ -245,8 +364,10 @@ const en = {
         },
         auth: {
             login_success: 'Logged in',
-            login_fail: 'Login failed',
             logout_success: 'Logged out',
+        },
+        dnd: {
+            reorderFailed: 'Failed to reorder',
         },
         project: {
             reorder_fail: 'Failed to reorder projects',
@@ -270,10 +391,13 @@ const en = {
         resizer_hint: 'Drag or use arrow keys to resize',
         menu_open: 'Open Menu',
         reorder_section: 'Reorder Section',
+        no_projects: 'No projects',
+        duration_format: '{min} min',
     },
 
     modal: {
         task_title_placeholder: 'Task Title',
+        filter_name_placeholder: 'e.g. Important tasks this week',
         memo_markdown: 'Memo (Markdown)',
         edit: 'Edit',
         preview: 'Preview',
@@ -291,6 +415,51 @@ const en = {
         delete: 'Delete',
         delete_confirm: 'Are you sure you want to delete this task?',
         no_memo: 'No memo',
+        workspace_edit_title: 'Edit Workspace Name',
+        workspace_create_title: 'New Workspace',
+        workspace_name_label: 'Workspace Name',
+        workspace_name_placeholder: 'Enter workspace name...',
+        workspace_desc_edit: 'Rename the workspace.',
+        workspace_desc_create: 'Create a new workspace to manage projects and tasks separately.',
+        label_name: 'Label Name',
+        label_name_placeholder: 'Label Name',
+        label_create_placeholder: 'New Label Name',
+        project_name: 'Project Name',
+        project_name_placeholder: 'Enter name...',
+        project_delete_confirm: 'Delete project "{name}"?',
+        label_delete_confirm: 'Delete label "{name}"?',
+        theme_color: 'Theme Color',
+
+        delete_label: 'Delete Label',
+        delete_project: 'Delete Project',
+    },
+
+    task_detail: {
+        recurrence_label: 'Recurrence',
+        recurrence_days: 'Repeat Days',
+        time_block_label: 'Time Block',
+        time_block_unspecified: 'Unspecified',
+        duration_label: 'Duration',
+        duration_none: 'None',
+        project_label: 'Project',
+        project_none: 'No Project',
+        due_date_label: 'Due Date',
+        schedule_label: 'Schedule',
+        title_placeholder: 'Task Title',
+        delete_button: 'Delete',
+    },
+
+    time_block: {
+        add_button: 'Add Time Block',
+        max_limit: 'Max 10 blocks allowed',
+        unspecified: 'Unspecified',
+        default_zone_desc: 'Default Zone',
+        change_color: 'Change Color',
+        error_invalid_time: 'Invalid Time: {start} - {end}',
+        error_overlap: 'Time Overlap: [{range1}] and [{range2}]',
+        time_select: 'Select Time',
+        delete_confirm: 'Delete this time block?',
+        settings_title: 'Time Block Settings',
     },
 
     recurrence: {
@@ -309,6 +478,28 @@ const en = {
         thu: 'Thu',
         fri: 'Fri',
         sat: 'Sat',
+    },
+
+    colors: {
+        red: 'Red',
+        pink: 'Pink',
+        purple: 'Purple',
+        deep_purple: 'Deep Purple',
+        indigo: 'Indigo',
+        blue: 'Blue',
+        light_blue: 'Light Blue',
+        cyan: 'Cyan',
+        teal: 'Teal',
+        green: 'Green',
+        light_green: 'Light Green',
+        lime: 'Lime',
+        yellow: 'Yellow',
+        amber: 'Amber',
+        orange: 'Orange',
+        deep_orange: 'Deep Orange',
+        brown: 'Brown',
+        grey: 'Grey',
+        blue_grey: 'Blue Grey',
     },
 
     settings_modal: {
@@ -362,6 +553,26 @@ const en = {
             confirm_final: '[Final Confirm] This cannot be undone. Execute?',
             cleanup_success: 'Deleted {count} duplicate tasks.',
             cleanup_fail: 'Error occurred: {error}',
+        },
+        account: {
+            guest_user: 'Guest User',
+            registered_user: 'Registered User',
+            not_logged_in: 'Not logged in',
+            logout: 'Logout',
+            logout_confirm: 'Are you sure you want to logout?',
+            persist_account: 'Persist Account',
+            persist_desc: 'Your account is temporary.\nRegister an email to access your data from other devices.',
+            register: 'Register Account',
+            registering: 'Registering...',
+            register_success: 'Account registered!',
+            register_fail: 'Registration failed',
+            already_in_use: 'Email already in use',
+            weak_password: 'Password is too weak',
+            email_label: 'Email',
+            password_label: 'Password',
+            hide_password: 'Hide Password',
+            show_password: 'Show Password',
+            registered_msg: 'Account is fully registered.',
         }
     },
 
@@ -377,6 +588,29 @@ const en = {
         aria_important: 'Mark as important',
         aria_important_remove: 'Unmark as important',
         adding: 'Adding...',
+    },
+
+    validation: {
+        required: 'Required',
+        workspace_name_required: 'Workspace name is required',
+        workspace_duplicate: 'This name is already taken',
+        project_name_required: 'Project name is required',
+        workspace_required: 'No workspace selected',
+        filter_name_required: 'Filter name is required',
+        filter_condition_required: 'Please select at least one condition',
+        save_fail: 'Failed to save',
+        delete_fail: 'Failed to delete',
+        label_name_required: 'Name is required',
+        label_workspace_required: 'Workspace not found',
+        workspace_confirm_switch: 'Switch to new workspace?',
+        select_days: 'Please select days',
+    },
+
+    date_options: {
+        today: 'Today',
+        tomorrow: 'Tomorrow',
+        week: 'This Week',
+        next_week: 'Next Week',
     }
 };
 
@@ -396,7 +630,7 @@ export type I18nKeys = NestedKeyOf<typeof ja>;
  * ストアから言語設定を受け取って翻訳関数を返す
  */
 export const getTranslator = (language: 'ja' | 'en') => {
-    function t(key: I18nKeys): string {
+    function t(key: I18nKeys, params?: Record<string, string | number>): string {
         const langData = translations[language];
         const enData = translations['en'];
 
@@ -405,12 +639,18 @@ export const getTranslator = (language: 'ja' | 'en') => {
             return path.split('.').reduce((acc, part) => acc && acc[part], obj);
         };
 
-        const result = resolve(langData, key);
-        if (result) return result;
+        let result = resolve(langData, key);
+        if (!result) {
+            result = resolve(enData, key) || key;
+        }
 
-        // Fallback
-        const fallback = resolve(enData, key);
-        return fallback || key;
+        if (params) {
+            return Object.entries(params).reduce((acc, [key, value]) => {
+                return acc.replace(`{${key}}`, String(value));
+            }, result);
+        }
+
+        return result;
     }
 
     return { t };

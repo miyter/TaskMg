@@ -59,7 +59,7 @@ const App: React.FC = () => {
         };
     }, [handleKeyDown]);
 
-    const { sensors, handleDragEnd } = useAppDnD(projects, {
+    const { sensors, handleDragEnd, handleDragStart } = useAppDnD(projects, {
         onOptimisticReorder: setProjectsOverride,
         onRevertReorder: setProjectsOverride,
     });
@@ -93,6 +93,7 @@ const App: React.FC = () => {
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
+            onDragStart={handleDragStart}
         >
             <ToastContainer />
             <ModalManager />

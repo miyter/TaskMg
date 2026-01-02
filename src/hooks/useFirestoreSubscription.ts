@@ -1,11 +1,21 @@
 import { QueryKey, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Unsubscribe } from '../core/firebase-sdk';
+import { logWarn } from '../utils/error-logger';
 
 // Global subscription registry to prevent duplicate listeners
 // Map key: JSON stringified queryKey
 // Value: { count: number, unsubscribe: () => void }
 const subscribers = new Map<string, { count: number; unsubscribe: Unsubscribe }>();
+
+/**
+ * Resets the global subscription registry.
+ * Use ONLY for testing cleanup.
+ */
+export const resetSubscribersForTesting = () => {
+    subscribers.forEach(sub => sub.unsubscribe());
+    subscribers.clear();
+};
 
 /**
  * A hook that manages a Firestore real-time subscription with React Query cache.
@@ -23,6 +33,8 @@ export function useFirestoreSubscription<T>(
 ) {
     const queryClient = useQueryClient();
     const keyHash = JSON.stringify(queryKey);
+
+
 
     useEffect(() => {
         // Skip subscription if key contains undefined/null (e.g. waiting for workspaceId)
@@ -45,23 +57,23 @@ export function useFirestoreSubscription<T>(
 
         // Increment reference count
         subRecord.count++;
-        // console.log(`[FirestoreSub] Count inc for ${keyHash}: ${subRecord.count}`);
 
         return () => {
             // Decrement reference count
             const currentSub = subscribers.get(keyHash);
             if (currentSub) {
                 currentSub.count--;
-                // console.log(`[FirestoreSub] Count dec for ${keyHash}: ${currentSub.count}`);
 
                 if (currentSub.count === 0) {
-                    // console.log(`[FirestoreSub] Unsubscribing for: ${keyHash}`);
                     currentSub.unsubscribe();
                     subscribers.delete(keyHash);
                 }
             }
         };
-    }, [keyHash]); // Rely on keyHash stability. subscribeFn should be stable or ignored if key doesn't change.
+        // Rely on keyHash stability. We intentionally do NOT include subscribeFn in deps 
+        // to prevent unnecessary re-subscriptions when inline functions are used. 
+        // subscribeFn is assumed to be derived from queryKey.
+    }, [keyHash]);
 
     // Return data from cache
     return useQuery<T>({
@@ -77,9 +89,9 @@ export function useFirestoreSubscription<T>(
             // After 30 seconds, resolve with empty array (safe default for list subscriptions).
             return new Promise<T>((resolve) => {
                 setTimeout(() => {
-                    console.warn('[useFirestoreSubscription] Timeout waiting for subscription data, resolving with default');
-                    resolve([] as unknown as T);
-                }, 30000);
+                    logWarn('[useFirestoreSubscription] Timeout waiting for subscription data, resolving with default', { queryKey });
+                    resolve(initialData as unknown as T);
+                }, 10000);
             });
         },
         initialData: initialData,

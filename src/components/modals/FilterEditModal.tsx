@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from '../../core/translations';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { useWorkspace } from '../../hooks/useWorkspace';
@@ -30,12 +31,7 @@ const mapQueryToState = (query: string): FilterState => {
 };
 
 const durations = [30, 45, 60, 75, 90];
-const dateOptions = [
-    { id: 'today', name: '今日' },
-    { id: 'tomorrow', name: '明日' },
-    { id: 'week', name: '今週' },
-    { id: 'next-week', name: '来週' }
-];
+
 
 interface FilterEditModalProps {
     isOpen?: boolean;
@@ -45,6 +41,7 @@ interface FilterEditModalProps {
 }
 
 export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex, overlayClassName }) => {
+    const { t } = useTranslation();
     const { closeModal } = useModalStore();
     const isOpen = !!propIsOpen;
     const filterToEdit = propData as Filter | null;
@@ -59,6 +56,8 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
     useEffect(() => {
         if (isOpen) {
             setName(filterToEdit?.name || '');
@@ -67,6 +66,13 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
             setLoading(false);
         }
     }, [isOpen, filterToEdit]);
+
+    // Error auto-focus
+    useEffect(() => {
+        if (error) {
+            inputRef.current?.focus();
+        }
+    }, [error]);
 
     const handleToggle = (key: keyof FilterState, val: string) => {
         setState(prev => {
@@ -81,7 +87,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
     const handleSave = useCallback(async () => {
         const trimmedName = name.trim();
         if (!trimmedName) {
-            setError('フィルター名を入力してください');
+            setError(t('validation.filter_name_required'));
             return;
         }
 
@@ -93,7 +99,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
         });
 
         if (!queryStr) {
-            setError('少なくとも1つの条件を選択してください');
+            setError(t('validation.filter_condition_required'));
             return;
         }
         setLoading(true);
@@ -101,7 +107,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
 
         try {
             if (!workspaceId) {
-                setError('ワークスペースが見つかりません');
+                setError(t('validation.workspace_required'));
                 setLoading(false);
                 return;
             }
@@ -115,10 +121,19 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
 
             closeModal();
         } catch (err: any) {
-            setError('保存に失敗しました: ' + (err.message || '不明なエラー'));
+            setError(t('validation.save_fail') + ': ' + (err.message || 'Error'));
             setLoading(false);
         }
-    }, [name, state, isEditMode, filterToEdit, closeModal]);
+    }, [name, state, isEditMode, filterToEdit, closeModal, t]);
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+            if (!loading && name.trim()) {
+                handleSave();
+            }
+            e.preventDefault();
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -126,21 +141,23 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
         <Modal
             isOpen={isOpen}
             onClose={closeModal}
-            title={isEditMode ? 'フィルター編集' : 'フィルター作成'}
+            title={isEditMode ? t('modal.edit') : t('modal.create')}
             className="max-w-4xl"
             zIndex={zIndex}
             overlayClassName={overlayClassName}
         >
             <div className="space-y-6">
                 <div>
-                    <label htmlFor="filter-name-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">フィルター名</label>
+                    <label htmlFor="filter-name-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('filter')}</label>
                     <input
+                        ref={inputRef}
                         id="filter-name-input"
                         name="filterName"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="例: 今週の重要タスク"
+                        onKeyDown={handleKeyDown}
+                        placeholder={t('modal.filter_name_placeholder')}
                         className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 dark:text-white"
                         autoFocus
                     />
@@ -149,7 +166,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Project Selection */}
                     <SelectionBox
-                        title="プロジェクト"
+                        title={t('project')}
                         items={projects}
                         selectedItems={state.project}
                         onToggle={(id) => handleToggle('project', id)}
@@ -157,8 +174,8 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
 
                     {/* TimeBlock Selection */}
                     <SelectionBox
-                        title="時間帯"
-                        items={[...timeBlocks, { id: UNASSIGNED_ID, name: '未定' }]}
+                        title={t('timeblock')}
+                        items={[...timeBlocks, { id: UNASSIGNED_ID, name: t('sidebar.unassigned') }]}
                         selectedItems={state.timeblock}
                         onToggle={(id) => handleToggle('timeblock', id)}
                         labelFn={(item) => (item.id === UNASSIGNED_ID || !item.start) ? item.name : `${item.start}-${item.end}`}
@@ -166,7 +183,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
 
                     {/* Duration Selection */}
                     <SelectionBox
-                        title="所要時間"
+                        title={t('modal.duration')}
                         items={durations.map(d => ({ id: d.toString(), name: `${d} min` }))}
                         selectedItems={state.duration}
                         onToggle={(id) => handleToggle('duration', id)}
@@ -174,8 +191,13 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
 
                     {/* Date Selection */}
                     <SelectionBox
-                        title="日付"
-                        items={dateOptions}
+                        title={t('modal.due_date')}
+                        items={[
+                            { id: 'today', name: t('date_options.today') },
+                            { id: 'tomorrow', name: t('date_options.tomorrow') },
+                            { id: 'week', name: t('date_options.week') },
+                            { id: 'next-week', name: t('date_options.next_week') }
+                        ]}
                         selectedItems={state.date}
                         onToggle={(id) => handleToggle('date', id)}
                     />
@@ -189,14 +211,14 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
                         onClick={closeModal}
                         className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition"
                     >
-                        キャンセル
+                        {t('modal.cancel')}
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={loading}
                         className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-md transition-all transform active:scale-95 disabled:opacity-50"
                     >
-                        {loading ? '処理中...' : isEditMode ? '変更を保存' : '作成'}
+                        {loading ? '...' : isEditMode ? t('modal.save') : t('modal.create')}
                     </button>
                 </div>
             </div>

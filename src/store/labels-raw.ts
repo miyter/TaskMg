@@ -30,6 +30,10 @@ export function getLabels(workspaceId?: string): Label[] {
     return _cachedLabelsMap.get(workspaceId) || [];
 }
 
+export function isLabelsInitialized(workspaceId: string): boolean {
+    return _cachedLabelsMap.has(workspaceId);
+}
+
 /**
  * ラベルデータのリアルタイムリスナーを開始する (RAW)
  */

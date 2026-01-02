@@ -63,5 +63,29 @@ export const UI_CONFIG = {
     }
 } as const;
 
+export const COLOR_PALETTE = [
+    { value: '#EF5350', key: 'red' },
+    { value: '#EC407A', key: 'pink' },
+    { value: '#AB47BC', key: 'purple' },
+    { value: '#7E57C2', key: 'deep_purple' },
+    { value: '#5C6BC0', key: 'indigo' },
+    { value: '#42A5F5', key: 'blue' },
+    { value: '#29B6F6', key: 'light_blue' },
+    { value: '#26C6DA', key: 'cyan' },
+    { value: '#26A69A', key: 'teal' },
+    { value: '#66BB6A', key: 'green' },
+    { value: '#9CCC65', key: 'light_green' },
+    { value: '#D4E157', key: 'lime' },
+    { value: '#FFEE58', key: 'yellow' },
+    { value: '#FFCA28', key: 'amber' },
+    { value: '#FFA726', key: 'orange' },
+    { value: '#FF7043', key: 'deep_orange' },
+    { value: '#8D6E63', key: 'brown' },
+    { value: '#BDBDBD', key: 'grey' },
+    { value: '#78909C', key: 'blue_grey' }
+] as const;
+
+export const SHARED_COLORS = COLOR_PALETTE.map(c => c.value);
+
 export type Density = 'compact' | 'normal' | 'comfortable' | 'spacious';
 export type SidebarDensity = Density;

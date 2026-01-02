@@ -16,24 +16,19 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import React, { useEffect, useState } from 'react';
+import { SYSTEM_CONSTANTS } from '../../core/constants';
+import { useTranslation } from '../../core/translations';
+import { COLOR_PALETTE } from '../../core/ui-constants';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { useWorkspace } from '../../hooks/useWorkspace';
 import { TimeBlock } from '../../store/schema';
 import { deleteTimeBlock, saveTimeBlock } from '../../store/timeblocks';
 import { useModalStore } from '../../store/ui/modal-store';
-import { ErrorMessage } from '../common/ErrorMessage';
-import { Modal } from '../common/Modal';
-import { SortableItem } from '../common/SortableItem';
+import { cn } from '../../utils/cn';
+import { ErrorMessage, Modal, Portal, SortableItem } from '../common';
 
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTE_OPTIONS = ['00', '15', '30', '45'];
-// Expanded Palette
-const PRESET_COLORS = [
-    '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16',
-    '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#0EA5E9',
-    '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF',
-    '#EC4899', '#F43F5E', '#64748B'
-];
 
 interface TimeBlockEditModalProps {
     isOpen?: boolean;
@@ -43,6 +38,7 @@ interface TimeBlockEditModalProps {
 }
 
 export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: propIsOpen, zIndex, overlayClassName }) => {
+    const { t } = useTranslation();
     const { closeModal } = useModalStore();
     const isOpen = !!propIsOpen;
     const { timeBlocks: storeBlocks } = useTimeBlocks();
@@ -67,7 +63,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
     }, [isOpen, storeBlocks]);
 
     const handleAdd = () => {
-        if (blocks.length >= 10) return;
+        if (blocks.length >= SYSTEM_CONSTANTS.TIME_BLOCK.MAX_COUNT) return;
 
         let nextStart = '09:00';
         let nextEnd = '10:00';
@@ -87,7 +83,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
             id: `new-${Date.now()}`,
             start: nextStart,
             end: nextEnd,
-            color: PRESET_COLORS[blocks.length % PRESET_COLORS.length],
+            color: COLOR_PALETTE[blocks.length % COLOR_PALETTE.length].value,
             order: blocks.length
         };
         setBlocks([...blocks, newBlock]);
@@ -95,13 +91,13 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
 
     const handleDelete = async (id: string) => {
         if (!id.startsWith('new-')) {
-            if (!confirm('この時間帯を削除しますか？')) return;
+            if (!confirm(t('time_block.delete_confirm'))) return;
             try {
                 if (workspaceId) {
                     await deleteTimeBlock(workspaceId, id);
                 }
             } catch (err) {
-                setError('削除に失敗しました');
+                setError(t('validation.delete_fail'));
                 return;
             }
         }
@@ -139,7 +135,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                 const [sh, sm] = b.start.split(':').map(Number);
                 const [eh, em] = b.end.split(':').map(Number);
                 if (sh * 60 + sm >= eh * 60 + em) {
-                    throw new Error(`不正な時間設定があります（開始≧終了）: ${b.start}-${b.end}`);
+                    throw new Error(t('time_block.error_invalid_time', { start: b.start, end: b.end }));
                 }
             }
 
@@ -157,7 +153,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                 const [nh, nm] = next.start.split(':').map(Number);
 
                 if (nh * 60 + nm < ch * 60 + cm) {
-                    throw new Error(`時間が重複しています: [${current.start}-${current.end}] と [${next.start}-${next.end}]`);
+                    throw new Error(t('time_block.error_overlap', { range1: `${current.start}-${current.end}`, range2: `${next.start}-${next.end}` }));
                 }
             }
 
@@ -176,7 +172,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
             await Promise.all(promises);
             closeModal();
         } catch (err: any) {
-            setError(err.message || '保存に失敗しました');
+            setError(err.message || t('validation.save_fail'));
             setLoading(false);
         }
     };
@@ -189,7 +185,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
         <Modal
             isOpen={isOpen}
             onClose={closeModal}
-            title="時間帯設定"
+            title={t('time_block.settings_title')}
             className="max-w-2xl h-[600px]"
             zIndex={zIndex}
             overlayClassName={overlayClassName}
@@ -224,39 +220,42 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                             ))}
                         </SortableContext>
 
-                        <DragOverlay>
+                        <DragOverlay dropAnimation={null} modifiers={[]}>
                             {activeBlock ? (
-                                <TimeBlockRow
-                                    block={activeBlock}
-                                    onDelete={() => { }}
-                                    onUpdate={() => { }}
-                                    isOverlay
-                                />
+                                <div style={{ transform: 'scale(1.05)', opacity: 0.9 }}>
+                                    <TimeBlockRow
+                                        block={activeBlock}
+                                        onDelete={() => { }}
+                                        onUpdate={() => { }}
+                                        isOverlay
+                                    />
+                                </div>
                             ) : null}
                         </DragOverlay>
                     </DndContext>
 
-                    {blocks.length < 10 ? (
+                    {blocks.length < SYSTEM_CONSTANTS.TIME_BLOCK.MAX_COUNT ? (
                         <button
                             onClick={handleAdd}
-                            className="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-gray-400 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all font-medium text-sm flex items-center justify-center gap-2 group"
+                            disabled={blocks.length >= SYSTEM_CONSTANTS.TIME_BLOCK.MAX_COUNT}
+                            className="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-gray-400 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all font-medium text-sm flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                             </svg>
-                            時間帯を追加
+                            {t('time_block.add_button')}
                         </button>
                     ) : (
                         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-sm rounded-lg flex items-center justify-center gap-2 border border-yellow-100 dark:border-yellow-900/30">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                            最大10個まで登録できます
+                            {t('time_block.max_limit')}
                         </div>
                     )}
 
                     <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg flex items-center text-sm text-gray-500 dark:text-gray-400">
                         <span className="w-2.5 h-2.5 rounded-full bg-gray-400 mr-3 shadow-sm"></span>
-                        <span className="font-bold mr-2 text-gray-700 dark:text-gray-300">未定</span>
-                        <span className="text-xs opacity-80">デフォルトのゾーン</span>
+                        <span className="font-bold mr-2 text-gray-700 dark:text-gray-300">{t('time_block.unspecified')}</span>
+                        <span className="text-xs opacity-80">{t('time_block.default_zone_desc')}</span>
                     </div>
                 </div>
 
@@ -268,7 +267,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                         disabled={loading}
                         className="px-8 py-2.5 bg-gray-900 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-lg font-bold text-sm transition-all active:scale-95 shadow-md disabled:bg-gray-400"
                     >
-                        {loading ? '保存中...' : '完了'}
+                        {loading ? t('saving') : t('done')}
                     </button>
                 </div>
             </div>
@@ -284,6 +283,7 @@ interface TimeBlockRowProps {
 }
 
 const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, isOverlay }) => {
+    const { t } = useTranslation();
     const [showColorPicker, setShowColorPicker] = useState(false);
 
     const startTime = block.start || '09:00';
@@ -298,22 +298,43 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
                     onClick={() => setShowColorPicker(!showColorPicker)}
                     className="w-6 h-6 rounded-full shadow-sm hover:scale-110 active:scale-95 transition-transform ring-2 ring-transparent focus:ring-blue-400 ring-offset-2 dark:ring-offset-gray-900"
                     style={{ backgroundColor: block.color || '#3B82F6' }}
-                    title="色を変更"
+                    title={t('time_block.change_color')}
                 />
                 {showColorPicker && (
-                    <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-2xl p-3 flex gap-2 w-max animate-fade-in-down">
-                        {PRESET_COLORS.map(c => (
-                            <button
-                                key={c}
-                                onClick={() => {
-                                    onUpdate({ color: c });
-                                    setShowColorPicker(false);
-                                }}
-                                className="w-6 h-6 rounded-full hover:scale-110 transition-transform ring-2 ring-transparent hover:ring-blue-400"
-                                style={{ backgroundColor: c }}
-                            />
-                        ))}
-                    </div>
+                    <Portal>
+                        <div
+                            className="fixed inset-0 z-[9999] bg-transparent"
+                            onClick={() => setShowColorPicker(false)}
+                        />
+                        <div
+                            className="fixed z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 w-[280px] animate-fade-in-down"
+                            style={{
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)'
+                            }}
+                        >
+                            <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase mb-3 tracking-wider">{t('modal.theme_color')}</h4>
+                            <div className="flex flex-wrap gap-2 justify-center">
+                                {COLOR_PALETTE.map(c => (
+                                    <button
+                                        key={c.value}
+                                        onClick={() => {
+                                            onUpdate({ color: c.value });
+                                            setShowColorPicker(false);
+                                        }}
+                                        className={cn(
+                                            "w-8 h-8 rounded-full transition-transform hover:scale-110 ring-2 ring-transparent hover:ring-blue-400 focus:outline-none focus:scale-110",
+                                            block.color === c.value && "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800"
+                                        )}
+                                        style={{ backgroundColor: c.value }}
+                                        aria-label={t(`colors.${c.key}` as any)}
+                                        aria-pressed={block.color === c.value}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </Portal>
                 )}
             </div>
 
@@ -350,7 +371,7 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
             <button
                 onClick={onDelete}
                 className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                title="削除"
+                title={t('modal.delete')}
             >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -360,13 +381,16 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
     );
 };
 
-const TimeSelect: React.FC<{ options: string[]; value: string; onChange: (val: string) => void; label?: string }> = ({ options, value, onChange, label }) => (
-    <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="appearance-none px-2 py-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded text-sm font-mono font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 outline-none cursor-pointer"
-        aria-label={label || "時間選択"}
-    >
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
-    </select>
-);
+const TimeSelect: React.FC<{ options: string[]; value: string; onChange: (val: string) => void; label?: string }> = ({ options, value, onChange, label }) => {
+    const { t } = useTranslation();
+    return (
+        <select
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="appearance-none px-2 py-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded text-sm font-mono font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 outline-none cursor-pointer"
+            aria-label={label || t('time_block.time_select')}
+        >
+            {options.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+    );
+};

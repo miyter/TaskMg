@@ -19,13 +19,17 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; label: string;
     <button
         onClick={onClick}
         className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 md:py-2 text-sm rounded-lg transition-all text-left whitespace-nowrap min-w-0 justify-start",
+            "flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all whitespace-nowrap min-w-0",
+            // Desktop: Horizontal list item style
+            "md:w-full md:justify-start md:text-left md:py-2",
+            // Mobile: Bottom tab item style
+            "flex-col w-full justify-center py-3 text-[10px] gap-1 rounded-none md:rounded-lg md:text-sm md:flex-row md:gap-3",
             active
-                ? "bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 font-bold border border-gray-100 dark:border-gray-700"
-                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200"
+                ? "bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 font-bold border-t-2 md:border-t-0 md:border md:border-gray-100 dark:md:border-gray-700 border-blue-500 md:border-transparent"
+                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200 border-t-2 md:border-t-0 border-transparent"
         )}
     >
-        <span className="text-xl md:text-base">{icon}</span>
+        <span className="text-lg md:text-base">{icon}</span>
         <span className="truncate font-medium">{label}</span>
     </button>
 );
@@ -52,6 +56,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
     const { currentWorkspaceId } = useWorkspaceStore();
 
     const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
+    const [backupConfirmed, setBackupConfirmed] = useState(false);
 
     const isOpen = !!propIsOpen;
 
@@ -65,21 +70,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
             overlayClassName={overlayClassName}
         >
             <div className="flex flex-col md:flex-row h-full">
-                {/* Sidebar (Tabs) */}
-                <div className="w-full md:w-64 bg-gray-50/50 dark:bg-gray-900/50 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 p-4 shrink-0 overflow-y-auto custom-scrollbar">
-                    <div className="space-y-1 md:space-y-2">
+                {/* Sidebar (Tabs) - Mobile: Bottom Bar, Desktop: Left Sidebar */}
+                <div className="order-last md:order-first w-full md:w-64 bg-white dark:bg-gray-900 md:bg-gray-50/50 md:dark:bg-gray-900/50 border-t md:border-t-0 md:border-r border-gray-200 dark:border-gray-700 shrink-0 z-10">
+                    <div className="flex flex-row md:flex-col justify-around md:justify-start md:p-4 md:space-y-2 pb-safe md:pb-4">
                         <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label={t('settings_modal.tabs.general')} icon="⚙️" />
                         <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label={t('settings_modal.tabs.appearance')} icon="🎨" />
                         <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} label={t('settings_modal.tabs.account')} icon="👤" />
 
-                        <hr className="my-2 border-gray-200 dark:border-gray-700 md:hidden" />
+                        {/* Mobile only divider logic handled by layout, removing hr */}
 
                         <TabButton active={activeTab === 'advanced'} onClick={() => setActiveTab('advanced')} label={t('settings_modal.tabs.advanced')} icon="⚡" />
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-900">
+                <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-900 order-first md:order-last relative">
                     {activeTab === 'appearance' && (
                         <div className="flex flex-col gap-4">
                             {/* Theme */}
@@ -312,10 +317,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                 <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-4">
                                     {t('settings_modal.maintenance.description')}
                                 </p>
+
+                                <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="w-4 h-4 text-red-600 rounded border-red-300 focus:ring-red-500"
+                                        checked={backupConfirmed}
+                                        onChange={(e) => setBackupConfirmed(e.target.checked)}
+                                    />
+                                    <span className="text-sm font-bold text-red-700 dark:text-red-400">
+                                        {t('settings_modal.maintenance.confirm_backup') || 'バックアップを作成しました（必須）'}
+                                    </span>
+                                </label>
+
                                 <button
                                     onClick={async () => {
                                         if (!currentWorkspaceId) return;
-                                        if (!confirm(t('settings_modal.maintenance.confirm_backup'))) return;
+                                        // Checkbox enforces backup confirmation
                                         if (!confirm(t('settings_modal.maintenance.confirm_final'))) return;
 
                                         try {
@@ -329,7 +347,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                             alert(t('settings_modal.maintenance.cleanup_fail').replace('{error}', e.message));
                                         }
                                     }}
-                                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-95"
+                                    disabled={!backupConfirmed}
+                                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:transform-none"
                                 >
                                     {t('settings_modal.maintenance.cleanup_duplicate')}
                                 </button>

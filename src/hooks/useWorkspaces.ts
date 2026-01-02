@@ -10,7 +10,7 @@ export const useWorkspaces = () => {
     const workspaces = useWorkspaceStore((state) => state.workspaces);
     const setWorkspaces = useWorkspaceStore((state) => state.setWorkspaces);
     const { userId, loading: authLoading } = useAuth();
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(() => workspaces.length === 0);
 
     useEffect(() => {
         if (authLoading) return;

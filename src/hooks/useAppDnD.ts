@@ -6,7 +6,7 @@ import {
     useSensors
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { getTranslator } from '../core/translations';
 import { UI_CONFIG } from '../core/ui-constants';
 import { reorderProjects, updateTask } from '../store';
@@ -46,6 +46,13 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
     const { language } = useSettingsStore();
     const { t } = getTranslator(language);
 
+    // Store simple snapshot of projects at start of drag
+    const initialProjectsRef = useRef<Project[]>(projects);
+
+    const handleDragStart = useCallback(() => {
+        initialProjectsRef.current = projects;
+    }, [projects]);
+
     const handleDragEnd = useCallback(async (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over) return;
@@ -58,7 +65,7 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
 
         // タスクをサイドバーへドラッグした場合の処理 (移動)
         if (draggedTaskId) {
-            const targetType = over.data.current?.type;
+            const targetType = over.data.current?.type as string; // Cast to generic string to avoid overly complex type checks with UI_CONFIG
             const targetValue = over.data.current?.value;
 
             const updates: Partial<Task> = {};
@@ -71,18 +78,20 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
                     await updateTask(draggedTaskId, updates);
                 } catch (err) {
                     console.error('Failed to update task via dnd', err);
-                    toast.error(t('error'));
+                    toast.error(t('msg.dnd.reorderFailed') || t('error'));
                 }
             }
         }
 
         // プロジェクト自体の並び替え
         if (activeId !== overId && !draggedTaskId) {
-            const oldIndex = projects.findIndex(p => p.id === activeId);
-            const newIndex = projects.findIndex(p => p.id === overId);
+            // Use snapshot for calculations to ensure consistency from drag start
+            const currentProjects = initialProjectsRef.current;
+            const oldIndex = currentProjects.findIndex(p => p.id === activeId);
+            const newIndex = currentProjects.findIndex(p => p.id === overId);
 
             if (oldIndex !== -1 && newIndex !== -1) {
-                const newProjects = arrayMove(projects, oldIndex, newIndex);
+                const newProjects = arrayMove(currentProjects, oldIndex, newIndex);
 
                 // Optimistic Update: ローカル状態を即座に更新
                 options?.onOptimisticReorder?.(newProjects);
@@ -92,13 +101,13 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
                     await reorderProjects(newProjects);
                 } catch (err) {
                     console.error('Failed to update project order', err);
-                    toast.error(t('error'));
-                    // 失敗時: 元の状態にロールバック
-                    options?.onRevertReorder?.(projects);
+                    toast.error(t('msg.dnd.reorderFailed') || t('error'));
+                    // 失敗時: DragStart時の状態にロールバック
+                    options?.onRevertReorder?.(currentProjects);
                 }
             }
         }
     }, [projects, options, t]);
 
-    return { sensors, handleDragEnd };
+    return { sensors, handleDragEnd, handleDragStart };
 };

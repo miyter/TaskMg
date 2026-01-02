@@ -4,6 +4,8 @@ import { auth } from '../core/firebase';
 import { User } from '../core/firebase-sdk';
 
 
+import { SYSTEM_CONSTANTS } from '../core/constants';
+
 /**
  * 認証状態を管理する単一のフック
  * アプリケーション全体で認証状態の唯一の情報源となる
@@ -14,28 +16,32 @@ export const useAuth = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        let isCancelled = false;
+        const controller = new AbortController();
         let unsubscribe = () => { };
         let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
         const setup = async () => {
             if (authService.hasInitialToken()) {
-                await authService.tryInitialTokenLogin();
+                try {
+                    await authService.tryInitialTokenLogin();
+                } catch (error) {
+                    console.error('[useAuth] Initial token login failed:', error);
+                }
             }
 
             // Avoid setting state if component unmounted during async operation
-            if (isCancelled) return;
+            if (controller.signal.aborted) return;
 
             unsubscribe = initAuthListener(
                 (user) => {
-                    if (isCancelled) return;
+                    if (controller.signal.aborted) return;
                     setUserId(user.uid);
                     setUser(user);
                     setLoading(false);
                     if (timeoutId) clearTimeout(timeoutId);
                 },
                 () => {
-                    if (isCancelled) return;
+                    if (controller.signal.aborted) return;
                     setUserId(null);
                     setUser(null);
                     setLoading(false);
@@ -46,16 +52,16 @@ export const useAuth = () => {
 
         // Loading timeout: prevent infinite loading state (10 seconds)
         timeoutId = setTimeout(() => {
-            if (!isCancelled) {
+            if (!controller.signal.aborted) {
                 console.warn('[useAuth] Loading timeout reached, forcing loading=false');
                 setLoading(false);
             }
-        }, 10000);
+        }, SYSTEM_CONSTANTS.TIMEOUT.AUTH_LOADING);
 
         setup();
 
         return () => {
-            isCancelled = true;
+            controller.abort();
             unsubscribe();
             if (timeoutId) clearTimeout(timeoutId);
         };

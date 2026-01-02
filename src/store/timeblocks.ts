@@ -1,10 +1,11 @@
 ﻿/**
- * 更新日: 2025-12-21
- * 内容: 引数シグネチャの修正 (workspaceId, callback)
- * TypeScript化: 2025-12-29
+ * TimeBlock Store with Caching
+ * Updated to use Workspace-aware caching (Map) instead of global array.
  */
 
+import { auth, db } from "../core/firebase";
 import {
+    Unsubscribe,
     collection,
     deleteDoc,
     doc,
@@ -13,16 +14,10 @@ import {
     query,
     serverTimestamp,
     setDoc,
-    Unsubscribe,
     writeBatch
 } from "../core/firebase-sdk";
-
-import { auth, db } from "../core/firebase";
-
 import { paths } from '../utils/paths';
 import { TimeBlock } from './schema';
-
-let timeBlocks: TimeBlock[] = [];
 
 const defaultTimeBlocks: TimeBlock[] = [
     { id: 'tb_morning', name: '06:00 - 09:00', start: '06:00', end: '09:00', color: '#EF4444', order: 0 },
@@ -30,51 +25,116 @@ const defaultTimeBlocks: TimeBlock[] = [
     { id: 'tb_night', name: '20:00 - 22:00', start: '20:00', end: '22:00', color: '#8B5CF6', order: 2 }
 ];
 
-/**
- * タイムブロックの購読
- * @param {string} workspaceId - DataSyncManagerから渡されるID
- * @param {function} callback
- */
-export function subscribeToTimeBlocks(workspaceId: string, callback: (blocks: TimeBlock[]) => void): Unsubscribe {
-    const userId = auth.currentUser?.uid;
+class TimeBlockCache {
+    private static instance: TimeBlockCache;
+    private cacheMap = new Map<string, TimeBlock[]>();
+    private listeners = new Map<string, Set<(blocks: TimeBlock[]) => void>>();
+    private unsubscribes = new Map<string, Unsubscribe>();
 
-    if (!userId || !workspaceId) {
-        // Return default blocks if no workspace ID (e.g. initial load or error)
-        // Ideally we should wait for workspaceId
-        timeBlocks = [];
-        if (typeof callback === 'function') callback(timeBlocks);
-        return () => { };
+    private constructor() { }
+
+    public static getInstance(): TimeBlockCache {
+        if (!TimeBlockCache.instance) {
+            TimeBlockCache.instance = new TimeBlockCache();
+        }
+        return TimeBlockCache.instance;
     }
 
-    const path = paths.timeblocks(userId, workspaceId);
-    const q = query(collection(db, path), orderBy('order', 'asc'));
+    public getBlocks(workspaceId: string): TimeBlock[] {
+        return this.cacheMap.get(workspaceId) || [];
+    }
 
-    let isFirstSnapshot = true;
+    public isInitialized(workspaceId: string): boolean {
+        return this.cacheMap.has(workspaceId);
+    }
 
-    return onSnapshot(q, (snapshot) => {
-        // Validation could be added here
-        timeBlocks = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        })) as TimeBlock[];
+    public setCache(workspaceId: string, blocks: TimeBlock[]) {
+        this.cacheMap.set(workspaceId, blocks);
+        this.notify(workspaceId);
+    }
 
-        // Auto-create default time blocks if empty on first load (not pending writes)
-        if (isFirstSnapshot && timeBlocks.length === 0 && !snapshot.metadata.hasPendingWrites) {
-            isFirstSnapshot = false;
-            createDefaultTimeBlocks(userId, workspaceId).catch(err =>
-                console.error('[TimeBlocks] Failed to create defaults:', err)
-            );
-            return; // Wait for next snapshot with created blocks
+    private notify(workspaceId: string) {
+        const blocks = this.getBlocks(workspaceId);
+        const workspaceListeners = this.listeners.get(workspaceId);
+        if (workspaceListeners) {
+            workspaceListeners.forEach(cb => cb([...blocks]));
         }
-        isFirstSnapshot = false;
+    }
 
-        if (typeof callback === 'function') callback(timeBlocks);
-    }, (error) => {
-        console.error("[TimeBlocks] Subscription error:", error);
-    });
+    public subscribe(userId: string | undefined, workspaceId: string, callback: (blocks: TimeBlock[]) => void): Unsubscribe {
+        if (!userId || !workspaceId) {
+            callback([]);
+            return () => { };
+        }
+
+        // Register listener
+        if (!this.listeners.has(workspaceId)) {
+            this.listeners.set(workspaceId, new Set());
+        }
+        this.listeners.get(workspaceId)!.add(callback);
+
+        // Initial Return (Optimistic)
+        const cached = this.cacheMap.get(workspaceId);
+        if (cached) {
+            // Async callback to avoid React warning
+            queueMicrotask(() => callback([...cached]));
+        }
+
+        // Start Firestore subscription if needed
+        if (!this.unsubscribes.has(workspaceId)) {
+            const path = paths.timeblocks(userId, workspaceId);
+            const q = query(collection(db, path), orderBy('order', 'asc'));
+
+            let isFirstSnapshot = true;
+
+            const unsub = onSnapshot(q, (snapshot) => {
+                const blocks = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })) as TimeBlock[];
+
+                // Default creation logic
+                if (isFirstSnapshot && blocks.length === 0 && !snapshot.metadata.hasPendingWrites) {
+                    isFirstSnapshot = false;
+                    createDefaultTimeBlocks(userId, workspaceId).catch(err =>
+                        console.error('[TimeBlocks] Failed to create defaults:', err)
+                    );
+                    return;
+                }
+                isFirstSnapshot = false;
+
+                // Update cache
+                this.cacheMap.set(workspaceId, blocks);
+                this.notify(workspaceId);
+
+            }, (error) => {
+                console.error("[TimeBlocks] Subscription error:", error);
+            });
+
+            this.unsubscribes.set(workspaceId, unsub);
+        }
+
+        return () => {
+            const workspaceListeners = this.listeners.get(workspaceId);
+            if (workspaceListeners) {
+                workspaceListeners.delete(callback);
+                // Clean up if no listeners? 
+                // Currently keeping cache for fast switching (Memory leak risk if many workspaces, but usually small)
+                // If we want to strictly clean up:
+                /*
+                if (workspaceListeners.size === 0) {
+                    this.unsubscribes.get(workspaceId)?.();
+                    this.unsubscribes.delete(workspaceId);
+                    this.cacheMap.delete(workspaceId); 
+                }
+                */
+            }
+        };
+    }
 }
 
-/** Create default time blocks for a new workspace */
+const cache = TimeBlockCache.getInstance();
+
 async function createDefaultTimeBlocks(userId: string, workspaceId: string): Promise<void> {
     const path = paths.timeblocks(userId, workspaceId);
     const batch = writeBatch(db);
@@ -94,34 +154,46 @@ async function createDefaultTimeBlocks(userId: string, workspaceId: string): Pro
     await batch.commit();
 }
 
-export function getTimeBlocks(): TimeBlock[] {
-    return [...timeBlocks];
+/**
+ * タイムブロックの購読
+ */
+export function subscribeToTimeBlocks(workspaceId: string, callback: (blocks: TimeBlock[]) => void): Unsubscribe {
+    const userId = auth.currentUser?.uid;
+    return cache.subscribe(userId, workspaceId, callback);
 }
 
-export function getTimeBlockById(id: string): TimeBlock | undefined {
-    return timeBlocks.find(b => b.id === id);
+/**
+ * 同期的にキャッシュを取得
+ */
+export function getTimeBlocks(workspaceId: string): TimeBlock[] {
+    return cache.getBlocks(workspaceId);
 }
 
+export function isTimeBlocksInitialized(workspaceId: string): boolean {
+    return cache.isInitialized(workspaceId);
+}
+
+/**
+ * 以前の global 変数クリア関数 (互換性維持または削除)
+ */
 export function clearTimeBlocksCache() {
-    timeBlocks = [];
+    // No-op or clear all?
+    // cache.reset(); // Not implemented yet
 }
+
+// Write functions (Using generic writes, trusting cache updates via listener)
 
 export async function saveTimeBlock(workspaceId: string, block: Partial<TimeBlock>): Promise<boolean | undefined> {
     const userId = auth.currentUser?.uid;
-    if (!userId || !workspaceId) {
-        console.error('Authentication and WorkspaceID required for TimeBlock operation.');
-        return;
-    }
+    if (!userId || !workspaceId) return;
 
     try {
-        // Validate partial block if needed, but for now we trust mostly
-        // TimeBlockSchema.partial().parse(block);
-
         const path = paths.timeblocks(userId, workspaceId);
         const id = block.id || crypto.randomUUID();
+        const currentBlocks = cache.getBlocks(workspaceId);
         const nextOrder = block.order !== undefined
             ? block.order
-            : Math.max(...timeBlocks.map(b => b.order || 0), -1) + 1;
+            : Math.max(...currentBlocks.map(b => b.order || 0), -1) + 1;
 
         const dataToSave = {
             name: block.name,
@@ -132,13 +204,14 @@ export async function saveTimeBlock(workspaceId: string, block: Partial<TimeBloc
             updatedAt: serverTimestamp()
         };
 
-        // Validate dataToSave against schema parts except serverTimestamp
+        // Optimistic update could be added here to cache
+        // But listener is fast enough usually. 
+        // For strict optimistic, we would update cacheMap.
 
         await setDoc(doc(db, path, id), dataToSave, { merge: true });
         return true;
     } catch (e) {
         console.error("[TimeBlocks] Save error:", e);
-        // showMessageModal("保存に失敗した。");
     }
 }
 
@@ -158,6 +231,16 @@ export async function updateTimeBlockOrder(workspaceId: string, orderedIds: stri
     const userId = auth.currentUser?.uid;
     if (!userId || !workspaceId) return;
     try {
+        // Optimistic update
+        const currentBlocks = cache.getBlocks(workspaceId);
+        const idToIndex = new Map(orderedIds.map((id, index) => [id, index]));
+        const newBlocks = currentBlocks.map(b => ({
+            ...b,
+            order: idToIndex.has(b.id!) ? idToIndex.get(b.id!) : b.order
+        })).sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        cache.setCache(workspaceId, newBlocks);
+
         const path = paths.timeblocks(userId, workspaceId);
         const batch = writeBatch(db);
         orderedIds.forEach((id, index) => {

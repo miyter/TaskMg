@@ -1,48 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
 
 import { Target } from '../store/schema';
-import { subscribeToTargets } from '../store/targets';
+import { getTargets, isTargetsInitialized, subscribeToTargets } from '../store/targets';
+import { useFirestoreSubscription } from './useFirestoreSubscription';
 import { useWorkspace } from './useWorkspace';
 
 export const useTargets = () => {
     const { workspaceId, loading: authLoading } = useWorkspace();
-    const [targets, setTargets] = useState<Target[]>([]);
-    const [loading, setLoading] = useState(true);
 
-    const isCancelledRef = useRef(false);
+    const subscribeFn = useCallback((onData: (data: Target[]) => void) => {
+        if (!workspaceId) return () => { };
+        return subscribeToTargets(workspaceId, onData);
+    }, [workspaceId]);
 
-    useEffect(() => {
-        isCancelledRef.current = false;
+    const isCacheReady = workspaceId ? isTargetsInitialized(workspaceId) : false;
 
-        if (!workspaceId) {
-            setTargets([]);
-            if (!authLoading) setLoading(false);
-            return;
-        }
+    const { data: targets, isPending } = useFirestoreSubscription<Target[]>(
+        ['targets', workspaceId],
+        subscribeFn,
+        (workspaceId && isCacheReady) ? getTargets(workspaceId) : undefined
+    );
 
-        setLoading(true);
+    const loading = authLoading || (!!workspaceId && isPending);
 
-        const unsubscribe = subscribeToTargets(
-            workspaceId,
-            (newTargets) => {
-                if (!isCancelledRef.current) {
-                    setTargets(newTargets);
-                    setLoading(false);
-                }
-            },
-            (error) => {
-                if (!isCancelledRef.current) {
-                    console.error("Target subscription error:", error);
-                    setLoading(false);
-                }
-            }
-        );
-
-        return () => {
-            isCancelledRef.current = true;
-            unsubscribe();
-        };
-    }, [workspaceId, authLoading]);
-
-    return { targets, loading: loading || authLoading };
+    return { targets: targets || [], loading };
 };

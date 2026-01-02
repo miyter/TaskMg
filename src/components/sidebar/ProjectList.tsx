@@ -10,7 +10,10 @@ import { SidebarLoadingState } from '../common/SidebarLoadingState';
 
 import { ProjectItem } from './ProjectItem';
 
+import { useTranslation } from '../../core/translations';
+
 export const ProjectList: React.FC = () => {
+    const { t } = useTranslation();
     const { projects, loading } = useProjects();
 
     if (loading) {
@@ -18,7 +21,7 @@ export const ProjectList: React.FC = () => {
     }
 
     if (projects.length === 0) {
-        return <div className="p-4 text-xs text-gray-400">プロジェクトはありません</div>;
+        return <div className="p-4 text-xs text-gray-400">{t('sidebar.no_projects')}</div>;
     }
 
     return (

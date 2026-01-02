@@ -12,12 +12,18 @@ import {
     addLabelRaw,
     deleteLabelRaw,
     getLabels as getLabelsRaw,
+    isLabelsInitialized as isLabelsInitializedRaw,
     subscribeToLabelsRaw,
     updateLabelRaw
 } from './labels-raw';
 import { Label } from './schema';
 
 export const getLabels = getLabelsRaw;
+
+export const isLabelsInitialized = (workspaceId?: string): boolean => {
+    if (!workspaceId) return false;
+    return isLabelsInitializedRaw(workspaceId);
+};
 
 /**
  * 認証ガード

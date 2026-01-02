@@ -12,15 +12,8 @@ import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
 
-// --- 定数 ---
-const RECURRENCE_OPTIONS = [
-    { value: 'none', label: 'なし' },
-    { value: 'daily', label: '毎日' },
-    { value: 'weekdays', label: '平日' },
-    { value: 'weekly', label: '毎週' },
-    { value: 'monthly', label: '毎月' },
-];
-const DAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
+import { useTranslation } from '../../core/translations';
+
 const TASK_STATUS = {
     TODO: 'todo',
     COMPLETED: 'completed',
@@ -35,6 +28,7 @@ interface TaskDetailModalProps {
 }
 
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex, overlayClassName }) => {
+    const { t } = useTranslation();
     const { closeModal } = useModalStore();
     const isOpen = !!propIsOpen;
     const task = propData as Task | null;
@@ -58,6 +52,26 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     const [duration, setDuration] = useState<number | null>(null);
     const [showPreview, setShowPreview] = useState(false);
     const [scheduleOpen, setScheduleOpen] = useState(false);
+
+    // --- i18n Data ---
+    const definitionRecurrenceOptions = useMemo(() => [
+        { value: 'none', label: t('recurrence.none') },
+        { value: 'daily', label: t('recurrence.daily') },
+        { value: 'weekdays', label: t('recurrence.weekdays') },
+        { value: 'weekly', label: t('recurrence.weekly') },
+        { value: 'monthly', label: t('recurrence.monthly') },
+    ], [t]);
+
+    const dayLabels = useMemo(() => [
+        t('days.sun'), t('days.mon'), t('days.tue'), t('days.wed'), t('days.thu'), t('days.fri'), t('days.sat')
+    ], [t]);
+
+
+
+
+
+
+
     const [error, setError] = useState<string | null>(null);
 
     // --- 初期化 ---
@@ -98,13 +112,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     const handleSave = useCallback(async () => {
         setError(null);
         if (!title.trim()) {
-            setError('タイトルを入力してください');
+            setError(t('validation.required'));
             return;
         }
 
         // 繰り返しがweeklyなのに曜日未選択の場合
         if (recurrence?.type === 'weekly' && (!recurrence.days || recurrence.days.length === 0)) {
-            setError('曜日を選択してください');
+            setError(t('validation.select_days'));
             return;
         }
 
@@ -132,9 +146,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             closeModal();
         } catch (e) {
             console.error('Failed to save task', e);
-            setError('保存に失敗しました');
+            setError(t('validation.save_fail'));
         }
-    }, [title, description, projectId, status, isImportant, dueDate, recurrence, timeBlockId, duration, isNewTask, task, closeModal]);
+    }, [title, description, projectId, status, isImportant, dueDate, recurrence, timeBlockId, duration, isNewTask, task, closeModal, t]);
 
     const handleDelete = useCallback(async (e?: React.MouseEvent) => {
         e?.preventDefault();
@@ -143,16 +157,16 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
         if (!task?.id || isNewTask) return;
 
-        if (!confirm('本当にこのタスクを削除しますか？')) return;
+        if (!confirm(t('modal.delete_confirm'))) return;
 
         try {
             await deleteTask(task.id);
             closeModal();
         } catch (e) {
             console.error('Failed to delete task', e);
-            setError('削除に失敗しました');
+            setError(t('validation.delete_fail'));
         }
-    }, [task?.id, isNewTask, closeModal]);
+    }, [task?.id, isNewTask, closeModal, t]);
 
     const handleRecurrenceTypeChange = useCallback((type: string) => {
         let newDays: number[] = [];
@@ -184,6 +198,22 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     // --- Memoized ---
     const previewHtml = useMemo(() => simpleMarkdownToHtml(description), [description]);
 
+    // Title Input: Enter to save
+    const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+            e.preventDefault();
+            handleSave();
+        }
+    };
+
+    // Container: Cmd/Ctrl + Enter to save
+    const handleContainerKeyDown = (e: React.KeyboardEvent) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            handleSave();
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -194,7 +224,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             className="max-w-4xl h-[95vh] sm:h-[85vh] w-full mx-2 sm:mx-auto mt-4 sm:mt-0 pb-safe"
             overlayClassName={overlayClassName}
         >
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full" onKeyDown={handleContainerKeyDown}>
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4 shrink-0">
                     <input
@@ -203,10 +233,11 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="タスクのタイトル"
+                        onKeyDown={handleTitleKeyDown}
+                        placeholder={t('task_detail.title_placeholder')}
                         className="flex-1 text-xl font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder:text-gray-400"
                         autoFocus
-                        aria-label="タスクのタイトル"
+                        aria-label={t('task_detail.title_placeholder')}
                     />
                     <button
                         onClick={() => setIsImportant(!isImportant)}
@@ -235,8 +266,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     <ErrorMessage message={error} className="mb-4" />
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
-                        {/* Left Column: Memo (Desktop: Left, Mobile: Second) */}
-                        <div className="md:col-span-8 flex flex-col h-full min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 order-last md:order-first">
+                        {/* Left Column: Memo */}
+                        <div className="md:col-span-8 flex flex-col h-full min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,7 +296,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                         name="description"
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
-                                        onBlur={() => description.trim() && setShowPreview(true)}
                                         placeholder="詳細を入力..."
                                         className="w-full h-full p-3 bg-gray-50 dark:bg-gray-900/50 border-0 rounded-lg outline-none text-sm transition-all resize-none leading-relaxed focus:ring-1 focus:ring-blue-500/50 text-gray-800 dark:text-gray-200 font-mono"
                                         autoFocus={!description}
@@ -275,8 +305,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             </div>
                         </div>
 
-                        {/* Right Column: Settings (Desktop: Right, Mobile: First) */}
-                        <div className="md:col-span-4 space-y-4 order-first md:order-last">
+                        {/* Right Column: Settings */}
+                        <div className="md:col-span-4 space-y-4">
                             {/* Schedule Section */}
                             <details open={scheduleOpen} onToggle={(e) => setScheduleOpen(e.currentTarget.open)} className="group border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
                                 <summary
@@ -288,7 +318,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                         <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        スケジュール
+                                        {t('task_detail.schedule_label')}
                                     </span>
                                     <span className="transform group-open:rotate-180 transition-transform text-gray-400">
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -299,7 +329,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                 <div className="p-4 flex flex-col gap-4">
                                     {/* Due Date */}
                                     <div>
-                                        <label htmlFor="task-due-date" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">期限日</label>
+                                        <label htmlFor="task-due-date" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.due_date_label')}</label>
                                         <div
                                             className="relative cursor-pointer"
                                             onClick={() => {
@@ -319,14 +349,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                                     {/* Recurrence */}
                                     <div>
-                                        <label htmlFor="task-recurrence" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">繰り返し</label>
+                                        <label htmlFor="task-recurrence" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.recurrence_label')}</label>
                                         <select
                                             id="task-recurrence"
                                             value={recurrence?.type || 'none'}
                                             onChange={(e) => handleRecurrenceTypeChange(e.target.value)}
                                             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
                                         >
-                                            {RECURRENCE_OPTIONS.map(opt => (
+                                            {definitionRecurrenceOptions.map(opt => (
                                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                                             ))}
                                         </select>
@@ -335,9 +365,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                     {/* Weekly Days */}
                                     {(recurrence?.type === 'weekly' || recurrence?.type === 'weekdays') && (
                                         <div className="pt-2 border-t border-gray-100 dark:border-gray-700 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            <span className="block text-xs font-semibold text-gray-500 mb-2 uppercase">繰り返す曜日</span>
+                                            <span className="block text-xs font-semibold text-gray-500 mb-2 uppercase">{t('task_detail.recurrence_days')}</span>
                                             <div className="flex flex-wrap gap-2">
-                                                {DAY_LABELS.map((day, idx) => (
+                                                {dayLabels.map((day, idx) => (
                                                     <label key={idx} className="flex items-center gap-1 cursor-pointer select-none">
                                                         <input
                                                             type="checkbox"
@@ -354,14 +384,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                                     {/* TimeBlock */}
                                     <div>
-                                        <label htmlFor="task-timeblock" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">時間帯</label>
+                                        <label htmlFor="task-timeblock" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.time_block_label')}</label>
                                         <select
                                             id="task-timeblock"
                                             value={timeBlockId || ''}
                                             onChange={(e) => setTimeBlockId(e.target.value || null)}
                                             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
                                         >
-                                            <option value="">未定</option>
+                                            <option value="">{t('task_detail.time_block_unspecified')}</option>
                                             {timeBlocks.map(tb => (
                                                 <option key={tb.id} value={tb.id}>{tb.start} - {tb.end}</option>
                                             ))}
@@ -370,14 +400,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                                     {/* Duration */}
                                     <div>
-                                        <label htmlFor="task-duration" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">所要時間</label>
+                                        <label htmlFor="task-duration" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.duration_label')}</label>
                                         <select
                                             id="task-duration"
                                             value={duration || ''}
                                             onChange={(e) => setDuration(e.target.value ? parseInt(e.target.value, 10) : null)}
                                             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
                                         >
-                                            <option value="">指定なし</option>
+                                            <option value="">{t('task_detail.duration_none')}</option>
                                             {customDurations.map(d => (
                                                 <option key={d} value={d}>{d} min</option>
                                             ))}
@@ -388,14 +418,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                             {/* Project */}
                             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
-                                <label htmlFor="task-project" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">プロジェクト</label>
+                                <label htmlFor="task-project" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.project_label')}</label>
                                 <select
                                     id="task-project"
                                     value={projectId || 'none'}
                                     onChange={(e) => setProjectId(e.target.value === 'none' ? null : e.target.value)}
                                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
                                 >
-                                    <option value="none">プロジェクトなし</option>
+                                    <option value="none">{t('task_detail.project_none')}</option>
                                     {projects.map(p => (
                                         <option key={p.id} value={p.id}>{p.name}</option>
                                     ))}
@@ -417,7 +447,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
-                                削除
+                                {t('task_detail.delete_button')}
                             </button>
                         </div>
                     )}
@@ -427,14 +457,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             onClick={closeModal}
                             className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
                         >
-                            キャンセル
+                            {t('modal.cancel')}
                         </button>
                         <button
                             type="button"
                             onClick={handleSave}
                             className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium shadow-md transition transform active:scale-95"
                         >
-                            {isNewTask ? '作成' : '保存'}
+                            {isNewTask ? t('modal.create') : t('modal.save')}
                         </button>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from '../../core/translations';
 import { Workspace } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
 import { addWorkspace, getWorkspaces, setCurrentWorkspaceId, updateWorkspaceName } from '../../store/workspace';
@@ -15,6 +16,7 @@ interface WorkspaceEditModalProps {
 }
 
 export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
+    const { t } = useTranslation();
     const { closeModal } = useModalStore();
     const isOpen = !!propIsOpen;
     const workspace = propData as Workspace | null;
@@ -23,6 +25,8 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const inputRef = React.useRef<HTMLInputElement>(null);
 
     // 初期化
     useEffect(() => {
@@ -33,10 +37,17 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
         }
     }, [isOpen, workspace]);
 
+    // Error auto-focus
+    useEffect(() => {
+        if (error) {
+            inputRef.current?.focus();
+        }
+    }, [error]);
+
     const handleSave = useCallback(async () => {
         const trimmedName = name.trim();
         if (!trimmedName) {
-            setError('ワークスペース名を入力してください');
+            setError(t('validation.workspace_name_required'));
             return;
         }
 
@@ -46,7 +57,7 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
             (ws: Workspace) => ws.name === trimmedName && ws.id !== workspace?.id
         );
         if (isDuplicate) {
-            setError('その名前は既に使われています');
+            setError(t('validation.workspace_duplicate'));
             return;
         }
 
@@ -59,15 +70,17 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
             } else {
                 const newWs = await addWorkspace(trimmedName);
                 if (newWs?.id) {
-                    setCurrentWorkspaceId(newWs.id);
+                    if (confirm(t('validation.workspace_confirm_switch'))) {
+                        setCurrentWorkspaceId(newWs.id);
+                    }
                 }
             }
             closeModal();
         } catch (err: any) {
-            setError('保存に失敗しました: ' + (err.message || '不明なエラー'));
+            setError(t('validation.save_fail') + ': ' + (err.message || 'Error'));
             setLoading(false);
         }
-    }, [name, isEdit, workspace, closeModal]);
+    }, [name, isEdit, workspace, closeModal, t]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
@@ -79,21 +92,22 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
 
     return (
         <Modal isOpen={isOpen} onClose={closeModal} className="max-w-md">
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6 max-h-[85vh] overflow-y-auto p-1">
                 {/* Header */}
                 <div>
                     <label htmlFor="workspace-name-input" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
-                        {isEdit ? 'ワークスペース名の変更' : '新規ワークスペース'}
+                        {isEdit ? t('modal.workspace_edit_title') : t('modal.workspace_create_title')}
                     </label>
                     <input
+                        ref={inputRef}
                         id="workspace-name-input"
                         name="workspaceName"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="ワークスペース名を入力..."
-                        className="w-full text-xl font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600"
+                        placeholder={t('modal.workspace_name_placeholder')}
+                        className="w-full text-lg font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600"
                         autoFocus
                     />
                 </div>
@@ -101,8 +115,8 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
                 {/* Description */}
                 <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                     {isEdit
-                        ? 'ワークスペースの名前を変更します。'
-                        : '新しいワークスペースを作成します。プロジェクトやタスクを個別に管理できるようになります。'}
+                        ? t('modal.workspace_desc_edit')
+                        : t('modal.workspace_desc_create')}
                 </p>
 
                 {/* Error */}
@@ -115,14 +129,14 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
                         disabled={loading}
                         className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition disabled:opacity-50"
                     >
-                        キャンセル
+                        {t('modal.cancel')}
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={loading}
                         className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg shadow-md transition-all transform active:scale-95"
                     >
-                        {loading ? (isEdit ? '更新中...' : '作成中...') : isEdit ? '保存' : '作成'}
+                        {loading ? t('saving') : isEdit ? t('modal.save') : t('modal.create')}
                     </button>
                 </div>
             </div>

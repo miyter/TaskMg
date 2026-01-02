@@ -18,17 +18,18 @@ export const useTasks = () => {
         );
     }, [workspaceId]);
 
+    // Initial loading logic:
+    // If we have workspaceId but tasks are not initialized in cache, we are loading.
+    const isCacheReady = workspaceId ? isTasksInitialized(workspaceId) : false;
+
     // Use React Query via generic subscription hook
     const { data: tasks, isPending } = useFirestoreSubscription<Task[]>(
         ['tasks', workspaceId],
         subscribeFn,
-        workspaceId ? getTasks(workspaceId) : []
+        (workspaceId && isCacheReady) ? getTasks(workspaceId) : undefined
     );
 
-    // Initial loading logic:
-    // If we have workspaceId but tasks are not initialized in cache, we are loading.
     // Also respect authLoading.
-    const isCacheReady = workspaceId ? isTasksInitialized(workspaceId) : false;
     const loading = authLoading || (!!workspaceId && !isCacheReady && isPending);
 
     return {
