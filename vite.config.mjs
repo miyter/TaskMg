@@ -19,6 +19,19 @@ export default defineConfig({
       input: {
         main: 'index.html',
       },
+      output: {
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('firebase')) {
+              return 'firebase';
+            }
+            if (id.includes('react') || id.includes('scheduler')) {
+              return 'react-vendor';
+            }
+            return 'vendor';
+          }
+        },
+      },
     },
   },
 
