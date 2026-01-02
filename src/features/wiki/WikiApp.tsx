@@ -1,10 +1,11 @@
-import React from 'react';
+import { useTranslation } from '../../core/translations';
 import { useModalStore } from '../../store/ui/modal-store'; // Update import path if necessary
 import { WIKI_DATA } from './wiki-data';
 import { WikiFrameworkCard } from './WikiFrameworkCard';
 
 export const WikiApp: React.FC = () => {
     const { openModal } = useModalStore();
+    const { t } = useTranslation();
 
     return (
         <div className="h-full bg-gray-50 dark:bg-gray-900 overflow-y-auto custom-scrollbar">
@@ -16,7 +17,7 @@ export const WikiApp: React.FC = () => {
                         </svg>
                     </span>
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300">
-                        フレームワーク Wiki
+                        {t('sidebar.framework_wiki')}
                     </span>
                 </h1>
 

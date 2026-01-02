@@ -5,7 +5,10 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { useWorkspaceStore } from '../../store/ui/workspace-store';
 import { cn } from '../../utils/cn';
 import { ErrorMessage } from '../common/ErrorMessage';
+import { IconFileText, IconTrash } from '../common/Icons';
 import { Modal } from '../common/Modal';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 import { useTranslation } from '../../core/translations';
 import { COLOR_PALETTE } from '../../core/ui-constants';
@@ -22,7 +25,7 @@ interface ProjectEditModalProps {
 
 export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex, overlayClassName }) => {
     const { t } = useTranslation();
-    const { closeModal } = useModalStore();
+    const { closeModal, openModal } = useModalStore();
     const { currentWorkspaceId } = useWorkspaceStore();
 
     const isOpen = !!propIsOpen;
@@ -83,17 +86,24 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
 
     const handleDelete = useCallback(async () => {
         if (!project?.id) return;
-        if (!confirm(t('modal.project_delete_confirm').replace('{name}', project.name))) return;
 
-        setLoading(true);
-        try {
-            await deleteProject(project.id);
-            closeModal();
-        } catch (err: any) {
-            setError(t('validation.delete_fail'));
-            setLoading(false);
-        }
-    }, [project, closeModal, t]);
+        openModal('confirmation', {
+            title: t('delete'),
+            message: t('modal.project_delete_confirm').replace('{name}', project.name),
+            confirmLabel: t('delete'),
+            variant: 'danger',
+            onConfirm: async () => {
+                setLoading(true);
+                try {
+                    await deleteProject(project.id!);
+                    closeModal();
+                } catch (err: any) {
+                    setError(t('validation.delete_fail'));
+                    setLoading(false);
+                }
+            }
+        });
+    }, [project, closeModal, openModal, t]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
@@ -118,24 +128,21 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
                 {/* Header */}
                 <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 shrink-0">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                        </svg>
+                        <IconFileText size={20} />
                     </div>
-                    <div>
-                        <label htmlFor="project-name-input" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
-                            {t('modal.project_name')}
-                        </label>
-                        <input
+                    <div className="flex-1">
+                        <Input
                             ref={inputRef}
                             id="project-name-input"
                             name="projectName"
                             type="text"
+                            label={t('modal.project_name')}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={t('modal.project_name_placeholder')}
-                            className="w-full text-lg font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 p-0"
+                            className="bg-transparent border-none text-lg font-bold p-0 focus:ring-0 focus:border-transparent px-0 py-0 rounded-none h-auto"
+                            containerClassName="gap-0"
                             autoFocus
                             aria-describedby={error ? "project-error-msg" : undefined}
                         />
@@ -179,27 +186,26 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
                                 aria-label={t('modal.delete_project')}
                                 title={t('modal.delete_project')}
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
+                                <IconTrash size={20} />
                             </button>
                         )}
                     </div>
                     <div className="flex gap-3">
-                        <button
+                        <Button
                             onClick={closeModal}
                             disabled={loading}
-                            className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition disabled:opacity-50"
+                            variant="ghost"
                         >
                             {t('modal.cancel')}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             onClick={handleSave}
                             disabled={loading}
-                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            isLoading={loading}
+                            variant="primary"
                         >
-                            {loading ? '...' : isEdit ? t('modal.save') : t('modal.create')}
-                        </button>
+                            {isEdit ? t('modal.save') : t('modal.create')}
+                        </Button>
                     </div>
                 </div>
             </div>

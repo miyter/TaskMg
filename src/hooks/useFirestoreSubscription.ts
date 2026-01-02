@@ -25,15 +25,29 @@ export const resetSubscribersForTesting = () => {
  * @param initialData Optional initial data for the query
  * @returns The query result object from useQuery
  */
+export interface SubscriptionOptions {
+    timeout?: number;
+}
+
+/**
+ * A hook that manages a Firestore real-time subscription with React Query cache.
+ * It ensures only one active subscription exists per unique queryKey, regardless of how many components use this hook.
+ * 
+ * @param queryKey Unique key for React Query cache and subscription tracking
+ * @param subscribeFn Function that starts the subscription. Must accept an callback for data updates.
+ * @param initialData Optional initial data for the query
+ * @param options Subscription configuration objects
+ * @returns The query result object from useQuery
+ */
 export function useFirestoreSubscription<T>(
     queryKey: QueryKey,
     subscribeFn: (onData: (data: T) => void) => Unsubscribe,
-    initialData?: T
+    initialData?: T,
+    options?: SubscriptionOptions
 ) {
     const queryClient = useQueryClient();
     const keyHash = JSON.stringify(queryKey);
-
-
+    const timeoutMs = options?.timeout ?? 5000; // Default reduced to 5s from 10s for better UX
 
     useEffect(() => {
         // Skip subscription if key contains undefined/null (e.g. waiting for workspaceId)
@@ -93,8 +107,9 @@ export function useFirestoreSubscription<T>(
                 const timeoutId = setTimeout(() => {
                     // Fail-safe: resolve with current cache or null after timeout
                     const finalData = queryClient.getQueryData<T>(queryKey);
+                    console.warn(`[FirestoreSub] Timeout waiting for data: ${keyHash}`);
                     resolve((finalData ?? initialData ?? null) as unknown as T);
-                }, 10000);
+                }, timeoutMs);
 
                 // Listen for cache updates via queryClient
                 const unsubscribe = queryClient.getQueryCache().subscribe((event) => {

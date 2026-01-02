@@ -8,7 +8,9 @@ import { Density, FontSize, ThemeMode, useSettingsStore } from '../../store/ui/s
 import { useWorkspaceStore } from '../../store/ui/workspace-store';
 import { cn } from '../../utils/cn';
 import { AccordionSection } from '../common/AccordionSection';
+import { IconChevronDown, IconPlus } from '../common/Icons';
 import { Modal } from '../common/Modal';
+import { Button } from '../ui/Button';
 import { AccountSettingsTab } from './AccountSettingsTab';
 
 import { cleanupDuplicateTasks } from '../../store/maintenance';
@@ -43,7 +45,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen, zIndex, overlayClassName }) => {
     const { t } = useTranslation();
-    const { closeModal } = useModalStore();
+    const { closeModal, openModal } = useModalStore();
     const {
         themeMode, setThemeMode,
         density, setDensity,
@@ -175,7 +177,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 ))}
                                             </select>
                                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 z-0">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                                <IconChevronDown className="w-4 h-4" />
                                             </div>
                                         </div>
                                     </div>
@@ -194,7 +196,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 ))}
                                             </select>
                                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 z-0">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                                <IconChevronDown className="w-4 h-4" />
                                             </div>
                                         </div>
                                     </div>
@@ -213,7 +215,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                     {t('settings_modal.backup.description')}
                                 </p>
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                                    <button
+                                    <Button
                                         onClick={async () => {
                                             if (!auth.currentUser || !currentWorkspaceId) return;
                                             try {
@@ -232,47 +234,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 alert(t('settings_modal.backup.create_fail'));
                                             }
                                         }}
-                                        className="btn-premium w-full sm:w-auto text-sm flex items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 shadow-sm"
+                                        variant="premium"
+                                        leftIcon={<IconPlus className="w-4 h-4" />}
+                                        className="w-full sm:w-auto"
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                        <span className="inline">{t('settings_modal.backup.create')}</span>
-                                    </button>
+                                        {t('settings_modal.backup.create')}
+                                    </Button>
                                     <div className="relative w-full sm:w-auto">
                                         <input
                                             type="file"
                                             accept=".json"
                                             className="hidden"
                                             id="backup-import-input"
-                                            onChange={async (e) => {
+                                            onChange={(e) => {
                                                 const file = e.target.files?.[0];
                                                 if (!file || !auth.currentUser || !currentWorkspaceId) return;
 
-                                                if (!window.confirm(t('settings_modal.backup.import_confirm'))) {
-                                                    e.target.value = '';
-                                                    return;
-                                                }
+                                                // Reset input immediately
+                                                e.target.value = '';
 
-                                                const reader = new FileReader();
-                                                reader.onload = async (ev) => {
-                                                    try {
-                                                        const json = JSON.parse(ev.target?.result as string);
-                                                        const result = await importBackupData(auth.currentUser!.uid, currentWorkspaceId, json);
-                                                        alert(t('settings_modal.backup.import_success').replace('{tasks}', String(result.tasksCount)).replace('{projects}', String(result.projectsCount)));
-                                                        window.location.reload(); // Refresh to reflect changes
-                                                    } catch (err) {
-                                                        console.error(err);
-                                                        alert(t('settings_modal.backup.import_fail'));
+                                                openModal('confirmation', {
+                                                    title: t('settings_modal.backup.import'),
+                                                    message: t('settings_modal.backup.import_confirm'),
+                                                    confirmLabel: t('modal.ok'), // or 'Import'
+                                                    variant: 'danger',
+                                                    onConfirm: () => {
+                                                        const reader = new FileReader();
+                                                        reader.onload = async (ev) => {
+                                                            try {
+                                                                const json = JSON.parse(ev.target?.result as string);
+                                                                const result = await importBackupData(auth.currentUser!.uid, currentWorkspaceId, json);
+                                                                alert(t('settings_modal.backup.import_success').replace('{tasks}', String(result.tasksCount)).replace('{projects}', String(result.projectsCount)));
+                                                                window.location.reload(); // Refresh to reflect changes
+                                                            } catch (err) {
+                                                                console.error(err);
+                                                                alert(t('settings_modal.backup.import_fail'));
+                                                            }
+                                                        };
+                                                        reader.readAsText(file);
                                                     }
-                                                };
-                                                reader.readAsText(file);
-                                                e.target.value = ''; // Reset input
+                                                });
                                             }}
                                         />
                                         <label
                                             htmlFor="backup-import-input"
                                             className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer shadow-sm text-sm flex items-center justify-center gap-2 transition-colors"
                                         >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                            <IconPlus className="w-4 h-4" />
                                             {t('settings_modal.backup.import')}
                                         </label>
                                     </div>
@@ -332,28 +340,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                     </span>
                                 </label>
 
-                                <button
-                                    onClick={async () => {
+                                <Button
+                                    onClick={() => {
                                         if (!currentWorkspaceId) return;
-                                        // Checkbox enforces backup confirmation
-                                        if (!confirm(t('settings_modal.maintenance.confirm_final'))) return;
 
-                                        try {
-                                            const count = await cleanupDuplicateTasks(currentWorkspaceId);
-                                            alert(t('settings_modal.maintenance.cleanup_success').replace('{count}', String(count)));
-                                            if (count > 0) {
-                                                window.location.reload();
+                                        openModal('confirmation', {
+                                            title: t('settings_modal.maintenance.title'),
+                                            message: t('settings_modal.maintenance.confirm_final'),
+                                            confirmLabel: t('settings_modal.maintenance.cleanup_duplicate'),
+                                            variant: 'danger',
+                                            onConfirm: async () => {
+                                                try {
+                                                    const count = await cleanupDuplicateTasks(currentWorkspaceId);
+                                                    alert(t('settings_modal.maintenance.cleanup_success').replace('{count}', String(count)));
+                                                    if (count > 0) {
+                                                        window.location.reload();
+                                                    }
+                                                } catch (e: any) {
+                                                    console.error(e);
+                                                    alert(t('settings_modal.maintenance.cleanup_fail').replace('{error}', e.message));
+                                                }
                                             }
-                                        } catch (e: any) {
-                                            console.error(e);
-                                            alert(t('settings_modal.maintenance.cleanup_fail').replace('{error}', e.message));
-                                        }
+                                        });
                                     }}
                                     disabled={!backupConfirmed}
-                                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+                                    variant="danger"
                                 >
                                     {t('settings_modal.maintenance.cleanup_duplicate')}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     )}

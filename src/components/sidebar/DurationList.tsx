@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { useTasks } from '../../hooks/useTasks';
+import { useSettingsStore } from '../../store/ui/settings-store';
 import { DurationItem } from './DurationItem';
 
 export const DurationList: React.FC = () => {
     const { tasks } = useTasks();
-    const durations = UI_CONFIG.SIDEBAR.DURATIONS;
+    const { customDurations } = useSettingsStore();
+    const durations = customDurations?.length > 0 ? customDurations : UI_CONFIG.SIDEBAR.DURATIONS;
 
     // Memoize counts
     const counts = useMemo(() => {

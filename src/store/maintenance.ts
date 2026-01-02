@@ -1,6 +1,6 @@
 
 import { auth, db } from '../core/firebase';
-import { collection, doc, getDocs } from '../core/firebase-sdk';
+import { collection, doc, getDocs, writeBatch } from '../core/firebase-sdk';
 import { paths } from '../utils/paths';
 import { Task } from './schema';
 
@@ -66,7 +66,7 @@ export async function cleanupDuplicateTasks(workspaceId: string): Promise<number
 
     // 3. Batch Delete
     if (groupIdsToDelete.length > 0) {
-        const { writeBatch } = await import('../core/firebase-sdk');
+
 
         // Firestore batch limits to 500 operations
         for (let i = 0; i < groupIdsToDelete.length; i += 500) {

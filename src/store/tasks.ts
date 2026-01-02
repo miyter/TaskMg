@@ -1,6 +1,7 @@
 import { auth } from '../core/firebase';
 import { Unsubscribe } from '../core/firebase-sdk';
 import { getTranslator } from '../core/translations';
+import { getNextRecurrenceDate } from '../utils/date';
 import { useSettingsStore } from './ui/settings-store';
 
 import { Task, TaskSchema } from './schema';
@@ -72,7 +73,6 @@ export async function updateTaskStatus(taskId: string, status: string) {
         if (status === 'completed') {
             const task = getTaskFromCache(workspaceId, taskId);
             if (task?.recurrence && task.recurrence.type !== 'none') {
-                const { getNextRecurrenceDate } = await import('../utils/date');
                 const nextDate = getNextRecurrenceDate(task.dueDate ?? null, task.recurrence as any);
                 if (nextDate) {
                     const nextTask: Partial<Task> = {

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from '../../core/translations';
 import { useWorkspace } from '../../hooks/useWorkspace';
 import { addTarget } from '../../store';
+import { toast } from '../../store/ui/toast-store';
 import { useViewStore } from '../../store/ui/view-store';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
 import { WizardStep } from './WizardStep';
@@ -12,6 +14,7 @@ export const WizardApp: React.FC = () => {
     const [data, setData] = useState<Record<string, string>>({});
     const { setView, viewData } = useViewStore();
     const { workspaceId } = useWorkspace();
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (viewData?.mode) {
@@ -31,7 +34,7 @@ export const WizardApp: React.FC = () => {
         const finalData = { ...data, ...stepData };
 
         if (!workspaceId) {
-            alert('ワークスペースが選択されていません。');
+            toast.error(t('wizard.alert_no_workspace'));
             return;
         }
 
@@ -41,7 +44,7 @@ export const WizardApp: React.FC = () => {
                 data: finalData
             });
             console.log("Wizard Completed, Saved to Firestore", finalData);
-            alert(`${WIZARD_MODES[mode].label}の目標が作成されました！（ダッシュボードへ移動します）`);
+            toast.success(t('wizard.alert_create_success', { label: WIZARD_MODES[mode].label }));
 
             // Reset and navigate
             setStep(0);
@@ -50,7 +53,7 @@ export const WizardApp: React.FC = () => {
             setView('target-dashboard');
         } catch (error) {
             console.error("Failed to save wizard target:", error);
-            alert("目標の保存に失敗しました。");
+            toast.error(t('wizard.alert_save_fail'));
         }
     };
 

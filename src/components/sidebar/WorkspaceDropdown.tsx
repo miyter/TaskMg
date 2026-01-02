@@ -7,6 +7,7 @@ import { setCurrentWorkspaceId } from '../../store/workspace';
 import { cn } from '../../utils/cn';
 
 import { useWorkspace } from '../../hooks/useWorkspace';
+import { IconCheck, IconChevronDown, IconPlus } from '../common/Icons';
 
 export const WorkspaceDropdown: React.FC = () => {
     const { t } = useTranslation();
@@ -58,12 +59,9 @@ export const WorkspaceDropdown: React.FC = () => {
                     {currentWorkspace ? currentWorkspace.name : t('loading')}
                 </span>
 
-                <svg
+                <IconChevronDown
                     className={cn("w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-transform duration-200", isOpen ? "rotate-180" : "")}
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
+                />
             </button>
 
             {isOpen && (
@@ -77,9 +75,7 @@ export const WorkspaceDropdown: React.FC = () => {
                             }}
                             className="flex items-center w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors rounded-md"
                         >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
+                            <IconPlus className="w-4 h-4 mr-2" />
                             {t('sidebar.add_workspace')}
                         </button>
                     </div>
@@ -103,9 +99,7 @@ export const WorkspaceDropdown: React.FC = () => {
                                 >
                                     <span className="truncate block max-w-[140px] sm:max-w-[180px]">{ws.name}</span>
                                     {isCurrent && (
-                                        <svg className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
+                                        <IconCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" />
                                     )}
                                 </button>
                             );

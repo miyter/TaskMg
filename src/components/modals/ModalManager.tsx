@@ -10,6 +10,7 @@ import { WorkspaceEditModal } from './WorkspaceEditModal';
 import { useModalStore } from '../../store/ui/modal-store';
 
 import { WikiFrameworkModal } from '../../features/wiki/WikiFrameworkModal';
+import { ConfirmationModal } from './ConfirmationModal';
 
 
 
@@ -44,6 +45,7 @@ export const ModalManager: React.FC = () => {
                     case 'filter-edit': return <FilterEditModal key={modal.id} {...props} />;
                     case 'timeblock-edit': return <TimeBlockEditModal key={modal.id} {...props} />;
                     case 'wiki-framework': return <WikiFrameworkModal key={modal.id} {...props} />;
+                    case 'confirmation': return <ConfirmationModal key={modal.id} {...props} />;
                     default: return null;
                 }
             })}

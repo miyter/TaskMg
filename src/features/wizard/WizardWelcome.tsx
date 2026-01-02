@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../core/translations';
 import { cn } from '../../utils/cn';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
 
@@ -9,13 +10,12 @@ interface WizardWelcomeProps {
 }
 
 export const WizardWelcome: React.FC<WizardWelcomeProps> = ({ currentMode, onModeChange, onStart }) => {
+    const { t } = useTranslation();
     const config = WIZARD_MODES[currentMode];
 
-    const features: Record<string, string[]> = {
-        okr: ['測定可能', '野心的目標', 'チーム向け'],
-        woop: ['科学的根拠', '障害対策', '個人向け'],
-        backward: ['逆算思考', 'マイルストーン', '長期計画']
-    };
+    // Get features from translation (comma separated string)
+    // Cast to any because of dynamic key construction
+    const featureList = (t(`wizard.features.${currentMode}` as any) || '').split(',');
 
     return (
         <div className="max-w-6xl mx-auto px-4 h-full max-h-[700px] flex flex-col py-6">
@@ -25,17 +25,17 @@ export const WizardWelcome: React.FC<WizardWelcomeProps> = ({ currentMode, onMod
                     <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
-                    <span className="font-medium">目標設計ウィザード</span>
+                    <span className="font-medium">{t('sidebar.target_wizard')}</span>
                     <svg className="w-3 h-3 mx-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
                     </svg>
-                    <span className="text-gray-700 dark:text-gray-300 font-semibold">手法を選択</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-semibold">{t('wizard.select_method')}</span>
                 </div>
             </div>
 
             {/* Mode Selection */}
             <div className="mb-6 flex-shrink-0">
-                <h2 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">フレームワークを選択</h2>
+                <h2 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">{t('wizard.select_framework')}</h2>
                 <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
                     {(Object.keys(WIZARD_MODES) as WizardModeId[]).map((mode) => (
                         <button
@@ -70,9 +70,9 @@ export const WizardWelcome: React.FC<WizardWelcomeProps> = ({ currentMode, onMod
                         </p>
 
                         <div className="mt-6 flex flex-wrap gap-2 justify-center">
-                            {(features[currentMode] || []).map(tag => (
+                            {featureList.map(tag => (
                                 <span key={tag} className="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm">
-                                    {tag}
+                                    {tag.trim()}
                                 </span>
                             ))}
                         </div>
@@ -86,7 +86,7 @@ export const WizardWelcome: React.FC<WizardWelcomeProps> = ({ currentMode, onMod
                     onClick={onStart}
                     className="group inline-flex items-center px-6 py-3 border-2 border-transparent shadow-xl font-bold rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-500/50 transition-all transform hover:scale-105 active:scale-95"
                 >
-                    <span>このモードで開始する</span>
+                    <span>{t('wizard.start_mode')}</span>
                     <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                     </svg>

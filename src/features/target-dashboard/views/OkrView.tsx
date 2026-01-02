@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../../core/translations';
 import { OkrData } from '../dashboard-types';
 
 interface OkrViewProps {
@@ -6,8 +7,9 @@ interface OkrViewProps {
 }
 
 export const OkrView: React.FC<OkrViewProps> = React.memo(({ data }) => {
+    const { t } = useTranslation();
     if (!data || !data.keyResults) {
-        return <div className="p-4 text-center text-gray-500">データ読み込みエラー</div>;
+        return <div className="p-4 text-center text-gray-500">{t('target_dashboard.loading_error')}</div>;
     }
 
     const getConfidenceColor = (conf: string) => {
@@ -21,7 +23,7 @@ export const OkrView: React.FC<OkrViewProps> = React.memo(({ data }) => {
             {/* Objective (Root) */}
             <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border-2 border-blue-100 dark:border-blue-900 shadow-lg text-center mb-12 relative z-10 transition-transform hover:scale-[1.01]">
                 <div className="absolute top-[-15px] left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-md">
-                    Objective
+                    {t('target_dashboard.okr.objective_label')}
                 </div>
                 <h2 className="font-black text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 leading-tight">
                     "{data.objective}"
@@ -48,7 +50,7 @@ export const OkrView: React.FC<OkrViewProps> = React.memo(({ data }) => {
 
                             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-700 transition-all group h-full flex flex-col">
                                 <div className="flex justify-between items-start mb-3">
-                                    <span className="text-xs font-bold text-gray-400">KR #{kr.id}</span>
+                                    <span className="text-xs font-bold text-gray-400">{t('target_dashboard.okr.kr_prefix')}{kr.id}</span>
                                     <div className={`w-3 h-3 rounded-full ${confColor}`} title={`Confidence: ${kr.confidence}`}></div>
                                 </div>
 

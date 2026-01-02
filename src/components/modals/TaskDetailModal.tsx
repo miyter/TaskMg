@@ -10,7 +10,12 @@ import { cn } from '../../utils/cn';
 import { formatDateForInput, getInitialDueDateFromRecurrence, parseDateInput, toDate } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { ErrorMessage } from '../common/ErrorMessage';
+import { IconCalendar, IconChevronDown, IconFileText, IconStar, IconTrash, IconX } from '../common/Icons';
 import { Modal } from '../common/Modal';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Textarea } from '../ui/Textarea';
 
 import { useTranslation } from '../../core/translations';
 
@@ -29,7 +34,7 @@ interface TaskDetailModalProps {
 
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex, overlayClassName }) => {
     const { t } = useTranslation();
-    const { closeModal } = useModalStore();
+    const { closeModal, openModal } = useModalStore(); // Destructure openModal
     const isOpen = !!propIsOpen;
     const task = propData as Task | null;
     // 新規タスク判定: IDがない、または'temp-'で始まる一時IDの場合
@@ -154,16 +159,24 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
         if (!task?.id || isNewTask) return;
 
-        if (!confirm(t('modal.delete_confirm'))) return;
+        if (!task?.id || isNewTask) return;
 
-        try {
-            await deleteTask(task.id);
-            closeModal();
-        } catch (e) {
-            console.error('Failed to delete task', e);
-            setError(t('validation.delete_fail'));
-        }
-    }, [task?.id, isNewTask, closeModal, t]);
+        openModal('confirmation', {
+            title: t('delete'),
+            message: t('modal.delete_confirm'),
+            confirmLabel: t('delete'),
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteTask(task.id!);
+                    closeModal(); // Close TaskDetailModal
+                } catch (e) {
+                    console.error('Failed to delete task', e);
+                    setError(t('validation.delete_fail'));
+                }
+            }
+        });
+    }, [task?.id, isNewTask, closeModal, openModal, t]);
 
     const handleRecurrenceTypeChange = useCallback((type: string) => {
         let newDays: number[] = [];
@@ -224,39 +237,42 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             <div className="flex flex-col h-full" onKeyDown={handleContainerKeyDown}>
                 {/* Header */}
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 shrink-0">
-                    <input
-                        id="task-title"
-                        name="title"
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        onKeyDown={handleTitleKeyDown}
-                        placeholder={t('task_detail.title_placeholder')}
-                        className="flex-1 text-xl font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder:text-gray-400"
-                        autoFocus
-                        aria-label={t('task_detail.title_placeholder')}
-                    />
-                    <button
+                    <div className="flex-1">
+                        <Input
+                            id="task-title"
+                            name="title"
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            onKeyDown={handleTitleKeyDown}
+                            placeholder={t('task_detail.title_placeholder')}
+                            className="text-xl font-bold bg-transparent border-none focus:ring-0 px-0 py-0 shadow-none h-auto rounded-none"
+                            containerClassName="gap-0"
+                            autoFocus
+                            aria-label={t('task_detail.title_placeholder')}
+                        />
+                    </div>
+                    <Button
                         onClick={() => setIsImportant(!isImportant)}
+                        variant="ghost"
+                        size="icon"
                         className={cn(
-                            "p-2 rounded-full transition-colors",
-                            isImportant ? "text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20" : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            "transition-colors",
+                            isImportant ? "text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30" : "text-gray-400"
                         )}
                         title={isImportant ? "重要度を解除" : "重要としてマーク"}
                     >
-                        <svg className="w-6 h-6" fill={isImportant ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                        </svg>
-                    </button>
-                    <button
+                        <IconStar className="w-6 h-6" fill={isImportant ? "currentColor" : "none"} />
+                    </Button>
+                    <Button
                         onClick={closeModal}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        variant="ghost"
+                        size="icon"
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                         aria-label="閉じる"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+                        <IconX className="w-6 h-6" />
+                    </Button>
                 </div>
 
                 {/* Body */}
@@ -267,19 +283,19 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                         <div className="md:col-span-8 flex flex-col h-full min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
+                                    <IconFileText size={16} />
                                     メモ (Markdown)
                                 </label>
-                                <button
+                                <Button
                                     type="button"
                                     onClick={() => setShowPreview(!showPreview)}
-                                    className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-1 rounded transition-colors text-xs font-medium"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-medium h-auto py-1 px-3"
                                     aria-label={showPreview ? '編集モードに切り替え' : 'プレビューモードに切り替え'}
                                 >
                                     {showPreview ? '編集' : 'プレビュー'}
-                                </button>
+                                </Button>
                             </div>
                             <div className="flex-1 relative">
                                 {showPreview ? (
@@ -288,13 +304,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                         dangerouslySetInnerHTML={{ __html: previewHtml || '<span class="text-gray-400">メモがありません</span>' }}
                                     />
                                 ) : (
-                                    <textarea
+                                    <Textarea
                                         id="task-description"
                                         name="description"
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         placeholder="詳細を入力..."
-                                        className="w-full h-full p-3 bg-gray-50 dark:bg-gray-900/50 border-0 rounded-lg outline-none text-sm transition-all resize-none leading-relaxed focus:ring-1 focus:ring-blue-500/50 text-gray-800 dark:text-gray-200 font-mono"
+                                        className="h-full bg-gray-50 dark:bg-gray-900/50 border-0 rounded-lg focus:ring-1 focus:ring-blue-500/50 text-gray-800 dark:text-gray-200 font-mono"
+                                        containerClassName="h-full"
                                         autoFocus={!description}
                                         aria-label="詳細メモ"
                                     />
@@ -312,21 +329,16 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                     aria-expanded={scheduleOpen}
                                 >
                                     <span className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                                        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
+                                        <IconCalendar className="text-blue-500" size={16} />
                                         {t('task_detail.schedule_label')}
                                     </span>
                                     <span className="transform group-open:rotate-180 transition-transform text-gray-400">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
+                                        <IconChevronDown size={20} />
                                     </span>
                                 </summary>
                                 <div className="p-4 flex flex-col gap-4">
                                     {/* Due Date */}
                                     <div>
-                                        <label htmlFor="task-due-date" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.due_date_label')}</label>
                                         <div
                                             className="relative cursor-pointer"
                                             onClick={() => {
@@ -334,29 +346,27 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                                 input?.showPicker?.();
                                             }}
                                         >
-                                            <input
+                                            <Input
                                                 type="date"
                                                 id="task-due-date"
+                                                label={t('task_detail.due_date_label')}
                                                 value={formatDateForInput(dueDate)}
                                                 onChange={(e) => setDueDate(parseDateInput(e.target.value))}
-                                                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm cursor-pointer"
+                                                className="cursor-pointer bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                                             />
                                         </div>
                                     </div>
 
                                     {/* Recurrence */}
                                     <div>
-                                        <label htmlFor="task-recurrence" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.recurrence_label')}</label>
-                                        <select
+                                        <Select
                                             id="task-recurrence"
+                                            label={t('task_detail.recurrence_label')}
                                             value={recurrence?.type || 'none'}
                                             onChange={(e) => handleRecurrenceTypeChange(e.target.value)}
-                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
-                                        >
-                                            {definitionRecurrenceOptions.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
-                                        </select>
+                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                                            options={definitionRecurrenceOptions}
+                                        />
                                     </div>
 
                                     {/* Weekly Days */}
@@ -383,52 +393,53 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                                     {/* TimeBlock */}
                                     <div>
-                                        <label htmlFor="task-timeblock" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.time_block_label')}</label>
-                                        <select
+                                        <Select
                                             id="task-timeblock"
+                                            label={t('task_detail.time_block_label')}
                                             value={timeBlockId || ''}
                                             onChange={(e) => setTimeBlockId(e.target.value || null)}
-                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
+                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
                                         >
                                             <option value="">{t('task_detail.time_block_unspecified')}</option>
                                             {timeBlocks.map(tb => (
                                                 <option key={tb.id} value={tb.id}>{tb.start} - {tb.end}</option>
                                             ))}
-                                        </select>
+                                        </Select>
                                     </div>
 
                                     {/* Duration */}
                                     <div>
-                                        <label htmlFor="task-duration" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.duration_label')}</label>
-                                        <select
+                                        <Select
                                             id="task-duration"
+                                            label={t('task_detail.duration_label')}
                                             value={duration || ''}
                                             onChange={(e) => setDuration(e.target.value ? parseInt(e.target.value, 10) : null)}
-                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
+                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
                                         >
                                             <option value="">{t('task_detail.duration_none')}</option>
                                             {customDurations.map(d => (
                                                 <option key={d} value={d}>{d} min</option>
                                             ))}
-                                        </select>
+                                        </Select>
                                     </div>
                                 </div>
                             </details>
 
                             {/* Project */}
                             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                                <label htmlFor="task-project" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.project_label')}</label>
-                                <select
+                                <Select
                                     id="task-project"
+                                    label={t('task_detail.project_label')}
                                     value={projectId || 'none'}
                                     onChange={(e) => setProjectId(e.target.value === 'none' ? null : e.target.value)}
-                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm appearance-none cursor-pointer"
+                                    className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                    containerClassName="gap-2"
                                 >
                                     <option value="none">{t('task_detail.project_none')}</option>
                                     {projects.map(p => (
                                         <option key={p.id} value={p.id}>{p.name}</option>
                                     ))}
-                                </select>
+                                </Select>
                             </div>
                         </div>
                     </div>
@@ -438,33 +449,32 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
                     {!isNewTask && (
                         <div className="flex items-center gap-2">
-                            <button
+                            <Button
                                 type="button"
                                 onClick={handleDelete}
-                                className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition flex items-center gap-1.5"
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 px-4"
+                                leftIcon={<IconTrash size={16} />}
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
                                 {t('task_detail.delete_button')}
-                            </button>
+                            </Button>
                         </div>
                     )}
                     <div className={`flex gap-2 ${isNewTask ? 'ml-auto' : ''}`}>
-                        <button
+                        <Button
                             type="button"
                             onClick={closeModal}
-                            className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
+                            variant="ghost"
                         >
                             {t('modal.cancel')}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
                             onClick={handleSave}
-                            className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium transition-colors"
+                            variant="primary"
                         >
                             {isNewTask ? t('modal.create') : t('modal.save')}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

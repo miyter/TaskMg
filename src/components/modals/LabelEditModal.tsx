@@ -5,7 +5,10 @@ import { Label } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
 import { cn } from '../../utils/cn';
 import { ErrorMessage } from '../common/ErrorMessage';
+import { IconTrash } from '../common/Icons';
 import { Modal } from '../common/Modal';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 import { useTranslation } from '../../core/translations';
 import { COLOR_PALETTE } from '../../core/ui-constants';
@@ -22,7 +25,7 @@ interface LabelEditModalProps {
 
 export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex, overlayClassName }) => {
     const { t } = useTranslation();
-    const { closeModal } = useModalStore();
+    const { closeModal, openModal } = useModalStore();
     const isOpen = !!propIsOpen;
     const label = propData as Label | null;
     const isEdit = !!label?.id;
@@ -83,19 +86,26 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
 
     const handleDelete = useCallback(async () => {
         if (!label?.id) return;
-        if (!confirm(t('modal.label_delete_confirm').replace('{name}', label.name))) return;
 
-        setLoading(true);
-        try {
-            if (workspaceId && label?.id) {
-                await deleteLabel(workspaceId, label.id);
+        openModal('confirmation', {
+            title: t('delete'),
+            message: t('modal.label_delete_confirm').replace('{name}', label.name),
+            confirmLabel: t('delete'),
+            variant: 'danger',
+            onConfirm: async () => {
+                setLoading(true);
+                try {
+                    if (workspaceId && label?.id) {
+                        await deleteLabel(workspaceId, label.id);
+                    }
+                    closeModal();
+                } catch (err: any) {
+                    setError(t('validation.delete_fail'));
+                    setLoading(false);
+                }
             }
-            closeModal();
-        } catch (err: any) {
-            setError(t('validation.delete_fail'));
-            setLoading(false);
-        }
-    }, [label, closeModal, t]);
+        });
+    }, [label, closeModal, openModal, workspaceId, t]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
@@ -124,21 +134,19 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
                         style={{ backgroundColor: color }}
                     />
                     <div className="flex-1">
-                        <label htmlFor="label-name-input" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
-                            {t('modal.label_name')}
-                        </label>
-                        <input
+                        <Input
                             ref={inputRef}
                             id="label-name-input"
                             name="labelName"
                             type="text"
+                            label={t('modal.label_name')}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={isEdit ? t('modal.label_name_placeholder') : t('modal.label_create_placeholder')}
-                            className="w-full text-lg font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 p-0"
+                            className="bg-transparent border-none text-lg font-bold p-0 focus:ring-0 focus:border-transparent px-0 py-0 rounded-none h-auto"
+                            containerClassName="gap-0"
                             autoFocus
-                            aria-label={t('modal.label_name')}
                             aria-invalid={!!error}
                             aria-describedby={error ? "label-error-msg" : undefined}
                         />
@@ -175,35 +183,37 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
                 <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
                         {isEdit && (
-                            <button
+                            <Button
                                 onClick={handleDelete}
                                 disabled={loading}
-                                className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
+                                variant="ghost"
+                                size="icon"
+                                className="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                                 aria-label={t('modal.delete_label')}
                                 title={t('modal.delete_label')}
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
+
+                                <IconTrash size={20} />
+                            </Button>
                         )}
                     </div>
 
                     <div className="flex gap-3">
-                        <button
+                        <Button
                             onClick={closeModal}
                             disabled={loading}
-                            className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition disabled:opacity-50"
+                            variant="ghost"
                         >
                             {t('modal.cancel')}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             onClick={handleSave}
                             disabled={loading || !name.trim()}
-                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            isLoading={loading}
+                            variant="primary"
                         >
-                            {loading ? t('saving') : isEdit ? t('modal.save') : t('modal.create')}
-                        </button>
+                            {isEdit ? t('modal.save') : t('modal.create')}
+                        </Button>
                     </div>
                 </div>
             </div>

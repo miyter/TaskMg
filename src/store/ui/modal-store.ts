@@ -1,7 +1,16 @@
 import { create } from 'zustand';
 import { Filter, Label, Project, Task, TimeBlock, Workspace } from '../schema';
 
-export type ModalType = 'settings' | 'task-detail' | 'label-edit' | 'project-edit' | 'workspace-edit' | 'filter-edit' | 'timeblock-edit' | 'wiki-framework';
+export type ModalType = 'settings' | 'task-detail' | 'label-edit' | 'project-edit' | 'workspace-edit' | 'filter-edit' | 'timeblock-edit' | 'wiki-framework' | 'confirmation';
+
+export interface ConfirmationData {
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    variant?: 'danger' | 'primary';
+}
 
 // Discriminated Union for internal type safety
 export type ModalInstance =
@@ -12,10 +21,11 @@ export type ModalInstance =
     | { id: string; type: 'workspace-edit'; data: Partial<Workspace> }
     | { id: string; type: 'filter-edit'; data: Partial<Filter> }
     | { id: string; type: 'timeblock-edit'; data: Partial<TimeBlock> }
-    | { id: string; type: 'wiki-framework'; data?: any };
+    | { id: string; type: 'wiki-framework'; data?: any }
+    | { id: string; type: 'confirmation'; data: ConfirmationData };
 
 // Union for argument type
-export type ModalData = Partial<Task> | Partial<Project> | Partial<Label> | Partial<Workspace> | Partial<Filter> | Partial<TimeBlock> | null;
+export type ModalData = Partial<Task> | Partial<Project> | Partial<Label> | Partial<Workspace> | Partial<Filter> | Partial<TimeBlock> | ConfirmationData | null;
 
 interface ModalState {
     stack: ModalInstance[];

@@ -8,6 +8,7 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
 import { getDensityClass } from '../../utils/ui-utils';
+import { IconEdit, IconTrash } from '../common/Icons';
 import { ContextMenu, ContextMenuItem } from '../ui/ContextMenu'; // インポート追加
 
 interface ProjectItemProps {
@@ -37,13 +38,19 @@ export const ProjectItem = React.memo<ProjectItemProps>(({ project }) => {
         openModal('project-edit', project);
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         setMenuPosition(null);
-        if (confirm(`${t('project')}: ${project.name}\n${t('msg.confirm_delete')}`)) {
-            if (project.id) {
-                await deleteProject(project.id);
+        openModal('confirmation', {
+            title: t('delete'),
+            message: `${t('project')}: ${project.name}\n${t('msg.confirm_delete')}`,
+            confirmLabel: t('delete'),
+            variant: 'danger',
+            onConfirm: async () => {
+                if (project.id) {
+                    await deleteProject(project.id);
+                }
             }
-        }
+        });
     };
 
     const handleContextMenu = (e: React.MouseEvent) => {
@@ -88,22 +95,16 @@ export const ProjectItem = React.memo<ProjectItemProps>(({ project }) => {
                     aria-label={t('edit')}
                     title={t('edit')}
                 >
-                    <svg className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
+                    <IconEdit className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
                 </button>
             </div>
 
             {menuPosition && (
                 <ContextMenu x={menuPosition.x} y={menuPosition.y} onClose={() => setMenuPosition(null)}>
-                    <ContextMenuItem onClick={handleEdit} icon={
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                    }>
+                    <ContextMenuItem onClick={handleEdit} icon={<IconEdit size={16} />}>
                         {t('edit')}
                     </ContextMenuItem>
-                    <ContextMenuItem onClick={handleDelete} variant="danger" icon={
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    }>
+                    <ContextMenuItem onClick={handleDelete} variant="danger" icon={<IconTrash size={16} />}>
                         {t('delete')}
                     </ContextMenuItem>
                 </ContextMenu>

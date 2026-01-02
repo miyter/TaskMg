@@ -116,7 +116,7 @@ export const SearchView: React.FC = () => {
                     {!localQuery && (
                         <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
                             <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 font-mono">/</kbd>
-                            <span>でいつでも検索を開始</span>
+                            <span>{t('search_view.tips')}</span>
                         </div>
                     )}
 
@@ -124,7 +124,7 @@ export const SearchView: React.FC = () => {
                     {localQuery && (
                         <p className="mt-3 text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                            「{localQuery}」の検索結果
+                            {t('search_view.results_for', { query: localQuery })}
                         </p>
                     )}
                 </div>
@@ -144,8 +144,8 @@ export const SearchView: React.FC = () => {
                                 </svg>
                             </div>
                         </div>
-                        <p className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">タスクを検索</p>
-                        <p className="text-sm text-center max-w-xs opacity-75">タスク名、説明、プロジェクト名などで<br />タスクを素早く見つけられます</p>
+                        <p className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">{t('search_view.empty_title')}</p>
+                        <p className="text-sm text-center max-w-xs opacity-75" dangerouslySetInnerHTML={{ __html: t('search_view.empty_desc') }} />
                     </div>
                 )}
             </div>

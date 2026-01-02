@@ -17,7 +17,7 @@ interface WorkspaceEditModalProps {
 
 export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { t } = useTranslation();
-    const { closeModal } = useModalStore();
+    const { closeModal, openModal } = useModalStore(); // Add openModal
     const isOpen = !!propIsOpen;
     const workspace = propData as Workspace | null;
     const isEdit = !!workspace?.id;
@@ -67,20 +67,30 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
         try {
             if (isEdit && workspace?.id) {
                 await updateWorkspaceName(workspace.id, trimmedName);
+                closeModal();
             } else {
                 const newWs = await addWorkspace(trimmedName);
+                // Prompt to switch? For premium feel, maybe just switch automatically or toast.
+                // But following requirement: replace confirm with modal.
+                // Note: closeModal() is called inside or after. 
+
                 if (newWs?.id) {
-                    if (confirm(t('validation.workspace_confirm_switch'))) {
-                        setCurrentWorkspaceId(newWs.id);
-                    }
+                    closeModal(); // Close edit/create modal first
+                    openModal('confirmation', {
+                        title: t('modal.workspace_create_title'),
+                        message: t('validation.workspace_confirm_switch'),
+                        confirmLabel: t('modal.ok'),
+                        onConfirm: () => setCurrentWorkspaceId(newWs.id)
+                    });
+                } else {
+                    closeModal();
                 }
             }
-            closeModal();
         } catch (err: any) {
             setError(t('validation.save_fail') + ': ' + (err.message || 'Error'));
             setLoading(false);
         }
-    }, [name, isEdit, workspace, closeModal, t]);
+    }, [name, isEdit, workspace, closeModal, openModal, t]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.nativeEvent.isComposing) {

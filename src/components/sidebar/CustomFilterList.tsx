@@ -11,6 +11,7 @@ import { ContextMenu, ContextMenuItem } from '../ui/ContextMenu';
 import { SidebarItem } from './SidebarItem';
 
 import { Filter, Task } from '../../store/schema';
+import { IconEdit, IconSearch, IconTrash } from '../common/Icons';
 
 export const CustomFilterList: React.FC = () => {
     const { filters, loading } = useFilters();
@@ -51,13 +52,19 @@ const CustomFilterItem: React.FC<{ filter: Filter, tasks: Task[], workspaceId: s
         openModal('filter-edit', filter);
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         setMenuPosition(null);
-        if (confirm(`${t('filter')}: ${filter.name}\n${t('msg.confirm_delete')}`)) {
-            if (filter.id && workspaceId) {
-                await deleteFilter(workspaceId, filter.id);
+        openModal('confirmation', {
+            title: t('delete'),
+            message: `${t('filter')}: ${filter.name}\n${t('msg.confirm_delete')}`,
+            confirmLabel: t('delete'),
+            variant: 'danger',
+            onConfirm: async () => {
+                if (filter.id && workspaceId) {
+                    await deleteFilter(workspaceId, filter.id);
+                }
             }
-        }
+        });
     };
 
     const handleContextMenu = (e: React.MouseEvent) => {
@@ -71,7 +78,7 @@ const CustomFilterItem: React.FC<{ filter: Filter, tasks: Task[], workspaceId: s
             <div onContextMenu={handleContextMenu}>
                 <SidebarItem
                     label={filter.name}
-                    icon={<span>🔍</span>}
+                    icon={<IconSearch size={16} />}
                     count={count}
                     isActive={isActive}
                     onClick={() => setFilter('custom', filter.id)}
@@ -79,14 +86,10 @@ const CustomFilterItem: React.FC<{ filter: Filter, tasks: Task[], workspaceId: s
             </div>
             {menuPosition && (
                 <ContextMenu x={menuPosition.x} y={menuPosition.y} onClose={() => setMenuPosition(null)}>
-                    <ContextMenuItem onClick={handleEdit} icon={
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                    }>
+                    <ContextMenuItem onClick={handleEdit} icon={<IconEdit size={16} />}>
                         {t('edit')}
                     </ContextMenuItem>
-                    <ContextMenuItem onClick={handleDelete} variant="danger" icon={
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    }>
+                    <ContextMenuItem onClick={handleDelete} variant="danger" icon={<IconTrash size={16} />}>
                         {t('delete')}
                     </ContextMenuItem>
                 </ContextMenu>

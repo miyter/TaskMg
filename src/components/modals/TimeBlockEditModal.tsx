@@ -26,6 +26,7 @@ import { deleteTimeBlock, saveTimeBlock } from '../../store/timeblocks';
 import { useModalStore } from '../../store/ui/modal-store';
 import { cn } from '../../utils/cn';
 import { ErrorMessage, Modal, Portal, SortableItem } from '../common';
+import { Button } from '../ui/Button';
 
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTE_OPTIONS = ['00', '15', '30', '45'];
@@ -39,7 +40,7 @@ interface TimeBlockEditModalProps {
 
 export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: propIsOpen, zIndex, overlayClassName }) => {
     const { t } = useTranslation();
-    const { closeModal } = useModalStore();
+    const { closeModal, openModal } = useModalStore();
     const isOpen = !!propIsOpen;
     const { timeBlocks: storeBlocks } = useTimeBlocks();
     const { workspaceId } = useWorkspace();
@@ -91,15 +92,23 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
 
     const handleDelete = async (id: string) => {
         if (!id.startsWith('new-')) {
-            if (!confirm(t('time_block.delete_confirm'))) return;
-            try {
-                if (workspaceId) {
-                    await deleteTimeBlock(workspaceId, id);
+            openModal('confirmation', {
+                title: t('delete'),
+                message: t('time_block.delete_confirm'),
+                confirmLabel: t('delete'),
+                variant: 'danger',
+                onConfirm: async () => {
+                    try {
+                        if (workspaceId) {
+                            await deleteTimeBlock(workspaceId, id);
+                            setBlocks(prev => prev.filter(b => b.id !== id));
+                        }
+                    } catch (err) {
+                        setError(t('validation.delete_fail'));
+                    }
                 }
-            } catch (err) {
-                setError(t('validation.delete_fail'));
-                return;
-            }
+            });
+            return;
         }
         setBlocks(blocks.filter(b => b.id !== id));
     };
@@ -235,16 +244,15 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                     </DndContext>
 
                     {blocks.length < SYSTEM_CONSTANTS.TIME_BLOCK.MAX_COUNT ? (
-                        <button
+                        <Button
                             onClick={handleAdd}
                             disabled={blocks.length >= SYSTEM_CONSTANTS.TIME_BLOCK.MAX_COUNT}
-                            className="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-gray-400 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all font-medium text-sm flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                            variant="ghost"
+                            className="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-gray-400 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all font-medium text-sm flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
+                            leftIcon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>}
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                            </svg>
                             {t('time_block.add_button')}
-                        </button>
+                        </Button>
                     ) : (
                         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-sm rounded-lg flex items-center justify-center gap-2 border border-yellow-100 dark:border-yellow-900/30">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -262,13 +270,15 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                 <ErrorMessage message={error} className="mb-4" />
 
                 <div className="pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-end">
-                    <button
+                    <Button
                         onClick={handleSave}
                         disabled={loading}
-                        className="px-8 py-2.5 bg-gray-900 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-lg font-bold text-sm transition-colors disabled:bg-gray-400"
+                        isLoading={loading}
+                        variant="primary"
+                        className="px-8 py-2.5 bg-gray-900 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-500"
                     >
                         {loading ? t('saving') : t('done')}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </Modal>
@@ -368,15 +378,17 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
                 </div>
             </div>
 
-            <button
+            <Button
                 onClick={onDelete}
-                className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                variant="ghost"
+                size="icon"
+                className="text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                 title={t('modal.delete')}
             >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-            </button>
+            </Button>
         </div>
     );
 };

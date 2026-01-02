@@ -4,6 +4,7 @@ import { useTranslation } from '../../core/translations';
 import { UI_CONFIG } from '../../core/ui-constants';
 import { useUIStore } from '../../store/ui/ui-store';
 import { cn } from '../../utils/cn';
+import { IconDoubleChevronLeft } from '../common/Icons';
 import { SidebarSearch } from './SidebarSearch';
 
 interface SidebarProps {
@@ -83,9 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                     title={isSidebarOpen ? t('sidebar.toggle_collapse') : t('sidebar.toggle_expand')}
                     aria-label={isSidebarOpen ? t('sidebar.toggle_collapse') : t('sidebar.toggle_expand')}
                 >
-                    <svg className={cn("w-5 h-5 transition-transform duration-300", !isSidebarOpen && "rotate-180")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
-                    </svg>
+                    <IconDoubleChevronLeft className={cn("w-5 h-5 transition-transform duration-300", !isSidebarOpen && "rotate-180")} strokeWidth={2.5} />
                 </button>
             </div>
 

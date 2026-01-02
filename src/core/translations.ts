@@ -109,6 +109,7 @@ const ja = {
         cancel: 'キャンセル',
         save: '保存',
         create: '作成',
+        ok: 'OK',
         delete: '削除',
         delete_confirm: '本当にこのタスクを削除しますか？',
         no_memo: 'メモがありません',
@@ -348,6 +349,71 @@ const ja = {
         retry: '再試行',
         reload: 'ページを再読み込み',
         details: 'エラー詳細',
+    },
+
+    search_view: {
+        tips: 'でいつでも検索を開始',
+        results_for: '「{query}」の検索結果',
+        empty_title: 'タスクを検索',
+        empty_desc: 'タスク名、説明、プロジェクト名などで<br />タスクを素早く見つけられます',
+    },
+
+    wizard: {
+        next: '次へ',
+        back: '戻る',
+        finish: '完了して作成',
+        alert_no_workspace: 'ワークスペースが選択されていません。',
+        alert_create_success: '{label}の目標が作成されました！（ダッシュボードへ移動します）',
+        alert_save_fail: '目標の保存に失敗しました。',
+        select_method: '手法を選択',
+        select_framework: 'フレームワークを選択',
+        start_mode: 'このモードで開始する',
+        features: {
+            okr: '測定可能,野心的目標,チーム向け',
+            woop: '科学的根拠,障害対策,個人向け',
+            backward: '逆算思考,マイルストーン,長期計画',
+        }
+    },
+
+    wiki: {
+        view_details: '詳細を見る',
+        summary: '概要',
+        details: '詳細',
+        use_cases: '使用例',
+        tips: 'Tips',
+        use_in_wizard: 'ウィザードで使用する',
+    },
+
+    target_dashboard: {
+        title_default: '目標を設定して、進捗を可視化しましょう',
+        kgi_default: '未設定のKGI',
+        wish_default: '未設定のWISH',
+        obj_default: '未設定のObjective',
+        target_default: '目標',
+        created_at: '作成日: {date}',
+        no_targets: '{mode} の目標は見つかりませんでした。',
+        days_left: '残り',
+        days_unit: '日',
+        loading_error: 'データ読み込みエラー',
+
+        backward: {
+            target_label: 'TARGET',
+            now_label: '← NOW',
+            now_icon: 'Now',
+        },
+        okr: {
+            objective_label: 'Objective',
+            kr_prefix: 'KR #',
+        },
+        woop: {
+            wish_label: 'Wish (願望)',
+            outcome_label: 'Outcome (最高の結果)',
+            obstacles_header: 'Obstacles & If-Then Plans',
+            obstacle_badge: '壁',
+            if_badge: 'IF',
+            score_label: 'Score',
+            add_obstacle: '+ 障害を追加する',
+        }
     }
 };
 
@@ -452,6 +518,7 @@ const en = {
         cancel: 'Cancel',
         save: 'Save',
         create: 'Create',
+        ok: 'OK',
         delete: 'Delete',
         delete_confirm: 'Are you sure you want to delete this task?',
         no_memo: 'No memo',
@@ -691,6 +758,71 @@ const en = {
         retry: 'Retry',
         reload: 'Reload Page',
         details: 'Error Details',
+    },
+
+    search_view: {
+        tips: 'Start search anytime',
+        results_for: 'Results for "{query}"',
+        empty_title: 'Search Tasks',
+        empty_desc: 'Find tasks quickly by name, description, or project',
+    },
+
+    wizard: {
+        next: 'Next',
+        back: 'Back',
+        finish: 'Complete & Create',
+        alert_no_workspace: 'Workspace is not selected.',
+        alert_create_success: '{label} target created! (Redirecting to Dashboard)',
+        alert_save_fail: 'Failed to save target.',
+        select_method: 'Select Method',
+        select_framework: 'Select Framework',
+        start_mode: 'Start with this mode',
+        features: {
+            okr: 'Measurable,Ambitious Goals,For Teams',
+            woop: 'Scientific,Obstacles,For Individuals',
+            backward: 'Backward Thinking,Milestones,Long-term',
+        }
+    },
+
+    wiki: {
+        view_details: 'View Details',
+        summary: 'Summary',
+        details: 'Details',
+        use_cases: 'Use Cases',
+        tips: 'Tips',
+        use_in_wizard: 'Use in Wizard',
+    },
+
+    target_dashboard: {
+        title_default: 'Set targets and visualize progress',
+        kgi_default: 'Undefined KGI',
+        wish_default: 'Undefined WISH',
+        obj_default: 'Undefined Objective',
+        target_default: 'Target',
+        created_at: 'Created: {date}',
+        no_targets: 'No {mode} targets found.',
+        days_left: 'Left',
+        days_unit: 'days',
+        loading_error: 'Error loading data',
+
+        backward: {
+            target_label: 'TARGET',
+            now_label: '← NOW',
+            now_icon: 'Now',
+        },
+        okr: {
+            objective_label: 'Objective',
+            kr_prefix: 'KR #',
+        },
+        woop: {
+            wish_label: 'Wish',
+            outcome_label: 'Outcome',
+            obstacles_header: 'Obstacles & If-Then Plans',
+            obstacle_badge: 'Obstacle',
+            if_badge: 'IF',
+            score_label: 'Score',
+            add_obstacle: '+ Add Obstacle',
+        }
     }
 };
 

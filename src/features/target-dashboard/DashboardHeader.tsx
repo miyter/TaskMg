@@ -62,9 +62,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(({ kgi
                 <div className="flex items-center gap-6 flex-shrink-0">
                     {/* Days Left */}
                     <div className="text-center hidden sm:block">
-                        <div className="text-xs text-gray-500 dark:text-gray-400">残り</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{t('target_dashboard.days_left')}</div>
                         <div className={`font-black ${statusColor} tabular-nums`}>
-                            {kgi.daysLeft}<span className="text-xs font-medium ml-0.5 text-gray-400">日</span>
+                            {kgi.daysLeft}<span className="text-xs font-medium ml-0.5 text-gray-400">{t('target_dashboard.days_unit')}</span>
                         </div>
                     </div>
 

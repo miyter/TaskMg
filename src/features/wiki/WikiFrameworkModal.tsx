@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { Modal } from '../../components/common/Modal';
+import { useTranslation } from '../../core/translations';
 import { useModalStore } from '../../store/ui/modal-store';
 import { WikiFramework } from './wiki-data';
 
@@ -13,6 +14,7 @@ interface WikiFrameworkModalProps {
 
 export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { closeModal } = useModalStore();
+    const { t } = useTranslation();
     const isOpen = !!propIsOpen;
     const framework = propData as WikiFramework;
 
@@ -49,7 +51,7 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: 
                     <div className="mb-8">
                         <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center">
                             <span className="w-1 h-4 bg-blue-600 dark:bg-blue-400 mr-2 rounded-full"></span>
-                            概要
+                            {t('wiki.summary')}
                         </h3>
                         <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
                             {framework.concept.summary}
@@ -60,7 +62,7 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: 
                     <div className="mb-8">
                         <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
                             <span className="w-1 h-4 bg-gray-400 mr-2 rounded-full"></span>
-                            詳細
+                            {t('wiki.details')}
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
                             {framework.concept.detail}
@@ -72,7 +74,7 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: 
                         <div className="mb-8">
                             <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
                                 <span className="w-1 h-4 bg-purple-500 mr-2 rounded-full"></span>
-                                Use Cases
+                                {t('wiki.use_cases')}
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {framework.useCases.map((uc, idx) => (
@@ -104,7 +106,7 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: 
                         <div className="mb-6">
                             <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
                                 <span className="w-1 h-4 bg-amber-500 mr-2 rounded-full"></span>
-                                Tips
+                                {t('wiki.tips')}
                             </h3>
                             <div className="space-y-3">
                                 {framework.tips.map((tip, idx) => (
@@ -124,14 +126,14 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: 
                         onClick={closeModal}
                         className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     >
-                        閉じる
+                        {t('close')}
                     </button>
                     <button
                         onClick={handleApply}
                         className="group relative px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-lg shadow-md transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
                     >
                         <span className="relative z-10 flex items-center">
-                            ウィザードで使用する
+                            {t('wiki.use_in_wizard')}
                             <svg className="w-4 h-4 ml-2 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>

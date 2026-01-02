@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../core/translations';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
 import { WizardProgressBar } from './WizardProgressBar';
 
@@ -11,6 +12,7 @@ interface WizardStepProps {
 }
 
 export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNext, onFinish }) => {
+    const { t } = useTranslation();
     const config = WIZARD_MODES[mode];
     const stepIndex = step - 1;
     const stepConfig = config.steps[stepIndex];
@@ -81,7 +83,7 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
                         onClick={onBack}
                         className="px-6 py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition font-medium"
                     >
-                        戻る
+                        {t('wizard.back')}
                     </button>
 
                     {step < totalSteps ? (
@@ -89,7 +91,7 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
                             onClick={handleNext}
                             className="px-8 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md transition font-medium flex items-center"
                         >
-                            次へ
+                            {t('wizard.next')}
                             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
                         </button>
                     ) : (
@@ -98,7 +100,7 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
                             className="px-8 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-lg transition font-medium flex items-center transform hover:scale-105"
                         >
                             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                            完了して作成
+                            {t('wizard.finish')}
                         </button>
                     )}
                 </div>

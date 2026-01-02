@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../core/translations';
 import { useTargets } from '../../hooks/useTargets';
 import { Target } from '../../store/schema';
 import { DashboardHeader } from './DashboardHeader';
@@ -8,6 +9,7 @@ import { OkrView } from './views/OkrView';
 import { WoopView } from './views/WoopView';
 
 export const DashboardApp: React.FC = () => {
+    const { t } = useTranslation();
     const { targets } = useTargets();
     const [currentTab, setCurrentTab] = useState('backward');
     const [collapsed, setCollapsed] = useState(false);
@@ -58,7 +60,7 @@ export const DashboardApp: React.FC = () => {
         if (filteredTargets.length === 0) {
             return (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-                    <p className="mb-4">No {currentTab.toUpperCase()} targets found.</p>
+                    <p className="mb-4">{t('target_dashboard.no_targets', { mode: currentTab.toUpperCase() })}</p>
                 </div>
             );
         }
@@ -69,7 +71,7 @@ export const DashboardApp: React.FC = () => {
                     <div key={target.id} className="border-b border-gray-200 dark:border-gray-700 pb-12 last:border-0">
                         {/* Show creation date */}
                         <div className="mb-4 text-xs text-gray-400 flex justify-end">
-                            Created: {formatDate(target.createdAt)}
+                            {t('target_dashboard.created_at', { date: formatDate(target.createdAt) })}
                         </div>
 
                         {currentTab === 'backward' && <BackwardView data={transformBackward(target)} />}
@@ -86,12 +88,12 @@ export const DashboardApp: React.FC = () => {
     const selectedTarget = filteredTargets[0];
 
     // Helper to extract a title based on mode
-    const getTargetTitle = (t: Target | undefined, mode: string) => {
-        if (!t) return "目標を設定して、進捗を可視化しましょう";
-        if (mode === 'backward') return t.data.goal_kgi || "未設定のKGI";
-        if (mode === 'woop') return t.data.wish || "未設定のWISH";
-        if (mode === 'okr') return t.data.objective || "未設定のObjective";
-        return "目標";
+    const getTargetTitle = (t_obj: Target | undefined, mode: string) => {
+        if (!t_obj) return t('target_dashboard.title_default');
+        if (mode === 'backward') return t_obj.data.goal_kgi || t('target_dashboard.kgi_default');
+        if (mode === 'woop') return t_obj.data.wish || t('target_dashboard.wish_default');
+        if (mode === 'okr') return t_obj.data.objective || t('target_dashboard.obj_default');
+        return t('target_dashboard.target_default');
     };
 
     const headerKgi = {

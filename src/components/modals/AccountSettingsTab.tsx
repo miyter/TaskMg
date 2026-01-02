@@ -3,11 +3,13 @@ import { auth } from '../../core/firebase';
 import { EmailAuthProvider, linkWithCredential, signOut } from '../../core/firebase-sdk';
 import { useTranslation } from '../../core/translations';
 import { useAuth } from '../../hooks/useAuth';
+import { useModalStore } from '../../store/ui/modal-store';
 import { toast } from '../../store/ui/toast-store';
 
 export const AccountSettingsTab: React.FC = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
+    const { openModal } = useModalStore(); // Add openModal
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -38,12 +40,17 @@ export const AccountSettingsTab: React.FC = () => {
         }
     };
 
-    const handleSignOut = async () => {
-        if (confirm(t('settings_modal.account.logout_confirm'))) {
-            await signOut(auth);
-            // App.tsxのonAuthStateChangedが検知してリダイレクトするはずだが、念のためリロード
-            window.location.reload();
-        }
+    const handleSignOut = () => {
+        openModal('confirmation', {
+            title: t('settings_modal.account.logout'),
+            message: t('settings_modal.account.logout_confirm'),
+            confirmLabel: t('settings_modal.account.logout'),
+            variant: 'danger',
+            onConfirm: async () => {
+                await signOut(auth);
+                window.location.reload();
+            }
+        });
     };
 
     return (
