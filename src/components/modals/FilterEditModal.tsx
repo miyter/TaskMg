@@ -175,10 +175,10 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
                     {/* TimeBlock Selection */}
                     <SelectionBox
                         title={t('timeblock')}
-                        items={[...timeBlocks, { id: UNASSIGNED_ID, name: t('sidebar.unassigned') }]}
+                        items={[...timeBlocks, { id: UNASSIGNED_ID, name: t('sidebar.unassigned') }] as any[]}
                         selectedItems={state.timeblock}
                         onToggle={(id) => handleToggle('timeblock', id)}
-                        labelFn={(item) => (item.id === UNASSIGNED_ID || !item.start) ? item.name : `${item.start}-${item.end}`}
+                        labelFn={(item: any) => (item.id === UNASSIGNED_ID || !item.start) ? item.name : `${item.start}-${item.end}`}
                     />
 
                     {/* Duration Selection */}

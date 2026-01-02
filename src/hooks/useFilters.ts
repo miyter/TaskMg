@@ -8,17 +8,18 @@ import { useWorkspace } from './useWorkspace';
  * カスタムフィルターを購読するカスタムフック
  */
 export const useFilters = () => {
-    const { workspaceId, loading: authLoading } = useWorkspace();
+    const { workspaceId, userId, loading: authLoading } = useWorkspace();
 
     const subscribeFn = useCallback((onData: (data: Filter[]) => void) => {
-        if (!workspaceId) return () => { };
+        // 認証が完了するまでサブスクリプションを開始しない
+        if (!workspaceId || !userId) return () => { };
         return subscribeToFilters(workspaceId, onData);
-    }, [workspaceId]);
+    }, [workspaceId, userId]);
 
     const isCacheReady = workspaceId ? isFiltersInitialized(workspaceId) : false;
 
     const { data: filters, isPending } = useFirestoreSubscription<Filter[]>(
-        ['filters', workspaceId || 'pending'],
+        ['filters', userId || undefined, workspaceId || undefined],
         subscribeFn,
         (workspaceId && isCacheReady) ? getFilters(workspaceId) : undefined
     );

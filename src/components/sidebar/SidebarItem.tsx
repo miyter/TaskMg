@@ -38,7 +38,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
                 isActive
                     ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
                     : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200",
-                isOver && "ring-2 ring-blue-500 bg-blue-100 dark:bg-blue-900/50"
+                isOver && "bg-blue-50 dark:bg-blue-900/30"
             )}
         >
             <div className="flex items-center gap-2 flex-1 min-w-0">

@@ -2,8 +2,7 @@ import { useDroppable } from '@dnd-kit/core';
 import React from 'react';
 import { getTranslator } from '../../core/translations';
 import { useTaskCounts } from '../../hooks/useTaskCounts';
-import { useTasks } from '../../hooks/useTasks';
-import { useFilterStore } from '../../store/ui/filter-store';
+import { FilterType, useFilterStore } from '../../store/ui/filter-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { useViewStore } from '../../store/ui/view-store';
 import { cn } from '../../utils/cn';
@@ -18,7 +17,6 @@ const FILTER_ITEMS = [
 ] as const;
 
 export const BasicFilters: React.FC = () => {
-    const { tasks } = useTasks();
     const { language } = useSettingsStore();
     const { t } = getTranslator(language);
     const counts = useTaskCounts();
@@ -28,8 +26,7 @@ export const BasicFilters: React.FC = () => {
             {FILTER_ITEMS.map(item => (
                 <FilterItem
                     key={item.id}
-                    item={item}
-                    tasks={tasks}
+                    item={item as FilterItemType}
                     label={t(item.i18nKey as any)}
                     count={counts[item.id as keyof typeof counts] || 0}
                 />
@@ -38,10 +35,20 @@ export const BasicFilters: React.FC = () => {
     );
 };
 
-const FilterItem: React.FC<{ item: any, tasks: any[], label: string, count: number }> = ({ item, tasks, label, count }) => {
+
+interface FilterItemType {
+    id: FilterType;
+    i18nKey: string;
+    icon: string;
+    color: string;
+    droppable?: boolean;
+}
+
+const FilterItem: React.FC<{ item: FilterItemType, label: string, count: number }> = ({ item, label, count }) => {
     const { filterType, setFilter } = useFilterStore();
-    const { currentView, setView } = useViewStore();
+    const { setView } = useViewStore();
     const { density } = useSettingsStore();
+    const currentView = useViewStore(s => s.currentView);
     const isActive = currentView === 'tasks' && filterType === item.id;
 
     const { setNodeRef, isOver } = useDroppable({
@@ -74,7 +81,7 @@ const FilterItem: React.FC<{ item: any, tasks: any[], label: string, count: numb
                     isActive
                         ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
                         : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700",
-                    isOver && item.droppable && "ring-2 ring-blue-500 bg-blue-100 dark:bg-blue-900/50"
+                    isOver && item.droppable && "bg-blue-50 dark:bg-blue-900/30"
                 )}
             >
                 <span className={item.color}>{item.icon}</span>

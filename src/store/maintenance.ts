@@ -1,6 +1,6 @@
 
 import { auth, db } from '../core/firebase';
-import { collection, deleteDoc, doc, getDocs } from '../core/firebase-sdk';
+import { collection, doc, getDocs } from '../core/firebase-sdk';
 import { paths } from '../utils/paths';
 import { Task } from './schema';
 
@@ -30,8 +30,7 @@ export async function cleanupDuplicateTasks(workspaceId: string): Promise<number
         seenTitles.set(key, existing);
     }
 
-    let deletedCount = 0;
-    const deletePromises: Promise<void>[] = [];
+    const groupIdsToDelete: string[] = [];
 
     // 2. Identify Duplicates
     for (const [title, group] of seenTitles.entries()) {
@@ -39,7 +38,6 @@ export async function cleanupDuplicateTasks(workspaceId: string): Promise<number
             // Keep the one with the most information (e.g. has description) 
             // or the oldest one (original), or newest.
             // Policy: Keep the oldest created one (most likely the original), delete others.
-            // If createdAt is missing, use ID string comparison.
 
             group.sort((a, b) => {
                 // Handle Firestore Timestamp or Date objects
@@ -58,16 +56,30 @@ export async function cleanupDuplicateTasks(workspaceId: string): Promise<number
 
             // Keep index 0, delete index 1..n
             const toDelete = group.slice(1);
-
             for (const task of toDelete) {
-                if (!task.id) continue; // Skip if id is undefined
-                console.log(`[Cleanup] Deleting duplicate task: "${task.title}" (${task.id})`);
-                deletePromises.push(deleteDoc(doc(db, path, task.id)));
-                deletedCount++;
+                if (task.id) {
+                    groupIdsToDelete.push(task.id);
+                }
             }
         }
     }
 
-    await Promise.all(deletePromises);
-    return deletedCount;
+    // 3. Batch Delete
+    if (groupIdsToDelete.length > 0) {
+        const { writeBatch } = await import('../core/firebase-sdk');
+
+        // Firestore batch limits to 500 operations
+        for (let i = 0; i < groupIdsToDelete.length; i += 500) {
+            const batch = writeBatch(db);
+            const chunk = groupIdsToDelete.slice(i, i + 500);
+
+            for (const id of chunk) {
+                batch.delete(doc(db, path, id));
+            }
+
+            await batch.commit();
+        }
+    }
+
+    return groupIdsToDelete.length;
 }

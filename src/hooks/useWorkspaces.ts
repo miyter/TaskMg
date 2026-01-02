@@ -1,32 +1,31 @@
-import { useEffect, useState } from 'react';
-import { useWorkspaceStore } from '../store/ui/workspace-store';
-import { subscribeToWorkspaces } from '../store/workspace';
+import { useCallback } from 'react';
+import { Workspace } from '../store/schema';
+import { getWorkspaces, isWorkspacesInitialized, subscribeToWorkspaces } from '../store/workspace';
 import { useAuth } from './useAuth';
+import { useFirestoreSubscription } from './useFirestoreSubscription';
 
 /**
  * ワークスペース一覧を購読するカスタムフック
  */
 export const useWorkspaces = () => {
-    const workspaces = useWorkspaceStore((state) => state.workspaces);
-    const setWorkspaces = useWorkspaceStore((state) => state.setWorkspaces);
     const { userId, loading: authLoading } = useAuth();
-    const [loading, setLoading] = useState(() => workspaces.length === 0);
 
-    useEffect(() => {
-        if (authLoading) return;
+    const subscribeFn = useCallback((onData: (data: Workspace[]) => void) => {
+        // 認証が完了するまでサブスクリプションを開始しない
+        if (!userId) return () => { };
+        return subscribeToWorkspaces(userId, onData);
+    }, [userId]);
 
-        if (!userId) {
-            setWorkspaces([]); // Clear data on logout
-            setLoading(false);
-            return;
-        }
+    const isCacheReady = userId ? isWorkspacesInitialized(userId) : false;
+    const initialData = (isCacheReady && userId) ? getWorkspaces(userId) : undefined;
 
-        const unsubscribe = subscribeToWorkspaces(userId, () => {
-            setLoading(false);
-        });
+    const { data: workspaces, isPending } = useFirestoreSubscription<Workspace[]>(
+        ['workspaces', userId || undefined],
+        subscribeFn,
+        initialData
+    );
 
-        return () => unsubscribe();
-    }, [userId, authLoading, setWorkspaces]);
+    const loading = authLoading || (!!userId && isPending);
 
-    return { workspaces, loading: loading || authLoading };
+    return { workspaces: workspaces || [], loading };
 };

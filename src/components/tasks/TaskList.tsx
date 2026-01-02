@@ -138,7 +138,11 @@ export const TaskList: React.FC = () => {
         }
     };
 
-    if (loading) {
+    // 検索モード時はちらつきを防ぐため、キャッシュがあればローディングを表示しない
+    const isSearching = !!(query && query.trim().length > 0);
+    const showLoading = loading && !isSearching && tasks.length === 0;
+
+    if (showLoading) {
         return (
             <div className="flex items-center justify-center h-full">
                 <div className="text-gray-400 text-sm animate-pulse">{t('task_list.loading')}</div>
@@ -146,7 +150,6 @@ export const TaskList: React.FC = () => {
         );
     }
 
-    const isSearching = !!(query && query.trim().length > 0);
     const isManualSort = sortCriteria === 'manual';
 
     return (

@@ -15,7 +15,7 @@ import {
     subscribeToTasksRaw,
     updateTaskRaw,
     updateTaskStatusRaw
-} from './store-raw';
+} from './tasks-raw';
 import { toast } from './ui/toast-store';
 import { getCurrentWorkspaceId } from './workspace';
 
@@ -67,6 +67,31 @@ export async function addTask(taskData: Partial<Task>) {
 export async function updateTaskStatus(taskId: string, status: string) {
     try {
         const { userId, workspaceId } = requireAuthAndWorkspace();
+
+        // Recurrence Logic: Create next task if completing a recurring one
+        if (status === 'completed') {
+            const task = getTaskFromCache(workspaceId, taskId);
+            if (task?.recurrence && task.recurrence.type !== 'none') {
+                const { getNextRecurrenceDate } = await import('../utils/date');
+                const nextDate = getNextRecurrenceDate(task.dueDate ?? null, task.recurrence as any);
+                if (nextDate) {
+                    const nextTask: Partial<Task> = {
+                        title: task.title,
+                        description: task.description,
+                        projectId: task.projectId,
+                        labelIds: task.labelIds,
+                        timeBlockId: task.timeBlockId,
+                        duration: task.duration,
+                        isImportant: task.isImportant,
+                        recurrence: task.recurrence,
+                        dueDate: nextDate,
+                        status: 'todo'
+                    };
+                    addTaskRaw(userId, workspaceId, nextTask).catch(e => console.error("Failed to create recurring task:", e));
+                }
+            }
+        }
+
         await updateTaskStatusRaw(userId, workspaceId, taskId, status);
     } catch (error) {
         console.error("Failed to update status:", error);
@@ -142,7 +167,7 @@ export async function toggleTaskStatus(taskId: string, _legacyStatus?: string) {
         const currentStatus = task?.status || _legacyStatus || 'todo';
 
         const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
-        await updateTaskStatusRaw(userId, workspaceId, taskId, newStatus);
+        await updateTaskStatus(taskId, newStatus);
 
         if (newStatus === 'completed') {
             toast.success(getT()('msg.task.complete_success'));

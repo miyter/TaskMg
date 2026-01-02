@@ -6,19 +6,20 @@ import { useFirestoreSubscription } from './useFirestoreSubscription';
 import { useWorkspace } from './useWorkspace';
 
 export const useProjects = () => {
-    const { workspaceId, loading: authLoading } = useWorkspace();
+    const { workspaceId, userId, loading: authLoading } = useWorkspace();
     const queryClient = useQueryClient();
 
     const subscribeFn = useCallback((onData: (data: Project[]) => void) => {
-        if (!workspaceId) return () => { };
+        // 認証が完了するまでサブスクリプションを開始しない
+        if (!workspaceId || !userId) return () => { };
         return subscribeToProjects(workspaceId, onData);
-    }, [workspaceId]);
+    }, [workspaceId, userId]);
 
     const isCacheReady = workspaceId ? isProjectsInitialized(workspaceId) : false;
     const initialData = (isCacheReady && workspaceId) ? getProjects(workspaceId) : undefined;
 
     const { data: projects, isPending } = useFirestoreSubscription<Project[]>(
-        ['projects', workspaceId || undefined],
+        ['projects', userId || undefined, workspaceId || undefined],
         subscribeFn,
         initialData
     );

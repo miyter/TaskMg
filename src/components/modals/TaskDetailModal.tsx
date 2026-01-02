@@ -136,10 +136,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
         try {
             if (isNewTask) {
-                await addTask({
-                    ...updates,
-                    title: updates.title!,
-                } as any);
+                await addTask(updates);
             } else {
                 await updateTask(task!.id!, updates);
             }

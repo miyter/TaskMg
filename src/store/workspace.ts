@@ -1,94 +1,100 @@
 ﻿/**
- * 更新日: 2025-12-27
- * 内容: ワークスペースが0個の場合の処理を修正
- *      - ensureDefaultWorkspace() を呼び出す前に onUpdate([]) を呼び出すように変更
- *      - onSnapshot コールバックから async を削除（SDK互換性のため）
- *      - onUpdate を関数内で強制的に正規化（safeOnUpdate）し、Minifyエラーを根絶
- * TypeScript化: 2025-12-29
+ * 更新日: 2026-01-02
+ * 内容: Facade/Raw パターンに移行
+ *      - workspace-raw.ts を内部実装として、このファイルは認証ガード付きのファサードを提供
  */
 
-import {
-    addDoc,
-    collection,
-    deleteDoc, doc,
-    getDocs, limit,
-    onSnapshot,
-    orderBy,
-    query,
-    serverTimestamp,
-    Unsubscribe,
-    updateDoc,
-    where
-} from "../core/firebase-sdk";
-
-import { auth, db } from "../core/firebase";
-
-import { paths } from '../utils/paths';
-
-
-
-import { Workspace, WorkspaceSchema } from './schema';
-
+import { auth } from '../core/firebase';
+import { Unsubscribe } from '../core/firebase-sdk';
+import { Workspace } from './schema';
 import { useWorkspaceStore } from "./ui/workspace-store";
+import {
+    addWorkspaceRaw,
+    deleteWorkspaceRaw,
+    ensureDefaultWorkspaceRaw,
+    getWorkspacesRaw,
+    isWorkspaceNameDuplicateRaw,
+    isWorkspacesInitialized as isWorkspacesInitializedRaw,
+    subscribeToWorkspacesRaw,
+    updateWorkspaceRaw,
+    updateWorkspacesCacheRaw,
+    workspaceCache
+} from './workspace-raw';
 
-let unsubscribe: Unsubscribe | null = null;
+// ========================================
+// 同期取得用のエクスポート
+// ========================================
 
-export function getWorkspaces(): Workspace[] {
-    return useWorkspaceStore.getState().workspaces;
+export function getWorkspaces(userId?: string): Workspace[] {
+    const targetUserId = userId || auth.currentUser?.uid;
+    if (!targetUserId) return [];
+    return getWorkspacesRaw(targetUserId);
 }
 
+export function isWorkspacesInitialized(userId?: string): boolean {
+    const targetUserId = userId || auth.currentUser?.uid;
+    if (!targetUserId) return false;
+    return isWorkspacesInitializedRaw(targetUserId);
+}
+
+export function updateWorkspacesCache(workspaces: Workspace[], userId?: string): void {
+    const targetUserId = userId || auth.currentUser?.uid;
+    if (targetUserId) updateWorkspacesCacheRaw(targetUserId, workspaces);
+}
+
+// ========================================
+// ワークスペースID管理（UI State）
+// ========================================
+
+export function getCurrentWorkspaceId(): string | null {
+    return useWorkspaceStore.getState().currentWorkspaceId;
+}
+
+export function setCurrentWorkspaceId(id: string): void {
+    if (!id) return;
+    const store = useWorkspaceStore.getState();
+    if (store.currentWorkspaceId === id) return;
+    store.setCurrentWorkspaceId(id);
+}
+
+// ========================================
+// サブスクリプション
+// ========================================
+
 /**
- * ワークスペース一覧をリアルタイム購読
+ * ワークスペースのリアルタイム購読
+ * @param userId ユーザーIDまたはコールバック（後方互換性のため）
+ * @param onUpdate コールバック
  */
-export function subscribeToWorkspaces(userId: string, onUpdate?: (workspaces: Workspace[]) => void): Unsubscribe {
-    if (!userId) {
-        if (onUpdate) onUpdate([]);
+export function subscribeToWorkspaces(
+    userId: string | ((workspaces: Workspace[]) => void),
+    onUpdate?: (workspaces: Workspace[]) => void
+): Unsubscribe {
+    // 引数解決ガード（後方互換性）
+    const callback = typeof userId === 'function' ? userId : onUpdate;
+    const targetUserId = typeof userId === 'string' ? userId : auth.currentUser?.uid;
+
+    if (!targetUserId) {
+        if (typeof callback === 'function') callback([]);
         return () => { };
     }
 
-    if (unsubscribe) unsubscribe();
-
-    const path = paths.workspaces(userId);
-    const q = query(collection(db, path), orderBy('createdAt', 'asc'));
-
-    const store = useWorkspaceStore.getState();
-
-    unsubscribe = onSnapshot(q, (snapshot) => {
-        const items: Workspace[] = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        })) as Workspace[];
-
-        store.setWorkspaces(items);
-
-        if (items.length === 0 && !snapshot.metadata.hasPendingWrites) {
-            if (onUpdate) onUpdate([]);
-            ensureDefaultWorkspace().catch(err => console.error('[Workspace] Default creation error:', err));
+    // ワークスペースが0個の場合、デフォルトを作成
+    const wrappedCallback = (workspaces: Workspace[]) => {
+        // Workspaces が 0 個でデフォルト作成が必要かチェック
+        if (workspaces.length === 0) {
+            ensureDefaultWorkspaceRaw(targetUserId).catch(err =>
+                console.error('[Workspace] Default creation error:', err)
+            );
         } else {
-            const currentId = validateCurrentWorkspace(items);
-            if (onUpdate) onUpdate(items);
+            // 現在の workspaceId が有効かバリデート
+            validateCurrentWorkspace(workspaces);
         }
-    }, (error) => {
-        console.error("[Workspace] Subscription error:", error);
-        store.setWorkspaces([]);
-        if (onUpdate) onUpdate([]);
-    });
 
-    return unsubscribe;
-}
+        if (typeof callback === 'function') callback(workspaces);
+    };
 
-async function ensureDefaultWorkspace() {
-    try {
-        const user = auth.currentUser;
-        if (!user) return;
-        const path = paths.workspaces(user.uid);
-        const snapshot = await getDocs(query(collection(db, path), limit(1)));
-        if (snapshot.empty) {
-            await addWorkspace('メイン');
-        }
-    } catch (err) {
-        console.error('[Workspace] Failed to ensure default workspace:', err);
-    }
+    return subscribeToWorkspacesRaw(targetUserId, wrappedCallback);
 }
 
 function validateCurrentWorkspace(items: Workspace[]): string | null {
@@ -104,69 +110,45 @@ function validateCurrentWorkspace(items: Workspace[]): string | null {
     return currentId;
 }
 
-export function getCurrentWorkspaceId(): string | null {
-    return useWorkspaceStore.getState().currentWorkspaceId;
-}
-
-export function setCurrentWorkspaceId(id: string) {
-    if (!id) return;
-    const store = useWorkspaceStore.getState();
-    if (store.currentWorkspaceId === id) return;
-    store.setCurrentWorkspaceId(id);
-}
-
-
+// ========================================
+// CRUD 操作
+// ========================================
 
 export async function addWorkspace(name: string): Promise<{ id: string, name: string }> {
-    try {
-        // Validation
-        WorkspaceSchema.pick({ name: true }).parse({ name });
+    const user = auth.currentUser;
+    if (!user) throw new Error('Authentication required');
 
-        const user = auth.currentUser;
-        if (!user) throw new Error('Authentication required');
-        const path = paths.workspaces(user.uid);
-
-        const docRef = await addDoc(collection(db, path), {
-            name: name,
-            createdAt: serverTimestamp()
-        });
-        return { id: docRef.id, name: name };
-    } catch (e) {
-        console.error("[Workspace] Add error:", e);
-        // Error notification handled by caller or UI layer
-        throw e;
-    }
+    return addWorkspaceRaw(user.uid, name);
 }
 
 export async function isWorkspaceNameDuplicate(name: string, excludeId: string | null = null): Promise<boolean> {
     const user = auth.currentUser;
     if (!user) return false;
-    const path = paths.workspaces(user.uid);
-    const q = query(collection(db, path), where('name', '==', name), limit(5));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.some(doc => doc.id !== excludeId);
+
+    return isWorkspaceNameDuplicateRaw(user.uid, name, excludeId);
 }
 
 export async function updateWorkspaceName(id: string, newName: string): Promise<void> {
-    try {
-        const user = auth.currentUser;
-        if (!user) throw new Error('Authentication required');
-        const path = paths.workspaces(user.uid);
-        await updateDoc(doc(db, path, id), { name: newName });
-    } catch (e) {
-        console.error("[Workspace] Update error:", e);
-        // Error notification handled by caller or UI layer
-    }
+    const user = auth.currentUser;
+    if (!user) throw new Error('Authentication required');
+
+    return updateWorkspaceRaw(user.uid, id, { name: newName });
 }
 
 export async function deleteWorkspace(id: string): Promise<void> {
-    try {
-        const user = auth.currentUser;
-        if (!user) throw new Error('Authentication required');
-        const path = paths.workspaces(user.uid);
-        await deleteDoc(doc(db, path, id));
-    } catch (e) {
-        console.error("[Workspace] Delete error:", e);
-        // Error notification handled by caller or UI layer
+    const user = auth.currentUser;
+    if (!user) throw new Error('Authentication required');
+
+    return deleteWorkspaceRaw(user.uid, id);
+}
+
+// ========================================
+// キャッシュクリア（ログアウト時）
+// ========================================
+
+export function clearWorkspaceCache(): void {
+    const user = auth.currentUser;
+    if (user) {
+        workspaceCache.clearCache(user.uid);
     }
 }

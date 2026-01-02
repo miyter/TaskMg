@@ -10,6 +10,8 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { ContextMenu, ContextMenuItem } from '../ui/ContextMenu';
 import { SidebarItem } from './SidebarItem';
 
+import { Filter, Task } from '../../store/schema';
+
 export const CustomFilterList: React.FC = () => {
     const { filters, loading } = useFilters();
     const { tasks } = useTasks();
@@ -26,7 +28,7 @@ export const CustomFilterList: React.FC = () => {
     );
 };
 
-const CustomFilterItem: React.FC<{ filter: any, tasks: any[], workspaceId: string | null }> = ({ filter, tasks, workspaceId }) => {
+const CustomFilterItem: React.FC<{ filter: Filter, tasks: Task[], workspaceId: string | null }> = ({ filter, tasks, workspaceId }) => {
     const { t } = useTranslation();
     const { filterType, targetId, setFilter } = useFilterStore();
     const { openModal } = useModalStore();

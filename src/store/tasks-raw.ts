@@ -18,7 +18,6 @@ import {
     updateDoc
 } from "../core/firebase-sdk";
 import { areTaskArraysIdentical } from '../utils/compare';
-import { getNextRecurrenceDate } from '../utils/date';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
 import { Task, TaskSchema } from './schema';
@@ -349,26 +348,6 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
             return t;
         });
         taskCache.setCache(workspaceId, newTasks);
-    }
-
-    // Recurrence Logic: Create next task if completing a recurring one
-    if (status === 'completed' && originalTask?.recurrence && originalTask.recurrence.type !== 'none') {
-        const nextDate = getNextRecurrenceDate(originalTask.dueDate ?? null, originalTask.recurrence as import('../utils/date').RecurrenceConfig);
-        if (nextDate) {
-            const nextTask: Partial<Task> = {
-                title: originalTask.title,
-                description: originalTask.description,
-                projectId: originalTask.projectId,
-                labelIds: originalTask.labelIds,
-                timeBlockId: originalTask.timeBlockId,
-                duration: originalTask.duration,
-                isImportant: originalTask.isImportant,
-                recurrence: originalTask.recurrence,
-                dueDate: nextDate,
-                status: 'todo'
-            };
-            addTaskRaw(userId, workspaceId, nextTask).catch(e => console.error("Failed to create recurring task:", e));
-        }
     }
 
     return withRetry(async () => {
