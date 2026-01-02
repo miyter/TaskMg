@@ -87,7 +87,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
 
     return createPortal(
         <div
-            className="fixed inset-0 flex items-center justify-center p-0 sm:p-4 animate-fade-in"
+            className="fixed inset-0 flex items-center justify-center p-0 sm:p-4"
             style={{ zIndex }}
             role="dialog"
             aria-modal="true"
@@ -105,7 +105,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
                 ref={modalRef}
                 tabIndex={-1}
                 className={cn(
-                    "relative bg-white dark:bg-gray-800 rounded-none sm:rounded-xl shadow-2xl w-full overflow-hidden flex flex-col transform transition-all animate-scale-in outline-none max-h-[100dvh] sm:max-h-[90vh]",
+                    "relative bg-white dark:bg-gray-800 rounded-none sm:rounded-xl shadow-md w-full overflow-hidden flex flex-col outline-none max-h-[100dvh] sm:max-h-[90vh]",
                     sizeClasses[size],
                     className
                 )}

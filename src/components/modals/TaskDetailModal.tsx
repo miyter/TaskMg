@@ -267,7 +267,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                     <ErrorMessage message={error} className="mb-3" />
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
                         {/* Left Column: Memo */}
-                        <div className="md:col-span-8 flex flex-col h-full min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+                        <div className="md:col-span-8 flex flex-col h-full min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -308,7 +308,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                         {/* Right Column: Settings */}
                         <div className="md:col-span-4 space-y-4">
                             {/* Schedule Section */}
-                            <details open={scheduleOpen} onToggle={(e) => setScheduleOpen(e.currentTarget.open)} className="group border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
+                            <details open={scheduleOpen} onToggle={(e) => setScheduleOpen(e.currentTarget.open)} className="group border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
                                 <summary
                                     className="flex items-center justify-between px-4 py-3 cursor-pointer list-none outline-none bg-gray-50 dark:bg-gray-700/30 rounded-t-lg group-[:not([open])]:rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50 focus:ring-2 focus:ring-inset focus:ring-blue-500"
                                     role="button"
@@ -419,7 +419,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             </details>
 
                             {/* Project */}
-                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                                 <label htmlFor="task-project" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">{t('task_detail.project_label')}</label>
                                 <select
                                     id="task-project"
@@ -464,7 +464,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                         <button
                             type="button"
                             onClick={handleSave}
-                            className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium shadow-md transition transform active:scale-95"
+                            className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium transition-colors"
                         >
                             {isNewTask ? t('modal.create') : t('modal.save')}
                         </button>

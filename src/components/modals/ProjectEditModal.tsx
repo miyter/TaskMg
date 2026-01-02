@@ -154,8 +154,8 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
                                 type="button"
                                 onClick={() => setColor(c.value)}
                                 className={cn(
-                                    "w-6 h-6 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800",
-                                    color === c.value ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800 scale-110" : ""
+                                    "w-6 h-6 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800",
+                                    color === c.value ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800" : ""
                                 )}
                                 style={{ backgroundColor: c.value }}
                                 aria-label={t(`colors.${c.key}` as any)}
@@ -196,7 +196,7 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
                         <button
                             onClick={handleSave}
                             disabled={loading}
-                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-md transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? '...' : isEdit ? t('modal.save') : t('modal.create')}
                         </button>

@@ -340,6 +340,14 @@ const ja = {
         add_task: 'タスクを追加',
         add_with_title: '「{title}」をタスクに追加',
         aria_label: '新しいタスクを追加',
+    },
+
+    error_boundary: {
+        title: 'エラーが発生しました',
+        description: '申し訳ありません。予期せぬエラーが発生しました。',
+        retry: '再試行',
+        reload: 'ページを再読み込み',
+        details: 'エラー詳細',
     }
 };
 
@@ -675,6 +683,14 @@ const en = {
         add_task: 'Add Task',
         add_with_title: 'Add "{title}" as task',
         aria_label: 'Add new task',
+    },
+
+    error_boundary: {
+        title: 'An Error Occurred',
+        description: 'Sorry, an unexpected error has occurred.',
+        retry: 'Retry',
+        reload: 'Reload Page',
+        details: 'Error Details',
     }
 };
 

@@ -78,26 +78,42 @@ export function useFirestoreSubscription<T>(
     return useQuery<T>({
         queryKey,
         queryFn: () => {
-            // This function is only called if cache is empty and staleTime expired.
-            // Since we rely on subscription to push data, we assume data will come from subscription.
-            // If we have initialData, return it synchronously.
+            // Check if data already exists in cache (race condition handling)
+            const existingData = queryClient.getQueryData<T>(queryKey);
+            if (existingData !== undefined) {
+                return Promise.resolve(existingData);
+            }
+
             if (initialData !== undefined) {
                 return Promise.resolve(initialData);
             }
-            // If no initialData, wait for subscription with a timeout.
-            // After timeout, silently resolve with empty array (safe default for list subscriptions).
-            // This prevents "pending forever" state while allowing subscription to push data later.
+
+            // If no initialData, wait for subscription.
             return new Promise<T>((resolve) => {
                 const timeoutId = setTimeout(() => {
-                    // Silently resolve - subscription will update cache when data arrives
-                    resolve(initialData as unknown as T);
+                    // Fail-safe: resolve with current cache or null after timeout
+                    const finalData = queryClient.getQueryData<T>(queryKey);
+                    resolve((finalData ?? initialData ?? null) as unknown as T);
                 }, 10000);
 
-                // Check if data already exists in cache (race condition handling)
-                const existingData = queryClient.getQueryData<T>(queryKey);
-                if (existingData !== undefined) {
+                // Listen for cache updates via queryClient
+                const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+                    if (event.type === 'updated' && JSON.stringify(event.query.queryKey) === keyHash) {
+                        const data = event.query.state.data as T;
+                        if (data !== undefined) {
+                            clearTimeout(timeoutId);
+                            unsubscribe();
+                            resolve(data);
+                        }
+                    }
+                });
+
+                // Final check just in case it updated between the check at start and subscription
+                const dataNow = queryClient.getQueryData<T>(queryKey);
+                if (dataNow !== undefined) {
                     clearTimeout(timeoutId);
-                    resolve(existingData);
+                    unsubscribe();
+                    resolve(dataNow);
                 }
             });
         },

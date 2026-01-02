@@ -88,7 +88,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                     {activeTab === 'appearance' && (
                         <div className="flex flex-col gap-4">
                             {/* Theme */}
-                            <AccordionSection title={t('settings_modal.appearance.theme')} icon="🌓" defaultOpen={true}>
+                            <AccordionSection title={t('settings_modal.appearance.theme')} icon="🌓" defaultOpen={false}>
                                 <div className="grid grid-cols-3 gap-3">
                                     {(['light', 'dark', 'system'] as ThemeMode[]).map(mode => (
                                         <button
@@ -108,7 +108,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                             </AccordionSection>
 
                             {/* Density */}
-                            <AccordionSection title={t('settings_modal.appearance.density')} icon="📐" defaultOpen={true}>
+                            <AccordionSection title={t('settings_modal.appearance.density')} icon="📐" defaultOpen={false}>
                                 <div className="space-y-3">
                                     {(['compact', 'normal', 'comfortable', 'spacious'] as Density[]).map(d => (
                                         <label key={d} htmlFor={`density-${d}`} className={cn(
@@ -138,7 +138,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                             </AccordionSection>
 
                             {/* Font Size */}
-                            <AccordionSection title={t('settings_modal.appearance.font_size')} icon="Aa" defaultOpen={true}>
+                            <AccordionSection title={t('settings_modal.appearance.font_size')} icon="Aa" defaultOpen={false}>
                                 <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
                                     {(['sm', 'base', 'md', 'lg', 'xl'] as FontSize[]).map(s => (
                                         <button
@@ -279,7 +279,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                 </div>
                             </div>
 
-                            <AccordionSection title={t('settings_modal.language.title')} icon="🌐" defaultOpen={true}>
+                            <AccordionSection title={t('settings_modal.language.title')} icon="🌐" defaultOpen={false}>
                                 <div className="grid grid-cols-2 gap-3">
                                     {[
                                         { code: 'ja', label: '日本語' },
@@ -350,7 +350,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                         }
                                     }}
                                     disabled={!backupConfirmed}
-                                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:transform-none"
+                                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors"
                                 >
                                     {t('settings_modal.maintenance.cleanup_duplicate')}
                                 </button>

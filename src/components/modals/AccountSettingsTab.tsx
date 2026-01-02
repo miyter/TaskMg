@@ -47,9 +47,9 @@ export const AccountSettingsTab: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-300">
+        <div className="space-y-8">
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-8 sm:gap-6 border border-gray-100 dark:border-gray-700">
-                <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-3xl shadow-inner shrink-0">
+                <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-3xl shrink-0">
                     {isAnonymous ? '🕵️' : '👤'}
                 </div>
                 <div className="flex-1 text-center sm:text-left">
@@ -87,7 +87,7 @@ export const AccountSettingsTab: React.FC = () => {
 
                         <form onSubmit={handleLinkAccount} className="space-y-4 max-w-md">
                             {error && (
-                                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-lg font-medium animate-in slide-in-from-top-2">
+                                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-lg font-medium">
                                     {error}
                                 </div>
                             )}
@@ -136,12 +136,12 @@ export const AccountSettingsTab: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 group"
+                                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
                             >
                                 {loading ? t('settings_modal.account.registering') : (
                                     <>
                                         {t('settings_modal.account.register')}
-                                        <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                        <span>→</span>
                                     </>
                                 )}
                             </button>

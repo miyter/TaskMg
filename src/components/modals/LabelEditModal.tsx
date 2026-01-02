@@ -157,8 +157,8 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
                                 type="button"
                                 onClick={() => setColor(c.value)}
                                 className={cn(
-                                    "w-6 h-6 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800",
-                                    color === c.value ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800 scale-110" : ""
+                                    "w-6 h-6 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800",
+                                    color === c.value ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800" : ""
                                 )}
                                 style={{ backgroundColor: c.value }}
                                 aria-label={t(`colors.${c.key}` as any)}
@@ -195,14 +195,14 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
                             disabled={loading}
                             className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition disabled:opacity-50"
                         >
-                            キャンセル
+                            {t('modal.cancel')}
                         </button>
                         <button
                             onClick={handleSave}
                             disabled={loading || !name.trim()}
-                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-md transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? '保存中...' : isEdit ? '保存' : '作成'}
+                            {loading ? t('saving') : isEdit ? t('modal.save') : t('modal.create')}
                         </button>
                     </div>
                 </div>

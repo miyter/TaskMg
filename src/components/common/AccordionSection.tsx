@@ -12,7 +12,7 @@ interface AccordionSectionProps {
 export const AccordionSection: React.FC<AccordionSectionProps> = ({
     title,
     children,
-    defaultOpen = true,
+    defaultOpen = false,
     icon,
     className
 }) => {
@@ -24,6 +24,8 @@ export const AccordionSection: React.FC<AccordionSectionProps> = ({
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-800/30 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
                 type="button"
+                aria-expanded={isOpen}
+                aria-controls={`accordion-panel-${title.replace(/\s+/g, '-').toLowerCase()}`}
             >
                 <div className="flex items-center gap-3">
                     {icon && <span className="text-lg">{icon}</span>}
@@ -39,8 +41,9 @@ export const AccordionSection: React.FC<AccordionSectionProps> = ({
                 </svg>
             </button>
             <div
+                id={`accordion-panel-${title.replace(/\s+/g, '-').toLowerCase()}`}
                 className={cn(
-                    "transition-all duration-300 ease-in-out overflow-hidden bg-white dark:bg-transparent",
+                    "transition-all duration-100 ease-in-out overflow-hidden bg-white dark:bg-transparent",
                     isOpen ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
                 )}
             >

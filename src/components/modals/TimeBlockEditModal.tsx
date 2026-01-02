@@ -222,7 +222,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
 
                         <DragOverlay dropAnimation={null} modifiers={[]}>
                             {activeBlock ? (
-                                <div style={{ transform: 'scale(1.05)', opacity: 0.9 }}>
+                                <div style={{ opacity: 0.9 }}>
                                     <TimeBlockRow
                                         block={activeBlock}
                                         onDelete={() => { }}
@@ -265,7 +265,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                     <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="px-8 py-2.5 bg-gray-900 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-lg font-bold text-sm transition-all active:scale-95 shadow-md disabled:bg-gray-400"
+                        className="px-8 py-2.5 bg-gray-900 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-lg font-bold text-sm transition-colors disabled:bg-gray-400"
                     >
                         {loading ? t('saving') : t('done')}
                     </button>
@@ -292,11 +292,11 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
     const [eh, em] = endTime.split(':');
 
     return (
-        <div className={`flex items-center gap-4 p-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-sm group ${isOverlay ? 'shadow-xl ring-2 ring-blue-500 scale-105 opacity-90 cursor-grabbing' : ''}`}>
+        <div className={`flex items-center gap-4 p-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-sm group ${isOverlay ? 'shadow ring-2 ring-blue-500 opacity-90 cursor-grabbing' : ''}`}>
             <div className="relative">
                 <button
                     onClick={() => setShowColorPicker(!showColorPicker)}
-                    className="w-6 h-6 rounded-full shadow-sm hover:scale-110 active:scale-95 transition-transform ring-2 ring-transparent focus:ring-blue-400 ring-offset-2 dark:ring-offset-gray-900"
+                    className="w-6 h-6 rounded-full shadow-sm ring-2 ring-transparent focus:ring-blue-400 ring-offset-2 dark:ring-offset-gray-900"
                     style={{ backgroundColor: block.color || '#3B82F6' }}
                     title={t('time_block.change_color')}
                 />
@@ -307,7 +307,7 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
                             onClick={() => setShowColorPicker(false)}
                         />
                         <div
-                            className="fixed z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 w-[280px] animate-fade-in-down"
+                            className="fixed z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow p-4 w-[280px]"
                             style={{
                                 top: '50%',
                                 left: '50%',
@@ -324,7 +324,7 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
                                             setShowColorPicker(false);
                                         }}
                                         className={cn(
-                                            "w-8 h-8 rounded-full transition-transform hover:scale-110 ring-2 ring-transparent hover:ring-blue-400 focus:outline-none focus:scale-110",
+                                            "w-8 h-8 rounded-full ring-2 ring-transparent hover:ring-blue-400 focus:outline-none",
                                             block.color === c.value && "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800"
                                         )}
                                         style={{ backgroundColor: c.value }}

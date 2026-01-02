@@ -216,7 +216,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
                     <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-md transition-all transform active:scale-95 disabled:opacity-50"
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
                     >
                         {loading ? '...' : isEditMode ? t('modal.save') : t('modal.create')}
                     </button>

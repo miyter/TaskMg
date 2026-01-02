@@ -2,7 +2,15 @@
 
 ## 🚀 残存課題
 
-なし - 全ての主要課題は解決済み
+- **プロジェクトの永続化不良 (最優先)**: プロジェクトを作成してもリロード後に消失する。Firestore への書き込みは成功しているログがあるが、サブスクリプション (`subscribeToProjectsRaw`) を通じた再取得または同期パスに問題があり、リロード後にキャッシュが空になる。
+- **インサイト（検索・フィルタ）の微修正**: 検索クエリが空の状態で再描画が発生した際、まれに初期化中メッセージがちらつく。
+
+---
+
+## 🏗️ 最近の修正 (2026-01-02)
+- **インボックス表示の安定化**: `useFirestoreSubscription` のレースコンディション（データ到着前にPromiseが解決/タイムアウトする問題）を修正し、タスクが安定して表示されるように改善。
+- **React Query 警告の解消**: `Query data cannot be undefined` 警告を回避するため、初期データやタイムアウト時の解決値を `null` にフォールバックする処理を追加。
+- **プロジェクト管理のリファクタリング**: `projects-raw.ts` をクラス化し、Optimistic Update とロールバック処理を導入。
 
 ---
 
@@ -19,6 +27,25 @@
 
 ---
 
+## 🎨 UI/UXリファクタリング課題 (Design Compliance)
+
+`docs/PROJECT_STATUS.md` の「🎨 UI/UX 設計思想」に基づくリファクタリング対象。
+
+### 完了
+すべてのUI/UXリファクタリング課題が完了しました。
+
+---
+
+## 📋 リファクタリング時の注意事項
+
+1. **アニメーション削除時**: `transition-*`、`duration-*`、`animate-*`クラスを削除。静的表示に変更。
+2. **影の削減時**: `shadow-2xl`→`shadow-md`→`shadow`の順で控えめに。完全削除も可。
+3. **i18n対応時**: `src/core/translations.ts`にキーを追加し、`t('key')`で参照。
+4. **アクセシビリティ**: `aria-expanded={isOpen}`、`aria-controls="panel-id"`を追加。
+5. **By Design除外**: `SortableItem.tsx`の`isDragging`時opacity変更はDnDフィードバックとして必要最小限のため現状維持を検討。
+
+---
+
 ## 📝 Design Decisions (By Design)
 - **Legacy Exports**: API互換性のため、`auth.ts` のプロキシ関数は維持。
 - **Inline Styles**: 動的な色指定には Tailwind ではなく `style` 属性を使用。
@@ -26,6 +53,8 @@
 - **Localization Consistency (Work in Progress)**: 現在、日本語と英語が混在している箇所があるが、これは完全な i18n 移行への過渡期としての状態。
 - **Facade Pattern (Data Flow)**: `store-raw.ts` は内部実装とし、外部からは `tasks.ts` 等のファサード関数を通じてのみアクセス。単一方向データフローを強制。
 - **Optimistic Update with Rollback**: 失敗時は自動ロールバックとToast通知でユーザーに通知。
+- **Modal Stack**: `ModalManager`はスタック方式で複数モーダルの重ね表示をサポート。これは設定画面からラベル編集を開く等のユースケースで必要。
+- **Custom SVG Icons**: `Icons.tsx`は3つのみの軽量実装のため、Lucide等の外部ライブラリ追加より効率的。
 
 ---
 

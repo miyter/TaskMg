@@ -1,13 +1,14 @@
 /**
- * 更新日: 2025-12-30
- * 内容: firebase.tsの自動初期化対応によるリファクタリング
+ * 更新日: 2026-01-02
+ * 内容: ProjectCache クラスへの移行と Optimistic Update の強化
+ *      - 成功時の自動更新、失敗時のロールバック、Toast通知を追加
  */
 
 import {
     addDoc,
     collection,
     deleteDoc, doc,
-    onSnapshot, orderBy,
+    onSnapshot,
     query,
     serverTimestamp, Unsubscribe,
     updateDoc,
@@ -19,162 +20,179 @@ import { areProjectArraysIdentical } from '../utils/compare';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
 import { Project } from './schema';
+import { toast } from './ui/toast-store';
 
-// ==========================================================
-// ★ RAW FUNCTIONS (userId, workspaceId 必須)
-// ==========================================================
+class ProjectCache {
+    private cachedProjectsMap = new Map<string, Project[]>();
+    private listeners = new Map<string, Set<(projects: Project[]) => void>>();
+    private unsubscribes = new Map<string, Unsubscribe>();
 
-// プロジェクトリストのキャッシュ（複数ワークスペース対応）
-const _cachedProjectsMap = new Map<string, Project[]>();
-const _projectListeners = new Map<string, Set<(projects: Project[]) => void>>();
-const _projectUnsubscribes = new Map<string, Unsubscribe>();
-
-/**
- * キャッシュが初期化されているか確認する
- */
-export function isProjectsInitialized(workspaceId: string): boolean {
-    return _cachedProjectsMap.has(workspaceId);
-}
-
-/**
- * リスナーへの通知ヘルパー
- */
-function notifyProjectListeners(workspaceId: string) {
-    const projects = _cachedProjectsMap.get(workspaceId) || [];
-    const listeners = _projectListeners.get(workspaceId);
-    if (listeners) {
-        const projectsCopy = [...projects];
-        listeners.forEach(listener => listener(projectsCopy));
-    }
-}
-
-/**
- * キャッシュを手動更新する (Optimistic Update用)
- */
-export function updateProjectsCacheRaw(workspaceId: string, projects: Project[]) {
-    _cachedProjectsMap.set(workspaceId, projects);
-    notifyProjectListeners(workspaceId);
-}
-
-/**
- * プロジェクトデータのリアルタイムリスナーを開始する (RAW)
- */
-export function subscribeToProjectsRaw(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void): Unsubscribe {
-    // リスナー登録
-    if (!_projectListeners.has(workspaceId)) {
-        _projectListeners.set(workspaceId, new Set());
-    }
-    const listeners = _projectListeners.get(workspaceId)!;
-    listeners.add(onUpdate);
-
-    // 即時キャッシュ返却 (React strict mode対応: 非同期で実行)
-    const cached = _cachedProjectsMap.get(workspaceId);
-    if (cached) {
-        queueMicrotask(() => onUpdate([...cached]));
+    public isInitialized(workspaceId: string): boolean {
+        return this.cachedProjectsMap.has(workspaceId);
     }
 
-    // サブスクリプション未確立なら開始
-    if (!_projectUnsubscribes.has(workspaceId)) {
-        const path = paths.projects(userId, workspaceId);
-        // 並び順を保証
-        const q = query(collection(db, path), orderBy('createdAt', 'asc'));
-
-        const unsub = onSnapshot(q, (snapshot) => {
-            const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-            const currentCached = _cachedProjectsMap.get(workspaceId);
-
-            // Custom optimization for reference stability
-            if (currentCached && areProjectArraysIdentical(currentCached, projects)) {
-                return;
-            }
-
-            // キャッシュを更新
-            _cachedProjectsMap.set(workspaceId, projects);
-            notifyProjectListeners(workspaceId);
-        }, (error) => {
-            console.error("Error subscribing to projects:", error);
-            _cachedProjectsMap.set(workspaceId, []);
-            notifyProjectListeners(workspaceId);
-        });
-
-        _projectUnsubscribes.set(workspaceId, unsub);
-    }
-
-    // Unsubscribe関数
-    return () => {
-        listeners.delete(onUpdate);
-        if (listeners.size === 0) {
-            const unsub = _projectUnsubscribes.get(workspaceId);
-            if (unsub) {
-                unsub();
-                _projectUnsubscribes.delete(workspaceId);
-            }
-            _projectListeners.delete(workspaceId);
-            // _cachedProjectsMap.delete(workspaceId); // キャッシュは残す（再接続時の高速化）
+    private notifyListeners(workspaceId: string) {
+        const projects = this.cachedProjectsMap.get(workspaceId) || [];
+        const listeners = this.listeners.get(workspaceId);
+        if (listeners) {
+            const projectsCopy = [...projects];
+            listeners.forEach(listener => listener(projectsCopy));
         }
-    };
+    }
+
+    public setCache(workspaceId: string, projects: Project[]) {
+        this.cachedProjectsMap.set(workspaceId, projects);
+        this.notifyListeners(workspaceId);
+    }
+
+    public getProjects(workspaceId: string): Project[] {
+        return this.cachedProjectsMap.get(workspaceId) || [];
+    }
+
+    public subscribe(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void): Unsubscribe {
+        if (!this.listeners.has(workspaceId)) {
+            this.listeners.set(workspaceId, new Set());
+        }
+        const listeners = this.listeners.get(workspaceId)!;
+        listeners.add(onUpdate);
+
+        const cached = this.cachedProjectsMap.get(workspaceId);
+        if (cached) {
+            queueMicrotask(() => onUpdate([...cached]));
+        }
+
+        if (!this.unsubscribes.has(workspaceId)) {
+            const path = paths.projects(userId, workspaceId);
+            const q = query(collection(db, path));
+            console.log(`[ProjectCache] Subscribing to path: ${path} for user: ${userId}`);
+            const unsub = onSnapshot(q, (snapshot) => {
+                const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
+                console.log(`[ProjectCache] Received ${projects.length} projects from Firestore for workspace: ${workspaceId}`);
+                const current = this.cachedProjectsMap.get(workspaceId);
+
+                if (current && areProjectArraysIdentical(current, projects)) {
+                    console.log("[ProjectCache] Data identical, skipping update");
+                    return;
+                }
+
+                console.log("[ProjectCache] Updating cache and notifying listeners");
+                this.cachedProjectsMap.set(workspaceId, projects);
+                this.notifyListeners(workspaceId);
+            }, (error) => {
+                console.error("[ProjectCache] Subscription error:", error);
+                this.cachedProjectsMap.set(workspaceId, []);
+                this.notifyListeners(workspaceId);
+            });
+
+            this.unsubscribes.set(workspaceId, unsub);
+        }
+
+        return () => {
+            listeners.delete(onUpdate);
+            if (listeners.size === 0) {
+                this.unsubscribes.get(workspaceId)?.();
+                this.unsubscribes.delete(workspaceId);
+                this.listeners.delete(workspaceId);
+            }
+        };
+    }
 }
 
-/**
- * 指定したワークスペースの現在キャッシュされているプロジェクトリストを取得する
- * @param workspaceId ワークスペースID
- */
-export function getProjects(workspaceId: string): Project[] {
-    return _cachedProjectsMap.get(workspaceId) || [];
+export const projectCache = new ProjectCache();
+
+export const isProjectsInitialized = (workspaceId: string) => projectCache.isInitialized(workspaceId);
+export const getProjects = (workspaceId: string) => projectCache.getProjects(workspaceId);
+export const updateProjectsCacheRaw = (workspaceId: string, projects: Project[]) => projectCache.setCache(workspaceId, projects);
+
+export function subscribeToProjectsRaw(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void): Unsubscribe {
+    return projectCache.subscribe(userId, workspaceId, onUpdate);
 }
 
-/**
- * 新しいプロジェクトを追加する (RAW)
- */
 export async function addProjectRaw(userId: string, workspaceId: string, name: string, color?: string) {
-    return withRetry(async () => {
-        const path = paths.projects(userId, workspaceId);
+    const originalProjects = projectCache.getProjects(workspaceId);
 
-        await addDoc(collection(db, path), {
+    // Optimistic Update
+    const tempId = 'temp-' + Date.now();
+    const newProject: Project = { id: tempId, name, color, ownerId: userId, createdAt: new Date() } as any;
+    projectCache.setCache(workspaceId, [...originalProjects, newProject]);
+
+    const path = paths.projects(userId, workspaceId);
+    console.log(`[ProjectCache] Adding project to path: ${path}`);
+
+    return withRetry(async () => {
+        const docRef = await addDoc(collection(db, path), {
             name,
             color,
             ownerId: userId,
             createdAt: serverTimestamp()
         });
+        console.log(`[ProjectCache] Successfully added project with ID: ${docRef.id}`);
+    }, {
+        onFinalFailure: () => {
+            console.error(`[ProjectCache] Failed to add project: ${name}`);
+            projectCache.setCache(workspaceId, originalProjects);
+            toast.error('プロジェクトの追加に失敗しました');
+        }
     });
 }
 
-/**
- * プロジェクトを更新する (RAW)
- */
 export async function updateProjectRaw(userId: string, workspaceId: string, projectId: string, updates: Partial<Project>) {
+    const originalProjects = projectCache.getProjects(workspaceId);
+
+    // Optimistic Update
+    const newProjects = originalProjects.map(p => p.id === projectId ? { ...p, ...updates } : p);
+    projectCache.setCache(workspaceId, newProjects);
+
     return withRetry(async () => {
         const path = paths.projects(userId, workspaceId);
         const ref = doc(db, path, projectId);
         await updateDoc(ref, updates);
+    }, {
+        onFinalFailure: () => {
+            projectCache.setCache(workspaceId, originalProjects);
+            toast.error('プロジェクトの更新に失敗しました');
+        }
     });
 }
 
-/**
- * プロジェクトを削除する (RAW)
- */
 export async function deleteProjectRaw(userId: string, workspaceId: string, projectId: string) {
+    const originalProjects = projectCache.getProjects(workspaceId);
+
+    // Optimistic Update
+    const newProjects = originalProjects.filter(p => p.id !== projectId);
+    projectCache.setCache(workspaceId, newProjects);
+
     return withRetry(async () => {
         const path = paths.projects(userId, workspaceId);
         await deleteDoc(doc(db, path, projectId));
+    }, {
+        onFinalFailure: () => {
+            projectCache.setCache(workspaceId, originalProjects);
+            toast.error('プロジェクトの削除に失敗しました');
+        }
     });
 }
 
-/**
- * プロジェクトの並び順を一括更新する (Batch)
- */
 export async function reorderProjectsRaw(userId: string, workspaceId: string, projects: Project[]) {
+    const originalProjects = projectCache.getProjects(workspaceId);
+    projectCache.setCache(workspaceId, projects);
+
     return withRetry(async () => {
         const batch = writeBatch(db);
         const path = paths.projects(userId, workspaceId);
 
         projects.forEach((p, index) => {
-            if (p.id) {
+            if (p.id && !p.id.startsWith('temp-')) {
                 const ref = doc(db, path, p.id);
                 batch.update(ref, { order: index });
             }
         });
 
         await batch.commit();
+    }, {
+        onFinalFailure: () => {
+            projectCache.setCache(workspaceId, originalProjects);
+            toast.error('並び替えの保存に失敗しました');
+        }
     });
 }

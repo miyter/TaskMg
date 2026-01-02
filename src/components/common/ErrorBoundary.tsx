@@ -1,4 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { getTranslator } from '../../core/translations';
+import { useSettingsStore } from '../../store/ui/settings-store';
 import { logReactError } from '../../utils/error-logger';
 
 interface Props {
@@ -41,6 +43,10 @@ export class ErrorBoundary extends Component<Props, State> {
                 return this.props.fallback;
             }
 
+            // クラスコンポーネントではフック不可なので、ストアから直接取得
+            const language = useSettingsStore.getState().language;
+            const { t } = getTranslator(language);
+
             return (
                 <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
                     <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
@@ -50,28 +56,28 @@ export class ErrorBoundary extends Component<Props, State> {
                             </svg>
                         </div>
                         <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-                            エラーが発生しました
+                            {t('error_boundary.title')}
                         </h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                            申し訳ありません。予期せぬエラーが発生しました。
+                            {t('error_boundary.description')}
                         </p>
                         <div className="flex gap-3 justify-center">
                             <button
                                 onClick={this.handleRetry}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             >
-                                再試行
+                                {t('error_boundary.retry')}
                             </button>
                             <button
                                 onClick={() => window.location.reload()}
                                 className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                             >
-                                ページを再読み込み
+                                {t('error_boundary.reload')}
                             </button>
                         </div>
                         {process.env.NODE_ENV === 'development' && this.state.error && (
                             <details className="mt-6 text-left">
-                                <summary className="text-xs text-gray-400 cursor-pointer">エラー詳細</summary>
+                                <summary className="text-xs text-gray-400 cursor-pointer">{t('error_boundary.details')}</summary>
                                 <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-900 rounded text-xs overflow-auto max-h-40 text-red-600 dark:text-red-400">
                                     {this.state.error.stack}
                                 </pre>
@@ -85,3 +91,4 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.children;
     }
 }
+
