@@ -13,6 +13,7 @@ export const ja = {
     projects: 'プロジェクト',
     project: 'プロジェクト',
     labels: 'ラベル',
+    label: 'ラベル',
     filters: 'カスタムフィルタ',
     timeblocks: 'タイムブロック',
     durations: '所要時間',
@@ -228,6 +229,7 @@ export const ja = {
             general: '一般設定',
             appearance: '外観・表示',
             account: 'アカウント',
+            schedule: 'スケジュール設定',
             advanced: '高度な設定',
         },
         appearance: {
@@ -237,6 +239,12 @@ export const ja = {
             fonts: 'フォント設定',
             font_en: '欧文フォント',
             font_jp: '和文フォント',
+        },
+        duration: {
+            description: 'タスクの所要時間として選択できるプリセットを設定します。',
+        },
+        timeblocks: {
+            description: '一日の時間を区切る「タイムブロック」を設定します。タスクを特定の時間帯に割り当てて管理できます。',
         },
         backup: {
             title: 'バックアップと復元',
@@ -324,6 +332,7 @@ export const ja = {
         label_name_required: '名前を入力してください',
         label_workspace_required: 'ワークスペースが見つかりません',
         workspace_confirm_switch: '新しいワークスペースに切り替えますか？',
+        workspace_delete_last: '最後のワークスペースは削除できません。',
         select_days: '曜日を選択してください',
         auth_required: '認証が必要です',
         validation_error: 'バリデーションエラー',
@@ -338,7 +347,7 @@ export const ja = {
 
     task_list: {
         searching_results: '検索結果を表示中: "{query}"',
-        sort_manual: '手動 (並び替え)',
+        sort_manual: '手動',
         sort_created: '作成日順',
         sort_due: '期限が近い順',
         sort_important: '重要度順',
@@ -487,6 +496,7 @@ export const en = {
     projects: 'Projects',
     project: 'Project',
     labels: 'Labels',
+    label: 'Label',
     filters: 'Filters',
     timeblocks: 'Time Blocks',
     durations: 'Durations',
@@ -700,6 +710,7 @@ export const en = {
             general: 'General',
             appearance: 'Appearance',
             account: 'Account',
+            schedule: 'Schedule',
             advanced: 'Advanced',
         },
         appearance: {
@@ -709,6 +720,12 @@ export const en = {
             fonts: 'Fonts',
             font_en: 'English Font',
             font_jp: 'Japanese Font',
+        },
+        duration: {
+            description: 'Configure preset durations for task estimation.',
+        },
+        timeblocks: {
+            description: 'Define customized time blocks to organize your daily schedule.',
         },
         backup: {
             title: 'Backup & Restore',
@@ -796,6 +813,7 @@ export const en = {
         label_name_required: 'Name is required',
         label_workspace_required: 'Workspace not found',
         workspace_confirm_switch: 'Switch to new workspace?',
+        workspace_delete_last: 'Cannot delete the last workspace.',
         select_days: 'Please select days',
         auth_required: 'Authentication required',
         validation_error: 'Validation error',

@@ -27,11 +27,11 @@ export const GeneralDashboard: React.FC = () => {
     ];
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar p-6 space-y-8">
+        <div className="h-full overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-6">
             <header className="mb-4">
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('dashboard')}</h1>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                    {t('task_list.sort_manual')} {/* Placeholder for a subtitle if needed */}
+                    {t('general_dashboard.overall_stats')} & {t('general_dashboard.time_block_usage')}
                 </p>
             </header>
 

@@ -63,6 +63,7 @@ export const LabelSchema = z.object({
     ownerId: z.string(),
     workspaceId: z.string().optional(), // Added for future migration
     createdAt: DateLikeSchema,
+    order: z.number().optional(),
 });
 
 export const WorkspaceSchema = z.object({

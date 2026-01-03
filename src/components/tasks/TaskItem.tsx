@@ -7,7 +7,7 @@ import { Task } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
 import { cn } from '../../utils/cn';
 import { formatDateCompact, getTaskDateColor } from '../../utils/date';
-import { IconCalendar, IconCheck, IconClock, IconEdit, IconRepeat, IconStar, IconTrash } from '../common/Icons';
+import { IconCalendar, IconCheck, IconClock, IconEdit, IconGripVertical, IconRepeat, IconStar, IconTrash } from '../common/Icons';
 import { ContextMenu, ContextMenuItem, ContextMenuSub } from '../ui/ContextMenu';
 
 interface TaskItemProps {
@@ -110,16 +110,26 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
                 onClick={() => openModal('task-detail', task)}
                 onContextMenu={handleContextMenu}
                 className={cn(
-                    "group flex items-center gap-3 p-[var(--task-p)] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-xl hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 cursor-pointer hover-lift",
+                    "group flex items-center gap-3 p-[var(--task-p)] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-xl hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 cursor-default hover-lift",
                     className
                 )}
-                {...dragHandleProps}
             >
+                {/* Drag Handle */}
+                {/* Only show if dragHandleProps exists (Manual Sort Mode) */}
+                {dragHandleProps && (
+                    <div
+                        {...dragHandleProps}
+                        className="cursor-move text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 p-1 -ml-1 flex-shrink-0 touch-none"
+                    >
+                        <IconGripVertical className="w-4 h-4" />
+                    </div>
+                )}
+
                 {/* Checkbox */}
                 <button
                     onClick={handleToggle}
                     className={cn(
-                        "w-5 h-5 rounded-full border flex items-center justify-center transition-colors shrink-0",
+                        "w-5 h-5 rounded-full border flex items-center justify-center transition-colors shrink-0 cursor-pointer", // explicit cursor pointer
                         isCompleted
                             ? "bg-blue-500 border-blue-500 text-white"
                             : "border-gray-300 dark:border-gray-600 hover:border-blue-400 text-transparent"
@@ -152,7 +162,7 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
                     </div>
 
                     {/* TimeBlock */}
-                    <div className="hidden sm:flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[80px]">
+                    <div className="hidden sm:flex items-center gap-1 text-gray-400 dark:text-gray-500 min-w-[80px]">
                         {timeBlock ? (
                             <>
                                 <IconClock className="w-3.5 h-3.5" />
@@ -161,7 +171,7 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
                                 </span>
                             </>
                         ) : (
-                            <span className="text-gray-300 dark:text-gray-600">—</span>
+                            <span className="text-[10px] uppercase font-bold tracking-widest opacity-30">{t('task_detail.time_block_unspecified')}</span>
                         )}
                     </div>
 
@@ -170,7 +180,7 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
                         "flex items-center gap-1 min-w-[70px]",
                         (hasRecurrence || hasDate)
                             ? (isCompleted ? "text-gray-400" : getTaskDateColor(task.dueDate || null))
-                            : "text-gray-300 dark:text-gray-600"
+                            : "text-gray-400 dark:text-gray-500 opacity-50"
                     )}>
                         {hasRecurrence ? (
                             <>
@@ -185,7 +195,7 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
                                 <span className="hidden sm:inline">{formatDateCompact(task.dueDate!)}</span>
                             </>
                         ) : (
-                            <span>—</span>
+                            <span className="text-[10px] uppercase font-bold tracking-widest">{t('no_date')}</span>
                         )}
                     </div>
                 </div>

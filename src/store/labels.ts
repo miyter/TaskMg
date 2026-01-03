@@ -15,6 +15,7 @@ import {
     deleteLabelRaw,
     getLabels as getLabelsRaw,
     isLabelsInitialized as isLabelsInitializedRaw,
+    reorderLabelsRaw,
     subscribeToLabelsRaw,
     updateLabelRaw
 } from './labels-raw';
@@ -135,6 +136,21 @@ export async function deleteLabel(workspaceId: string, labelId: string) {
     } catch (error) {
         console.error("Failed to delete label:", error);
         toast.error(getT()('msg.label.delete_fail'));
+        throw error;
+    }
+}
+
+/**
+ * ラベルの並び順を更新する
+ */
+export async function reorderLabels(workspaceId: string, orderedLabelIds: string[]) {
+    try {
+        const userId = requireAuth();
+        if (!workspaceId) throw new Error("Workspace ID required");
+        await reorderLabelsRaw(userId, workspaceId, orderedLabelIds);
+    } catch (error) {
+        console.error("Failed to reorder labels:", error);
+        toast.error(getT()('msg.label.update_fail'));
         throw error;
     }
 }

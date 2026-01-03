@@ -35,7 +35,8 @@ function isSidebarDroppable(id: string | number): boolean {
     return idStr.startsWith('project:') ||
         idStr === 'inbox' ||
         idStr.startsWith('timeblock:') ||
-        idStr.startsWith('duration:');
+        idStr.startsWith('duration:') ||
+        idStr.startsWith('label:');
 }
 
 /**

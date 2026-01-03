@@ -2,7 +2,7 @@
 import { useTranslation } from '../../core/translations';
 import { Workspace } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
-import { addWorkspace, getWorkspaces, setCurrentWorkspaceId, updateWorkspaceName } from '../../store/workspace';
+import { addWorkspace, deleteWorkspace, getWorkspaces, setCurrentWorkspaceId, updateWorkspaceName } from '../../store/workspace';
 import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
 import { Button } from '../ui/Button';
@@ -16,8 +16,6 @@ interface WorkspaceEditModalProps {
     data?: any;
     zIndex?: number;
 }
-
-
 
 export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { t } = useTranslation();
@@ -96,6 +94,35 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
         }
     }, [name, isEdit, workspace, closeModal, openModal, t]);
 
+    const handleDelete = useCallback(() => {
+        if (!workspace?.id) return;
+
+        const existingWorkspaces = getWorkspaces();
+        if (existingWorkspaces.length <= 1) {
+            setError(t('validation.workspace_delete_last') || "Cannot delete the last workspace.");
+            return;
+        }
+
+        closeModal();
+        openModal('confirmation', {
+            title: t('delete'),
+            message: t('msg.confirm_delete_workspace') || `Are you sure you want to delete workspace "${workspace.name}"?`,
+            confirmLabel: t('delete'),
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteWorkspace(workspace.id!);
+                    // If current workspace was deleted, switch to another one is handled by store subscription ideally,
+                    // or we force switch here if needed. But let's assume raw layer handles safety or subscription updates it.
+                    // Actually, useWorkspaces hook will update the list and Sidebar will re-render.
+                } catch (e) {
+                    console.error("Failed to delete workspace:", e);
+                }
+            }
+        });
+    }, [workspace, closeModal, openModal, t]);
+
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
             handleSave();
@@ -135,23 +162,37 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
                 <ErrorMessage message={error} />
 
                 {/* Footer */}
-                <div className="flex justify-end items-center pt-4 border-t border-gray-200 dark:border-gray-700 gap-3">
-                    <Button
-                        onClick={closeModal}
-                        disabled={loading}
-                        variant="ghost"
-                        className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
-                    >
-                        {t('modal.cancel')}
-                    </Button>
-                    <Button
-                        onClick={handleSave}
-                        disabled={loading}
-                        isLoading={loading}
-                        variant="primary"
-                    >
-                        {isEdit ? t('modal.save') : t('modal.create')}
-                    </Button>
+                <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div>
+                        {isEdit && (
+                            <Button
+                                onClick={handleDelete}
+                                disabled={loading}
+                                variant="ghost"
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 px-2"
+                            >
+                                {t('delete')}
+                            </Button>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Button
+                            onClick={closeModal}
+                            disabled={loading}
+                            variant="ghost"
+                            className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+                        >
+                            {t('modal.cancel')}
+                        </Button>
+                        <Button
+                            onClick={handleSave}
+                            disabled={loading}
+                            isLoading={loading}
+                            variant="primary"
+                        >
+                            {isEdit ? t('modal.save') : t('modal.create')}
+                        </Button>
+                    </div>
                 </div>
             </div>
         </Modal>

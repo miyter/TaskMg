@@ -42,41 +42,41 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
         const isExceeded = rawPercent > 100;
 
         return (
-            <div className="glass-card flex items-center gap-4 py-3 px-4 my-2">
-                {/* 1. Name */}
-                <div className="flex-shrink-0 w-24 truncate text-xs font-bold text-gray-500 dark:text-gray-400" title={timeBlock.name}>
+            <div className="flex items-center gap-3 py-2 px-3 my-1 border border-gray-100 dark:border-gray-800 rounded-lg bg-gray-50/30 dark:bg-gray-800/20">
+                {/* 1. Name - Smaller width */}
+                <div className="flex-shrink-0 w-20 truncate text-[10px] font-bold text-gray-400 uppercase tracking-tight" title={timeBlock.name}>
                     {timeBlock.name}
                 </div>
 
-                {/* 2. Time */}
-                <div className="flex-shrink-0 text-xs text-gray-500 dark:text-gray-400 tabular-nums">
-                    <span className="font-bold text-gray-700 dark:text-gray-300 w-[4.5ch] text-right inline-block">{totalTaskHours}h</span>
+                {/* 2. Time - Compact */}
+                <div className="flex-shrink-0 text-xs text-gray-500 dark:text-gray-400 tabular-nums min-w-[70px]">
+                    <span className="font-bold text-gray-700 dark:text-gray-300">{totalTaskHours}h</span>
                     <span className="text-gray-400 mx-0.5">/</span>
-                    <span className="w-[4.5ch] inline-block">{capacityHours}h</span>
+                    <span>{capacityHours}h</span>
                 </div>
 
-                {/* 3. Progress Bar */}
-                <div className="flex-1 relative h-3 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden min-w-[100px]">
+                {/* 3. Progress Bar - Stretches */}
+                <div className="flex-1 relative h-2 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden min-w-[60px]">
                     <div
                         className={cn(
-                            "h-full rounded-full transition-all duration-500 ease-out shadow-sm",
-                            isExceeded ? "bg-red-500" : "bg-gradient-to-r from-blue-500 to-indigo-600"
+                            "h-full rounded-full transition-all duration-500 ease-out",
+                            isExceeded ? "bg-red-500" : "bg-blue-500"
                         )}
                         style={{ width: isExceeded ? '100%' : `${progressPercent}%` }}
                     />
                 </div>
 
-                {/* 4. Details */}
-                <div className="flex-shrink-0 flex items-center justify-end gap-3 min-w-[140px]">
-                    <div className={cn(
-                        "text-lg font-bold tabular-nums text-right w-[3.5ch]",
+                {/* 4. Details - Responsive width */}
+                <div className="flex-shrink-0 flex items-center gap-2 tabular-nums">
+                    <span className={cn(
+                        "text-xs font-bold w-[4ch] text-right",
                         isExceeded ? "text-red-500" : "text-blue-500"
                     )}>
-                        {Math.round(rawPercent)}<span className="text-xs font-normal opacity-70">%</span>
-                    </div>
-                    <div className={cn("text-xs whitespace-nowrap text-right w-[100px]", isOver ? "text-red-500" : "text-green-500")}>
-                        ({isOver ? t('task_stats.over') : t('task_stats.remaining')} {absDiffHours}h)
-                    </div>
+                        {Math.round(rawPercent)}%
+                    </span>
+                    <span className={cn("text-[10px] hidden sm:inline", isOver ? "text-red-400" : "text-gray-400")}>
+                        ({isOver ? '+' : '-'}{absDiffHours}h)
+                    </span>
                 </div>
             </div>
         );

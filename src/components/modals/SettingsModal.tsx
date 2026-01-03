@@ -11,13 +11,15 @@ import { cn } from '../../utils/cn';
 import { AccordionSection } from '../common/AccordionSection';
 import { IconPlus } from '../common/Icons';
 import { Modal } from '../common/Modal';
+import { DurationSettings } from '../settings/DurationSettings';
+import { TimeBlockSettings } from '../settings/TimeBlockSettings';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { AccountSettingsTab } from './AccountSettingsTab';
 
 import { cleanupDuplicateTasks } from '../../store/maintenance';
 
-type SettingsTab = 'general' | 'appearance' | 'account' | 'advanced';
+type SettingsTab = 'general' | 'appearance' | 'schedule' | 'account' | 'advanced';
 
 const TabButton: React.FC<{ active: boolean; onClick: () => void; label: string; icon: string }> = ({ active, onClick, label, icon }) => (
     <button
@@ -82,6 +84,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                     <div className="flex flex-row md:flex-col justify-around md:justify-start md:p-4 md:space-y-2 pb-safe md:pb-4">
                         <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label={t('settings_modal.tabs.general')} icon="⚙️" />
                         <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label={t('settings_modal.tabs.appearance')} icon="🎨" />
+                        <TabButton active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} label={t('settings_modal.tabs.schedule') || 'Schedule'} icon="📅" />
                         <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} label={t('settings_modal.tabs.account')} icon="👤" />
 
                         {/* Mobile only divider logic handled by layout, removing hr */}
@@ -183,6 +186,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                     options={UI_CONFIG.FONTS.JP}
                                 />
                             </AccordionSection>
+                        </div>
+                    )}
+
+                    {activeTab === 'schedule' && (
+                        <div className="flex flex-col gap-6">
+                            <TimeBlockSettings />
+                            <DurationSettings />
                         </div>
                     )}
 

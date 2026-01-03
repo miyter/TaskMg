@@ -7,7 +7,7 @@ import { setCurrentWorkspaceId } from '../../store/workspace';
 import { cn } from '../../utils/cn';
 
 import { useWorkspace } from '../../hooks/useWorkspace';
-import { IconCheck, IconChevronDown, IconPlus } from '../common/Icons';
+import { IconCheck, IconChevronDown, IconPlus, IconSettings } from '../common/Icons';
 
 export const WorkspaceDropdown: React.FC = () => {
     const { t } = useTranslation();
@@ -84,24 +84,39 @@ export const WorkspaceDropdown: React.FC = () => {
                         {workspaces.map(ws => {
                             const isCurrent = ws.id === currentId;
                             return (
-                                <button
-                                    key={ws.id}
-                                    onClick={() => {
-                                        if (ws.id) setCurrentWorkspaceId(ws.id);
-                                        setIsOpen(false);
-                                    }}
-                                    className={cn(
-                                        "w-full text-left px-4 py-2 text-sm flex items-center justify-between transition-colors",
-                                        isCurrent
-                                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium'
-                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                    )}
-                                >
-                                    <span className="truncate block max-w-[140px] sm:max-w-[180px]">{ws.name}</span>
-                                    {isCurrent && (
-                                        <IconCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" />
-                                    )}
-                                </button>
+                                <div key={ws.id} className="flex items-center justify-between group/item px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <button
+                                        onClick={() => {
+                                            if (ws.id) setCurrentWorkspaceId(ws.id);
+                                            setIsOpen(false);
+                                        }}
+                                        className={cn(
+                                            "flex-1 text-left text-sm truncate mr-2",
+                                            isCurrent
+                                                ? 'text-blue-700 dark:text-blue-300 font-medium'
+                                                : 'text-gray-700 dark:text-gray-300'
+                                        )}
+                                    >
+                                        <span className="truncate block max-w-[120px] sm:max-w-[140px]">{ws.name}</span>
+                                    </button>
+
+                                    <div className="flex items-center gap-1">
+                                        {isCurrent && (
+                                            <IconCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                                        )}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setIsOpen(false);
+                                                openModal('workspace-edit', ws);
+                                            }}
+                                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                            title={t('edit')}
+                                        >
+                                            <IconSettings className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
                             );
                         })}
                     </div>

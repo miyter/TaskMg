@@ -10,9 +10,8 @@ import { cn } from '../../utils/cn';
 import { formatDateForInput, getInitialDueDateFromRecurrence, parseDateInput, toDate } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { ErrorMessage } from '../common/ErrorMessage';
-import { IconCalendar, IconChevronDown, IconFileText, IconStar, IconX } from '../common/Icons';
+import { IconStar, IconX } from '../common/Icons';
 import { Modal } from '../common/Modal';
-import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
@@ -224,6 +223,29 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
         }
     };
 
+    // --- Markdown Editor Helpers ---
+    const insertMarkdown = useCallback((prefix: string, suffix: string = '') => {
+        const textarea = document.getElementById('task-description') as HTMLTextAreaElement;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const selectedText = text.substring(start, end);
+
+        const newText = text.substring(0, start) + prefix + selectedText + suffix + text.substring(end);
+
+        setDescription(newText);
+
+        // Restore cursor position / selection
+        // We need to wait for React to re-render with new value, but setState is async.
+        // Using setTimeout to defer selection update
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+        }, 0);
+    }, []);
+
     if (!isOpen) return null;
 
     return (
@@ -273,69 +295,81 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto p-2 sm:p-4 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
                     <ErrorMessage message={error} className="mb-3" />
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 h-full">
-                        {/* Left Column: Memo */}
-                        <div className="md:col-span-8 flex flex-col h-full min-h-[200px] sm:min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
-                            <div className="flex justify-between items-center mb-2">
-                                <label htmlFor="task-description" className="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
-                                    <IconFileText size={16} />
-                                    メモ (Markdown)
-                                </label>
-                                <Button
-                                    type="button"
-                                    onClick={() => setShowPreview(!showPreview)}
-                                    size="sm"
-                                    variant="ghost"
-                                    className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-medium h-auto py-1 px-3"
-                                    aria-label={showPreview ? '編集モードに切り替え' : 'プレビューモードに切り替え'}
-                                >
-                                    {showPreview ? t('modal.edit') : t('modal.preview')}
-                                </Button>
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
+                        {/* Left Column: Memo (Main Content) - Split Editor/Preview */}
+                        <div className="md:col-span-8 flex flex-col h-full min-h-[400px]">
+                            {/* Toolbar - Compact */}
+                            <div className="flex items-center gap-0.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-gray-800 shrink-0 overflow-x-auto no-scrollbar">
+                                <button type="button" onClick={() => insertMarkdown('**', '**')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Bold">
+                                    <IconBold size={16} />
+                                </button>
+                                <button type="button" onClick={() => insertMarkdown('*', '*')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Italic">
+                                    <IconItalic size={16} />
+                                </button>
+                                <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1.5" />
+                                <button type="button" onClick={() => insertMarkdown('- ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="List">
+                                    <IconList size={16} />
+                                </button>
+                                <button type="button" onClick={() => insertMarkdown('1. ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Numbered List">
+                                    <IconListOrdered size={16} />
+                                </button>
+                                <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1.5" />
+                                <button type="button" onClick={() => insertMarkdown('### ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Heading">
+                                    <IconHeading size={16} />
+                                </button>
+                                <button type="button" onClick={() => insertMarkdown('> ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Quote">
+                                    <IconQuote size={16} />
+                                </button>
+                                <div className="flex-1" />
                             </div>
-                            <div className="flex-1 relative">
-                                {showPreview ? (
-                                    <div
-                                        className="w-full h-full p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm overflow-y-auto prose prose-sm dark:prose-invert max-w-none"
-                                        dangerouslySetInnerHTML={{ __html: previewHtml || '<span class="text-gray-400">メモがありません</span>' }}
-                                    />
-                                ) : (
+
+                            {/* Split Editor/Preview */}
+                            <div className="flex-1 flex flex-col md:flex-row gap-4 h-full min-h-0">
+                                {/* Editor */}
+                                <div className="flex-1 flex flex-col h-full min-h-0">
+                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 px-0.5">Editor</div>
                                     <Textarea
                                         id="task-description"
                                         name="description"
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
-                                        placeholder="詳細を入力..."
-                                        className="h-full bg-gray-50 dark:bg-gray-900/50 border-0 rounded-lg focus:ring-1 focus:ring-blue-500/50 text-gray-800 dark:text-gray-200 font-mono text-sm"
+                                        placeholder="Add details..."
+                                        className="flex-1 bg-transparent border-0 focus:ring-0 p-0 text-gray-800 dark:text-gray-200 font-mono text-xs sm:text-sm resize-none leading-relaxed custom-scrollbar"
                                         containerClassName="h-full"
                                         autoFocus={!description}
-                                        aria-label="詳細メモ"
+                                        aria-label="Description"
                                     />
-                                )}
+                                </div>
+
+                                <div className="hidden md:block w-px bg-gray-100 dark:bg-gray-800 self-stretch my-2" />
+
+                                {/* Preview */}
+                                <div className="flex-1 flex flex-col h-full min-h-0 border-t md:border-t-0 pt-4 md:pt-0">
+                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 px-0.5">Preview</div>
+                                    <div
+                                        className="flex-1 py-0 pr-2 text-xs sm:text-sm overflow-y-auto custom-scrollbar prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5"
+                                        dangerouslySetInnerHTML={{ __html: previewHtml || '<span class="text-gray-400 italic">No content</span>' }}
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        {/* Right Column: Settings */}
-                        <div className="md:col-span-4 space-y-3">
-                            {/* Schedule Section */}
-                            <details open={scheduleOpen} onToggle={(e) => setScheduleOpen(e.currentTarget.open)} className="group border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-                                <summary
-                                    className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 cursor-pointer list-none outline-none bg-gray-50 dark:bg-gray-700/30 rounded-t-lg group-[:not([open])]:rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50 focus:ring-2 focus:ring-inset focus:ring-blue-500"
-                                    role="button"
-                                    aria-expanded={scheduleOpen}
-                                >
-                                    <span className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                                        <IconCalendar className="text-blue-500" size={16} />
-                                        {t('task_detail.schedule_label')}
-                                    </span>
-                                    <span className="transform group-open:rotate-180 transition-transform text-gray-400">
-                                        <IconChevronDown size={20} />
-                                    </span>
-                                </summary>
-                                <div className="p-3 flex flex-col gap-3">
+                        {/* Divider - Vertical */}
+                        <div className="hidden md:block col-span-1 w-px bg-gray-100 dark:bg-gray-800 h-full mx-auto" />
+
+                        {/* Right Column: Settings (Sidebar style) */}
+                        <div className="md:col-span-3 space-y-5 pt-1 overflow-y-auto no-scrollbar">
+                            {/* Schedule Section - Flat */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1 border-b border-gray-100 dark:border-gray-800">
+                                    {t('task_detail.schedule_label')}
+                                </div>
+                                <div className="space-y-3 px-1">
                                     {/* Due Date */}
-                                    <div>
+                                    <div className="relative group">
+                                        <label className="text-xs text-gray-500 mb-1 block">{t('task_detail.due_date_label')}</label>
                                         <div
                                             className="relative cursor-pointer"
                                             onClick={() => {
@@ -346,56 +380,59 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                             <Input
                                                 type="date"
                                                 id="task-due-date"
-                                                label={t('task_detail.due_date_label')}
                                                 value={formatDateForInput(dueDate)}
                                                 onChange={(e) => setDueDate(parseDateInput(e.target.value))}
-                                                className="cursor-pointer bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-sm"
+                                                className="cursor-pointer bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto w-full"
                                             />
                                         </div>
                                     </div>
 
                                     {/* Recurrence */}
                                     <div>
+                                        <label className="text-xs text-gray-500 mb-1 block">{t('task_detail.recurrence_label')}</label>
                                         <Select
                                             id="task-recurrence"
-                                            label={t('task_detail.recurrence_label')}
                                             value={recurrence?.type || 'none'}
                                             onChange={(e) => handleRecurrenceTypeChange(e.target.value)}
-                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-sm"
+                                            className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
                                             options={definitionRecurrenceOptions}
                                         />
                                     </div>
 
                                     {/* Weekly Days */}
                                     {(recurrence?.type === 'weekly' || recurrence?.type === 'weekdays') && (
-                                        <div className="pt-2 border-t border-gray-100 dark:border-gray-700 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            <span className="block text-xs font-semibold text-gray-500 mb-2 uppercase">{t('task_detail.recurrence_days')}</span>
-                                            <div className="flex flex-wrap gap-2">
-                                                {dayLabels.map((day, idx) => (
-                                                    <label key={idx} htmlFor={`recurrence-day-${idx}`} className="flex items-center gap-1 cursor-pointer select-none">
-                                                        <input
-                                                            id={`recurrence-day-${idx}`}
-                                                            name={`recurrenceDay${idx}`}
-                                                            type="checkbox"
-                                                            checked={recurrence.days?.includes(idx) || false}
-                                                            onChange={() => handleDayToggle(idx)}
-                                                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                        />
-                                                        <span className="text-xs text-gray-700 dark:text-gray-300">{day}</span>
-                                                    </label>
-                                                ))}
+                                        <div className="pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {dayLabels.map((day, idx) => {
+                                                    const isSelected = recurrence.days?.includes(idx);
+                                                    return (
+                                                        <button
+                                                            type="button"
+                                                            key={idx}
+                                                            onClick={() => handleDayToggle(idx)}
+                                                            className={cn(
+                                                                "w-7 h-7 rounded-full text-xs flex items-center justify-center transition-colors border",
+                                                                isSelected
+                                                                    ? "bg-blue-500 text-white border-blue-500"
+                                                                    : "bg-transparent text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                                            )}
+                                                        >
+                                                            {day}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     )}
 
                                     {/* TimeBlock */}
                                     <div>
+                                        <label className="text-xs text-gray-500 mb-1 block">{t('task_detail.time_block_label')}</label>
                                         <Select
                                             id="task-timeblock"
-                                            label={t('task_detail.time_block_label')}
                                             value={timeBlockId || ''}
                                             onChange={(e) => setTimeBlockId(e.target.value || null)}
-                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-sm"
+                                            className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
                                         >
                                             <option value="">{t('task_detail.time_block_unspecified')}</option>
                                             {timeBlocks.map(tb => (
@@ -406,12 +443,12 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                                     {/* Duration */}
                                     <div>
+                                        <label className="text-xs text-gray-500 mb-1 block">{t('task_detail.duration_label')}</label>
                                         <Select
                                             id="task-duration"
-                                            label={t('task_detail.duration_label')}
                                             value={duration || ''}
                                             onChange={(e) => setDuration(e.target.value ? parseInt(e.target.value, 10) : null)}
-                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-sm"
+                                            className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
                                         >
                                             <option value="">{t('task_detail.duration_none')}</option>
                                             {customDurations.map(d => (
@@ -420,23 +457,27 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                         </Select>
                                     </div>
                                 </div>
-                            </details>
+                            </div>
 
-                            {/* Project */}
-                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-                                <Select
-                                    id="task-project"
-                                    label={t('task_detail.project_label')}
-                                    value={projectId || 'none'}
-                                    onChange={(e) => setProjectId(e.target.value === 'none' ? null : e.target.value)}
-                                    className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-sm"
-                                    containerClassName="gap-2"
-                                >
-                                    <option value="none">{t('task_detail.project_none')}</option>
-                                    {projects.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
-                                    ))}
-                                </Select>
+                            {/* Project Section */}
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1 border-b border-gray-100 dark:border-gray-800">
+                                    {t('task_detail.project_label')}
+                                </div>
+                                <div className="px-1">
+                                    <Select
+                                        id="task-project"
+                                        value={projectId || 'none'}
+                                        onChange={(e) => setProjectId(e.target.value === 'none' ? null : e.target.value)}
+                                        className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
+                                        containerClassName="gap-2"
+                                    >
+                                        <option value="none">{t('task_detail.project_none')}</option>
+                                        {projects.map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))}
+                                    </Select>
+                                </div>
                             </div>
                         </div>
                     </div>

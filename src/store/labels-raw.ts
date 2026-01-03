@@ -168,3 +168,55 @@ export async function deleteLabelRaw(userId: string, workspaceId: string, labelI
         }
     });
 }
+
+import { writeBatch } from "../core/firebase-sdk";
+
+export async function reorderLabelsRaw(userId: string, workspaceId: string, orderedLabelIds: string[]) {
+    const originalLabels = labelCache.getLabels(workspaceId);
+    const orderMap = new Map<string, number>();
+    orderedLabelIds.forEach((id, index) => orderMap.set(id, index));
+
+    // Optimistic Update
+    if (originalLabels && originalLabels.length > 0) {
+        const updatedLabels = originalLabels.map(l => {
+            const newIndex = orderMap.get(l.id!);
+            if (newIndex !== undefined) {
+                return { ...l, order: newIndex };
+            }
+            return l;
+        });
+
+        // Sort to reflect UI immediately
+        updatedLabels.sort((a, b) => {
+            const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+            const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+            return orderA - orderB;
+        });
+
+        labelCache.setCache(workspaceId, updatedLabels);
+    }
+
+    return withRetry(async () => {
+        const path = paths.labels(userId, workspaceId);
+
+        const chunks: string[][] = [];
+        for (let i = 0; i < orderedLabelIds.length; i += 500) {
+            chunks.push(orderedLabelIds.slice(i, i + 500));
+        }
+
+        for (const chunk of chunks) {
+            const batch = writeBatch(db);
+            chunk.forEach((id) => {
+                const globalIndex = orderMap.get(id)!;
+                const ref = doc(db, path, id);
+                batch.update(ref, { order: globalIndex });
+            });
+            await batch.commit();
+        }
+    }, {
+        onFinalFailure: () => {
+            labelCache.setCache(workspaceId, originalLabels);
+            toast.error('ラベルの並び替えに失敗しました');
+        }
+    });
+}

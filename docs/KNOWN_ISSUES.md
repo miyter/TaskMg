@@ -2,11 +2,45 @@
 
 ## 🚀 残存課題
 
+> [!IMPORTANT]
+> 修正にあたっては `docs/PROJECT_STATUS.md` の「UI/UX 設計思想」を必ず参照し、情報の高密度化とミニマリズムを両棲させてください。
+
+---
+
+### ✅ Completed (Recent Refinements)
+- **Dashboard**:
+    - **Density & Spacing**: Vertical spacing compressed between sections.
+    - **Progress Bar Overflow**: Progress bar layout adjusted for responsiveness.
+- **Task Edit Modal**:
+    - **Density & Layout**: Border-based layout was abolished in favor of dividers. Information density improved.
+    - **Header Simplification**: Icons prioritized over text labels.
+    - **WYSIWYG Editor**: Abolished preview toggle in favor of a real-time split-view editor.
+- **Main View**:
+    - **Wording**: Sort option text shortened.
+    - **Empty State**: Added "日付なし" display for tasks without due dates.
+- **Workspace**:
+    - **Edit/Delete**: Added edit/delete functionality in the workspace dropdown.
+- **Time Block & Duration**:
+    - **Settings UI**: Added dedicated schedule tab in settings modal.
+
+---
+
+### ⚡ Grok Review (Remaining)
+- **src/components/tasks/TaskList.tsx**:
+    - **タスク並び替え遅延**: 手動並び替え時にOptimistic Updateがあるが、Reactの再レンダリングにより若干のラグを感じる可能性がある。
+    - **DnDロジック重複**: `useDndMonitor`（ローカル）と`useAppDnD`（グローバル）で処理が分散しており、統合が望ましい。
 
 
+---
 
+### 🏎️ Performance (Mobile Lighthouse)
 
-
+- **Render Blocking Resources**:
+    - **CSS**: `vendor-*.css` (約90KB) と `main-*.css` (約12KB) がレンダリングをブロックし、LCPを遅延 (推計470ms)。クリティカルCSSのインライン化や遅延読み込みを検討。
+- **Forced Reflow**:
+    - **Layout Thrashing**: JavaScript (`main-*.js`) によるDOM状態変更後の即時計測が発生中 (36ms)。`useLayoutEffect` やドラッグ操作時のDOM計測ロジックの最適化が必要。
+- **Lighthouse/LCP**:
+    - **Critical Request Chain**: Firebase Auth iframe等の長いリクエストチェーン (最大2.4s) が初期表示を遅延。
 
 ---
 
@@ -15,4 +49,3 @@
 - **完全な多言語化 (i18n)**: Wikiコンテンツの多言語化、Zodスキーマのエラーメッセージのローカライズ。
 - **Firestore制約**: `WorkspaceEditModal` 等でのサーバー側ユニーク制約の検討。
 - **定数値の集約**: 引き続きマジックナンバーの抽出を進める。
-

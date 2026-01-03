@@ -57,6 +57,7 @@ export const IconDoubleChevronRight = createIcon(<path d="M13 5l7 7-7 7M5 5l7 7-
 export const IconDashboard = createIcon(<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />);
 export const IconWizard = createIcon(<path d="M13 10V3L4 14h7v7l9-11h-7z" />);
 export const IconWiki = createIcon(<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />);
+export const IconGripVertical = createIcon(<><circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" /></>);
 
 export const IconCalendar = createIcon(<><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>);
 export const IconCalendarDays = createIcon(<><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="M8 14h.01" /><path d="M12 14h.01" /><path d="M16 14h.01" /><path d="M8 18h.01" /><path d="M12 18h.01" /><path d="M16 18h.01" /></>);
@@ -64,6 +65,16 @@ export const IconClock = createIcon(<><circle cx="12" cy="12" r="10" /><path d="
 export const IconRepeat = createIcon(<><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></>);
 export const IconInbox = createIcon(<><path d="M4 11V4h16v7" /><path d="M4 11h5.8a2.2 2.2 0 004.4 0H20v8a1 1 0 01-1 1H5a1 1 0 01-1-1v-8z" /></>);
 export const IconClipboard = createIcon(<><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /></>);
+
+// --- Editor ---
+export const IconBold = createIcon(<path d="M6 4h8a4 4 0 014 4 4 4 0 01-4 4H6z" /><path d="M6 12h9a4 4 0 014 4 4 4 0 01-4 4H6z" />);
+export const IconItalic = createIcon(<path d="M19 4h-9" /><path d="M14 20H5" /><path d="M15 4L9 20" />);
+export const IconList = createIcon(<><path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" /><path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" /></>);
+export const IconListOrdered = createIcon(<><path d="M10 6h11" /><path d="M10 12h11" /><path d="M10 18h11" /><path d="M4 6h1v4" /><path d="M4 10h2" /><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" /></>);
+export const IconCheckSquare = createIcon(<path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />);
+export const IconCode = createIcon(<path d="M16 18l6-6-6-6" /><path d="M8 6l-6 6 6 6" />);
+export const IconHeading = createIcon(<path d="M6 4v16" /><path d="M18 4v16" /><path d="M6 12h12" />);
+export const IconQuote = createIcon(<path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2.5 2h-1c-.5 0-1 .5-1 1v1c0 .5.5 1 1 1z" /><path d="M16 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2.5 2h-1c-.5 0-1 .5-1 1v1c0 .5.5 1 1 1z" />);
 
 // --- Spinner ---
 export const IconSpinner = ({ className, size, ...props }: IconProps) => (
