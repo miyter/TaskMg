@@ -161,7 +161,9 @@ export const ja = {
         due_date_label: '期限日',
         schedule_label: 'スケジュール',
         title_placeholder: 'タスクのタイトル',
+
         delete_button: '削除',
+        duration_unit: '分',
     },
 
     time_block: {
@@ -446,6 +448,26 @@ export const ja = {
         header_collapse: 'ヘッダーを折りたたむ',
     },
 
+    login: {
+        tagline: '究極のタスク管理エクスペリエンス',
+        signin: 'サインイン',
+        signing_in: 'サインイン中...',
+        guest_login: 'ゲストとして利用',
+        email_label: 'Email',
+        password_label: 'Password',
+        or: 'または',
+        error: {
+            invalid_email: '無効なメールアドレスの形式です。',
+            user_disabled: 'このユーザーは無効化されています。',
+            user_not_found: 'ユーザーが見つかりません。',
+            wrong_password: 'パスワードが間違っています。',
+            too_many_requests: 'リクエストが多すぎます。後でもう一度お試しください。',
+            network_error: 'ネットワークエラーが発生しました。',
+            login_fail: 'ログインに失敗しました。',
+            guest_fail: 'ゲストログインに失敗しました: {message}',
+        }
+    },
+
     general_dashboard: {
         overall_stats: '全体統計',
         time_block_usage: 'タイムブロック使用状況',
@@ -608,7 +630,9 @@ export const en = {
         due_date_label: 'Due Date',
         schedule_label: 'Schedule',
         title_placeholder: 'Task Title',
+
         delete_button: 'Delete',
+        duration_unit: 'min',
     },
 
     time_block: {
@@ -890,6 +914,26 @@ export const en = {
             if_badge: 'IF',
             score_label: 'Score',
             add_obstacle: '+ Add Obstacle',
+        }
+    },
+
+    login: {
+        tagline: 'The Ultimate Task Management Experience',
+        signin: 'Sign In',
+        signing_in: 'Signing in...',
+        guest_login: 'Guest Login',
+        email_label: 'Email',
+        password_label: 'Password',
+        or: 'OR',
+        error: {
+            invalid_email: 'Invalid email format.',
+            user_disabled: 'User disabled.',
+            user_not_found: 'User not found.',
+            wrong_password: 'Wrong password.',
+            too_many_requests: 'Too many requests. Try again later.',
+            network_error: 'Network error.',
+            login_fail: 'Login failed.',
+            guest_fail: 'Guest login failed: {message}',
         }
     },
 

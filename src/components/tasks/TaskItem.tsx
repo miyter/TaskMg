@@ -144,37 +144,32 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
                 {/* Meta Info (Right Side) */}
                 <div className="flex items-center gap-3 text-xs shrink-0">
                     {/* Project */}
-                    {project && (
-                        <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
-                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: project.color || '#ccc' }} />
-                            <span className="max-w-[100px] truncate">{project.name}</span>
-                        </div>
-                    )}
+                    <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: project?.color || '#ccc' }} />
+                        <span className="max-w-[100px] truncate">
+                            {project ? project.name : t('task_detail.project_none')}
+                        </span>
+                    </div>
 
                     {/* TimeBlock */}
                     {timeBlock && (
                         <div className="hidden sm:flex items-center gap-1 text-gray-500 dark:text-gray-400">
                             <IconClock className="w-3.5 h-3.5" />
-                            <span className="max-w-[120px] truncate">{timeBlock.name}</span>
+                            <span className="max-w-[120px] truncate">
+                                {timeBlock.name || `${timeBlock.start} - ${timeBlock.end}`}
+                            </span>
                         </div>
                     )}
 
                     {/* Date / Recurrence */}
-                    <div className={cn("flex items-center gap-1", isCompleted ? "text-gray-400" : getTaskDateColor(task.dueDate || null))}>
-                        {hasRecurrence ? (
-                            /* Recurrence Icon */
-                            <IconRepeat className="w-3.5 h-3.5" />
-                        ) : hasDate ? (
-                            /* Date Icon + Text */
-                            <>
-                                <IconCalendar className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">{formatDateCompact(task.dueDate || null)}</span>
-                            </>
-                        ) : (
-                            /* No Date */
-                            null
-                        )}
-                    </div>
+                    {(hasRecurrence || hasDate) && (
+                        <div className={cn("flex items-center gap-1", isCompleted ? "text-gray-400" : getTaskDateColor(task.dueDate || null))}>
+                            {hasRecurrence ? <IconRepeat className="w-3.5 h-3.5" /> : <IconCalendar className="w-3.5 h-3.5" />}
+                            {task.dueDate && (
+                                <span className="hidden sm:inline">{formatDateCompact(task.dueDate)}</span>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Actions */}

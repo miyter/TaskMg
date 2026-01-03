@@ -295,7 +295,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                     className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-medium h-auto py-1 px-3"
                                     aria-label={showPreview ? '編集モードに切り替え' : 'プレビューモードに切り替え'}
                                 >
-                                    {showPreview ? '編集' : 'プレビュー'}
+                                    {showPreview ? t('modal.edit') : t('modal.preview')}
                                 </Button>
                             </div>
                             <div className="flex-1 relative">
@@ -419,7 +419,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                         >
                                             <option value="">{t('task_detail.duration_none')}</option>
                                             {customDurations.map(d => (
-                                                <option key={d} value={d}>{d} min</option>
+                                                <option key={d} value={d}>{d} {t('task_detail.duration_unit')}</option>
                                             ))}
                                         </Select>
                                     </div>

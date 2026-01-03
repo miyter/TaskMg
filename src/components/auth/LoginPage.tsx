@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { auth } from '../../core/firebase';
 import { signInAnonymously, signInWithEmailAndPassword } from '../../core/firebase-sdk';
+import { useTranslation } from '../../core/translations';
 
 export const LoginPage: React.FC = () => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -16,14 +18,14 @@ export const LoginPage: React.FC = () => {
         try {
             await signInWithEmailAndPassword(auth, email, password);
         } catch (err: any) {
-            let msg = "Login failed.";
+            let msg = t('login.error.login_fail');
             switch (err.code) {
-                case 'auth/invalid-email': msg = "Invalid email format."; break;
-                case 'auth/user-disabled': msg = "User disabled."; break;
-                case 'auth/user-not-found': msg = "User not found."; break;
-                case 'auth/wrong-password': msg = "Wrong password."; break;
-                case 'auth/too-many-requests': msg = "Too many requests. Try again later."; break;
-                case 'auth/network-request-failed': msg = "Network error."; break;
+                case 'auth/invalid-email': msg = t('login.error.invalid_email'); break;
+                case 'auth/user-disabled': msg = t('login.error.user_disabled'); break;
+                case 'auth/user-not-found': msg = t('login.error.user_not_found'); break;
+                case 'auth/wrong-password': msg = t('login.error.wrong_password'); break;
+                case 'auth/too-many-requests': msg = t('login.error.too_many_requests'); break;
+                case 'auth/network-request-failed': msg = t('login.error.network_error'); break;
             }
             setError(msg);
         } finally {
@@ -37,7 +39,7 @@ export const LoginPage: React.FC = () => {
         try {
             await signInAnonymously(auth);
         } catch (err: any) {
-            setError("Guest login failed: " + err.message);
+            setError(t('login.error.guest_fail').replace('{message}', err.message));
         } finally {
             setLoading(false);
         }
@@ -51,7 +53,7 @@ export const LoginPage: React.FC = () => {
                         <img src="/images/web-app-manifest-512x512.png" alt="Logo" className="h-12 w-12" />
                     </div>
                     <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Task<span className="text-blue-600 dark:text-blue-400">Mg</span></h1>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">究極のタスク管理エクスペリエンス</p>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">{t('login.tagline')}</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-5 sm:space-y-6">
@@ -62,7 +64,7 @@ export const LoginPage: React.FC = () => {
                     )}
 
                     <div>
-                        <label htmlFor="login-email" className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Email</label>
+                        <label htmlFor="login-email" className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">{t('login.email_label')}</label>
                         <input
                             id="login-email"
                             name="email"
@@ -77,7 +79,7 @@ export const LoginPage: React.FC = () => {
                     </div>
 
                     <div>
-                        <label htmlFor="login-password" className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Password</label>
+                        <label htmlFor="login-password" className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">{t('login.password_label')}</label>
                         <input
                             id="login-password"
                             name="password"
@@ -96,7 +98,7 @@ export const LoginPage: React.FC = () => {
                         disabled={loading}
                         className="btn-premium w-full py-4 text-lg shadow-lg hover:shadow-xl active:scale-[0.98] transition-all"
                     >
-                        {loading ? 'サインイン中...' : 'サインイン'}
+                        {loading ? t('login.signing_in') : t('login.signin')}
                     </button>
                 </form>
 
@@ -106,7 +108,7 @@ export const LoginPage: React.FC = () => {
                             <div className="w-full border-t border-gray-200/50 dark:border-gray-700/50"></div>
                         </div>
                         <div className="relative flex justify-center text-xs">
-                            <span className="px-3 bg-transparent text-gray-400 uppercase tracking-widest font-bold">OR</span>
+                            <span className="px-3 bg-transparent text-gray-400 uppercase tracking-widest font-bold">{t('login.or')}</span>
                         </div>
                     </div>
 
@@ -115,7 +117,7 @@ export const LoginPage: React.FC = () => {
                         disabled={loading}
                         className="mt-8 w-full py-3.5 bg-gray-100/50 hover:bg-gray-200/70 active:bg-gray-300 dark:bg-gray-700/30 dark:hover:bg-gray-600/50 dark:active:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-3 border border-transparent hover:border-gray-300 dark:hover:border-gray-600"
                     >
-                        <span className="text-xl">🕵️</span> ゲストとして利用
+                        <span className="text-xl">🕵️</span> {t('login.guest_login')}
                     </button>
                 </div>
             </div>
