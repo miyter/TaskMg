@@ -44,6 +44,14 @@ export const UI_CONFIG = {
         BREAKPOINT_MD: 768, // Matches Tailwind 'md' breakpoint (768px)
         DURATIONS: [30, 45, 60, 75, 90],
     },
+    TIME_BLOCK: {
+        MAX_COUNT: 10,
+        DEFAULTS: [
+            { id: 'tb_morning', name: '06:00 - 09:00', start: '06:00', end: '09:00', color: '#EF4444', order: 0 },
+            { id: 'tb_afternoon', name: '13:00 - 17:00', start: '13:00', end: '17:00', color: '#3B82F6', order: 1 },
+            { id: 'tb_night', name: '20:00 - 22:00', start: '20:00', end: '22:00', color: '#8B5CF6', order: 2 }
+        ]
+    },
     LAYOUT: {
         // Tailwind class for main content width
         CONTAINER_WIDTH_CLASS: 'w-full max-w-full',

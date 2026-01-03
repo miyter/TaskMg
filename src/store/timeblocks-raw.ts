@@ -16,16 +16,14 @@ import {
     setDoc,
     writeBatch
 } from "../core/firebase-sdk";
+import { UI_CONFIG } from '../core/ui-constants';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
 import { TimeBlock } from './schema';
 import { toast } from './ui/toast-store';
 
-const defaultTimeBlocks: TimeBlock[] = [
-    { id: 'tb_morning', name: '06:00 - 09:00', start: '06:00', end: '09:00', color: '#EF4444', order: 0 },
-    { id: 'tb_afternoon', name: '13:00 - 17:00', start: '13:00', end: '17:00', color: '#3B82F6', order: 1 },
-    { id: 'tb_night', name: '20:00 - 22:00', start: '20:00', end: '22:00', color: '#8B5CF6', order: 2 }
-];
+
+const defaultTimeBlocks: TimeBlock[] = UI_CONFIG.TIME_BLOCK.DEFAULTS.map(b => ({ ...b })) as TimeBlock[];
 
 class TimeBlockCache {
     private static instance: TimeBlockCache;

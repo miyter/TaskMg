@@ -13,12 +13,11 @@ import {
     SortableContext,
     arrayMove,
     sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
+    verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import React, { useEffect, useState } from 'react';
-import { SYSTEM_CONSTANTS } from '../../core/constants';
 import { useTranslation } from '../../core/translations';
-import { COLOR_PALETTE } from '../../core/ui-constants';
+import { COLOR_PALETTE, UI_CONFIG } from '../../core/ui-constants';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { useWorkspace } from '../../hooks/useWorkspace';
 import { TimeBlock } from '../../store/schema';
@@ -65,7 +64,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
     }, [isOpen, storeBlocks]);
 
     const handleAdd = () => {
-        if (blocks.length >= SYSTEM_CONSTANTS.TIME_BLOCK.MAX_COUNT) return;
+        if (blocks.length >= UI_CONFIG.TIME_BLOCK.MAX_COUNT) return;
 
         let nextStart = '09:00';
         let nextEnd = '10:00';
@@ -240,7 +239,7 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                     </DndContext>
 
                     {/* Add Button - FAB style circular button */}
-                    {blocks.length < SYSTEM_CONSTANTS.TIME_BLOCK.MAX_COUNT ? (
+                    {blocks.length < UI_CONFIG.TIME_BLOCK.MAX_COUNT ? (
                         <div className="flex justify-center py-2">
                             <button
                                 onClick={handleAdd}
