@@ -124,12 +124,21 @@ export const TaskList: React.FC = () => {
 
     const displayTasks = localOrderedTasks || processedTasks;
 
-    // Logic for task reordering (integrated with global DnD)
-    const handleTaskReorder = React.useCallback(async (activeTaskId: string, overTaskId: string) => {
-        // Only allow reordering if we are in manual sort mode
-        if (sortCriteria !== 'manual') return;
+    // Refs to avoid infinite loop in useCallback dependencies
+    const tasksRef = React.useRef({ localOrderedTasks, processedTasks, sortCriteria });
+    React.useEffect(() => {
+        tasksRef.current = { localOrderedTasks, processedTasks, sortCriteria };
+    });
 
-        const currentTasks = localOrderedTasks || processedTasks;
+    // Logic for task reordering (integrated with global DnD)
+    // Dependencies minimized to prevent infinite loop (React Error #185)
+    const handleTaskReorder = React.useCallback(async (activeTaskId: string, overTaskId: string) => {
+        const { localOrderedTasks: local, processedTasks: processed, sortCriteria: sort } = tasksRef.current;
+
+        // Only allow reordering if we are in manual sort mode
+        if (sort !== 'manual') return;
+
+        const currentTasks = local || processed;
         const oldIndex = currentTasks.findIndex(t => t.id === activeTaskId);
         const newIndex = currentTasks.findIndex(t => t.id === overTaskId);
 
@@ -147,10 +156,29 @@ export const TaskList: React.FC = () => {
                 setLocalOrderedTasks(null); // Rollback on error
             }
         }
-    }, [sortCriteria, localOrderedTasks, processedTasks]);
+    }, []); // Empty deps - uses ref for latest values
 
-    // Register handler to global DnD system
+    // Register handler to global DnD system with infinite loop protection
+    const effectCallCountRef = React.useRef(0);
+    const effectLastTimeRef = React.useRef(Date.now());
+
     React.useEffect(() => {
+        const now = Date.now();
+        const timeDiff = now - effectLastTimeRef.current;
+
+        // Reset counter if more than 1 second has passed
+        if (timeDiff > 1000) {
+            effectCallCountRef.current = 0;
+        }
+        effectLastTimeRef.current = now;
+        effectCallCountRef.current++;
+
+        // Infinite loop stopper: if called more than 10 times within 1 second, abort
+        if (effectCallCountRef.current > 10) {
+            console.error('[TaskList] Infinite loop detected in setTasksReorderHandler effect. Aborting registration.');
+            return;
+        }
+
         setTasksReorderHandler(handleTaskReorder);
         return () => setTasksReorderHandler(null);
     }, [handleTaskReorder, setTasksReorderHandler]);

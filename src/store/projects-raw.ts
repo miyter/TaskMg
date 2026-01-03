@@ -1,7 +1,7 @@
 /**
- * 更新日: 2026-01-02
- * 内容: ProjectCache クラスへの移行と Optimistic Update の強化
- *      - 成功時の自動更新、失敗時のロールバック、Toast通知を追加
+ * 更新日: 2026-01-03
+ * 内容: FirestoreCollectionCache ベースクラスへの移行
+ *      - 共通キャッシュロジックを base-cache.ts に集約
  */
 
 import {
@@ -19,82 +19,54 @@ import { db } from '../core/firebase';
 import { areProjectArraysIdentical } from '../utils/compare';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
+import { FirestoreCollectionCache } from './base-cache';
 import { Project } from './schema';
 import { toast } from './ui/toast-store';
 
-class ProjectCache {
-    private cachedProjectsMap = new Map<string, Project[]>();
-    private listeners = new Map<string, Set<(projects: Project[]) => void>>();
-    private unsubscribes = new Map<string, Unsubscribe>();
-
-    public isInitialized(workspaceId: string): boolean {
-        return this.cachedProjectsMap.has(workspaceId);
+/**
+ * ProjectCache - FirestoreCollectionCache を継承
+ */
+class ProjectCache extends FirestoreCollectionCache<Project> {
+    constructor() {
+        super({ logPrefix: '[ProjectCache]' });
     }
 
-    private notifyListeners(workspaceId: string) {
-        const projects = this.cachedProjectsMap.get(workspaceId) || [];
-        const listeners = this.listeners.get(workspaceId);
-        if (listeners) {
-            const projectsCopy = [...projects];
-            listeners.forEach(listener => listener(projectsCopy));
-        }
-    }
-
-    public setCache(workspaceId: string, projects: Project[]) {
-        this.cachedProjectsMap.set(workspaceId, projects);
-        this.notifyListeners(workspaceId);
-    }
-
+    // 後方互換性のためのエイリアス
     public getProjects(workspaceId: string): Project[] {
-        return this.cachedProjectsMap.get(workspaceId) || [];
+        return this.getItems(workspaceId);
     }
 
     public subscribe(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void): Unsubscribe {
-        if (!this.listeners.has(workspaceId)) {
-            this.listeners.set(workspaceId, new Set());
-        }
-        const listeners = this.listeners.get(workspaceId)!;
-        listeners.add(onUpdate);
+        // リスナー登録とクリーンアップ関数取得
+        const cleanup = this.registerListener(workspaceId, onUpdate);
 
-        const cached = this.cachedProjectsMap.get(workspaceId);
-        if (cached) {
-            queueMicrotask(() => onUpdate([...cached]));
-        }
-
-        if (!this.unsubscribes.has(workspaceId)) {
+        // Firestore 購読開始（まだ未開始の場合）
+        if (!this.hasFirestoreSubscription(workspaceId)) {
             const path = paths.projects(userId, workspaceId);
             const q = query(collection(db, path));
-            console.log(`[ProjectCache] Subscribing to path: ${path} for user: ${userId}`);
+            console.log(`${this.config.logPrefix} Subscribing to path: ${path} for user: ${userId}`);
+
             const unsub = onSnapshot(q, (snapshot) => {
                 const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-                console.log(`[ProjectCache] Received ${projects.length} projects from Firestore for workspace: ${workspaceId}`);
-                const current = this.cachedProjectsMap.get(workspaceId);
+                console.log(`${this.config.logPrefix} Received ${projects.length} projects from Firestore for workspace: ${workspaceId}`);
+                const current = this.getItems(workspaceId);
 
-                if (current && areProjectArraysIdentical(current, projects)) {
-                    console.log("[ProjectCache] Data identical, skipping update");
+                if (current.length > 0 && areProjectArraysIdentical(current, projects)) {
+                    console.log(`${this.config.logPrefix} Data identical, skipping update`);
                     return;
                 }
 
-                console.log("[ProjectCache] Updating cache and notifying listeners");
-                this.cachedProjectsMap.set(workspaceId, projects);
-                this.notifyListeners(workspaceId);
+                console.log(`${this.config.logPrefix} Updating cache and notifying listeners`);
+                this.setCache(workspaceId, projects);
             }, (error) => {
-                console.error("[ProjectCache] Subscription error:", error);
-                this.cachedProjectsMap.set(workspaceId, []);
-                this.notifyListeners(workspaceId);
+                console.error(`${this.config.logPrefix} Subscription error:`, error);
+                this.setCache(workspaceId, []);
             });
 
-            this.unsubscribes.set(workspaceId, unsub);
+            this.setFirestoreSubscription(workspaceId, unsub);
         }
 
-        return () => {
-            listeners.delete(onUpdate);
-            if (listeners.size === 0) {
-                this.unsubscribes.get(workspaceId)?.();
-                this.unsubscribes.delete(workspaceId);
-                this.listeners.delete(workspaceId);
-            }
-        };
+        return cleanup;
     }
 }
 
@@ -113,7 +85,7 @@ export async function addProjectRaw(userId: string, workspaceId: string, name: s
 
     // Optimistic Update
     const tempId = 'temp-' + Date.now();
-    const newProject: Project = { id: tempId, name, color, ownerId: userId, createdAt: new Date() } as any;
+    const newProject: Project = { id: tempId, name, color, ownerId: userId, createdAt: new Date() } as Project;
     projectCache.setCache(workspaceId, [...originalProjects, newProject]);
 
     const path = paths.projects(userId, workspaceId);
@@ -173,17 +145,34 @@ export async function deleteProjectRaw(userId: string, workspaceId: string, proj
     });
 }
 
-export async function reorderProjectsRaw(userId: string, workspaceId: string, projects: Project[]) {
+export async function reorderProjectsRaw(userId: string, workspaceId: string, orderedProjectIds: string[]) {
     const originalProjects = projectCache.getProjects(workspaceId);
-    projectCache.setCache(workspaceId, projects);
+
+    // Optimistic Update: order フィールドを更新してソート
+    const orderMap = new Map<string, number>();
+    orderedProjectIds.forEach((id, index) => orderMap.set(id, index));
+
+    const updatedProjects = originalProjects.map(p => {
+        const newOrder = orderMap.get(p.id!);
+        if (newOrder !== undefined) {
+            return { ...p, order: newOrder };
+        }
+        return p;
+    });
+    updatedProjects.sort((a, b) => {
+        const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+        const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+        return orderA - orderB;
+    });
+    projectCache.setCache(workspaceId, updatedProjects);
 
     return withRetry(async () => {
         const batch = writeBatch(db);
         const path = paths.projects(userId, workspaceId);
 
-        projects.forEach((p, index) => {
-            if (p.id && !p.id.startsWith('temp-')) {
-                const ref = doc(db, path, p.id);
+        orderedProjectIds.forEach((id, index) => {
+            if (id && !id.startsWith('temp-')) {
+                const ref = doc(db, path, id);
                 batch.update(ref, { order: index });
             }
         });

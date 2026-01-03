@@ -125,7 +125,7 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
                 const newProjects = arrayMove(currentProjects, oldIndex, newIndex);
                 options?.onOptimisticReorder?.(newProjects);
                 try {
-                    await reorderProjects(newProjects);
+                    await reorderProjects(newProjects.map(p => p.id!));
                 } catch (err) {
                     console.error('Failed to update project order', err);
                     toast.error(t('msg.dnd.reorderFailed') || t('error'));

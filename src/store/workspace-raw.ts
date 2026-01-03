@@ -1,7 +1,7 @@
 /**
- * 更新日: 2026-01-02
- * 内容: WorkspaceCache クラスへの移行と Optimistic Update の強化
- *      - 成功時の自動更新、失敗時のロールバック、Toast通知を追加
+ * 更新日: 2026-01-03
+ * 内容: FirestoreCollectionCache ベースクラスへの移行
+ *      - 共通キャッシュロジックを base-cache.ts に集約
  */
 
 import {
@@ -20,92 +20,58 @@ import {
 import { db } from '../core/firebase';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
+import { FirestoreCollectionCache } from './base-cache';
 import { Workspace, WorkspaceSchema } from './schema';
 import { toast } from './ui/toast-store';
 
-class WorkspaceCache {
-    private cachedWorkspacesMap = new Map<string, Workspace[]>();
-    private listeners = new Map<string, Set<(workspaces: Workspace[]) => void>>();
-    private unsubscribes = new Map<string, Unsubscribe>();
-
-    public isInitialized(userId: string): boolean {
-        return this.cachedWorkspacesMap.has(userId);
+/**
+ * WorkspaceCache - FirestoreCollectionCache を継承
+ * Workspace は userId をキーとして使用
+ */
+class WorkspaceCache extends FirestoreCollectionCache<Workspace> {
+    constructor() {
+        super({ logPrefix: '[WorkspaceCache]' });
     }
 
-    private notifyListeners(userId: string) {
-        const workspaces = this.cachedWorkspacesMap.get(userId) || [];
-        const listeners = this.listeners.get(userId);
-        if (listeners) {
-            const workspacesCopy = [...workspaces];
-            listeners.forEach(listener => listener(workspacesCopy));
-        }
-    }
-
-    public setCache(userId: string, workspaces: Workspace[]) {
-        this.cachedWorkspacesMap.set(userId, workspaces);
-        this.notifyListeners(userId);
-    }
-
+    // 後方互換性のためのエイリアス
     public getWorkspaces(userId: string): Workspace[] {
-        return this.cachedWorkspacesMap.get(userId) || [];
+        return this.getItems(userId);
     }
 
     public subscribe(userId: string, onUpdate: (workspaces: Workspace[]) => void): Unsubscribe {
-        if (!this.listeners.has(userId)) {
-            this.listeners.set(userId, new Set());
-        }
-        const listeners = this.listeners.get(userId)!;
-        listeners.add(onUpdate);
+        // リスナー登録とクリーンアップ関数取得
+        const cleanup = this.registerListener(userId, onUpdate);
 
-        const cached = this.cachedWorkspacesMap.get(userId);
-        if (cached) {
-            queueMicrotask(() => onUpdate([...cached]));
-        }
-
-        if (!this.unsubscribes.has(userId)) {
+        // Firestore 購読開始（まだ未開始の場合）
+        if (!this.hasFirestoreSubscription(userId)) {
             const path = paths.workspaces(userId);
             const q = query(collection(db, path), orderBy('createdAt', 'asc'));
-            console.log(`[WorkspaceCache] Subscribing to path: ${path}`);
+            console.log(`${this.config.logPrefix} Subscribing to path: ${path}`);
+
             const unsub = onSnapshot(q, (snapshot) => {
                 const workspaces = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Workspace[];
-                console.log(`[WorkspaceCache] Received ${workspaces.length} workspaces from Firestore`);
+                console.log(`${this.config.logPrefix} Received ${workspaces.length} workspaces from Firestore`);
 
                 // Zod validation
                 const validWorkspaces = workspaces.filter(w => {
                     const result = WorkspaceSchema.safeParse(w);
                     if (!result.success) {
-                        console.error("[WorkspaceCache] Invalid workspace data:", w, result.error);
+                        console.error(`${this.config.logPrefix} Invalid workspace data:`, w, result.error);
                         return false;
                     }
                     return true;
                 });
 
-                this.cachedWorkspacesMap.set(userId, validWorkspaces);
-                this.notifyListeners(userId);
+                this.setCache(userId, validWorkspaces);
             }, (error) => {
-                console.error("[WorkspaceCache] Subscription error:", error);
-                this.cachedWorkspacesMap.set(userId, []);
-                this.notifyListeners(userId);
+                console.error(`${this.config.logPrefix} Subscription error:`, error);
+                this.setCache(userId, []);
             });
 
-            this.unsubscribes.set(userId, unsub);
+            this.setFirestoreSubscription(userId, unsub);
         }
 
-        return () => {
-            listeners.delete(onUpdate);
-            if (listeners.size === 0) {
-                this.unsubscribes.get(userId)?.();
-                this.unsubscribes.delete(userId);
-                this.listeners.delete(userId);
-            }
-        };
-    }
-
-    public clearCache(userId: string) {
-        this.cachedWorkspacesMap.delete(userId);
-        this.unsubscribes.get(userId)?.();
-        this.unsubscribes.delete(userId);
-        this.listeners.delete(userId);
+        return cleanup;
     }
 }
 

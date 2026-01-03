@@ -1,8 +1,7 @@
 /**
- * 更新日: 2026-01-02
- * 内容: LabelCache クラスへの移行と Optimistic Update の強化
- *      - 成功時の自動更新、失敗時のロールバック、Toast通知を追加
- *      - queueMicrotask による React 18 Strict Mode 対応
+ * 更新日: 2026-01-03
+ * 内容: FirestoreCollectionCache ベースクラスへの移行
+ *      - 共通キャッシュロジックを base-cache.ts に集約
  */
 
 import {
@@ -12,81 +11,54 @@ import {
     onSnapshot,
     query,
     serverTimestamp, Unsubscribe,
-    updateDoc
+    updateDoc,
+    writeBatch
 } from "../core/firebase-sdk";
 
 import { db } from '../core/firebase';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
+import { FirestoreCollectionCache } from './base-cache';
 import { Label } from './schema';
 import { toast } from './ui/toast-store';
 
-class LabelCache {
-    private cachedLabelsMap = new Map<string, Label[]>();
-    private listeners = new Map<string, Set<(labels: Label[]) => void>>();
-    private unsubscribes = new Map<string, Unsubscribe>();
-
-    public isInitialized(workspaceId: string): boolean {
-        return this.cachedLabelsMap.has(workspaceId);
+/**
+ * LabelCache - FirestoreCollectionCache を継承
+ */
+class LabelCache extends FirestoreCollectionCache<Label> {
+    constructor() {
+        super({ logPrefix: '[LabelCache]' });
     }
 
-    private notifyListeners(workspaceId: string) {
-        const labels = this.cachedLabelsMap.get(workspaceId) || [];
-        const listeners = this.listeners.get(workspaceId);
-        if (listeners) {
-            const labelsCopy = [...labels];
-            listeners.forEach(listener => listener(labelsCopy));
-        }
-    }
-
-    public setCache(workspaceId: string, labels: Label[]) {
-        this.cachedLabelsMap.set(workspaceId, labels);
-        this.notifyListeners(workspaceId);
-    }
-
+    // 後方互換性のためのエイリアス
     public getLabels(workspaceId: string): Label[] {
-        return this.cachedLabelsMap.get(workspaceId) || [];
+        return this.getItems(workspaceId);
     }
 
     public subscribe(userId: string, workspaceId: string, onUpdate: (labels: Label[]) => void): Unsubscribe {
-        if (!this.listeners.has(workspaceId)) {
-            this.listeners.set(workspaceId, new Set());
-        }
-        const listeners = this.listeners.get(workspaceId)!;
-        listeners.add(onUpdate);
+        // リスナー登録とクリーンアップ関数取得
+        const cleanup = this.registerListener(workspaceId, onUpdate);
 
-        const cached = this.cachedLabelsMap.get(workspaceId);
-        if (cached) {
-            queueMicrotask(() => onUpdate([...cached]));
-        }
-
-        if (!this.unsubscribes.has(workspaceId)) {
+        // Firestore 購読開始（まだ未開始の場合）
+        if (!this.hasFirestoreSubscription(workspaceId)) {
             const path = paths.labels(userId, workspaceId);
             const q = query(collection(db, path));
-            console.log(`[LabelCache] Subscribing to path: ${path}`);
+            console.log(`${this.config.logPrefix} Subscribing to path: ${path}`);
+
             const unsub = onSnapshot(q, (snapshot) => {
                 const labels = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Label[];
-                console.log(`[LabelCache] Received ${labels.length} labels from Firestore for workspace: ${workspaceId}`);
+                console.log(`${this.config.logPrefix} Received ${labels.length} labels from Firestore for workspace: ${workspaceId}`);
 
-                this.cachedLabelsMap.set(workspaceId, labels);
-                this.notifyListeners(workspaceId);
+                this.setCache(workspaceId, labels);
             }, (error) => {
-                console.error("[LabelCache] Subscription error:", error);
-                this.cachedLabelsMap.set(workspaceId, []);
-                this.notifyListeners(workspaceId);
+                console.error(`${this.config.logPrefix} Subscription error:`, error);
+                this.setCache(workspaceId, []);
             });
 
-            this.unsubscribes.set(workspaceId, unsub);
+            this.setFirestoreSubscription(workspaceId, unsub);
         }
 
-        return () => {
-            listeners.delete(onUpdate);
-            if (listeners.size === 0) {
-                this.unsubscribes.get(workspaceId)?.();
-                this.unsubscribes.delete(workspaceId);
-                this.listeners.delete(workspaceId);
-            }
-        };
+        return cleanup;
     }
 }
 
@@ -168,8 +140,6 @@ export async function deleteLabelRaw(userId: string, workspaceId: string, labelI
         }
     });
 }
-
-import { writeBatch } from "../core/firebase-sdk";
 
 export async function reorderLabelsRaw(userId: string, workspaceId: string, orderedLabelIds: string[]) {
     const originalLabels = labelCache.getLabels(workspaceId);

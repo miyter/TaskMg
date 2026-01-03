@@ -1,7 +1,8 @@
 /**
- * 更新日: 2025-12-21
- * 内容: 防御的なプログラミングの強化（コールバックの型チェック、recurrenceの安全な扱い）
- * TypeScript化: 2025-12-29
+ * 更新日: 2026-01-03
+ * 内容: FirestoreCollectionCache ベースクラスへの移行
+ *      - 共通キャッシュロジックを base-cache.ts に集約
+ *      - 防御的なプログラミングの強化（コールバックの型チェック、recurrenceの安全な扱い）
  */
 
 import { db } from '../core/firebase';
@@ -15,11 +16,13 @@ import {
     serverTimestamp,
     Timestamp,
     Unsubscribe,
-    updateDoc
+    updateDoc,
+    writeBatch
 } from "../core/firebase-sdk";
 import { areTaskArraysIdentical } from '../utils/compare';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
+import { FirestoreCollectionCache } from './base-cache';
 import { Task, TaskSchema } from './schema';
 import { toast } from './ui/toast-store';
 
@@ -68,26 +71,16 @@ function deserializeTask(id: string, data: any): Task {
     return task;
 }
 
-// ==========================================================
-// ★ RAW FUNCTIONS (userId必須)
-// ==========================================================
-
-// ==========================================================
-// ★ RAW FUNCTIONS (userId必須)
-// ==========================================================
-
 /**
- * TaskCache Class
- * Manages in-memory cache and Firestore subscriptions for tasks.
+ * TaskCache - FirestoreCollectionCache を継承
  */
-class TaskCache {
+class TaskCache extends FirestoreCollectionCache<Task> {
     private static instance: TaskCache;
-    private cachedTasksMap = new Map<string, Task[]>();
-    private listeners = new Map<string, Set<(tasks: Task[]) => void>>();
-    private unsubscribes = new Map<string, Unsubscribe>();
     private currentWorkspaceId: string | null = null;
 
-    private constructor() { }
+    private constructor() {
+        super({ logPrefix: '[TaskCache]' });
+    }
 
     public static getInstance(): TaskCache {
         if (!TaskCache.instance) {
@@ -96,69 +89,27 @@ class TaskCache {
         return TaskCache.instance;
     }
 
-    /**
-     * Notify listeners of updates
-     */
-    private notifyListeners(workspaceId: string) {
-        const tasks = this.cachedTasksMap.get(workspaceId) || [];
-        const listeners = this.listeners.get(workspaceId);
-        if (listeners) {
-            const tasksCopy = [...tasks];
-            listeners.forEach(listener => listener(tasksCopy));
-        }
-    }
-
-    /**
-     * Reset cache
-     */
-    public reset(workspaceId?: string) {
-        if (workspaceId) {
-            this.unsubscribes.get(workspaceId)?.();
-            this.unsubscribes.delete(workspaceId);
-            this.listeners.delete(workspaceId);
-            this.cachedTasksMap.delete(workspaceId);
-        } else {
-            this.unsubscribes.forEach(unsub => unsub());
-            this.unsubscribes.clear();
-            this.listeners.clear();
-            this.cachedTasksMap.clear();
-        }
-        this.currentWorkspaceId = null;
+    // 後方互換性のためのエイリアス
+    public getTasks(workspaceId: string): Task[] {
+        return this.getItems(workspaceId);
     }
 
     /**
      * Get single task from cache
      */
     public getTask(workspaceId: string, taskId: string): Task | undefined {
-        const tasks = this.cachedTasksMap.get(workspaceId);
-        return tasks?.find(t => t.id === taskId);
+        const tasks = this.getItems(workspaceId);
+        return tasks.find(t => t.id === taskId);
     }
 
     /**
-     * Get all tasks from cache
+     * Reset cache (ログアウト時やメモリ解放用)
      */
-    public getTasks(workspaceId: string): Task[] {
-        return this.cachedTasksMap.get(workspaceId) || [];
+    public reset(workspaceId?: string) {
+        this.clearCache(workspaceId);
+        this.currentWorkspaceId = null;
     }
 
-    /**
-     * Check if initialized
-     */
-    public isInitialized(workspaceId: string): boolean {
-        return this.cachedTasksMap.has(workspaceId);
-    }
-
-    /**
-     * Set cache manually (for Optimistic Updates)
-     */
-    public setCache(workspaceId: string, tasks: Task[]) {
-        this.cachedTasksMap.set(workspaceId, tasks);
-        this.notifyListeners(workspaceId);
-    }
-
-    /**
-     * Subscribe to tasks
-     */
     public subscribe(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void, onError?: (error: any) => void): Unsubscribe {
         if (!userId || !workspaceId) {
             onUpdate([]);
@@ -167,54 +118,33 @@ class TaskCache {
 
         this.currentWorkspaceId = workspaceId;
 
-        // Register listener
-        if (!this.listeners.has(workspaceId)) {
-            this.listeners.set(workspaceId, new Set());
-        }
-        const listeners = this.listeners.get(workspaceId)!;
-        listeners.add(onUpdate);
+        // リスナー登録とクリーンアップ関数取得
+        const cleanup = this.registerListener(workspaceId, onUpdate);
 
-        // Immediate cache return (Async for React strict mode compatibility)
-        const cached = this.cachedTasksMap.get(workspaceId);
-        if (cached) {
-            queueMicrotask(() => onUpdate([...cached]));
-        }
-
-        // Start subscription if not active
-        if (!this.unsubscribes.has(workspaceId)) {
+        // Firestore 購読開始（まだ未開始の場合）
+        if (!this.hasFirestoreSubscription(workspaceId)) {
             const path = paths.tasks(userId, workspaceId);
             const q = query(collection(db, path));
 
             const unsub = onSnapshot(q, (snapshot) => {
                 const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
-                const currentTasks = this.cachedTasksMap.get(workspaceId);
+                const currentTasks = this.getItems(workspaceId);
 
                 // Optimization: Stabilize reference
-                if (currentTasks && areTaskArraysIdentical(currentTasks, tasks)) {
+                if (currentTasks.length > 0 && areTaskArraysIdentical(currentTasks, tasks)) {
                     return;
                 }
 
-                this.cachedTasksMap.set(workspaceId, tasks);
-                this.notifyListeners(workspaceId);
+                this.setCache(workspaceId, tasks);
             }, (error) => {
-                console.error("[Tasks] Subscription error:", error);
+                console.error(`${this.config.logPrefix} Subscription error:`, error);
                 if (onError) onError(error);
             });
 
-            this.unsubscribes.set(workspaceId, unsub);
+            this.setFirestoreSubscription(workspaceId, unsub);
         }
 
-        // Unsubscribe function
-        return () => {
-            listeners.delete(onUpdate);
-            if (listeners.size === 0) {
-                const unsub = this.unsubscribes.get(workspaceId);
-                if (unsub) {
-                    unsub();
-                    this.unsubscribes.delete(workspaceId);
-                }
-            }
-        };
+        return cleanup;
     }
 }
 
@@ -256,8 +186,6 @@ function removeUndefined<T extends Record<string, any>>(obj: T): T {
         Object.entries(obj).filter(([_, v]) => v !== undefined)
     ) as T;
 }
-
-import { writeBatch } from "../core/firebase-sdk";
 
 export async function reorderTasksRaw(userId: string, workspaceId: string, orderedTaskIds: string[]) {
     // Build index map for O(1) lookup (avoid O(n^2) indexOf calls)
@@ -309,9 +237,27 @@ export async function reorderTasksRaw(userId: string, workspaceId: string, order
 
 // タスク操作関数（Optimistic UI対応）
 export async function addTaskRaw(userId: string, workspaceId: string, taskData: Partial<Task>) {
-    // Optimistic Update: IDは一時的に生成（Firestoreが上書きするがキーが変わるため注意が必要）
-    // *追加の場合はIDが未確定なのでOptimistic Updateは難しいが、プレースホルダーを表示するアプローチもある
-    // ここでは追加のラグは許容し、更新/削除のラグごまかしを優先する
+    const originalTasks = taskCache.getTasks(workspaceId);
+
+    // Optimistic Update: 一時IDで即時反映
+    const tempId = 'temp-' + Date.now();
+    const newTask: Task = {
+        id: tempId,
+        title: taskData.title || 'Untitled',
+        description: taskData.description || null,
+        status: 'todo',
+        dueDate: taskData.dueDate,
+        createdAt: new Date(),
+        ownerId: userId,
+        projectId: taskData.projectId || null,
+        labelIds: taskData.labelIds || [],
+        timeBlockId: taskData.timeBlockId || null,
+        duration: taskData.duration || null,
+        isImportant: taskData.isImportant || false,
+        recurrence: taskData.recurrence || null,
+    } as Task;
+    taskCache.setCache(workspaceId, [...originalTasks, newTask]);
+
     return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
         // undefinedを削除して安全にする
@@ -327,6 +273,12 @@ export async function addTaskRaw(userId: string, workspaceId: string, taskData: 
             status: 'todo',
             createdAt: serverTimestamp()
         });
+    }, {
+        onFinalFailure: () => {
+            console.error(`[TaskCache] Failed to add task: ${taskData.title}`);
+            taskCache.setCache(workspaceId, originalTasks);
+            toast.error('タスクの追加に失敗しました');
+        }
     });
 }
 

@@ -1,10 +1,13 @@
+/**
+ * 更新日: 2026-01-03
+ * 内容: store-utils.ts の共通ユーティリティを使用するようリファクタリング
+ */
+
 import { auth } from '../core/firebase';
 import { Unsubscribe } from '../core/firebase-sdk';
-import { getTranslator } from '../core/i18n/utils';
 import { getNextRecurrenceDate } from '../utils/date';
-import { useSettingsStore } from './ui/settings-store';
-
 import { Task, TaskSchema } from './schema';
+import { getT, requireAuthAndWorkspace, withErrorHandling } from './store-utils';
 import {
     addTaskRaw,
     deleteTaskRaw,
@@ -21,163 +24,120 @@ import { toast } from './ui/toast-store';
 import { getCurrentWorkspaceId } from './workspace';
 
 /**
- * 翻訳ヘルパー
- */
-const getT = () => getTranslator(useSettingsStore.getState().language).t;
-
-/**
- * 認証とワークスペース選択のガード
- */
-function requireAuthAndWorkspace() {
-    const userId = auth.currentUser?.uid;
-    const workspaceId = getCurrentWorkspaceId();
-    if (!userId || !workspaceId) {
-        throw new Error('Authentication or Workspace required.');
-    }
-    return { userId, workspaceId };
-}
-
-/**
  * 新しいタスクを追加する
  */
 export async function addTask(taskData: Partial<Task>) {
-    try {
-        const { userId, workspaceId } = requireAuthAndWorkspace();
+    const { userId, workspaceId } = requireAuthAndWorkspace();
 
-        // Zodバリデーション (titleのみ必須、他はpartialなので部分チェック)
-        const partialSchema = TaskSchema.partial().required({ title: true });
-        const validation = partialSchema.safeParse(taskData);
-        if (!validation.success) {
-            console.warn('[addTask] Validation warning:', validation.error.flatten());
-            // 警告のみで継続（データロスを防ぐため）
-        }
-
-        await addTaskRaw(userId, workspaceId, taskData);
-        // toast.success(MESSAGES.TASK_CREATE_SUCCESS); // Optional: toaster for creation
-    } catch (error) {
-        console.error("Failed to add task:", error);
-        toast.error(getT()('msg.task.create_fail'));
-
-        throw error;
+    // Zodバリデーション (titleのみ必須、他はpartialなので部分チェック)
+    const partialSchema = TaskSchema.partial().required({ title: true });
+    const validation = partialSchema.safeParse(taskData);
+    if (!validation.success) {
+        console.warn('[addTask] Validation warning:', validation.error.flatten());
+        // 警告のみで継続（データロスを防ぐため）
     }
+
+    return withErrorHandling(
+        () => addTaskRaw(userId, workspaceId, taskData),
+        'msg.task.create_fail'
+    );
 }
 
 /**
  * タスクの状態を更新する
  */
 export async function updateTaskStatus(taskId: string, status: string) {
-    try {
-        const { userId, workspaceId } = requireAuthAndWorkspace();
+    const { userId, workspaceId } = requireAuthAndWorkspace();
 
-        // Recurrence Logic: Create next task if completing a recurring one
-        if (status === 'completed') {
-            const task = getTaskFromCache(workspaceId, taskId);
-            if (task?.recurrence && task.recurrence.type !== 'none') {
-                const nextDate = getNextRecurrenceDate(task.dueDate ?? null, task.recurrence as any);
-                if (nextDate) {
-                    const nextTask: Partial<Task> = {
-                        title: task.title,
-                        description: task.description,
-                        projectId: task.projectId,
-                        labelIds: task.labelIds,
-                        timeBlockId: task.timeBlockId,
-                        duration: task.duration,
-                        isImportant: task.isImportant,
-                        recurrence: task.recurrence,
-                        dueDate: nextDate,
-                        status: 'todo'
-                    };
-                    addTaskRaw(userId, workspaceId, nextTask).catch(e => console.error("Failed to create recurring task:", e));
-                }
+    // Recurrence Logic: Create next task if completing a recurring one
+    if (status === 'completed') {
+        const task = getTaskFromCache(workspaceId, taskId);
+        if (task?.recurrence && task.recurrence.type !== 'none') {
+            const nextDate = getNextRecurrenceDate(task.dueDate ?? null, task.recurrence as any);
+            if (nextDate) {
+                const nextTask: Partial<Task> = {
+                    title: task.title,
+                    description: task.description,
+                    projectId: task.projectId,
+                    labelIds: task.labelIds,
+                    timeBlockId: task.timeBlockId,
+                    duration: task.duration,
+                    isImportant: task.isImportant,
+                    recurrence: task.recurrence,
+                    dueDate: nextDate,
+                    status: 'todo'
+                };
+                addTaskRaw(userId, workspaceId, nextTask).catch(e => console.error("Failed to create recurring task:", e));
             }
         }
-
-        await updateTaskStatusRaw(userId, workspaceId, taskId, status);
-    } catch (error) {
-        console.error("Failed to update status:", error);
-        toast.error(getT()('msg.task.status_update_fail'));
-
-        throw error;
     }
+
+    return withErrorHandling(
+        () => updateTaskStatusRaw(userId, workspaceId, taskId, status),
+        'msg.task.status_update_fail'
+    );
 }
 
 /**
  * タスクを更新する
  */
 export async function updateTask(taskId: string, updates: Partial<Task>) {
-    try {
-        const { userId, workspaceId } = requireAuthAndWorkspace();
+    const { userId, workspaceId } = requireAuthAndWorkspace();
 
-        // Zodバリデーション (部分更新なのでpartialスキーマ)
-        const validation = TaskSchema.partial().safeParse(updates);
-        if (!validation.success) {
-            console.warn('[updateTask] Validation warning:', validation.error.flatten());
-        }
-
-        await updateTaskRaw(userId, workspaceId, taskId, updates);
-    } catch (error) {
-        console.error("Failed to update task:", error);
-        toast.error(getT()('msg.task.update_fail'));
-
-        throw error;
+    // Zodバリデーション (部分更新なのでpartialスキーマ)
+    const validation = TaskSchema.partial().safeParse(updates);
+    if (!validation.success) {
+        console.warn('[updateTask] Validation warning:', validation.error.flatten());
     }
+
+    return withErrorHandling(
+        () => updateTaskRaw(userId, workspaceId, taskId, updates),
+        'msg.task.update_fail'
+    );
 }
 
 /**
  * タスクの並び順を更新する
  */
 export async function reorderTasks(orderedTaskIds: string[]) {
-    try {
-        const { userId, workspaceId } = requireAuthAndWorkspace();
-        await reorderTasksRaw(userId, workspaceId, orderedTaskIds);
-    } catch (error) {
-        console.error("Failed to reorder tasks:", error);
-        toast.error(getT()('msg.task.update_fail'));
-        throw error;
-    }
+    const { userId, workspaceId } = requireAuthAndWorkspace();
+
+    return withErrorHandling(
+        () => reorderTasksRaw(userId, workspaceId, orderedTaskIds),
+        'msg.task.update_fail'
+    );
 }
 
 /**
  * タスクを削除する
  */
 export async function deleteTask(taskId: string) {
-    try {
-        const { userId, workspaceId } = requireAuthAndWorkspace();
-        await deleteTaskRaw(userId, workspaceId, taskId);
-        toast.success(getT()('msg.task.delete_success'));
+    const { userId, workspaceId } = requireAuthAndWorkspace();
 
-    } catch (error) {
-        console.error("Failed to delete task:", error);
-        toast.error(getT()('msg.task.delete_fail'));
-
-        throw error;
-    }
+    return withErrorHandling(
+        () => deleteTaskRaw(userId, workspaceId, taskId),
+        'msg.task.delete_fail',
+        { successMessageKey: 'msg.task.delete_success' }
+    );
 }
 
 /**
  * タスクのステータスをトグルする
  */
 export async function toggleTaskStatus(taskId: string, _legacyStatus?: string) {
-    try {
-        const { userId, workspaceId } = requireAuthAndWorkspace();
+    const { workspaceId } = requireAuthAndWorkspace();
+    const t = getT();
 
-        // 最新の状態をキャッシュから取得して競合を防ぐ
-        const task = getTaskFromCache(workspaceId, taskId);
-        // キャッシュになければ引数またはデフォルトを使用 (通常はキャッシュにあるはず)
-        const currentStatus = task?.status || _legacyStatus || 'todo';
+    // 最新の状態をキャッシュから取得して競合を防ぐ
+    const task = getTaskFromCache(workspaceId, taskId);
+    // キャッシュになければ引数またはデフォルトを使用 (通常はキャッシュにあるはず)
+    const currentStatus = task?.status || _legacyStatus || 'todo';
 
-        const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
-        await updateTaskStatus(taskId, newStatus);
+    const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
+    await updateTaskStatus(taskId, newStatus);
 
-        if (newStatus === 'completed') {
-            toast.success(getT()('msg.task.complete_success'));
-
-        }
-    } catch (error) {
-        console.error("Failed to toggle status:", error);
-        toast.error(getT()('msg.task.status_update_fail'));
-
-        throw error;
+    if (newStatus === 'completed') {
+        toast.success(t('msg.task.complete_success'));
     }
 }
 
@@ -191,7 +151,6 @@ export async function getTaskById(taskId: string): Promise<Task | null> {
 
 /**
  * タスク一覧の購読
- * DataSyncManager からの呼び出しに対応
  */
 export function subscribeToTasks(workspaceId: string, callback: (tasks: Task[]) => void, onError?: (error: any) => void): Unsubscribe {
     const user = auth.currentUser;

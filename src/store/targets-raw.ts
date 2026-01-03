@@ -1,8 +1,7 @@
 /**
- * 更新日: 2026-01-02
- * 内容: TargetCache クラスへの移行と Optimistic Update の強化
- *      - 成功時の自動更新、失敗時のロールバック、Toast通知を追加
- *      - queueMicrotask による React 18 Strict Mode 対応
+ * 更新日: 2026-01-03
+ * 内容: FirestoreCollectionCache ベースクラスへの移行
+ *      - 共通キャッシュロジックを base-cache.ts に集約
  */
 
 import {
@@ -19,82 +18,54 @@ import { db } from '../core/firebase';
 import { areArraysEqual } from '../utils/compare';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
+import { FirestoreCollectionCache } from './base-cache';
 import { Target } from './schema';
 import { toast } from './ui/toast-store';
 
-class TargetCache {
-    private cachedTargetsMap = new Map<string, Target[]>();
-    private listeners = new Map<string, Set<(targets: Target[]) => void>>();
-    private unsubscribes = new Map<string, Unsubscribe>();
-
-    public isInitialized(workspaceId: string): boolean {
-        return this.cachedTargetsMap.has(workspaceId);
+/**
+ * TargetCache - FirestoreCollectionCache を継承
+ */
+class TargetCache extends FirestoreCollectionCache<Target> {
+    constructor() {
+        super({ logPrefix: '[TargetCache]' });
     }
 
-    private notifyListeners(workspaceId: string) {
-        const targets = this.cachedTargetsMap.get(workspaceId) || [];
-        const listeners = this.listeners.get(workspaceId);
-        if (listeners) {
-            const targetsCopy = [...targets];
-            listeners.forEach(listener => listener(targetsCopy));
-        }
-    }
-
-    public setCache(workspaceId: string, targets: Target[]) {
-        this.cachedTargetsMap.set(workspaceId, targets);
-        this.notifyListeners(workspaceId);
-    }
-
+    // 後方互換性のためのエイリアス
     public getTargets(workspaceId: string): Target[] {
-        return this.cachedTargetsMap.get(workspaceId) || [];
+        return this.getItems(workspaceId);
     }
 
     public subscribe(userId: string, workspaceId: string, onUpdate: (targets: Target[]) => void): Unsubscribe {
-        if (!this.listeners.has(workspaceId)) {
-            this.listeners.set(workspaceId, new Set());
-        }
-        const listeners = this.listeners.get(workspaceId)!;
-        listeners.add(onUpdate);
+        // リスナー登録とクリーンアップ関数取得
+        const cleanup = this.registerListener(workspaceId, onUpdate);
 
-        const cached = this.cachedTargetsMap.get(workspaceId);
-        if (cached) {
-            queueMicrotask(() => onUpdate([...cached]));
-        }
-
-        if (!this.unsubscribes.has(workspaceId)) {
+        // Firestore 購読開始（まだ未開始の場合）
+        if (!this.hasFirestoreSubscription(workspaceId)) {
             const path = paths.targets(userId, workspaceId);
             // 作成日順（新しいものが上）
             const q = query(collection(db, path), orderBy('createdAt', 'desc'));
-            console.log(`[TargetCache] Subscribing to path: ${path}`);
+            console.log(`${this.config.logPrefix} Subscribing to path: ${path}`);
+
             const unsub = onSnapshot(q, (snapshot) => {
                 const targets = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Target[];
-                const currentCached = this.cachedTargetsMap.get(workspaceId);
+                const currentCached = this.getItems(workspaceId);
 
                 // 変更がない場合は更新スキップ
-                if (currentCached && areArraysEqual(currentCached, targets)) {
+                if (currentCached.length > 0 && areArraysEqual(currentCached, targets)) {
                     return;
                 }
 
-                console.log(`[TargetCache] Received ${targets.length} targets from Firestore for workspace: ${workspaceId}`);
-                this.cachedTargetsMap.set(workspaceId, targets);
-                this.notifyListeners(workspaceId);
+                console.log(`${this.config.logPrefix} Received ${targets.length} targets from Firestore for workspace: ${workspaceId}`);
+                this.setCache(workspaceId, targets);
             }, (error) => {
-                console.error("[TargetCache] Subscription error:", error);
-                this.cachedTargetsMap.set(workspaceId, []);
-                this.notifyListeners(workspaceId);
+                console.error(`${this.config.logPrefix} Subscription error:`, error);
+                this.setCache(workspaceId, []);
             });
 
-            this.unsubscribes.set(workspaceId, unsub);
+            this.setFirestoreSubscription(workspaceId, unsub);
         }
 
-        return () => {
-            listeners.delete(onUpdate);
-            if (listeners.size === 0) {
-                this.unsubscribes.get(workspaceId)?.();
-                this.unsubscribes.delete(workspaceId);
-                this.listeners.delete(workspaceId);
-            }
-        };
+        return cleanup;
     }
 }
 

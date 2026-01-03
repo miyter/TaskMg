@@ -1,6 +1,7 @@
 /**
- * TimeBlock Store - Raw Implementation
- * Handles Firestore Direct Access and Caching
+ * 更新日: 2026-01-03
+ * 内容: FirestoreCollectionCache ベースクラスへの移行
+ *      - 共通キャッシュロジックを base-cache.ts に集約
  */
 
 import { db } from '../core/firebase';
@@ -19,19 +20,21 @@ import {
 import { UI_CONFIG } from '../core/ui-constants';
 import { paths } from '../utils/paths';
 import { withRetry } from '../utils/retry';
+import { FirestoreCollectionCache } from './base-cache';
 import { TimeBlock } from './schema';
 import { toast } from './ui/toast-store';
 
-
 const defaultTimeBlocks: TimeBlock[] = UI_CONFIG.TIME_BLOCK.DEFAULTS.map(b => ({ ...b })) as TimeBlock[];
 
-class TimeBlockCache {
+/**
+ * TimeBlockCache - FirestoreCollectionCache を継承
+ */
+class TimeBlockCache extends FirestoreCollectionCache<TimeBlock> {
     private static instance: TimeBlockCache;
-    private cacheMap = new Map<string, TimeBlock[]>();
-    private listeners = new Map<string, Set<(blocks: TimeBlock[]) => void>>();
-    private unsubscribes = new Map<string, Unsubscribe>();
 
-    private constructor() { }
+    private constructor() {
+        super({ logPrefix: '[TimeBlockCache]' });
+    }
 
     public static getInstance(): TimeBlockCache {
         if (!TimeBlockCache.instance) {
@@ -40,26 +43,9 @@ class TimeBlockCache {
         return TimeBlockCache.instance;
     }
 
+    // 後方互換性のためのエイリアス
     public getBlocks(workspaceId: string): TimeBlock[] {
-        return this.cacheMap.get(workspaceId) || [];
-    }
-
-    public isInitialized(workspaceId: string): boolean {
-        return this.cacheMap.has(workspaceId);
-    }
-
-    public setCache(workspaceId: string, blocks: TimeBlock[]) {
-        this.cacheMap.set(workspaceId, blocks);
-        this.notify(workspaceId);
-    }
-
-    private notify(workspaceId: string) {
-        const blocks = this.getBlocks(workspaceId);
-        const workspaceListeners = this.listeners.get(workspaceId);
-        if (workspaceListeners) {
-            // Defensive copy
-            workspaceListeners.forEach(cb => cb([...blocks]));
-        }
+        return this.getItems(workspaceId);
     }
 
     public subscribe(userId: string | undefined, workspaceId: string, callback: (blocks: TimeBlock[]) => void): Unsubscribe {
@@ -68,20 +54,11 @@ class TimeBlockCache {
             return () => { };
         }
 
-        // Register listener
-        if (!this.listeners.has(workspaceId)) {
-            this.listeners.set(workspaceId, new Set());
-        }
-        this.listeners.get(workspaceId)!.add(callback);
+        // リスナー登録とクリーンアップ関数取得
+        const cleanup = this.registerListener(workspaceId, callback);
 
-        // Initial Return (Optimistic)
-        const cached = this.cacheMap.get(workspaceId);
-        if (cached) {
-            queueMicrotask(() => callback([...cached]));
-        }
-
-        // Start Firestore subscription if needed
-        if (!this.unsubscribes.has(workspaceId)) {
+        // Firestore 購読開始（まだ未開始の場合）
+        if (!this.hasFirestoreSubscription(workspaceId)) {
             const path = paths.timeblocks(userId, workspaceId);
             const q = query(collection(db, path), orderBy('order', 'asc'));
 
@@ -97,29 +74,23 @@ class TimeBlockCache {
                 if (isFirstSnapshot && blocks.length === 0 && !snapshot.metadata.hasPendingWrites) {
                     isFirstSnapshot = false;
                     createDefaultTimeBlocks(userId, workspaceId).catch(err =>
-                        console.error('[TimeBlocks] Failed to create defaults:', err)
+                        console.error(`${this.config.logPrefix} Failed to create defaults:`, err)
                     );
                     return;
                 }
                 isFirstSnapshot = false;
 
                 // Update cache
-                this.cacheMap.set(workspaceId, blocks);
-                this.notify(workspaceId);
+                this.setCache(workspaceId, blocks);
 
             }, (error) => {
-                console.error("[TimeBlocks] Subscription error:", error);
+                console.error(`${this.config.logPrefix} Subscription error:`, error);
             });
 
-            this.unsubscribes.set(workspaceId, unsub);
+            this.setFirestoreSubscription(workspaceId, unsub);
         }
 
-        return () => {
-            const workspaceListeners = this.listeners.get(workspaceId);
-            if (workspaceListeners) {
-                workspaceListeners.delete(callback);
-            }
-        };
+        return cleanup;
     }
 }
 
@@ -166,7 +137,7 @@ export async function addTimeBlockRaw(userId: string, workspaceId: string, block
     cache.setCache(workspaceId, newBlocks);
 
     const path = paths.timeblocks(userId, workspaceId);
-    const id = block.id || crypto.randomUUID(); // Fallback if no ID, but usually provided by caller
+    const id = block.id || crypto.randomUUID();
 
     return withRetry(async () => {
         await setDoc(doc(db, path, id), {

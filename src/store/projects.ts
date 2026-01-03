@@ -1,15 +1,9 @@
 /**
- * 更新日: 2025-12-21
- * 内容: subscribeToProjects の引数シグネチャを (workspaceId, onUpdate) に統一
- * TypeScript化: 2025-12-29
+ * 更新日: 2026-01-03
+ * 内容: store-utils.ts の共通ユーティリティを使用するようリファクタリング
  */
 
 import { auth } from '../core/firebase';
-import { getTranslator } from '../core/i18n/utils';
-import { useSettingsStore } from './ui/settings-store';
-import { toast } from './ui/toast-store';
-import { getCurrentWorkspaceId } from './workspace';
-
 import { Unsubscribe } from '../core/firebase-sdk';
 import {
     addProjectRaw,
@@ -22,23 +16,8 @@ import {
     updateProjectsCacheRaw
 } from './projects-raw';
 import { Project, ProjectSchema } from './schema';
-
-/**
- * 翻訳ヘルパー
- */
-const getT = () => getTranslator(useSettingsStore.getState().language).t;
-
-/**
- * 認証とワークスペース選択のガード
- */
-function requireAuthAndWorkspace() {
-    const userId = auth.currentUser?.uid;
-    const workspaceId = getCurrentWorkspaceId();
-    if (!userId || !workspaceId) {
-        throw new Error('Authentication or Workspace required.');
-    }
-    return { userId, workspaceId };
-}
+import { requireAuthAndWorkspace, validateOrThrow, withErrorHandling } from './store-utils';
+import { getCurrentWorkspaceId } from './workspace';
 
 // 同期取得用のエクスポート
 export const getProjects = (workspaceId?: string): Project[] => {
@@ -60,13 +39,13 @@ export const updateProjectsCache = (projects: Project[], workspaceId?: string) =
     if (targetId) updateProjectsCacheRaw(targetId, projects);
 };
 
-
 /**
  * プロジェクトのリアルタイム購読
- * @param {string|function} workspaceId - ワークスペースIDまたはコールバック
- * @param {function} [onUpdate] - コールバック
  */
-export const subscribeToProjects = (workspaceId: string | ((projects: Project[]) => void), onUpdate?: (projects: Project[]) => void): Unsubscribe => {
+export const subscribeToProjects = (
+    workspaceId: string | ((projects: Project[]) => void),
+    onUpdate?: (projects: Project[]) => void
+): Unsubscribe => {
     // 引数解決ガード
     const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
     const targetWorkspaceId = typeof workspaceId === 'string' ? workspaceId : getCurrentWorkspaceId();
@@ -84,91 +63,62 @@ export const subscribeToProjects = (workspaceId: string | ((projects: Project[])
 /**
  * 新しいプロジェクトを追加する
  */
-/**
- * 新しいプロジェクトを追加する
- */
 export const addProject = async (name: string, workspaceId: string | null = null, color?: string) => {
-    const t = getT();
-    try {
-        const user = auth.currentUser;
-        if (!user) throw new Error('Authentication required.');
+    const user = auth.currentUser;
+    if (!user) throw new Error('Authentication required.');
 
-        const targetWorkspaceId = workspaceId || getCurrentWorkspaceId();
-        if (!targetWorkspaceId) throw new Error('Workspace selection required.');
+    const targetWorkspaceId = workspaceId || getCurrentWorkspaceId();
+    if (!targetWorkspaceId) throw new Error('Workspace selection required.');
 
-        // Zod Validation
-        // ownerId and createdAt are system managed, so we validate the input part
-        const validationPayload = { name, color, ownerId: user.uid };
-        const result = ProjectSchema.pick({ name: true, color: true, ownerId: true }).safeParse(validationPayload);
+    // Zod Validation
+    const validationPayload = { name, color, ownerId: user.uid };
+    validateOrThrow(
+        ProjectSchema.pick({ name: true, color: true, ownerId: true }),
+        validationPayload
+    );
 
-        if (!result.success) {
-            const errorMsg = result.error.issues.map(i => i.message).join(', ');
-            toast.error(`${t('validation.validation_error')}: ${errorMsg}`);
-            throw new Error(`Validation failed: ${errorMsg}`);
-        }
-
-        const resultRaw = await addProjectRaw(user.uid, targetWorkspaceId, name, color);
-        return resultRaw;
-    } catch (error) {
-        console.error("Failed to add project:", error);
-        if (!(error as Error).message.includes('Validation')) {
-            toast.error(getT()('msg.project.create_fail'));
-        }
-        throw error;
-    }
+    return withErrorHandling(
+        () => addProjectRaw(user.uid, targetWorkspaceId, name, color),
+        'msg.project.create_fail'
+    );
 };
 
 /**
  * プロジェクトを更新する
  */
 export const updateProject = async (projectId: string, updates: Partial<Project>) => {
-    const t = getT();
-    try {
-        const { userId, workspaceId } = requireAuthAndWorkspace();
+    const { userId, workspaceId } = requireAuthAndWorkspace();
 
-        // Zod Validation
-        const result = ProjectSchema.partial().safeParse(updates);
-        if (!result.success) {
-            const errorMsg = result.error.issues.map(i => i.message).join(', ');
-            toast.error(`${t('validation.validation_error')}: ${errorMsg}`);
-            throw new Error(`Validation failed: ${errorMsg}`);
-        }
+    // Zod Validation
+    validateOrThrow(ProjectSchema.partial(), updates);
 
-        await updateProjectRaw(userId, workspaceId, projectId, updates);
-    } catch (error) {
-        console.error("Failed to update project:", error);
-        if (!(error as Error).message.includes('Validation')) {
-            toast.error(getT()('msg.project.update_fail'));
-        }
-        throw error;
-    }
+    return withErrorHandling(
+        () => updateProjectRaw(userId, workspaceId, projectId, updates),
+        'msg.project.update_fail'
+    );
 };
 
 /**
  * プロジェクトを削除する
  */
 export const deleteProject = async (projectId: string) => {
-    try {
-        const { userId, workspaceId } = requireAuthAndWorkspace();
-        await deleteProjectRaw(userId, workspaceId, projectId);
-        toast.success(getT()('msg.project.delete_success'));
-    } catch (error) {
-        console.error("Failed to delete project:", error);
-        toast.error(getT()('msg.project.delete_fail'));
-        throw error;
-    }
+    const { userId, workspaceId } = requireAuthAndWorkspace();
+
+    return withErrorHandling(
+        () => deleteProjectRaw(userId, workspaceId, projectId),
+        'msg.project.delete_fail',
+        { successMessageKey: 'msg.project.delete_success' }
+    );
 };
 
 /**
  * プロジェクトの順序を更新する
  */
-export const reorderProjects = async (projects: Project[]) => {
-    try {
-        const { userId, workspaceId } = requireAuthAndWorkspace();
-        await reorderProjectsRaw(userId, workspaceId, projects);
-    } catch (error) {
-        console.error("Failed to reorder projects:", error);
-        toast.error(getT()('msg.project.reorder_fail'));
-        throw error;
-    }
+export const reorderProjects = async (orderedProjectIds: string[]) => {
+    const { userId, workspaceId } = requireAuthAndWorkspace();
+
+    return withErrorHandling(
+        () => reorderProjectsRaw(userId, workspaceId, orderedProjectIds),
+        'msg.project.reorder_fail'
+    );
 };
