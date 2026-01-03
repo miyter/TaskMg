@@ -8,6 +8,7 @@ import { deleteTimeBlock } from '../../store';
 import { TimeBlock } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { useModalStore } from '../../store/ui/modal-store';
+import { useViewStore } from '../../store/ui/view-store';
 import { IconEdit, IconTrash } from '../common/Icons';
 import { SidebarLoadingState } from '../common/SidebarLoadingState';
 import { ContextMenu, ContextMenuItem } from '../ui/ContextMenu';

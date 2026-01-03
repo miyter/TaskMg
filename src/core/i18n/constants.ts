@@ -236,6 +236,7 @@ export const ja = {
             import_confirm: '現在のワークスペースにデータをインポートしますか？\n既存のデータは保持されますが、重複データの作成を防ぐため一部のIDが変更される場合があります。',
             import_success: 'インポートが完了しました。\nタスク: {tasks}件\nプロジェクト: {projects}件',
             import_fail: 'インポートに失敗しました。ファイル形式が正しいか確認してください。',
+            create_success: 'バックアップを作成しました。',
             create_fail: 'バックアップの作成に失敗しました。',
         },
         options: {
@@ -664,6 +665,7 @@ export const en = {
             import_confirm: 'Import data into current workspace?\nExisting data remains, but some IDs may change to prevent duplicates.',
             import_success: 'Import completed.\nTasks: {tasks}\nProjects: {projects}',
             import_fail: 'Import failed. Please check the file format.',
+            create_success: 'Backup created successfully.',
             create_fail: 'Failed to create backup.',
         },
         options: {

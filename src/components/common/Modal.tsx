@@ -14,20 +14,40 @@ interface ModalProps {
     className?: string;
     overlayClassName?: string;
     zIndex?: number;
+    variant?: 'center' | 'side-right';
     size?: 'sm' | 'md' | 'lg' | 'xl' | 'full' | 'none';
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className, overlayClassName, zIndex = 100, size = 'md' }) => {
+export const Modal: React.FC<ModalProps> = ({
+    isOpen,
+    onClose,
+    title,
+    children,
+    className,
+    overlayClassName,
+    zIndex = 100,
+    size = 'md',
+    variant = 'center'
+}) => {
     const { t } = useTranslation();
     const modalRef = useRef<HTMLDivElement>(null);
 
-    // Responsive size classes: full width on mobile, constrained on larger screens
-    const sizeClasses = {
+    // Responsive size classes
+    const centerSizeClasses = {
         sm: 'max-w-full sm:max-w-sm',
         md: 'max-w-full sm:max-w-lg',
         lg: 'max-w-full sm:max-w-3xl',
         xl: 'max-w-full sm:max-w-5xl',
         full: 'max-w-full m-0 sm:m-4 h-[100dvh] sm:h-[calc(100vh-2rem)]',
+        none: ''
+    };
+
+    const sideSizeClasses = {
+        sm: 'sm:w-80',
+        md: 'sm:w-96',
+        lg: 'sm:w-[32rem]',
+        xl: 'sm:w-[48rem]',
+        full: 'sm:w-screen',
         none: ''
     };
 
@@ -88,7 +108,10 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
 
     return createPortal(
         <div
-            className="fixed inset-0 flex items-center justify-center p-0 sm:p-4"
+            className={cn(
+                "fixed inset-0 flex z-50",
+                variant === 'center' ? "items-center justify-center p-0 sm:p-4" : "items-end sm:items-stretch justify-end p-0"
+            )}
             style={{ zIndex }}
             role="dialog"
             aria-modal="true"
@@ -106,8 +129,20 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
                 ref={modalRef}
                 tabIndex={-1}
                 className={cn(
-                    "relative bg-white dark:bg-gray-800 rounded-none sm:rounded-xl shadow-md w-full overflow-hidden flex flex-col outline-none max-h-[100dvh] sm:max-h-[90vh]",
-                    sizeClasses[size],
+                    "relative bg-white dark:bg-gray-800 shadow-md outline-none overflow-hidden flex flex-col transition-all duration-300",
+                    // Variant specific styles
+                    variant === 'center' && [
+                        "rounded-none sm:rounded-xl w-full max-h-[100dvh] sm:max-h-[90vh]",
+                        centerSizeClasses[size]
+                    ],
+                    variant === 'side-right' && [
+                        "h-[100dvh] w-full", // Mobile: full screen
+                        "sm:h-full sm:max-h-screen", // Desktop: full height
+                        "sm:rounded-l-2xl sm:rounded-r-none shadow-2xl border-l border-gray-200 dark:border-gray-700",
+                        sideSizeClasses[size],
+                        // Simple slide-in effect simulation (opacity is handled, but slide needs CSS animation usually)
+                        // For now we rely on layout change.
+                    ],
                     className
                 )}
             >

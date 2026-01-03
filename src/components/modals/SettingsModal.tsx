@@ -5,6 +5,7 @@ import { UI_CONFIG } from '../../core/ui-constants';
 import { createBackupData, importBackupData } from '../../store/backup';
 import { useModalStore } from '../../store/ui/modal-store';
 import { Density, FontSize, ThemeMode, useSettingsStore } from '../../store/ui/settings-store';
+import { useToastStore } from '../../store/ui/toast-store';
 import { useWorkspaceStore } from '../../store/ui/workspace-store';
 import { cn } from '../../utils/cn';
 import { AccordionSection } from '../common/AccordionSection';
@@ -57,6 +58,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
     } = useSettingsStore();
 
     const { currentWorkspaceId } = useWorkspaceStore();
+    const { addToast } = useToastStore();
 
     const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
     const [backupConfirmed, setBackupConfirmed] = useState(false);
@@ -68,9 +70,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
             isOpen={isOpen}
             onClose={closeModal}
             title={t('settings_modal.title')}
-            className="w-full h-[90vh] md:h-[85vh] p-0 overflow-hidden"
+            className="w-full h-full p-0 overflow-hidden"
             zIndex={zIndex}
             size="xl"
+            variant="side-right"
             overlayClassName={overlayClassName}
         >
             <div className="flex flex-col md:flex-row h-full">
@@ -207,9 +210,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 a.click();
                                                 document.body.removeChild(a);
                                                 URL.revokeObjectURL(url);
+                                                addToast(t('settings_modal.backup.create_success'), 'success'); // Assuming key exists or generic success message
                                             } catch (e) {
                                                 console.error(e);
-                                                alert(t('settings_modal.backup.create_fail'));
+                                                addToast(t('settings_modal.backup.create_fail'), 'error');
                                             }
                                         }}
                                         variant="premium"
@@ -242,11 +246,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                             try {
                                                                 const json = JSON.parse(ev.target?.result as string);
                                                                 const result = await importBackupData(auth.currentUser!.uid, currentWorkspaceId, json);
-                                                                alert(t('settings_modal.backup.import_success').replace('{tasks}', String(result.tasksCount)).replace('{projects}', String(result.projectsCount)));
-                                                                window.location.reload(); // Refresh to reflect changes
+                                                                addToast(t('settings_modal.backup.import_success').replace('{tasks}', String(result.tasksCount)).replace('{projects}', String(result.projectsCount)), 'success');
+
+                                                                // Short delay to let the toast be seen before reload
+                                                                setTimeout(() => {
+                                                                    window.location.reload();
+                                                                }, 1000);
                                                             } catch (err) {
                                                                 console.error(err);
-                                                                alert(t('settings_modal.backup.import_fail'));
+                                                                addToast(t('settings_modal.backup.import_fail'), 'error');
                                                             }
                                                         };
                                                         reader.readAsText(file);
@@ -330,13 +338,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                             onConfirm: async () => {
                                                 try {
                                                     const count = await cleanupDuplicateTasks(currentWorkspaceId);
-                                                    alert(t('settings_modal.maintenance.cleanup_success').replace('{count}', String(count)));
+                                                    addToast(t('settings_modal.maintenance.cleanup_success').replace('{count}', String(count)), 'success');
                                                     if (count > 0) {
-                                                        window.location.reload();
+                                                        setTimeout(() => {
+                                                            window.location.reload();
+                                                        }, 1000);
                                                     }
                                                 } catch (e: any) {
                                                     console.error(e);
-                                                    alert(t('settings_modal.maintenance.cleanup_fail').replace('{error}', e.message));
+                                                    addToast(t('settings_modal.maintenance.cleanup_fail').replace('{error}', e.message), 'error');
                                                 }
                                             }
                                         });

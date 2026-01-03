@@ -7,7 +7,7 @@ import { useSettingsStore } from '../../store/ui/settings-store';
 import { useViewStore } from '../../store/ui/view-store';
 import { cn } from '../../utils/cn';
 import { getDensityClass } from '../../utils/ui-utils';
-import { IconCalendar, IconCalendarDays, IconClipboard, IconInbox, IconStar } from '../common/Icons';
+import { IconCalendar, IconCalendarDays, IconClipboard, IconDashboard, IconInbox, IconStar } from '../common/Icons';
 
 const FILTER_ITEMS = [
     { id: 'inbox', i18nKey: 'inbox', Icon: IconInbox, color: 'text-blue-500', droppable: true },
@@ -18,12 +18,32 @@ const FILTER_ITEMS = [
 ] as const;
 
 export const BasicFilters: React.FC = () => {
-    const { language } = useSettingsStore();
+    const { language, density } = useSettingsStore();
     const { t } = getTranslator(language);
     const counts = useTaskCounts();
+    const { setView, currentView } = useViewStore();
+
+    const isDashboardActive = currentView === 'target-dashboard';
 
     return (
         <ul className="space-y-0.5">
+            {/* Dashboard Item */}
+            <li>
+                <button
+                    onClick={() => setView('target-dashboard')}
+                    className={cn(
+                        "w-full flex items-center px-3 text-sm rounded-md transition-colors text-left gap-3 group/item",
+                        getDensityClass(density),
+                        isDashboardActive
+                            ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
+                            : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    )}
+                >
+                    <IconDashboard className="w-4 h-4 text-indigo-500" />
+                    <span className="flex-1">{t('dashboard')}</span>
+                </button>
+            </li>
+
             {FILTER_ITEMS.map(item => (
                 <FilterItem
                     key={item.id}

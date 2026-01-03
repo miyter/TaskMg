@@ -1,6 +1,7 @@
 ﻿import { useDroppable } from '@dnd-kit/core';
 import React from 'react';
 import { useFilterStore } from '../../store/ui/filter-store';
+import { useViewStore } from '../../store/ui/view-store';
 import { IconClock } from '../common/Icons';
 import { SidebarItem } from './SidebarItem';
 
@@ -14,6 +15,7 @@ interface DurationItemProps {
 export const DurationItem: React.FC<DurationItemProps> = React.memo(({ mins, count }) => {
     const { t } = useTranslation();
     const { filterType, targetId, setFilter } = useFilterStore();
+    const { setView } = useViewStore();
     const isActive = filterType === 'duration' && targetId === mins.toString();
 
     const { setNodeRef, isOver } = useDroppable({
@@ -34,7 +36,10 @@ export const DurationItem: React.FC<DurationItemProps> = React.memo(({ mins, cou
                 count={count}
                 isActive={isActive}
                 isOver={isOver}
-                onClick={() => setFilter('duration', mins.toString())}
+                onClick={() => {
+                    setView('tasks');
+                    setFilter('duration', mins.toString());
+                }}
             />
         </div>
     );
