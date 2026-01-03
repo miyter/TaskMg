@@ -444,6 +444,11 @@ export const ja = {
         },
         header_expand: 'ヘッダーを展開',
         header_collapse: 'ヘッダーを折りたたむ',
+    },
+
+    general_dashboard: {
+        overall_stats: '全体統計',
+        time_block_usage: 'タイムブロック使用状況',
     }
 };
 
@@ -886,6 +891,11 @@ export const en = {
             score_label: 'Score',
             add_obstacle: '+ Add Obstacle',
         }
+    },
+
+    general_dashboard: {
+        overall_stats: 'Overall Statistics',
+        time_block_usage: 'Time Block Usage',
     }
 };
 

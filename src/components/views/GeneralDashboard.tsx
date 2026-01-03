@@ -52,13 +52,13 @@ export const GeneralDashboard: React.FC = () => {
 
             {/* Overall Stats (General Mode) */}
             <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-gray-800">
-                <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Overall Statistics</h2>
+                <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('general_dashboard.overall_stats')}</h2>
                 <TaskStats tasks={tasks.filter(t => t.status !== 'completed')} timeBlockId={null} />
             </div>
 
             {/* TimeBlock Usage */}
             <div className="space-y-4">
-                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">Time Block Usage</h2>
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">{t('general_dashboard.time_block_usage')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {timeBlocks.map(tb => {
                         // Filter tasks for this timeblock
