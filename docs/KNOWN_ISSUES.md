@@ -27,6 +27,8 @@
     - **Settings UI**: Added dedicated schedule tab in settings modal.
 - **Performance & Architecture**:
     - **Lazy Loading**: Implemented `React.lazy` for all modal components to optimize bundle size and TTI.
+    - **Reflow Optimization**: Converted `useThemeEffect` to use `useEffect` to reduce layout thrashing during initial load.
+    - **Zod Localization**: Implemented global Zod error map and schema refinements to support full i18n for validation messages.
     - **Component Standardization**: Integrated `Button`, `Input`, `Select`, `Textarea` across all views and modals for consistent UI/UX.
 - **Internationalization (i18n)**:
     - **Wiki Content**: Localized Wiki Framework data for JA/EN.
@@ -39,8 +41,7 @@
 
 - **Render Blocking Resources**:
     - **CSS**: `vendor-*.css` (約90KB) と `main-*.css` (約12KB) がレンダリングをブロックし、LCPを遅延 (推計470ms)。クリティカルCSSのインライン化や遅延読み込みを検討。
-- **Forced Reflow**:
-    - **Layout Thrashing**: JavaScript (`main-*.js`) によるDOM状態変更後の即時計測が発生中 (36ms)。`useLayoutEffect` やドラッグ操作時のDOM計測ロジックの最適化が必要。
+
 - **Lighthouse/LCP**:
     - **Critical Request Chain**: Firebase Auth iframe等の長いリクエストチェーン (最大2.4s) が初期表示を遅延。
 
@@ -48,6 +49,6 @@
 
 ## 🏗️ Long-Term Roadmap
 
-- **完全な多言語化 (i18n)**: Zodスキーマのエラーメッセージのローカライズ、動的な日付フォーマットのさらなる検討。
+- **完全な多言語化 (i18n)**: 動的な日付フォーマットのさらなる検討。
 - **Firestore制約**: `WorkspaceEditModal` 等でのサーバー側ユニーク制約の検討。
 - **定数値の集約**: 引き続きマジックナンバーの抽出を進める。

@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useEffect } from 'react';
 import { useSettingsStore } from '../store/ui/settings-store';
 import { useUIStore } from '../store/ui/ui-store';
 
@@ -10,7 +10,7 @@ export const useThemeEffect = () => {
     const { fontEn, fontJp, fontSize, density, themeMode } = useSettingsStore();
     const { setSidebarDensity } = useUIStore();
 
-    useLayoutEffect(() => {
+    useEffect(() => {
         const root = document.documentElement;
         const body = document.body;
 

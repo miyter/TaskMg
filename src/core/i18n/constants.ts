@@ -336,6 +336,10 @@ export const ja = {
         select_days: '曜日を選択してください',
         auth_required: '認証が必要です',
         validation_error: 'バリデーションエラー',
+        title_required: 'タイトルは必須です',
+        duration_invalid: '所要時間は0以上の数値で指定してください',
+        time_format_invalid: '時刻はHH:mm形式で入力してください（例: 09:00）',
+        timeblock_name_required: '時間帯の名前は必須です',
     },
 
     date_options: {
@@ -664,6 +668,8 @@ export const en = {
         settings_title: 'Time Block Settings',
     },
 
+
+
     recurrence: {
         none: 'None',
         daily: 'Daily',
@@ -817,6 +823,10 @@ export const en = {
         select_days: 'Please select days',
         auth_required: 'Authentication required',
         validation_error: 'Validation error',
+        title_required: 'Title is required',
+        duration_invalid: 'Duration must be a positive number',
+        time_format_invalid: 'Time must be in HH:mm format (e.g. 09:00)',
+        timeblock_name_required: 'Time block name is required',
     },
 
     date_options: {

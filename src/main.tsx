@@ -13,12 +13,14 @@ import '@fontsource/inter/700.css';
 import '@fontsource/m-plus-2/400.css';
 import '@fontsource/m-plus-2/500.css';
 import '@fontsource/m-plus-2/700.css';
+import { initZodI18n } from './core/i18n/zod-setup';
 import { initErrorLogger } from './utils/error-logger';
 
 import { queryClient } from './core/query-client';
 
 // グローバルエラーハンドラーを初期化
 initErrorLogger();
+initZodI18n();
 
 const rootElement = document.getElementById('app');
 if (!rootElement) throw new Error('Failed to find the root element');
