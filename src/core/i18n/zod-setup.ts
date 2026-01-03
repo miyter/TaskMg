@@ -20,7 +20,7 @@ export const initZodI18n = () => {
             }
         }
 
-        // Fallback to default Zod message
-        return { message: ctx.defaultError };
+        // Fallback to default Zod message (with null safety)
+        return { message: ctx?.defaultError || 'Validation error' };
     }) as any);
 };
