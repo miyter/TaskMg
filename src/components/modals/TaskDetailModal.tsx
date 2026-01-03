@@ -237,7 +237,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
         >
             <div className="flex flex-col h-full" onKeyDown={handleContainerKeyDown}>
                 {/* Header */}
-                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 shrink-0">
+                <div className="px-3 sm:px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 shrink-0">
                     <div className="flex-1">
                         <Input
                             id="task-title"
@@ -247,7 +247,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             onChange={(e) => setTitle(e.target.value)}
                             onKeyDown={handleTitleKeyDown}
                             placeholder={t('task_detail.title_placeholder')}
-                            className="text-xl font-bold bg-transparent border-none focus:ring-0 px-0 py-0 shadow-none h-auto rounded-none"
+                            className="text-lg sm:text-xl font-bold bg-transparent border-none focus:ring-0 px-0 py-0 shadow-none h-auto rounded-none"
                             containerClassName="gap-0"
                             autoFocus
                             aria-label={t('task_detail.title_placeholder')}
@@ -277,13 +277,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-2 sm:p-4 custom-scrollbar">
                     <ErrorMessage message={error} className="mb-3" />
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 h-full">
                         {/* Left Column: Memo */}
-                        <div className="md:col-span-8 flex flex-col h-full min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                        <div className="md:col-span-8 flex flex-col h-full min-h-[200px] sm:min-h-[300px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
                             <div className="flex justify-between items-center mb-2">
-                                <label className="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
+                                <label htmlFor="task-description" className="text-xs font-semibold text-gray-500 flex items-center gap-2 uppercase">
                                     <IconFileText size={16} />
                                     メモ (Markdown)
                                 </label>
@@ -311,7 +311,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         placeholder="詳細を入力..."
-                                        className="h-full bg-gray-50 dark:bg-gray-900/50 border-0 rounded-lg focus:ring-1 focus:ring-blue-500/50 text-gray-800 dark:text-gray-200 font-mono"
+                                        className="h-full bg-gray-50 dark:bg-gray-900/50 border-0 rounded-lg focus:ring-1 focus:ring-blue-500/50 text-gray-800 dark:text-gray-200 font-mono text-sm"
                                         containerClassName="h-full"
                                         autoFocus={!description}
                                         aria-label="詳細メモ"
@@ -325,7 +325,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             {/* Schedule Section */}
                             <details open={scheduleOpen} onToggle={(e) => setScheduleOpen(e.currentTarget.open)} className="group border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
                                 <summary
-                                    className="flex items-center justify-between px-4 py-3 cursor-pointer list-none outline-none bg-gray-50 dark:bg-gray-700/30 rounded-t-lg group-[:not([open])]:rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50 focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                                    className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 cursor-pointer list-none outline-none bg-gray-50 dark:bg-gray-700/30 rounded-t-lg group-[:not([open])]:rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50 focus:ring-2 focus:ring-inset focus:ring-blue-500"
                                     role="button"
                                     aria-expanded={scheduleOpen}
                                 >
@@ -337,7 +337,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                         <IconChevronDown size={20} />
                                     </span>
                                 </summary>
-                                <div className="p-4 flex flex-col gap-4">
+                                <div className="p-3 sm:p-4 flex flex-col gap-3 sm:gap-4">
                                     {/* Due Date */}
                                     <div>
                                         <div
@@ -353,7 +353,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                                 label={t('task_detail.due_date_label')}
                                                 value={formatDateForInput(dueDate)}
                                                 onChange={(e) => setDueDate(parseDateInput(e.target.value))}
-                                                className="cursor-pointer bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                                className="cursor-pointer bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-sm"
                                             />
                                         </div>
                                     </div>
@@ -365,7 +365,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                             label={t('task_detail.recurrence_label')}
                                             value={recurrence?.type || 'none'}
                                             onChange={(e) => handleRecurrenceTypeChange(e.target.value)}
-                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-sm"
                                             options={definitionRecurrenceOptions}
                                         />
                                     </div>
@@ -399,7 +399,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                             label={t('task_detail.time_block_label')}
                                             value={timeBlockId || ''}
                                             onChange={(e) => setTimeBlockId(e.target.value || null)}
-                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-sm"
                                         >
                                             <option value="">{t('task_detail.time_block_unspecified')}</option>
                                             {timeBlocks.map(tb => (
@@ -415,7 +415,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                             label={t('task_detail.duration_label')}
                                             value={duration || ''}
                                             onChange={(e) => setDuration(e.target.value ? parseInt(e.target.value, 10) : null)}
-                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                                            className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-sm"
                                         >
                                             <option value="">{t('task_detail.duration_none')}</option>
                                             {customDurations.map(d => (
@@ -427,13 +427,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             </details>
 
                             {/* Project */}
-                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
                                 <Select
                                     id="task-project"
                                     label={t('task_detail.project_label')}
                                     value={projectId || 'none'}
                                     onChange={(e) => setProjectId(e.target.value === 'none' ? null : e.target.value)}
-                                    className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                    className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-sm"
                                     containerClassName="gap-2"
                                 >
                                     <option value="none">{t('task_detail.project_none')}</option>
@@ -447,7 +447,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
+                <div className="px-3 sm:px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
                     {!isNewTask && (
                         <div className="flex items-center gap-2">
                             <Button

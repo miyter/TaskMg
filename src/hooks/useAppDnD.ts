@@ -7,11 +7,10 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useCallback, useRef } from 'react';
-import { getTranslator } from '../core/translations';
+import { useTranslation } from '../core/translations';
 import { UI_CONFIG } from '../core/ui-constants';
 import { reorderProjects, updateTask } from '../store';
 import { Project, Task } from '../store/schema';
-import { useSettingsStore } from '../store/ui/settings-store';
 import { toast } from '../store/ui/toast-store';
 
 /** Optimistic Update オプション */
@@ -36,15 +35,13 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
         }),
         useSensor(TouchSensor, {
             activationConstraint: {
-                delay: UI_CONFIG.DND.TOUCH_DELAY, // Prevent accidental drags while scrolling
+                delay: UI_CONFIG.DND.TOUCH_DELAY,
                 tolerance: 5,
             },
-
         })
     );
 
-    const { language } = useSettingsStore();
-    const { t } = getTranslator(language);
+    const { t } = useTranslation();
 
     // Store simple snapshot of projects at start of drag
     const initialProjectsRef = useRef<Project[]>(projects);
@@ -60,25 +57,40 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
         const activeId = String(active.id);
         const overId = String(over.id);
 
-        const getTaskId = (id: string) => id.startsWith(UI_CONFIG.DND.PREFIX_TASK) ? id.split(':')[1] : null;
-        const draggedTaskId = getTaskId(activeId);
+        // Try to get Task ID from data (safer) or ID string (fallback)
+        let draggedTaskId: string | null = null;
+        if (active.data.current && active.data.current.type === 'task' && active.data.current.task) {
+            draggedTaskId = active.data.current.task.id;
+        } else if (activeId.startsWith(UI_CONFIG.DND.PREFIX_TASK)) {
+            draggedTaskId = activeId.replace(UI_CONFIG.DND.PREFIX_TASK, '');
+        }
 
         // タスクをサイドバーへドラッグした場合の処理 (移動)
         if (draggedTaskId) {
-            const targetType = over.data.current?.type as string; // Cast to generic string to avoid overly complex type checks with UI_CONFIG
-            const targetValue = over.data.current?.value;
+            const targetData = over.data.current;
+            const targetType = targetData?.type as string;
+            const targetValue = targetData?.value;
 
-            const updates: Partial<Task> = {};
-            if (targetType === UI_CONFIG.DND.TYPE_PROJECT) updates.projectId = targetValue;
-            if (targetType === UI_CONFIG.DND.TYPE_INBOX) updates.projectId = null;
-            if (targetType === UI_CONFIG.DND.TYPE_TIMEBLOCK) updates.timeBlockId = targetValue === 'unassigned' ? null : targetValue;
+            if (targetType) {
+                const updates: Partial<Task> = {};
 
-            if (Object.keys(updates).length > 0) {
-                try {
-                    await updateTask(draggedTaskId, updates);
-                } catch (err) {
-                    console.error('Failed to update task via dnd', err);
-                    toast.error(t('msg.dnd.reorderFailed') || t('error'));
+                if (targetType === UI_CONFIG.DND.TYPE_PROJECT) {
+                    updates.projectId = targetValue;
+                } else if (targetType === UI_CONFIG.DND.TYPE_INBOX) {
+                    updates.projectId = null;
+                } else if (targetType === UI_CONFIG.DND.TYPE_TIMEBLOCK) {
+                    updates.timeBlockId = targetValue === 'unassigned' ? null : targetValue;
+                }
+
+                if (Object.keys(updates).length > 0) {
+                    try {
+                        await updateTask(draggedTaskId, updates);
+                        // toast.success(t('msg.task.update_success')); // Optional: feedback on move
+                    } catch (err) {
+                        console.error('Failed to update task via dnd', err);
+                        toast.error(t('msg.dnd.reorderFailed') || t('error'));
+                    }
+                    return; // Task move handled, exit
                 }
             }
         }
