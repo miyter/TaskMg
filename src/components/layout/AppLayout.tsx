@@ -24,7 +24,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
             {/* Mobile Backdrop */}
             {isSidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 lg:hidden transition-opacity duration-300"
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+                    style={{ zIndex: UI_CONFIG.Z_INDEX.SIDEBAR_BACKDROP }}
                     onClick={toggleSidebar}
                 />
             )}

@@ -27,6 +27,7 @@ export const ja = {
     add_task: 'タスクを追加',
     search: '検索',
     no_tasks: 'タスクがありません',
+    no_items: '項目がありません',
     loading: '読み込み中...',
     saving: '保存中...',
     done: '完了',
@@ -87,6 +88,7 @@ export const ja = {
             delete_fail: 'ラベルの削除に失敗しました',
         },
         confirm_delete: '本当に削除しますか？\n削除されたデータは元に戻せません。',
+        confirm_delete_workspace: 'ワークスペース「{name}」を削除してもよろしいですか？\nこの操作は取り消せません。',
     },
 
     delete: '削除',
@@ -345,6 +347,7 @@ export const ja = {
     date_options: {
         today: '今日',
         tomorrow: '明日',
+        yesterday: '昨日',
         week: '今週',
         next_week: '来週',
     },
@@ -513,6 +516,7 @@ export const en = {
     add_task: 'Add Task',
     search: 'Search',
     no_tasks: 'No tasks found',
+    no_items: 'No items found',
     loading: 'Loading...',
     saving: 'Saving...',
     done: 'Done',
@@ -572,6 +576,7 @@ export const en = {
             delete_fail: 'Failed to delete label',
         },
         confirm_delete: 'Are you sure you want to delete this item?\nThis action cannot be undone.',
+        confirm_delete_workspace: 'Are you sure you want to delete workspace "{name}"?\nThis action cannot be undone.',
     },
 
     delete: 'Delete',
@@ -832,6 +837,7 @@ export const en = {
     date_options: {
         today: 'Today',
         tomorrow: 'Tomorrow',
+        yesterday: 'Yesterday',
         week: 'This Week',
         next_week: 'Next Week',
     },

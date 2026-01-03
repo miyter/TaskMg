@@ -60,7 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 "lg:backdrop-blur-xl",
                 "border-r border-gray-200/50 dark:border-gray-700/30",
                 isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-                "fixed lg:relative z-30 lg:z-0 shadow-2xl lg:shadow-none overflow-hidden",
+                "fixed lg:relative lg:z-0 shadow-2xl lg:shadow-none overflow-hidden",
                 // Mobile width is fixed via inline style when open, otherwise 0. Desktop uses variable.
                 "w-[var(--sidebar-mobile)] lg:w-[var(--sidebar-desktop)]"
             )}
@@ -68,6 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 '--sidebar-desktop': `${sidebarWidth}px`,
                 '--sidebar-mobile': isSidebarOpen ? `${UI_CONFIG.LAYOUT.MOBILE_SIDEBAR_WIDTH_PX}px` : '0px',
                 width: isSidebarOpen ? undefined : '0px', // Force 0 width when closed on mobile to prevent layout shift
+                zIndex: window.innerWidth < 1024 ? UI_CONFIG.Z_INDEX.SIDEBAR_MOBILE : undefined
             } as React.CSSProperties}
         >
             {/* Header */}
@@ -114,9 +115,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                     }
                 }}
                 className={cn(
-                    "absolute top-0 right-0 w-3 h-full cursor-col-resize z-40 transition-colors hidden lg:flex items-center justify-center outline-none focus:bg-blue-500",
+                    "absolute top-0 right-0 w-3 h-full cursor-col-resize transition-colors hidden lg:flex items-center justify-center outline-none focus:bg-blue-500",
                     "hover:bg-blue-500/30 active:bg-blue-600/50 group/resizer"
                 )}
+                style={{ zIndex: UI_CONFIG.Z_INDEX.SIDEBAR_RESIZER }}
                 title={t('sidebar.resizer_hint')}
             >
                 {/* Visual Indicator - More visible */}

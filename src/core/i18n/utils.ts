@@ -30,5 +30,17 @@ export const getTranslator = (language: Language) => {
         return result;
     }
 
-    return { t };
+    function formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
+        try {
+            return new Intl.NumberFormat(language === 'ja' ? 'ja-JP' : 'en-US', options).format(value);
+        } catch (e) {
+            return String(value);
+        }
+    }
+
+    function formatCurrency(value: number, currency: string = 'USD'): string {
+        return formatNumber(value, { style: 'currency', currency });
+    }
+
+    return { t, formatNumber, formatCurrency };
 };

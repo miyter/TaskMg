@@ -11,7 +11,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
 import { useTranslation } from '../../core/translations';
-import { COLOR_PALETTE } from '../../core/ui-constants';
+import { COLOR_PALETTE, Color, UI_CONFIG } from '../../core/ui-constants';
 
 /**
  * プロジェクト編集/作成モーダル (React版)
@@ -33,7 +33,7 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
     const isEdit = !!project?.id;
 
     const [name, setName] = useState('');
-    const [color, setColor] = useState('#7E57C2');
+    const [color, setColor] = useState<Color>(UI_CONFIG.DEFAULT_COLORS.PROJECT);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +43,7 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
     useEffect(() => {
         if (isOpen) {
             setName(project?.name || '');
-            setColor(project?.color || COLOR_PALETTE[3].value); // Default to a nice purple
+            setColor((project?.color as Color) || UI_CONFIG.DEFAULT_COLORS.PROJECT);
             setError(null);
             setLoading(false);
         }

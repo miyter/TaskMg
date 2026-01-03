@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../core/translations';
+import { UI_CONFIG } from '../../core/ui-constants';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { deleteTask, toggleTaskStatus, updateTask } from '../../store';
@@ -155,7 +156,7 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
                 <div className="flex items-center gap-3 text-xs shrink-0">
                     {/* Project */}
                     <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: project?.color || '#ccc' }} />
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: project?.color || UI_CONFIG.DEFAULT_COLORS.PROJECT_INACTIVE }} />
                         <span className="max-w-[100px] truncate">
                             {project ? project.name : t('task_detail.project_none')}
                         </span>

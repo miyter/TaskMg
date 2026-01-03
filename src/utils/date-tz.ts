@@ -2,11 +2,7 @@
  * タイムゾーン対応の日付ユーティリティ
  * 
  * date-fns-tz を使用して、Firestore (UTC) とローカル時間の変換を安全に行う。
- * 
- * 設計方針:
- * - Firestoreには常にUTCで保存される（Timestampは内部的にUTC）
- * - ユーザー表示時はブラウザのローカルタイムゾーンに自動変換
- * - 日付境界の比較は常にローカルタイムゾーンで行う（ユーザー体験重視）
+ * i18n対応済み：現在の言語設定に基づいてフォーマットを行う。
  */
 
 import {
@@ -27,7 +23,26 @@ import {
     fromZonedTime,
     toZonedTime
 } from 'date-fns-tz';
-import { ja } from 'date-fns/locale';
+import { enUS, ja } from 'date-fns/locale';
+import { translations } from '../core/i18n/constants';
+import { Language } from '../core/i18n/types';
+import { useSettingsStore } from '../store/ui/settings-store';
+
+/**
+ * 現在のロケールを取得
+ */
+const getCurrentLocale = () => {
+    const { language } = useSettingsStore.getState();
+    return language === 'en' ? enUS : ja;
+};
+
+/**
+ * 現在の言語の翻訳リソースを取得
+ */
+const getTranslations = () => {
+    const { language } = useSettingsStore.getState();
+    return translations[language as Language] || translations['ja'];
+};
 
 /**
  * ユーザーのタイムゾーンを取得
@@ -115,25 +130,27 @@ export function getDaysDifference(dateLeft: Date, dateRight: Date): number {
  * 日付をローカルタイムゾーンでフォーマット
  */
 export function formatLocalDate(date: Date, formatStr: string = 'yyyy/MM/dd'): string {
-    return dateFnsTzFormat(date, getUserTimeZone(), formatStr, { locale: ja });
+    return dateFnsTzFormat(date, getUserTimeZone(), formatStr, { locale: getCurrentLocale() });
 }
 
 /**
  * 日付をコンパクトにフォーマット（今日/明日/昨日 または MM/dd）
  */
 export function formatDateCompactTz(date: Date): string {
-    if (isLocalToday(date)) return '今日';
-    if (isLocalTomorrow(date)) return '明日';
-    if (isLocalYesterday(date)) return '昨日';
+    const t = getTranslations();
+
+    if (isLocalToday(date)) return t.date_options.today;
+    if (isLocalTomorrow(date)) return t.date_options.tomorrow;
+    if (isLocalYesterday(date)) return t.date_options.yesterday;
 
     const now = new Date();
     const zonedDate = toLocalTime(date);
     const zonedNow = toLocalTime(now);
 
     if (zonedDate.getFullYear() !== zonedNow.getFullYear()) {
-        return dateFnsTzFormat(date, getUserTimeZone(), 'yyyy/MM/dd', { locale: ja });
+        return dateFnsTzFormat(date, getUserTimeZone(), 'yyyy/MM/dd', { locale: getCurrentLocale() });
     }
-    return dateFnsTzFormat(date, getUserTimeZone(), 'MM/dd', { locale: ja });
+    return dateFnsTzFormat(date, getUserTimeZone(), 'MM/dd', { locale: getCurrentLocale() });
 }
 
 /**

@@ -1,10 +1,11 @@
+
 /**
  * 更新日: 2025-12-31
  * 内容: TypeScript型チェックの有効化と設定取得ロジックの整理
  */
 
 import { FirebaseApp, getApps, initializeApp } from 'firebase/app';
-import { Auth, getAuth } from 'firebase/auth';
+import { Auth, browserLocalPersistence, browserPopupRedirectResolver, initializeAuth } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
 
 // グローバル定数の型定義
@@ -97,7 +98,16 @@ if (getApps().length > 0) {
 
 // サービスのエクスポート
 export const app: FirebaseApp = appInstance;
-export const auth: Auth = getAuth(app);
+
+
+// Optimize Auth initialization
+// Use browserLocalPersistence to prefer IndexedDB/LocalStorage and avoid some iframe reliance if possible
+// Also providing popupRedirectResolver explicitly might help tree-shaking (though less likely in this context)
+export const auth: Auth = initializeAuth(app, {
+    persistence: browserLocalPersistence,
+    popupRedirectResolver: browserPopupRedirectResolver
+});
+
 export const db: Firestore = getFirestore(app);
 
 // 後方互換性のため

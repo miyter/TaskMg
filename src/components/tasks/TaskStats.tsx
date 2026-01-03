@@ -11,7 +11,7 @@ interface TaskStatsProps {
 }
 
 export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
-    const { t } = useTranslation();
+    const { t, formatNumber } = useTranslation();
     const { timeBlocks } = useTimeBlocks();
 
     // Calculate total duration in minutes
@@ -22,7 +22,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
         return sum + (isNaN(duration) ? 0 : duration);
     }, 0);
 
-    const formatTime = (mins: number) => (mins / 60).toFixed(2) + 'h';
+    const formatTime = (mins: number) => formatNumber(mins / 60, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + 'h';
 
     // A. TimeBlock Mode
     const timeBlock = timeBlockId ? timeBlocks.find(tb => tb.id === timeBlockId) : null;
@@ -31,14 +31,14 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
         const capacityMinutes = calculateDurationMinutes(timeBlock.start, timeBlock.end);
         if (capacityMinutes <= 0) return null;
 
-        const capacityHours = (capacityMinutes / 60).toFixed(2);
-        const totalTaskHours = (totalTaskMinutes / 60).toFixed(2);
+        const capacityHours = formatNumber(capacityMinutes / 60, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const totalTaskHours = formatNumber(totalTaskMinutes / 60, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const rawPercent = (totalTaskMinutes / capacityMinutes) * 100;
         const progressPercent = Math.min(rawPercent, 100);
 
         const diffMinutes = capacityMinutes - totalTaskMinutes;
         const isOver = diffMinutes < 0;
-        const absDiffHours = (Math.abs(diffMinutes) / 60).toFixed(2);
+        const absDiffHours = formatNumber(Math.abs(diffMinutes) / 60, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const isExceeded = rawPercent > 100;
 
         return (
@@ -92,7 +92,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
         <div className="glass-card flex items-center justify-evenly py-3 px-4 my-2">
             <div className="flex flex-row items-baseline gap-2">
                 <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold">{t('task_stats.count_label')}</span>
-                <span className="font-bold text-sm text-gray-700 dark:text-gray-200">{count}{countUnit && <span className="text-xs font-normal ml-0.5 text-gray-400">{countUnit}</span>}</span>
+                <span className="font-bold text-sm text-gray-700 dark:text-gray-200">{formatNumber(count)}{countUnit && <span className="text-xs font-normal ml-0.5 text-gray-400">{countUnit}</span>}</span>
             </div>
             <div className="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
             <div className="flex flex-row items-baseline gap-2">

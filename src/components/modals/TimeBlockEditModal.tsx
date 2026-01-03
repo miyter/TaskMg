@@ -331,13 +331,15 @@ const CustomMiniSelect: React.FC<{
             {isOpen && (
                 <Portal>
                     <div
-                        className="fixed inset-0 z-[9998] bg-transparent"
+                        className="fixed inset-0 bg-transparent"
+                        style={{ zIndex: UI_CONFIG.Z_INDEX.POPOVER_BACKDROP }}
                         onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
                     />
                     <div
                         ref={listRef}
-                        className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-xl overflow-y-auto custom-scrollbar flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100"
+                        className="fixed bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-xl overflow-y-auto custom-scrollbar flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100"
                         style={{
+                            zIndex: UI_CONFIG.Z_INDEX.POPOVER,
                             top: position.top,
                             left: position.left,
                             width: Math.max(position.width, 60),
@@ -386,19 +388,21 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
                 <button
                     onClick={() => setShowColorPicker(!showColorPicker)}
                     className="w-5 h-5 rounded-full shadow-sm ring-2 ring-transparent focus:ring-blue-400 ring-offset-2 dark:ring-offset-gray-900 block transition-transform hover:scale-110"
-                    style={{ backgroundColor: block.color || '#3B82F6' }}
+                    style={{ backgroundColor: block.color || UI_CONFIG.DEFAULT_COLORS.TIME_BLOCK }}
                     title={t('time_block.change_color')}
                     onPointerDown={(e) => e.stopPropagation()}
                 />
                 {showColorPicker && (
                     <Portal>
                         <div
-                            className="fixed inset-0 z-[9999] bg-transparent"
+                            className="fixed inset-0 bg-transparent"
+                            style={{ zIndex: UI_CONFIG.Z_INDEX.POPOVER_BACKDROP }}
                             onClick={() => setShowColorPicker(false)}
                         />
                         <div
-                            className="fixed z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-4 w-[280px]"
+                            className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-4 w-[280px]"
                             style={{
+                                zIndex: UI_CONFIG.Z_INDEX.POPOVER,
                                 top: '50%',
                                 left: '50%',
                                 transform: 'translate(-50%, -50%)'

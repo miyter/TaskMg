@@ -6,6 +6,7 @@
 import { auth } from "../core/firebase";
 import { Unsubscribe } from "../core/firebase-sdk";
 import { getTranslator } from '../core/i18n/utils';
+import { UI_CONFIG } from '../core/ui-constants';
 import { TimeBlock, TimeBlockSchema } from './schema';
 import {
     addTimeBlockRaw,
@@ -87,7 +88,7 @@ export async function saveTimeBlock(workspaceId: string, block: Partial<TimeBloc
             name: block.name || '',
             start: block.start || '09:00',
             end: block.end || '10:00',
-            color: block.color || '#cccccc',
+            color: block.color || UI_CONFIG.DEFAULT_COLORS.TIME_BLOCK_INACTIVE,
             order: nextOrder
         };
 

@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../core/translations';
+import { UI_CONFIG } from '../../core/ui-constants';
 import { cn } from '../../utils/cn';
 
 // フォーカス可能な要素のセレクター
@@ -25,7 +26,7 @@ export const Modal: React.FC<ModalProps> = ({
     children,
     className,
     overlayClassName,
-    zIndex = 100,
+    zIndex = UI_CONFIG.Z_INDEX.MODAL,
     size = 'md',
     variant = 'center'
 }) => {

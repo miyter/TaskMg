@@ -4,6 +4,7 @@ import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useModalStore } from '../../store/ui/modal-store';
 import { setCurrentWorkspaceId } from '../../store/workspace';
 
+import { UI_CONFIG } from '../../core/ui-constants';
 import { cn } from '../../utils/cn';
 
 import { useWorkspace } from '../../hooks/useWorkspace';
@@ -65,7 +66,10 @@ export const WorkspaceDropdown: React.FC = () => {
             </button>
 
             {isOpen && (
-                <div className="absolute left-0 mt-2 w-60 sm:w-64 max-w-[calc(100vw-32px)] origin-top-left rounded-lg shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black/5 z-50 border border-gray-100 dark:border-gray-700 overflow-hidden animate-scale-in custom-scrollbar">
+                <div
+                    className="absolute left-0 mt-2 w-60 sm:w-64 max-w-[calc(100vw-32px)] origin-top-left rounded-lg shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black/5 border border-gray-100 dark:border-gray-700 overflow-hidden animate-scale-in custom-scrollbar"
+                    style={{ zIndex: UI_CONFIG.Z_INDEX.DROPDOWN }}
+                >
 
                     <div className="p-1 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
                         <button

@@ -2,7 +2,7 @@
 import { useTranslation } from '../../core/translations';
 import { Workspace } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
-import { addWorkspace, deleteWorkspace, getWorkspaces, setCurrentWorkspaceId, updateWorkspaceName } from '../../store/workspace';
+import { addWorkspace, deleteWorkspace, getWorkspaces, isWorkspaceNameDuplicate, setCurrentWorkspaceId, updateWorkspaceName } from '../../store/workspace';
 import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
 import { Button } from '../ui/Button';
@@ -53,20 +53,31 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
             return;
         }
 
-        // 重複チェック
-        const existingWorkspaces = getWorkspaces();
-        const isDuplicate = existingWorkspaces.some(
-            (ws: Workspace) => ws.name === trimmedName && ws.id !== workspace?.id
-        );
-        if (isDuplicate) {
-            setError(t('validation.workspace_duplicate'));
-            return;
-        }
-
         setLoading(true);
         setError(null);
 
         try {
+            // クライアントサイドでの簡易チェック (即時フィードバック用)
+            const existingWorkspaces = getWorkspaces();
+            const isClientDuplicate = existingWorkspaces.some(
+                (ws: Workspace) => ws.name === trimmedName && ws.id !== workspace?.id
+            );
+
+            if (isClientDuplicate) {
+                setError(t('validation.workspace_duplicate'));
+                setLoading(false);
+                return;
+            }
+
+            // サーバーサイドでの厳密なチェック (Firestore)
+            // isEditの場合は自身のIDを除外
+            const isServerDuplicate = await isWorkspaceNameDuplicate(trimmedName, workspace?.id || null);
+            if (isServerDuplicate) {
+                setError(t('validation.workspace_duplicate'));
+                setLoading(false);
+                return;
+            }
+
             if (isEdit && workspace?.id) {
                 await updateWorkspaceName(workspace.id, trimmedName);
                 closeModal();

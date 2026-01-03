@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import { UI_CONFIG } from '../../core/ui-constants';
 import { useModalStore } from '../../store/ui/modal-store';
 
 // Lazy load modals to improve initial bundle size and performance
@@ -26,7 +27,7 @@ export const ModalManager: React.FC = () => {
                 const props = {
                     isOpen: true,
                     data: modal.data,
-                    zIndex: 100 + index * 10,
+                    zIndex: UI_CONFIG.Z_INDEX.MODAL + index * 10,
                     overlayClassName: overlayStyle
                 };
 

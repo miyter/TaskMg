@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { UI_CONFIG } from '../../core/ui-constants';
 import { cn } from '../../utils/cn';
 import { IconChevronRight } from '../common/Icons';
 
@@ -36,8 +37,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose, childre
     return createPortal(
         <div
             ref={menuRef}
-            className="fixed z-50 min-w-[160px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 animate-in fade-in zoom-in-95 duration-100"
-            style={{ top: y, left: x }}
+            className="fixed min-w-[160px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 animate-in fade-in zoom-in-95 duration-100"
+            style={{ top: y, left: x, zIndex: UI_CONFIG.Z_INDEX.POPOVER }}
             onContextMenu={(e) => e.preventDefault()}
         >
             {children}
@@ -63,7 +64,7 @@ export const ContextMenuSub: React.FC<{ label: React.ReactNode; icon?: React.Rea
                 <IconChevronRight className="w-3 h-3 text-gray-400" />
             </button>
             {isOpen && (
-                <div className="absolute left-full top-0 ml-1 min-w-[140px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 animate-in fade-in zoom-in-95 duration-100 z-50">
+                <div className="absolute left-full top-0 ml-1 min-w-[140px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 animate-in fade-in zoom-in-95 duration-100" style={{ zIndex: UI_CONFIG.Z_INDEX.POPOVER }}>
                     {children}
                 </div>
             )}

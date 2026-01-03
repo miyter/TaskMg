@@ -4,6 +4,29 @@
  */
 
 export const UI_CONFIG = {
+    // Global z-index ladder
+    Z_INDEX: {
+        BASE: 0,
+        SIDEBAR_BACKDROP: 20,
+        SIDEBAR_MOBILE: 30,
+        SIDEBAR_RESIZER: 40,
+        DROPDOWN: 50,
+        STICKY: 100,
+        MODAL_BACKDROP: 9990,
+        MODAL: 9991,
+        POPOVER_BACKDROP: 9998,
+        POPOVER: 9999,
+        TOOLTIP: 10000,
+        TOAST: 10001,
+    },
+    DEFAULT_COLORS: {
+        PROJECT: '#7E57C2', // deep_purple (index 3)
+        PROJECT_INACTIVE: '#cccccc',
+        LABEL: '#42A5F5',   // blue (index 5)
+        TIME_BLOCK: '#3B82F6', // blue-500
+        TIME_BLOCK_INACTIVE: '#cccccc',
+        LABEL_INACTIVE: '#9ca3af', // gray-400
+    },
     // Map levels to utility classes (Sidebar items padding)
     DENSITY_CLASSES: {
         'compact': 'py-0.5',
@@ -94,6 +117,8 @@ export const COLOR_PALETTE = [
     { value: '#BDBDBD', key: 'grey' },
     { value: '#78909C', key: 'blue_grey' }
 ] as const;
+
+export type Color = typeof COLOR_PALETTE[number]['value'];
 
 export const SHARED_COLORS = COLOR_PALETTE.map(c => c.value);
 

@@ -20,7 +20,7 @@ interface LabelItemProps {
 }
 
 export const LabelItem = React.memo<LabelItemProps>(({ label, count = 0 }) => {
-    const { t } = useTranslation();
+    const { t, formatNumber } = useTranslation();
     const { filterType, targetId, setFilter } = useFilterStore();
     const { density } = useSettingsStore();
     const { setView } = useViewStore();
@@ -104,7 +104,7 @@ export const LabelItem = React.memo<LabelItemProps>(({ label, count = 0 }) => {
                             "w-3 h-3 rounded-full transition-all shrink-0",
                             isActive ? "opacity-100 scale-110 shadow-sm" : "opacity-75 group-hover:opacity-100"
                         )}
-                        style={{ backgroundColor: label.color || '#9ca3af' }}
+                        style={{ backgroundColor: label.color || UI_CONFIG.DEFAULT_COLORS.LABEL_INACTIVE }}
                     ></span>
                     <span className="truncate flex-1">{label.name}</span>
 
@@ -114,7 +114,7 @@ export const LabelItem = React.memo<LabelItemProps>(({ label, count = 0 }) => {
                             "text-xs px-1.5 py-0.5 rounded-full transition-opacity",
                             isActive ? "bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-gray-600"
                         )}>
-                            {count}
+                            {formatNumber(count)}
                         </span>
                     )}
                 </button>

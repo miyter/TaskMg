@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from '../../core/translations';
+import { UI_CONFIG } from '../../core/ui-constants';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { useWorkspace } from '../../hooks/useWorkspace';
 import { TimeBlock } from '../../store/schema';
@@ -30,7 +32,7 @@ export const TimeBlockSettings: React.FC = () => {
             name: '',
             start: '09:00',
             end: '10:00',
-            color: '#3b82f6'
+            color: UI_CONFIG.DEFAULT_COLORS.TIME_BLOCK
         });
     };
 
@@ -52,7 +54,7 @@ export const TimeBlockSettings: React.FC = () => {
 
         openModal('confirmation', {
             title: t('delete'),
-            message: `${t('timeblocks')}: ${name || 'Time Block'}\n${t('msg.confirm_delete')}`,
+            message: `${t('timeblocks')}: ${name || 'Time Block'} \n${t('msg.confirm_delete')} `,
             confirmLabel: t('delete'),
             variant: 'danger',
             onConfirm: async () => {
@@ -114,7 +116,7 @@ export const TimeBlockSettings: React.FC = () => {
                             </div>
                         ) : (
                             <>
-                                <div className="w-1 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: block.color || '#ccc' }} />
+                                <div className="w-1 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: block.color || UI_CONFIG.DEFAULT_COLORS.TIME_BLOCK_INACTIVE }} />
                                 <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
                                     <span className="font-bold text-gray-800 dark:text-gray-200 truncate">{block.name || '(No Name)'}</span>
                                     <span className="font-mono text-gray-500 text-xs sm:text-sm">{block.start} - {block.end}</span>

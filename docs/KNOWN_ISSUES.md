@@ -28,7 +28,10 @@
 - **Performance & Architecture**:
     - **Lazy Loading**: Implemented `React.lazy` for all modal components to optimize bundle size and TTI.
     - **Reflow Optimization**: Converted `useThemeEffect` to use `useEffect` to reduce layout thrashing during initial load.
-    - **Zod Localization**: Implemented global Zod error map and schema refinements to support full i18n for validation messages.
+    - **Render Blocking Resources**:
+    - **CSS**: `vendor-*.css` was optimized by deferring font loading (`@fontsource` imports moved to dynamic import). Monitor LCP improvement.
+    - **Performance**:
+    - **Firestore Unique Check**: Implemented server-side duplicate check in `WorkspaceEditModal` to prevent name collision across devices.
     - **Component Standardization**: Integrated `Button`, `Input`, `Select`, `Textarea` across all views and modals for consistent UI/UX.
 - **Internationalization (i18n)**:
     - **Wiki Content**: Localized Wiki Framework data for JA/EN.
@@ -39,16 +42,12 @@
 
 ### 🏎️ Performance (Mobile Lighthouse)
 
-- **Render Blocking Resources**:
-    - **CSS**: `vendor-*.css` (約90KB) と `main-*.css` (約12KB) がレンダリングをブロックし、LCPを遅延 (推計470ms)。クリティカルCSSのインライン化や遅延読み込みを検討。
-
 - **Lighthouse/LCP**:
-    - **Critical Request Chain**: Firebase Auth iframe等の長いリクエストチェーン (最大2.4s) が初期表示を遅延。
+    - **Critical Request Chain**: `initializeAuth` と `browserLocalPersistence` の明示的利用により iframe 依存を軽減し、初期ロードを最適化。(Status: Optimized)
 
 ---
 
 ## 🏗️ Long-Term Roadmap
 
-- **完全な多言語化 (i18n)**: 動的な日付フォーマットのさらなる検討。
-- **Firestore制約**: `WorkspaceEditModal` 等でのサーバー側ユニーク制約の検討。
-- **定数値の集約**: 引き続きマジックナンバーの抽出を進める。
+- **完全な多言語化 (i18n)**: 数値フォーマットの統一 (`formatNumber`, `formatCurrency`) を実装し、主要コンポーネント (`TaskStats`, `LabelItem`) に適用完了。通貨フォーマットは未使用だが基盤は整備済み。
+- **定数値の集約**: 主要な `z-index` と `DEFAULT_COLORS` の集約完了。残るハードコード値は随時リファクタリングする方針。
