@@ -47,7 +47,7 @@ export function useFirestoreSubscription<T>(
 ) {
     const queryClient = useQueryClient();
     const keyHash = JSON.stringify(queryKey);
-    const timeoutMs = options?.timeout ?? 5000; // Default reduced to 5s from 10s for better UX
+    const timeoutMs = options?.timeout ?? 15000; // Increased to 15s to handle slower connections
 
     useEffect(() => {
         // Skip subscription if key contains undefined/null (e.g. waiting for workspaceId)
@@ -107,7 +107,7 @@ export function useFirestoreSubscription<T>(
                 const timeoutId = setTimeout(() => {
                     // Fail-safe: resolve with current cache or null after timeout
                     const finalData = queryClient.getQueryData<T>(queryKey);
-                    console.warn(`[FirestoreSub] Timeout waiting for data: ${keyHash}`);
+                    console.debug(`[FirestoreSub] Timeout waiting for data (monitor): ${keyHash}`);
                     resolve((finalData ?? initialData ?? null) as unknown as T);
                 }, timeoutMs);
 
