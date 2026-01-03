@@ -10,7 +10,7 @@ import { cn } from '../../utils/cn';
 import { formatDateForInput, getInitialDueDateFromRecurrence, parseDateInput, toDate } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { ErrorMessage } from '../common/ErrorMessage';
-import { IconCalendar, IconChevronDown, IconFileText, IconStar, IconTrash, IconX } from '../common/Icons';
+import { IconCalendar, IconChevronDown, IconFileText, IconStar, IconX } from '../common/Icons';
 import { Modal } from '../common/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -236,9 +236,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             overlayClassName={overlayClassName}
         >
             <div className="flex flex-col h-full" onKeyDown={handleContainerKeyDown}>
-                {/* Header */}
-                <div className="px-3 sm:px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 shrink-0">
-                    <div className="flex-1">
+                {/* Header - Minimal height (40-50px) */}
+                <div className="px-3 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 shrink-0">
+                    <div className="flex-1 min-w-0">
                         <Input
                             id="task-title"
                             name="title"
@@ -247,33 +247,29 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             onChange={(e) => setTitle(e.target.value)}
                             onKeyDown={handleTitleKeyDown}
                             placeholder={t('task_detail.title_placeholder')}
-                            className="text-lg sm:text-xl font-bold bg-transparent border-none focus:ring-0 px-0 py-0 shadow-none h-auto rounded-none"
+                            className="text-base sm:text-lg font-semibold bg-transparent border-none focus:ring-0 px-0 py-0 shadow-none h-auto rounded-none"
                             containerClassName="gap-0"
                             autoFocus
                             aria-label={t('task_detail.title_placeholder')}
                         />
                     </div>
-                    <Button
+                    <button
                         onClick={() => setIsImportant(!isImportant)}
-                        variant="ghost"
-                        size="icon"
                         className={cn(
-                            "transition-colors",
-                            isImportant ? "text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30" : "text-gray-400"
+                            "p-1.5 rounded-md transition-colors",
+                            isImportant ? "text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/30" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                         )}
                         title={isImportant ? "重要度を解除" : "重要としてマーク"}
                     >
-                        <IconStar className="w-6 h-6" fill={isImportant ? "currentColor" : "none"} />
-                    </Button>
-                    <Button
+                        <IconStar className="w-4 h-4" fill={isImportant ? "currentColor" : "none"} />
+                    </button>
+                    <button
                         onClick={closeModal}
-                        variant="ghost"
-                        size="icon"
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                         aria-label="閉じる"
                     >
-                        <IconX className="w-6 h-6" />
-                    </Button>
+                        <IconX className="w-4 h-4" />
+                    </button>
                 </div>
 
                 {/* Body */}
@@ -446,36 +442,34 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="px-3 sm:px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
-                    {!isNewTask && (
-                        <div className="flex items-center gap-2">
-                            <Button
-                                type="button"
-                                onClick={handleDelete}
-                                variant="ghost"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 px-4"
-                                leftIcon={<IconTrash size={16} />}
-                            >
-                                {t('task_detail.delete_button')}
-                            </Button>
-                        </div>
+                {/* Footer - Compact with minimal padding */}
+                <div className="px-3 sm:px-4 py-2 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center shrink-0">
+                    {!isNewTask ? (
+                        <button
+                            type="button"
+                            onClick={handleDelete}
+                            className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                            {t('task_detail.delete_button')}
+                        </button>
+                    ) : (
+                        <div />
                     )}
-                    <div className={`flex gap-2 ${isNewTask ? 'ml-auto' : ''}`}>
-                        <Button
+                    <div className="flex items-center gap-2">
+                        <button
                             type="button"
                             onClick={closeModal}
-                            variant="ghost"
+                            className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                         >
                             {t('modal.cancel')}
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                             type="button"
                             onClick={handleSave}
-                            variant="primary"
+                            className="px-4 py-1.5 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors"
                         >
                             {isNewTask ? t('modal.create') : t('modal.save')}
-                        </Button>
+                        </button>
                     </div>
                 </div>
             </div>

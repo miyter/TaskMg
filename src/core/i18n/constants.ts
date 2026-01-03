@@ -91,6 +91,9 @@ export const ja = {
     delete: '削除',
     timeblock: 'タイムブロック',
     filter: 'フィルター',
+    filter_name: 'フィルター名',
+    filter_create_title: 'カスタムフィルターを作成',
+    filter_edit_title: 'フィルターを編集',
     sidebar: {
         add_workspace: 'ワークスペースを追加',
         search_placeholder: '検索 (/)',
@@ -560,6 +563,9 @@ export const en = {
     delete: 'Delete',
     timeblock: 'Time Block',
     filter: 'Filter',
+    filter_name: 'Filter Name',
+    filter_create_title: 'Create Custom Filter',
+    filter_edit_title: 'Edit Filter',
     sidebar: {
         add_workspace: 'Add Workspace',
         search_placeholder: 'Search (/)',

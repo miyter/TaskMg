@@ -239,42 +239,37 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                         </DragOverlay>
                     </DndContext>
 
+                    {/* Add Button - FAB style circular button */}
                     {blocks.length < SYSTEM_CONSTANTS.TIME_BLOCK.MAX_COUNT ? (
-                        <Button
-                            onClick={handleAdd}
-                            disabled={blocks.length >= SYSTEM_CONSTANTS.TIME_BLOCK.MAX_COUNT}
-                            variant="ghost"
-                            className="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-gray-400 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all font-medium text-sm flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
-                            leftIcon={<IconPlus className="w-5 h-5" />}
-                        >
-                            {t('time_block.add_button')}
-                        </Button>
+                        <div className="flex justify-center py-2">
+                            <button
+                                onClick={handleAdd}
+                                className="w-10 h-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center hover:scale-105 active:scale-95"
+                                title={t('time_block.add_button')}
+                            >
+                                <IconPlus className="w-5 h-5" />
+                            </button>
+                        </div>
                     ) : (
-                        <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-sm rounded-lg flex items-center justify-center gap-2 border border-yellow-100 dark:border-yellow-900/30">
-                            <IconAlertTriangle className="w-5 h-5" />
+                        <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-xs rounded-lg flex items-center justify-center gap-2">
+                            <IconAlertTriangle className="w-4 h-4" />
                             {t('time_block.max_limit')}
                         </div>
                     )}
-
-                    <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg flex items-center text-sm text-gray-500 dark:text-gray-400">
-                        <span className="w-2.5 h-2.5 rounded-full bg-gray-400 mr-3 shadow-sm"></span>
-                        <span className="font-bold mr-2 text-gray-700 dark:text-gray-300">{t('time_block.unspecified')}</span>
-                        <span className="text-xs opacity-80">{t('time_block.default_zone_desc')}</span>
-                    </div>
                 </div>
 
                 <ErrorMessage message={error} className="mb-4" />
 
-                <div className="pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-end">
-                    <Button
+                {/* Footer - Minimal with only done button */}
+                <div className="pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+                    <button
+                        type="button"
                         onClick={handleSave}
                         disabled={loading}
-                        isLoading={loading}
-                        variant="primary"
-                        className="px-8 py-2.5 bg-gray-900 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-500"
+                        className="px-5 py-1.5 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 rounded-md transition-colors"
                     >
                         {loading ? t('saving') : t('done')}
-                    </Button>
+                    </button>
                 </div>
             </div>
         </Modal>
