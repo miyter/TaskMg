@@ -10,6 +10,10 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
 import { SelectionBox } from '../common/SelectionBox';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+
+
 
 const UNASSIGNED_ID = 'none';
 
@@ -148,17 +152,16 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
         >
             <div className="space-y-6">
                 <div>
-                    <label htmlFor="filter-name-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('filter')}</label>
-                    <input
+                    <Input
                         ref={inputRef}
                         id="filter-name-input"
                         name="filterName"
+                        label={t('filter')}
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder={t('modal.filter_name_placeholder')}
-                        className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 dark:text-white"
                         autoFocus
                     />
                 </div>
@@ -207,19 +210,22 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
                 <ErrorMessage message={error} />
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                    <button
+                    <Button
                         onClick={closeModal}
-                        className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition"
+                        disabled={loading}
+                        variant="ghost"
+                        className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
                     >
                         {t('modal.cancel')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={handleSave}
                         disabled={loading}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
+                        isLoading={loading}
+                        variant="primary"
                     >
                         {loading ? '...' : isEditMode ? t('modal.save') : t('modal.create')}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </Modal>

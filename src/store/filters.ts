@@ -1,75 +1,50 @@
 /**
- * 更新日: 2025-12-31
- * 内容: subscribeToFilters の引数シグネチャを (workspaceId, onUpdate) に統一
- *       Zod バリデーションを有効化
- * TypeScript化: 2025-12-29
+ * Filter Store Facade
+ * Provides Type-Safe API for Filters with Validation
  */
 
-import { auth, db } from '../core/firebase';
+import { auth } from '../core/firebase';
+import { Unsubscribe } from "../core/firebase-sdk";
+import { getTranslator } from '../core/i18n/utils';
 import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    onSnapshot,
-    query,
-    serverTimestamp, Unsubscribe,
-    updateDoc
-} from "../core/firebase-sdk";
-import { getTranslator } from '../core/translations';
-import { paths } from '../utils/paths';
+    addFilterRaw,
+    clearFiltersCacheRaw,
+    deleteFilterRaw,
+    getFiltersRaw,
+    isFiltersInitializedRaw,
+    subscribeToFiltersRaw,
+    updateFilterRaw
+} from './filters-raw';
 import { Filter, FilterSchema } from './schema';
 import { useSettingsStore } from './ui/settings-store';
 import { toast } from './ui/toast-store';
-
-// Map<workspaceId, Filter[]> to prevent data mixing between workspaces
-const _cachedFiltersMap = new Map<string, Filter[]>();
 
 const getT = () => getTranslator(useSettingsStore.getState().language).t;
 
 export function getFilters(workspaceId?: string): Filter[] {
     if (!workspaceId) return [];
-    return _cachedFiltersMap.get(workspaceId) || [];
+    return getFiltersRaw(workspaceId);
 }
 
 export function clearFiltersCache(workspaceId?: string) {
-    if (workspaceId) {
-        _cachedFiltersMap.delete(workspaceId);
-    } else {
-        _cachedFiltersMap.clear();
-    }
+    clearFiltersCacheRaw(workspaceId);
 }
 
 export function isFiltersInitialized(workspaceId: string): boolean {
-    return _cachedFiltersMap.has(workspaceId);
+    return isFiltersInitializedRaw(workspaceId);
 }
 
 /**
  * フィルターのリアルタイム購読
- * @param workspaceId ワークスペースID
- * @param onUpdate フィルター更新時のコールバック
  */
 export function subscribeToFilters(workspaceId: string, onUpdate: (filters: Filter[]) => void): Unsubscribe {
     const userId = auth.currentUser?.uid;
 
     if (!userId || !workspaceId) {
-        _cachedFiltersMap.set(workspaceId || '', []);
         onUpdate([]);
         return () => { };
     }
-
-    const path = paths.filters(userId, workspaceId);
-    const q = query(collection(db, path));
-
-    return onSnapshot(q, (snapshot) => {
-        const filters = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Filter[];
-        _cachedFiltersMap.set(workspaceId, filters);
-        onUpdate(filters);
-    }, (error) => {
-        console.error("[Filters] Subscription error:", error);
-        _cachedFiltersMap.set(workspaceId, []);
-        onUpdate([]);
-    });
+    return subscribeToFiltersRaw(userId, workspaceId, onUpdate);
 }
 
 /**
@@ -98,14 +73,19 @@ export async function addFilter(filterData: Partial<Filter> & { workspaceId: str
         throw new Error(`Validation failed: ${errorMsg}`);
     }
 
-    const path = paths.filters(userId, workspaceId);
     const { id, ...data } = rest;
 
-    await addDoc(collection(db, path), {
-        ...data,
-        ownerId: userId,
+    // Pass to raw (raw expects Omit<Filter, 'id' | 'createdAt'> roughly, but typed loosely in implementation or handled)
+    // We need to cast or ensure types match. 
+    // Data here is name, query, etc.
+    // raw expects "filter" object + ownerId/workspaceId which we need to construct or pass.
+
+    await addFilterRaw(userId, workspaceId, {
+        name: data.name!,
+        query: data.query!,
         workspaceId,
-        createdAt: serverTimestamp()
+        ownerId: userId
+        // createdAt handled in raw
     });
 }
 
@@ -129,13 +109,8 @@ export async function updateFilter(workspaceId: string, filterId: string, filter
         throw new Error(`Validation failed: ${errorMsg}`);
     }
 
-    const path = paths.filters(userId, workspaceId);
-    const { id, ...data } = filterData;
-
-    await updateDoc(doc(db, path, filterId), {
-        ...data,
-        updatedAt: serverTimestamp()
-    });
+    const { id, ...updates } = filterData;
+    await updateFilterRaw(userId, workspaceId, filterId, updates);
 }
 
 
@@ -150,6 +125,5 @@ export async function deleteFilter(workspaceId: string, filterId: string) {
         throw new Error("Authentication required");
     }
 
-    const path = paths.filters(userId, workspaceId);
-    await deleteDoc(doc(db, path, filterId));
+    await deleteFilterRaw(userId, workspaceId, filterId);
 }

@@ -5,7 +5,7 @@
  */
 
 import { auth } from '../core/firebase';
-import { getTranslator } from '../core/translations';
+import { getTranslator } from '../core/i18n/utils';
 import { useSettingsStore } from './ui/settings-store';
 import { toast } from './ui/toast-store';
 
@@ -18,7 +18,7 @@ import {
     subscribeToLabelsRaw,
     updateLabelRaw
 } from './labels-raw';
-import { Label } from './schema';
+import { Label, LabelSchema } from './schema';
 
 export const getLabels = getLabelsRaw;
 
@@ -63,16 +63,33 @@ export function subscribeToLabels(workspaceId: string, onUpdate: (labels: Label[
 /**
  * 新しいラベルを追加する
  */
+/**
+ * 新しいラベルを追加する
+ */
 export async function addLabel(workspaceId: string, name: string, color: string) {
+    const t = getT();
     try {
         const userId = requireAuth();
         if (!workspaceId) throw new Error("Workspace ID required");
-        const result = await addLabelRaw(userId, workspaceId, name, color);
-        // toast.success(getT()('msg.label.create_success')); // Optional
-        return result;
+
+        // Zod Validation
+        // Using pick for partial validation of just the fields we are adding manually
+        const validationPayload = { name, color, ownerId: userId };
+        const result = LabelSchema.pick({ name: true, color: true, ownerId: true }).safeParse(validationPayload);
+
+        if (!result.success) {
+            const errorMsg = result.error.issues.map(i => i.message).join(', ');
+            toast.error(`${t('validation.validation_error')}: ${errorMsg}`);
+            throw new Error(`Validation failed: ${errorMsg}`);
+        }
+
+        const resultRaw = await addLabelRaw(userId, workspaceId, name, color);
+        return resultRaw;
     } catch (error) {
         console.error("Failed to add label:", error);
-        toast.error(getT()('msg.label.create_fail'));
+        if (!(error as Error).message.includes('Validation')) {
+            toast.error(getT()('msg.label.create_fail'));
+        }
         throw error;
     }
 }
@@ -81,15 +98,26 @@ export async function addLabel(workspaceId: string, name: string, color: string)
  * ラベルを更新する
  */
 export async function updateLabel(workspaceId: string, labelId: string, updates: Partial<Label>) {
+    const t = getT();
     try {
         const userId = requireAuth();
         if (!workspaceId) throw new Error("Workspace ID required");
-        const result = await updateLabelRaw(userId, workspaceId, labelId, updates);
-        // toast.success(getT()('msg.label.update_success')); // Optional
-        return result;
+
+        // Zod Validation
+        const result = LabelSchema.partial().safeParse(updates);
+        if (!result.success) {
+            const errorMsg = result.error.issues.map(i => i.message).join(', ');
+            toast.error(`${t('validation.validation_error')}: ${errorMsg}`);
+            throw new Error(`Validation failed: ${errorMsg}`);
+        }
+
+        const resultRaw = await updateLabelRaw(userId, workspaceId, labelId, updates);
+        return resultRaw;
     } catch (error) {
         console.error("Failed to update label:", error);
-        toast.error(getT()('msg.label.update_fail'));
+        if (!(error as Error).message.includes('Validation')) {
+            toast.error(getT()('msg.label.update_fail'));
+        }
         throw error;
     }
 }

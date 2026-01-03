@@ -3,16 +3,10 @@
 ## 🚀 残存課題
 
 ### 【優先度: 高】アーキテクチャ・型安全性の債務
-- **レイヤー分離の不徹底 (-raw.ts の欠如)**: `store/timeblocks.ts`, `store/filters.ts` など、一部のストアで Firestore インフラ層とビジネスロジックが分離されておらず、設計思想 (`PROJECT_STATUS.md`) から乖離している。
-- **機能実装の不備 (Optimistic Update/Validation)**:
-    - `store/timeblocks.ts` において、設計思想で謳われている「Optimistic Update」が未実装であり、保存時の Zod によるランタイムバリデーションも欠如している。
-    - `store/projects.ts` および `store/labels.ts` においても、`xxxSchema.safeParse()` による書き込み前のバリデーションが実施されていない。
+- (なし)
 
 ### 【優先度: 中】UI/UXリファクタリング課題
-- **原子コンポーネント（Atoms）の適用漏れ**: `SettingsModal.tsx` 等で、共通の `Select` や `Input` コンポーネントを使用せず、生の HTML 要素に Tailwind クラスを直接指定している。
-- **言語切り替え時の強制プリセット更新**: `settings-store.ts` の `setLanguage` にて、ユーザーが設定した density や fontSize を上書きしてしまう挙動の検討。
-- **統一シグネチャの不徹底**: 設計思想 (#81) では全 subscribe 関数を `(workspaceId, callback)` 形式に統一するとしているが、`store/targets.ts` などで依然として引数パターンが複数存在し、複雑化している。
-- **ロジックの重複と散在**: `DashboardApp.tsx` で独自の `formatDate` が定義されているなど、`utils/` 配下の共通関数を使用せず、コンポーネント内に閉じているロジックが散見される。
+- (なし)
 
 ---
 
@@ -49,16 +43,13 @@
 
 | カテゴリ | 課題内容 | 影響 |
 |----------|----------|------|
-| **アトミックデザイン** | `Button`, `Input` 等の汎用的な「原子」コンポーネントが不足。 | `src/components/ui` に `Button`, `Input`, `Select`, `Textarea` を作成し、`TaskDetailModal` を含む全主要モーダル (`Settings`, `ProjectEdit` 等) に適用完了。 |
-| **アイコン管理** | `Icons.tsx` による一元管理が主要コンポーネントで完了。 | 汎用 `Icon` コンポーネントを用い、`Sidebar`, `AppLayout`, `TaskList` 及び主要モーダルでのハードコードをほぼ解消。 |
-| **タイムアウト制御** | `useFirestoreSubscription` のデフォルト待機時間を 10秒→5秒に短縮し、オプションで指定可能に変更。 | 以前よりUXが向上。必要に応じて各フック呼び出し側で `timeout` オプションを指定可能。 |
-| **所要時間（Duration）のカスタマイズ** | 以前は固定値（30, 45, 60...）のみ。 | `src/store/ui/settings-store.ts` に `customDurations` ステートを追加し、設定画面でカスタマイズ可能にし、`DurationList` に反映させるように変更完了。 |
+| (なし) | - | - |
+
 
 ### 【優先度: 低】アイコン統一性
-| 項目 | 現状 | 判定 |
-|------|------|------|
-| 絵文字アイコン | BasicFilters/CustomFilterListで絵文字使用 | **長期検討**: Lucide導入は依存関係増加のため、アイコン数が増えた時点で再検討。現状は許容。 |
-| 手書きSVG | DurationItem等で独自SVG | **By Design**: 軽量実装として現状維持（Icons.tsxと同様の理由） |
+- **完了**: `BasicFilters` の絵文字（📅, ⭐, 📥等）を `Icons.tsx` のSVGコンポーネントに完全に置き換え完了。
+- **完了**: `DurationItem` は既に `Icons.tsx` の `IconClock` を使用済み。
+
 
 ---
 

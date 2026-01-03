@@ -1,4 +1,5 @@
 import React from 'react';
+import { IconChevronUp } from '../../components/common/Icons';
 import { getTranslator } from '../../core/translations';
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { KGIStatus } from './dashboard-types';
@@ -86,20 +87,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(({ kgi
                         ))}
                     </div>
 
+
+
                     {/* Toggle */}
                     <button
                         onClick={onToggleCollapse}
                         className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                         title={collapsed ? t('target_dashboard.header_expand') : t('target_dashboard.header_collapse')}
                     >
-                        <svg
+                        <IconChevronUp
                             className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path>
-                        </svg>
+                        />
                     </button>
                 </div>
             </div>

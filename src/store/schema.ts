@@ -76,6 +76,7 @@ export const FilterSchema = z.object({
     name: z.string().min(1, "フィルター名は必須です"),
     query: z.string(),
     workspaceId: z.string().optional(),
+    ownerId: z.string().optional(),
     createdAt: DateLikeSchema,
 });
 

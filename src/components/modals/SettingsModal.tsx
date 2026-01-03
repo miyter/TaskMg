@@ -8,9 +8,10 @@ import { Density, FontSize, ThemeMode, useSettingsStore } from '../../store/ui/s
 import { useWorkspaceStore } from '../../store/ui/workspace-store';
 import { cn } from '../../utils/cn';
 import { AccordionSection } from '../common/AccordionSection';
-import { IconChevronDown, IconPlus } from '../common/Icons';
+import { IconPlus } from '../common/Icons';
 import { Modal } from '../common/Modal';
 import { Button } from '../ui/Button';
+import { Select } from '../ui/Select';
 import { AccountSettingsTab } from './AccountSettingsTab';
 
 import { cleanupDuplicateTasks } from '../../store/maintenance';
@@ -161,46 +162,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
 
                             {/* Fonts */}
                             <AccordionSection title={t('settings_modal.appearance.fonts')} icon="Tt" defaultOpen={false}>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label htmlFor="settings-font-en" className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">{t('settings_modal.appearance.font_en')}</label>
-                                        <div className="relative">
-                                            <select
-                                                id="settings-font-en"
-                                                name="fontEn"
-                                                value={fontEn}
-                                                onChange={(e) => setFontEn(e.target.value)}
-                                                className="w-full pl-3 pr-10 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none relative z-10 bg-transparent"
-                                            >
-                                                {UI_CONFIG.FONTS.EU.map(f => (
-                                                    <option key={f.value} value={f.value}>{f.label}</option>
-                                                ))}
-                                            </select>
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 z-0">
-                                                <IconChevronDown className="w-4 h-4" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="settings-font-jp" className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">{t('settings_modal.appearance.font_jp')}</label>
-                                        <div className="relative">
-                                            <select
-                                                id="settings-font-jp"
-                                                name="fontJp"
-                                                value={fontJp}
-                                                onChange={(e) => setFontJp(e.target.value)}
-                                                className="w-full pl-3 pr-10 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none relative z-10 bg-transparent"
-                                            >
-                                                {UI_CONFIG.FONTS.JP.map(f => (
-                                                    <option key={f.value} value={f.value}>{f.label}</option>
-                                                ))}
-                                            </select>
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 z-0">
-                                                <IconChevronDown className="w-4 h-4" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <Select
+                                    id="settings-font-en"
+                                    name="fontEn"
+                                    label={t('settings_modal.appearance.font_en')}
+                                    value={fontEn}
+                                    onChange={(e) => setFontEn(e.target.value)}
+                                    options={UI_CONFIG.FONTS.EU}
+                                />
+                                <Select
+                                    id="settings-font-jp"
+                                    name="fontJp"
+                                    label={t('settings_modal.appearance.font_jp')}
+                                    value={fontJp}
+                                    onChange={(e) => setFontJp(e.target.value)}
+                                    options={UI_CONFIG.FONTS.JP}
+                                />
                             </AccordionSection>
                         </div>
                     )}

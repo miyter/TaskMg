@@ -40,21 +40,7 @@ export const useSettingsStore = create<SettingsState>()(
             setFontJp: (font) => set({ fontJp: font }),
             setFontSize: (size) => set({ fontSize: size }),
             setDensity: (density) => set({ density }),
-            setLanguage: (lang) => set((state) => {
-                // Language-specific layout presets
-                // Japanese: More compact due to dense characters
-                // English: More spacious for readability
-                const presets = {
-                    ja: { density: 'normal' as Density, fontSize: 'md' as FontSize },
-                    en: { density: 'comfortable' as Density, fontSize: 'base' as FontSize },
-                };
-                const preset = presets[lang];
-                return {
-                    language: lang,
-                    density: preset.density,
-                    fontSize: preset.fontSize,
-                };
-            }),
+            setLanguage: (lang) => set({ language: lang }),
             setCustomDurations: (durations) => set({ customDurations: durations.sort((a, b) => a - b) }),
         }),
         {

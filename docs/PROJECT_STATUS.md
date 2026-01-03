@@ -81,6 +81,10 @@ Firestore → subscribeToXxx() → React Query Cache → Hook → Component
 3. **統一シグネチャ**: 全 subscribe 関数は `(workspaceId, callback)` 形式に統一。
 4. **エラー可視化**: Toast 通知によるユーザーフィードバックと自動ロールバック。
 5. **i18n**: ネストされたキー構造による型安全な翻訳管理。
+6. **i18nアーキテクチャ**:
+    - **Data/Logic/Hook分離**: 辞書データ(`core/i18n/constants`)、純粋関数(`core/i18n/utils`)、Hook(`hooks/useTranslation`)を厳密に分離。
+    - **依存方向**: UI/Hook → Core/Logic/Store (StoreはHookに依存しない)。
+    - **Store層での利用**: Store内では`useSettingsStore.getState()`と言語別純粋関数を用いて翻訳を行う。Hookは使用しない。
 
 ---
 

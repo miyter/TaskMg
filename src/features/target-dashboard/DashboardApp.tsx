@@ -2,6 +2,7 @@
 import { useTranslation } from '../../core/translations';
 import { useTargets } from '../../hooks/useTargets';
 import { Target } from '../../store/schema';
+import { toDate } from '../../utils/date';
 import { DashboardHeader } from './DashboardHeader';
 import { BackwardData, OkrData, WoopData } from './dashboard-types';
 import { BackwardView } from './views/BackwardView';
@@ -49,13 +50,6 @@ export const DashboardApp: React.FC = () => {
         ]
     });
 
-    const formatDate = (date: any) => {
-        if (!date) return 'Unknown';
-        if (typeof date.toDate === 'function') return date.toDate().toLocaleDateString();
-        if (date instanceof Date) return date.toLocaleDateString();
-        return String(date);
-    };
-
     const renderContent = () => {
         if (filteredTargets.length === 0) {
             return (
@@ -71,7 +65,7 @@ export const DashboardApp: React.FC = () => {
                     <div key={target.id} className="border-b border-gray-200 dark:border-gray-700 pb-12 last:border-0">
                         {/* Show creation date */}
                         <div className="mb-4 text-xs text-gray-400 flex justify-end">
-                            {t('target_dashboard.created_at', { date: formatDate(target.createdAt) })}
+                            {t('target_dashboard.created_at', { date: toDate(target.createdAt)?.toLocaleDateString() || 'Unknown' })}
                         </div>
 
                         {currentTab === 'backward' && <BackwardView data={transformBackward(target)} />}
@@ -118,6 +112,3 @@ export const DashboardApp: React.FC = () => {
         </div>
     );
 };
-
-
-

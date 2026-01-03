@@ -5,6 +5,8 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { addWorkspace, getWorkspaces, setCurrentWorkspaceId, updateWorkspaceName } from '../../store/workspace';
 import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 /**
  * ワークスペース編集/作成モーダル (React版)
@@ -14,6 +16,8 @@ interface WorkspaceEditModalProps {
     data?: any;
     zIndex?: number;
 }
+
+
 
 export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { t } = useTranslation();
@@ -105,19 +109,17 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
             <div className="flex flex-col gap-6 max-h-[85vh] overflow-y-auto p-1">
                 {/* Header */}
                 <div>
-                    <label htmlFor="workspace-name-input" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
-                        {isEdit ? t('modal.workspace_edit_title') : t('modal.workspace_create_title')}
-                    </label>
-                    <input
+                    <Input
                         ref={inputRef}
                         id="workspace-name-input"
                         name="workspaceName"
+                        label={isEdit ? t('modal.workspace_edit_title') : t('modal.workspace_create_title')}
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder={t('modal.workspace_name_placeholder')}
-                        className="w-full text-lg font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600"
+                        className="w-full text-lg font-bold bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 px-0 py-0 h-auto focus:ring-0"
                         autoFocus
                     />
                 </div>
@@ -134,20 +136,22 @@ export const WorkspaceEditModal: React.FC<WorkspaceEditModalProps> = ({ isOpen: 
 
                 {/* Footer */}
                 <div className="flex justify-end items-center pt-4 border-t border-gray-200 dark:border-gray-700 gap-3">
-                    <button
+                    <Button
                         onClick={closeModal}
                         disabled={loading}
-                        className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition disabled:opacity-50"
+                        variant="ghost"
+                        className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
                     >
                         {t('modal.cancel')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={handleSave}
                         disabled={loading}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg shadow-md transition-all transform active:scale-95"
+                        isLoading={loading}
+                        variant="primary"
                     >
-                        {loading ? t('saving') : isEdit ? t('modal.save') : t('modal.create')}
-                    </button>
+                        {isEdit ? t('modal.save') : t('modal.create')}
+                    </Button>
                 </div>
             </div>
         </Modal>

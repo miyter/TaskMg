@@ -1,4 +1,8 @@
 ﻿import React, { useState } from 'react';
+import { IconCheck, IconChevronRight } from '../../components/common/Icons';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Textarea } from '../../components/ui/Textarea';
 import { useTranslation } from '../../core/translations';
 import { WIZARD_MODES, WizardModeId } from './wizard-config';
 import { WizardProgressBar } from './WizardProgressBar';
@@ -57,17 +61,16 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
                         {stepConfig.inputs.map((input, idx) => (
                             <div key={input.key || idx}>
                                 {input.type === 'textarea' ? (
-                                    <textarea
-                                        className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition text-base"
+                                    <Textarea
+                                        className="text-base"
                                         rows={5}
                                         placeholder={input.placeholder}
                                         value={inputs[idx] || ''}
                                         onChange={(e) => handleChange(idx, e.target.value)}
                                     />
                                 ) : (
-                                    <input
-                                        type="text"
-                                        className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition text-base"
+                                    <Input
+                                        className="text-base"
                                         placeholder={input.placeholder}
                                         value={inputs[idx] || ''}
                                         onChange={(e) => handleChange(idx, e.target.value)}
@@ -79,29 +82,32 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
                 </div>
 
                 <div className="pt-6 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                    <button
+                    <Button
                         onClick={onBack}
-                        className="px-6 py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition font-medium"
+                        variant="ghost"
+                        className="text-gray-600 dark:text-gray-400 font-medium"
                     >
                         {t('wizard.back')}
-                    </button>
+                    </Button>
 
                     {step < totalSteps ? (
-                        <button
+                        <Button
                             onClick={handleNext}
-                            className="px-8 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md transition font-medium flex items-center"
+                            variant="primary"
+                            className="bg-blue-600 hover:bg-blue-700 shadow-md"
+                            rightIcon={<IconChevronRight className="w-4 h-4 ml-2" />}
                         >
                             {t('wizard.next')}
-                            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-                        </button>
+                        </Button>
                     ) : (
-                        <button
+                        <Button
                             onClick={handleNext}
-                            className="px-8 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-lg transition font-medium flex items-center transform hover:scale-105"
+                            variant="primary"
+                            className="bg-green-600 hover:bg-green-700 shadow-lg transform hover:scale-105"
+                            leftIcon={<IconCheck className="w-5 h-5 mr-2" />}
                         >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                             {t('wizard.finish')}
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

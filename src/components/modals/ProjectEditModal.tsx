@@ -179,15 +179,17 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
                 <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
                         {isEdit && (
-                            <button
+                            <Button
                                 onClick={handleDelete}
                                 disabled={loading}
-                                className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
+                                variant="ghost"
+                                size="icon"
+                                className="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                                 aria-label={t('modal.delete_project')}
                                 title={t('modal.delete_project')}
                             >
                                 <IconTrash size={20} />
-                            </button>
+                            </Button>
                         )}
                     </div>
                     <div className="flex gap-3">

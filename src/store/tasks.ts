@@ -1,6 +1,6 @@
 import { auth } from '../core/firebase';
 import { Unsubscribe } from '../core/firebase-sdk';
-import { getTranslator } from '../core/translations';
+import { getTranslator } from '../core/i18n/utils';
 import { getNextRecurrenceDate } from '../utils/date';
 import { useSettingsStore } from './ui/settings-store';
 

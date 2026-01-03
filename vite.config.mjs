@@ -21,6 +21,11 @@ export default defineConfig({
       },
       output: {
         manualChunks: (id) => {
+          // Separate i18n data/logic from React components
+          if (id.includes('core/i18n')) {
+            return 'i18n';
+          }
+
           if (id.includes('node_modules')) {
             if (id.includes('firebase')) {
               return 'firebase';

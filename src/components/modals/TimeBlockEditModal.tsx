@@ -26,10 +26,12 @@ import { deleteTimeBlock, saveTimeBlock } from '../../store/timeblocks';
 import { useModalStore } from '../../store/ui/modal-store';
 import { cn } from '../../utils/cn';
 import { ErrorMessage, Modal, Portal, SortableItem } from '../common';
+import { IconAlertTriangle, IconPlus, IconTrash } from '../common/Icons';
 import { Button } from '../ui/Button';
+import { Select } from '../ui/Select';
 
-const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const MINUTE_OPTIONS = ['00', '15', '30', '45'];
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => ({ value: h, label: h }));
+const MINUTE_OPTIONS = ['00', '15', '30', '45'].map(m => ({ value: m, label: m }));
 
 interface TimeBlockEditModalProps {
     isOpen?: boolean;
@@ -213,12 +215,6 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                         >
                             {blocks.map((block) => (
                                 <SortableItem key={block.id} id={block.id!}>
-                                    {/* 
-                                        Note: We pass a simple static version during drag for the original item? 
-                                        Actually SortableItem handles opacity. 
-                                        But we can style the row to look "dragged" if we used useSortable.isDragging.
-                                        SortableItem implementation is: <div ref={setNodeRef} style={style} {...attrs} {...listeners}>{children}</div>
-                                      */}
                                     <TimeBlockRow
                                         block={block}
                                         onDelete={() => handleDelete(block.id!)}
@@ -249,13 +245,13 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                             disabled={blocks.length >= SYSTEM_CONSTANTS.TIME_BLOCK.MAX_COUNT}
                             variant="ghost"
                             className="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-gray-400 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all font-medium text-sm flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
-                            leftIcon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>}
+                            leftIcon={<IconPlus className="w-5 h-5" />}
                         >
                             {t('time_block.add_button')}
                         </Button>
                     ) : (
                         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-sm rounded-lg flex items-center justify-center gap-2 border border-yellow-100 dark:border-yellow-900/30">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            <IconAlertTriangle className="w-5 h-5" />
                             {t('time_block.max_limit')}
                         </div>
                     )}
@@ -300,6 +296,9 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
     const endTime = block.end || '10:00';
     const [sh, sm] = startTime.split(':');
     const [eh, em] = endTime.split(':');
+
+    // Mini select style
+    const miniSelectStyle = "w-auto py-1 pl-2 pr-6 h-8 text-sm font-mono font-medium min-w-[60px]";
 
     return (
         <div className={`flex items-center gap-4 p-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-sm group ${isOverlay ? 'shadow ring-2 ring-blue-500 opacity-90 cursor-grabbing' : ''}`}>
@@ -350,30 +349,42 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
 
             <div className="flex-1 flex items-center gap-3">
                 <div className="flex items-center gap-1.5">
-                    <TimeSelect
+                    <Select
                         options={HOUR_OPTIONS}
                         value={sh}
-                        onChange={(v) => onUpdate({ start: `${v}:${sm}` })}
+                        onChange={(e) => onUpdate({ start: `${e.target.value}:${sm}` })}
+                        className={miniSelectStyle}
+                        containerClassName="w-auto"
+                        aria-label={t('time_block.time_select')}
                     />
                     <span className="text-gray-300 dark:text-gray-600">:</span>
-                    <TimeSelect
+                    <Select
                         options={MINUTE_OPTIONS}
                         value={sm}
-                        onChange={(v) => onUpdate({ start: `${sh}:${v}` })}
+                        onChange={(e) => onUpdate({ start: `${sh}:${e.target.value}` })}
+                        className={miniSelectStyle}
+                        containerClassName="w-auto"
+                        aria-label={t('time_block.time_select')}
                     />
                 </div>
                 <div className="w-4 h-0.5 bg-gray-200 dark:bg-gray-700 rounded-full" />
                 <div className="flex items-center gap-1.5">
-                    <TimeSelect
+                    <Select
                         options={HOUR_OPTIONS}
                         value={eh}
-                        onChange={(v) => onUpdate({ end: `${v}:${em}` })}
+                        onChange={(e) => onUpdate({ end: `${e.target.value}:${em}` })}
+                        className={miniSelectStyle}
+                        containerClassName="w-auto"
+                        aria-label={t('time_block.time_select')}
                     />
                     <span className="text-gray-300 dark:text-gray-600">:</span>
-                    <TimeSelect
+                    <Select
                         options={MINUTE_OPTIONS}
                         value={em}
-                        onChange={(v) => onUpdate({ end: `${eh}:${v}` })}
+                        onChange={(e) => onUpdate({ end: `${eh}:${e.target.value}` })}
+                        className={miniSelectStyle}
+                        containerClassName="w-auto"
+                        aria-label={t('time_block.time_select')}
                     />
                 </div>
             </div>
@@ -385,25 +396,9 @@ const TimeBlockRow: React.FC<TimeBlockRowProps> = ({ block, onDelete, onUpdate, 
                 className="text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                 title={t('modal.delete')}
             >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+                <IconTrash className="w-5 h-5" />
             </Button>
         </div>
-    );
-};
-
-const TimeSelect: React.FC<{ options: string[]; value: string; onChange: (val: string) => void; label?: string }> = ({ options, value, onChange, label }) => {
-    const { t } = useTranslation();
-    return (
-        <select
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="appearance-none px-2 py-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded text-sm font-mono font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 outline-none cursor-pointer"
-            aria-label={label || t('time_block.time_select')}
-        >
-            {options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
     );
 };
 

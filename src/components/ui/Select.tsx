@@ -6,7 +6,7 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
     label?: string;
     error?: string;
     containerClassName?: string;
-    options?: { value: string | number; label: string }[];
+    options?: ReadonlyArray<{ value: string | number; label: string }>;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(

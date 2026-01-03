@@ -5,7 +5,7 @@
  */
 
 import { auth } from '../core/firebase';
-import { getTranslator } from '../core/translations';
+import { getTranslator } from '../core/i18n/utils';
 import { useSettingsStore } from './ui/settings-store';
 import { toast } from './ui/toast-store';
 import { getCurrentWorkspaceId } from './workspace';
@@ -21,7 +21,7 @@ import {
     updateProjectRaw,
     updateProjectsCacheRaw
 } from './projects-raw';
-import { Project } from './schema';
+import { Project, ProjectSchema } from './schema';
 
 /**
  * 翻訳ヘルパー
@@ -84,7 +84,11 @@ export const subscribeToProjects = (workspaceId: string | ((projects: Project[])
 /**
  * 新しいプロジェクトを追加する
  */
+/**
+ * 新しいプロジェクトを追加する
+ */
 export const addProject = async (name: string, workspaceId: string | null = null, color?: string) => {
+    const t = getT();
     try {
         const user = auth.currentUser;
         if (!user) throw new Error('Authentication required.');
@@ -92,12 +96,24 @@ export const addProject = async (name: string, workspaceId: string | null = null
         const targetWorkspaceId = workspaceId || getCurrentWorkspaceId();
         if (!targetWorkspaceId) throw new Error('Workspace selection required.');
 
-        const result = await addProjectRaw(user.uid, targetWorkspaceId, name, color);
-        // toast.success(getT()('msg.project.create_success')); // Optional if needed
-        return result;
+        // Zod Validation
+        // ownerId and createdAt are system managed, so we validate the input part
+        const validationPayload = { name, color, ownerId: user.uid };
+        const result = ProjectSchema.pick({ name: true, color: true, ownerId: true }).safeParse(validationPayload);
+
+        if (!result.success) {
+            const errorMsg = result.error.issues.map(i => i.message).join(', ');
+            toast.error(`${t('validation.validation_error')}: ${errorMsg}`);
+            throw new Error(`Validation failed: ${errorMsg}`);
+        }
+
+        const resultRaw = await addProjectRaw(user.uid, targetWorkspaceId, name, color);
+        return resultRaw;
     } catch (error) {
         console.error("Failed to add project:", error);
-        toast.error(getT()('msg.project.create_fail'));
+        if (!(error as Error).message.includes('Validation')) {
+            toast.error(getT()('msg.project.create_fail'));
+        }
         throw error;
     }
 };
@@ -106,13 +122,24 @@ export const addProject = async (name: string, workspaceId: string | null = null
  * プロジェクトを更新する
  */
 export const updateProject = async (projectId: string, updates: Partial<Project>) => {
+    const t = getT();
     try {
         const { userId, workspaceId } = requireAuthAndWorkspace();
+
+        // Zod Validation
+        const result = ProjectSchema.partial().safeParse(updates);
+        if (!result.success) {
+            const errorMsg = result.error.issues.map(i => i.message).join(', ');
+            toast.error(`${t('validation.validation_error')}: ${errorMsg}`);
+            throw new Error(`Validation failed: ${errorMsg}`);
+        }
+
         await updateProjectRaw(userId, workspaceId, projectId, updates);
-        // toast.success(getT()('msg.project.update_success')); // Optional for minor updates
     } catch (error) {
         console.error("Failed to update project:", error);
-        toast.error(getT()('msg.project.update_fail'));
+        if (!(error as Error).message.includes('Validation')) {
+            toast.error(getT()('msg.project.update_fail'));
+        }
         throw error;
     }
 };

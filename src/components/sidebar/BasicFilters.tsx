@@ -7,13 +7,14 @@ import { useSettingsStore } from '../../store/ui/settings-store';
 import { useViewStore } from '../../store/ui/view-store';
 import { cn } from '../../utils/cn';
 import { getDensityClass } from '../../utils/ui-utils';
+import { IconCalendar, IconCalendarDays, IconClipboard, IconInbox, IconStar } from '../common/Icons';
 
 const FILTER_ITEMS = [
-    { id: 'inbox', i18nKey: 'inbox', icon: '📥', color: 'text-blue-500', droppable: true },
-    { id: 'today', i18nKey: 'today', icon: '📅', color: 'text-green-500' },
-    { id: 'upcoming', i18nKey: 'upcoming', icon: '🗓️', color: 'text-purple-500' },
-    { id: 'important', i18nKey: 'important', icon: '⭐', color: 'text-amber-400' },
-    { id: 'custom', i18nKey: 'all_tasks', icon: '📋', color: 'text-gray-500' },
+    { id: 'inbox', i18nKey: 'inbox', Icon: IconInbox, color: 'text-blue-500', droppable: true },
+    { id: 'today', i18nKey: 'today', Icon: IconCalendar, color: 'text-green-500' },
+    { id: 'upcoming', i18nKey: 'upcoming', Icon: IconCalendarDays, color: 'text-purple-500' },
+    { id: 'important', i18nKey: 'important', Icon: IconStar, color: 'text-amber-400' },
+    { id: 'custom', i18nKey: 'all_tasks', Icon: IconClipboard, color: 'text-gray-500' },
 ] as const;
 
 export const BasicFilters: React.FC = () => {
@@ -26,7 +27,7 @@ export const BasicFilters: React.FC = () => {
             {FILTER_ITEMS.map(item => (
                 <FilterItem
                     key={item.id}
-                    item={item as FilterItemType}
+                    item={item as unknown as FilterItemType}
                     label={t(item.i18nKey as any)}
                     count={counts[item.id as keyof typeof counts] || 0}
                 />
@@ -39,7 +40,7 @@ export const BasicFilters: React.FC = () => {
 interface FilterItemType {
     id: FilterType;
     i18nKey: string;
-    icon: string;
+    Icon: React.ElementType; // Changed from icon: string to component
     color: string;
     droppable?: boolean;
 }
@@ -50,6 +51,7 @@ const FilterItem: React.FC<{ item: FilterItemType, label: string, count: number 
     const { density } = useSettingsStore();
     const currentView = useViewStore(s => s.currentView);
     const isActive = currentView === 'tasks' && filterType === item.id;
+    const Icon = item.Icon;
 
     const { setNodeRef, isOver } = useDroppable({
         id: `filter:${item.id}`,
@@ -84,7 +86,7 @@ const FilterItem: React.FC<{ item: FilterItemType, label: string, count: number 
                     isOver && item.droppable && "bg-blue-50 dark:bg-blue-900/30"
                 )}
             >
-                <span className={item.color}>{item.icon}</span>
+                <Icon className={cn("w-4 h-4", item.color)} />
                 <span className="flex-1">{label}</span>
                 {item.id !== 'search' && count > 0 && (
                     <span className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
