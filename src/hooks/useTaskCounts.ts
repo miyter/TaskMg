@@ -10,6 +10,7 @@ export type TaskCounts = {
     important: number;
     all: number;
     search: number;
+    projects: Record<string, number>;
 };
 
 export function useTaskCounts() {
@@ -19,13 +20,14 @@ export function useTaskCounts() {
     // Future Improvement: Move aggregation to Firestore (server-side counters)
     // Currently computing efficiently on client-side on tasks updates.
     const counts = useMemo(() => {
-        const acc = {
+        const acc: TaskCounts = {
             inbox: 0,
             today: 0,
             upcoming: 0,
             important: 0,
             all: 0,
-            search: 0
+            search: 0,
+            projects: {}
         };
 
         // Pre-compute lowercase search query if exists
@@ -64,6 +66,10 @@ export function useTaskCounts() {
 
             acc.all++;
 
+            // Project Count
+            if (task.projectId) {
+                acc.projects[task.projectId] = (acc.projects[task.projectId] || 0) + 1;
+            }
 
             // Inbox: No Project or 'unassigned'
             if (!task.projectId || task.projectId === 'unassigned' || task.projectId === 'none') {

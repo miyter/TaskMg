@@ -1,6 +1,7 @@
 ﻿import { useDroppable } from '@dnd-kit/core';
 import React, { useState } from 'react';
 import { useTranslation } from '../../core/translations';
+import { useTaskCounts } from '../../hooks/useTaskCounts';
 import { deleteProject } from '../../store'; // インポート追加
 import { Project } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
@@ -67,6 +68,8 @@ export const ProjectItem = React.memo<ProjectItemProps>(({ project }) => {
         setView('tasks');
     };
 
+    const count = useTaskCounts().projects[project.id!] || 0;
+
     return (
         <>
             <div
@@ -93,18 +96,11 @@ export const ProjectItem = React.memo<ProjectItemProps>(({ project }) => {
                     <span className="text-sm truncate">{project.name}</span>
                 </div>
 
-                {/* Edit Button (Keep visible for accessibility/touch) */}
-                <button
-                    onClick={handleEdit}
-                    className={cn(
-                        "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-opacity",
-                        isActive ? "opacity-100" : "opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
-                    )}
-                    aria-label={t('edit')}
-                    title={t('edit')}
-                >
-                    <IconEdit className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                </button>
+                {count > 0 && (
+                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                        {count}
+                    </span>
+                )}
             </div>
 
             {menuPosition && (

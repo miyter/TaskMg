@@ -19,34 +19,34 @@ export const DashboardApp: React.FC = () => {
     const filteredTargets = targets.filter(t => t.mode?.toLowerCase() === currentTab.toLowerCase());
 
     // Transformer Functions
-    const transformBackward = (t: Target): BackwardData => ({
+    const transformBackward = (target: Target): BackwardData => ({
         milestones: [
-            { date: 'Future', title: t.data.goal_kgi || 'Undefined Goal', type: 'goal', completed: false },
-            { date: 'Milestone', title: t.data.milestone_minus_1mo || '', type: 'milestone', completed: false },
-            { date: 'Today', title: 'Current Status', type: 'current', completed: true },
-            { date: 'Now', title: t.data.first_action || '', type: 'action', completed: false }
+            { date: t('target_dashboard.backward.timeline.future'), title: target.data.goal_kgi || t('target_dashboard.kgi_default'), type: 'goal', completed: false },
+            { date: t('target_dashboard.backward.timeline.milestone'), title: target.data.milestone_minus_1mo || '', type: 'milestone', completed: false },
+            { date: t('target_dashboard.backward.timeline.today'), title: t('target_dashboard.backward.current_status'), type: 'current', completed: true },
+            { date: t('target_dashboard.backward.timeline.now'), title: target.data.first_action || '', type: 'action', completed: false }
         ]
     });
 
-    const transformWoop = (t: Target): WoopData => ({
-        wish: t.data.wish || '',
-        outcome: t.data.outcome || '',
+    const transformWoop = (target: Target): WoopData => ({
+        wish: target.data.wish || '',
+        outcome: target.data.outcome || '',
         obstacles: [
             {
                 id: 1,
-                text: t.data.obstacle || '',
-                plan: t.data.plan || '',
+                text: target.data.obstacle || '',
+                plan: target.data.plan || '',
                 overcomeCount: 0
             }
         ]
     });
 
-    const transformOkr = (t: Target): OkrData => ({
-        objective: t.data.objective || '',
+    const transformOkr = (target: Target): OkrData => ({
+        objective: target.data.objective || '',
         keyResults: [
-            { id: 1, text: t.data.kr_1 || 'KR 1', current: 0, target: 100, confidence: 'medium' },
-            { id: 2, text: t.data.kr_2 || 'KR 2', current: 0, target: 100, confidence: 'medium' },
-            { id: 3, text: t.data.kr_3 || 'KR 3', current: 0, target: 100, confidence: 'medium' }
+            { id: 1, text: target.data.kr_1 || `${t('target_dashboard.okr.kr_prefix')}1`, current: 0, target: 100, confidence: 'medium' },
+            { id: 2, text: target.data.kr_2 || `${t('target_dashboard.okr.kr_prefix')}2`, current: 0, target: 100, confidence: 'medium' },
+            { id: 3, text: target.data.kr_3 || `${t('target_dashboard.okr.kr_prefix')}3`, current: 0, target: 100, confidence: 'medium' }
         ]
     });
 

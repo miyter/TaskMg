@@ -421,6 +421,13 @@ export const ja = {
             target_label: 'TARGET',
             now_label: '← NOW',
             now_icon: 'Now',
+            current_status: '現状',
+            timeline: {
+                future: '未来',
+                milestone: '中間',
+                today: '今日',
+                now: '直近'
+            }
         },
         okr: {
             objective_label: 'Objective',
@@ -858,6 +865,13 @@ export const en = {
             target_label: 'TARGET',
             now_label: '← NOW',
             now_icon: 'Now',
+            current_status: 'Current Status',
+            timeline: {
+                future: 'Future',
+                milestone: 'Milestone',
+                today: 'Today',
+                now: 'Now'
+            }
         },
         okr: {
             objective_label: 'Objective',
