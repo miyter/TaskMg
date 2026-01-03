@@ -8,6 +8,9 @@
 ---
 
 ### ✅ Completed (Recent Refinements)
+- **TaskList**:
+    - **Optimistic Reorder**: Added local state for instant sorting feedback (abolished delay).
+    - **DnD Integration**: Unified global (sidebar move) and local (reorder) DnD logic via `useDnDStore`.
 - **Dashboard**:
     - **Density & Spacing**: Vertical spacing compressed between sections.
     - **Progress Bar Overflow**: Progress bar layout adjusted for responsiveness.
@@ -22,14 +25,6 @@
     - **Edit/Delete**: Added edit/delete functionality in the workspace dropdown.
 - **Time Block & Duration**:
     - **Settings UI**: Added dedicated schedule tab in settings modal.
-
----
-
-### ⚡ Grok Review (Remaining)
-- **src/components/tasks/TaskList.tsx**:
-    - **タスク並び替え遅延**: 手動並び替え時にOptimistic Updateがあるが、Reactの再レンダリングにより若干のラグを感じる可能性がある。
-    - **DnDロジック重複**: `useDndMonitor`（ローカル）と`useAppDnD`（グローバル）で処理が分散しており、統合が望ましい。
-
 
 ---
 

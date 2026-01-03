@@ -3,6 +3,7 @@
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import React from 'react';
+import { UI_CONFIG } from '../../core/ui-constants';
 import { useProjects } from '../../hooks/useProjects';
 import { SortableItem } from '../common/SortableItem';
 
@@ -26,12 +27,12 @@ export const ProjectList: React.FC = () => {
 
     return (
         <SortableContext
-            items={projects.map(p => p.id!)}
+            items={projects.map(p => `${UI_CONFIG.DND.PREFIX_PROJECT}${p.id}`)}
             strategy={verticalListSortingStrategy}
         >
             <div className="space-y-0.5 p-2">
                 {projects.map((project) => (
-                    <SortableItem key={project.id} id={project.id!}>
+                    <SortableItem key={project.id} id={`${UI_CONFIG.DND.PREFIX_PROJECT}${project.id}`}>
                         <ProjectItem project={project} />
                     </SortableItem>
                 ))}

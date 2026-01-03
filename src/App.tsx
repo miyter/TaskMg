@@ -24,6 +24,7 @@ import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
 import { useThemeEffect } from './hooks/useThemeEffect';
 
+import { useDnDStore } from './store/ui/dnd-store';
 import { useFilterStore } from './store/ui/filter-store';
 import { useViewStore } from './store/ui/view-store';
 
@@ -112,9 +113,11 @@ const App: React.FC = () => {
         };
     }, [handleKeyDown]);
 
+    const { onTasksReorder } = useDnDStore();
     const { sensors, handleDragEnd, handleDragStart } = useAppDnD(projects, {
         onOptimisticReorder: setProjectsOverride,
         onRevertReorder: setProjectsOverride,
+        onTasksReorder: onTasksReorder || undefined,
     });
 
     // Compute Title (memoized)

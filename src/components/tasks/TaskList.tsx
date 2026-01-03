@@ -1,8 +1,4 @@
 ﻿import {
-    DragEndEvent,
-    useDndMonitor
-} from '@dnd-kit/core';
-import {
     SortableContext,
     arrayMove,
     useSortable,
@@ -16,6 +12,7 @@ import { useTasks } from '../../hooks/useTasks';
 import { getProcessedTasks } from '../../logic/search';
 import { reorderTasks } from '../../store';
 import { Task } from '../../store/schema';
+import { useDnDStore } from '../../store/ui/dnd-store';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { useModalStore } from '../../store/ui/modal-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
@@ -113,42 +110,51 @@ export const TaskList: React.FC = () => {
         spacious: 'space-y-4'
     }[density];
 
-    // Handle Drag End for Task Reordering (Local) via Monitor
-    useDndMonitor({
-        onDragEnd: async (event: DragEndEvent) => {
-            const { active, over } = event;
-            if (!over || active.id === over.id) return;
+    const { setTasksReorderHandler } = useDnDStore();
 
-            const activeIdStr = String(active.id);
-            const overIdStr = String(over.id);
+    // Local state for optimistic reordering to prevent 'jump' delay
+    const [localOrderedTasks, setLocalOrderedTasks] = React.useState<Task[] | null>(null);
 
-            // Ensure both are tasks
-            if (!activeIdStr.startsWith(UI_CONFIG.DND.PREFIX_TASK) || !overIdStr.startsWith(UI_CONFIG.DND.PREFIX_TASK)) {
-                return;
-            }
+    // Reset local order when tasks or filters change
+    React.useEffect(() => {
+        setLocalOrderedTasks(null);
+    }, [tasks, config]);
 
-            const activeTaskId = activeIdStr.replace(UI_CONFIG.DND.PREFIX_TASK, '');
-            const overTaskId = overIdStr.replace(UI_CONFIG.DND.PREFIX_TASK, '');
+    const displayTasks = localOrderedTasks || processedTasks;
 
-            // Only allow reordering if we are in manual sort mode
-            if (sortCriteria !== 'manual') return;
+    // Logic for task reordering (integrated with global DnD)
+    const handleTaskReorder = React.useCallback(async (activeTaskId: string, overTaskId: string) => {
+        // Only allow reordering if we are in manual sort mode
+        if (sortCriteria !== 'manual') return;
 
-            const oldIndex = processedTasks.findIndex(t => t.id === activeTaskId);
-            const newIndex = processedTasks.findIndex(t => t.id === overTaskId);
+        const currentTasks = localOrderedTasks || processedTasks;
+        const oldIndex = currentTasks.findIndex(t => t.id === activeTaskId);
+        const newIndex = currentTasks.findIndex(t => t.id === overTaskId);
 
-            if (oldIndex !== -1 && newIndex !== -1) {
-                // Optimistic UI update could be better handled by a local state or just waiting for store update
-                // Here we trigger store update directly
-                // Note: Since we don't have local optimistic state here easily without duplicating 'tasks',
-                // there might be a slight delay. getProcessedTasks relies on 'tasks' from store.
-                // Reordering IDs calculation:
-                // We simulate the move on processedTasks to get the new order of IDs
-                const reordered = arrayMove(processedTasks, oldIndex, newIndex);
-                const orderedIds = reordered.map(t => t.id!).filter(Boolean);
+        if (oldIndex !== -1 && newIndex !== -1) {
+            // Optimistic UI update: instant re-order
+            const reordered = arrayMove(currentTasks, oldIndex, newIndex);
+            setLocalOrderedTasks(reordered);
+
+            // Firestore update
+            const orderedIds = reordered.map(t => t.id!).filter(Boolean);
+            try {
                 await reorderTasks(orderedIds);
+            } catch (err) {
+                console.error('Failed to reorder tasks', err);
+                setLocalOrderedTasks(null); // Rollback on error
             }
         }
-    });
+    }, [sortCriteria, localOrderedTasks, processedTasks]);
+
+    // Register handler to global DnD system
+    React.useEffect(() => {
+        setTasksReorderHandler(handleTaskReorder);
+        return () => setTasksReorderHandler(null);
+    }, [handleTaskReorder, setTasksReorderHandler]);
+
+    // Simplify display check
+    const isEmpty = displayTasks.length === 0;
 
     // 検索モード時はちらつきを防ぐため、キャッシュがあればローディングを表示しない
     const isSearching = !!(query && query.trim().length > 0);
@@ -209,7 +215,7 @@ export const TaskList: React.FC = () => {
                     </button>
                 </div>
 
-                {processedTasks.length === 0 ? (
+                {isEmpty ? (
                     <div className="text-center py-20 flex flex-col items-center justify-center min-h-[60vh]">
                         <div className="relative mb-8">
                             <div className="absolute -inset-4 bg-blue-500/10 dark:bg-blue-400/10 blur-3xl rounded-full" />
@@ -232,18 +238,18 @@ export const TaskList: React.FC = () => {
                 ) : (
                     isManualSort ? (
                         <SortableContext
-                            items={processedTasks.map(t => `${UI_CONFIG.DND.PREFIX_TASK}${t.id || ''}`)}
+                            items={displayTasks.map(t => `${UI_CONFIG.DND.PREFIX_TASK}${t.id || ''}`)}
                             strategy={verticalListSortingStrategy}
                         >
                             <div className={cn("transition-all duration-200", densityClass)}>
-                                {processedTasks.map(task => (
+                                {displayTasks.map(task => (
                                     <SortableTaskItem key={task.id} task={task} />
                                 ))}
                             </div>
                         </SortableContext>
                     ) : (
                         <ul className={cn("transition-all duration-200", densityClass)}>
-                            {processedTasks.map((task: Task) => (
+                            {displayTasks.map((task: Task) => (
                                 <TaskItem key={task.id} task={task} />
                             ))}
                         </ul>
@@ -253,7 +259,7 @@ export const TaskList: React.FC = () => {
 
             {/* Stats Bar (Sticky Bottom Area) */}
             <div className="flex-none mt-auto pt-2 border-t border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
-                <TaskStats tasks={processedTasks} timeBlockId={config.timeBlockId} />
+                <TaskStats tasks={displayTasks} timeBlockId={config.timeBlockId} />
             </div>
         </div>
     );

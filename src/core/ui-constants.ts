@@ -20,6 +20,7 @@ export const UI_CONFIG = {
     },
     DND: {
         PREFIX_TASK: 'task:',
+        PREFIX_PROJECT: 'project:',
         PREFIX_FILTER: 'filter:',
         TYPE_PROJECT: 'project',
         TYPE_INBOX: 'inbox',
