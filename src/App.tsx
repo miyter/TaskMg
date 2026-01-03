@@ -9,6 +9,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ModalManager } from './components/modals/ModalManager';
 import { SidebarContent } from './components/sidebar/SidebarContent';
 import { TaskList } from './components/tasks/TaskList';
+import { GeneralDashboard } from './components/views/GeneralDashboard';
 import { SearchView } from './components/views/SearchView';
 import { auth } from './core/firebase';
 import { onAuthStateChanged } from './core/firebase-sdk';
@@ -126,6 +127,8 @@ const App: React.FC = () => {
                     <WikiApp />
                 ) : currentView === 'search' ? (
                     <SearchView />
+                ) : currentView === 'dashboard' ? (
+                    <GeneralDashboard />
                 ) : (
                     <TaskList />
                 )}

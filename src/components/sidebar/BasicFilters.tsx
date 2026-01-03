@@ -23,14 +23,14 @@ export const BasicFilters: React.FC = () => {
     const counts = useTaskCounts();
     const { setView, currentView } = useViewStore();
 
-    const isDashboardActive = currentView === 'target-dashboard';
+    const isDashboardActive = currentView === 'dashboard';
 
     return (
         <ul className="space-y-0.5">
             {/* Dashboard Item */}
             <li>
                 <button
-                    onClick={() => setView('target-dashboard')}
+                    onClick={() => setView('dashboard')}
                     className={cn(
                         "w-full flex items-center px-3 text-sm rounded-md transition-colors text-left gap-3 group/item",
                         getDensityClass(density),
