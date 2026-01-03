@@ -184,6 +184,8 @@ export const TaskList: React.FC = () => {
                     {/* Sort Options */}
                     <div className="flex items-center gap-2 px-1">
                         <select
+                            name="sortCriteria"
+                            aria-label={t('task_list.sort_options') || "Sort Options"}
                             value={sortCriteria}
                             onChange={(e) => setSortCriteria(e.target.value)}
                             className="text-xs bg-transparent border-none outline-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer font-medium focus:ring-0"

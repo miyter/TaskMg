@@ -62,18 +62,24 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
                             <div key={input.key || idx}>
                                 {input.type === 'textarea' ? (
                                     <Textarea
+                                        name={input.key || `textarea-${idx}`}
+                                        id={input.key || `textarea-${idx}`}
                                         className="text-base"
                                         rows={5}
                                         placeholder={input.placeholder}
                                         value={inputs[idx] || ''}
                                         onChange={(e) => handleChange(idx, e.target.value)}
+                                        aria-label={input.placeholder}
                                     />
                                 ) : (
                                     <Input
+                                        name={input.key || `input-${idx}`}
+                                        id={input.key || `input-${idx}`}
                                         className="text-base"
                                         placeholder={input.placeholder}
                                         value={inputs[idx] || ''}
                                         onChange={(e) => handleChange(idx, e.target.value)}
+                                        aria-label={input.placeholder}
                                     />
                                 )}
                             </div>

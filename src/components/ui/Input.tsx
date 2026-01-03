@@ -1,4 +1,4 @@
-import React, { forwardRef, InputHTMLAttributes } from 'react';
+import React, { forwardRef, InputHTMLAttributes, useId } from 'react';
 import { cn } from '../../utils/cn';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -11,11 +11,14 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
     ({ className, label, error, leftIcon, rightIcon, containerClassName, id, ...props }, ref) => {
+        const generatedId = useId();
+        const inputId = id || generatedId;
+
         return (
             <div className={cn("flex flex-col gap-1.5", containerClassName)}>
                 {label && (
                     <label
-                        htmlFor={id}
+                        htmlFor={inputId}
                         className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                     >
                         {label}
@@ -29,7 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     )}
                     <input
                         ref={ref}
-                        id={id}
+                        id={inputId}
                         className={cn(
                             "w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border rounded-xl px-4 py-2.5 outline-none transition-all placeholder:text-gray-300 dark:placeholder:text-gray-600",
                             "focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500",
@@ -41,7 +44,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                             className
                         )}
                         aria-invalid={!!error}
-                        aria-describedby={error && id ? `${id}-error` : undefined}
+                        aria-describedby={error ? `${inputId}-error` : undefined}
                         {...props}
                     />
                     {rightIcon && (
@@ -51,7 +54,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     )}
                 </div>
                 {error && (
-                    <p id={id ? `${id}-error` : undefined} className="text-xs text-red-500 font-medium animate-fade-in-down">
+                    <p id={`${inputId}-error`} className="text-xs text-red-500 font-medium animate-fade-in-down">
                         {error}
                     </p>
                 )}

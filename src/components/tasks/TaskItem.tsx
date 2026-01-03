@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useTranslation } from '../../core/translations';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
-import { toggleTaskStatus, updateTask } from '../../store';
+import { deleteTask, toggleTaskStatus, updateTask } from '../../store';
 import { Task } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
 import { cn } from '../../utils/cn';
 import { formatDateCompact, getTaskDateColor } from '../../utils/date';
-import { IconCalendar, IconCheck, IconClock, IconRepeat, IconStar } from '../common/Icons';
+import { IconCalendar, IconCheck, IconClock, IconEdit, IconRepeat, IconStar, IconTrash } from '../common/Icons';
+import { ContextMenu, ContextMenuItem, ContextMenuSub } from '../ui/ContextMenu';
 
 interface TaskItemProps {
     task: Task;
@@ -16,11 +18,14 @@ interface TaskItemProps {
 }
 
 export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dragHandleProps }) => {
+    const { t } = useTranslation();
     const isCompleted = task.status === 'completed';
     const isImportant = !!task.isImportant;
     const { openModal } = useModalStore();
     const { projects } = useProjects();
     const { timeBlocks } = useTimeBlocks();
+
+    const [menuPosition, setMenuPosition] = useState<{ x: number, y: number } | null>(null);
 
     const handleToggle = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -36,6 +41,60 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
         }
     };
 
+    const handleContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setMenuPosition({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleEdit = () => {
+        setMenuPosition(null);
+        openModal('task-detail', task);
+    };
+
+    const handleDelete = () => {
+        setMenuPosition(null);
+        openModal('confirmation', {
+            title: t('delete'),
+            message: `${t('task')}: ${task.title}\n${t('msg.confirm_delete')}`,
+            confirmLabel: t('delete'),
+            variant: 'danger',
+            onConfirm: async () => {
+                if (task.id) {
+                    await deleteTask(task.id);
+                }
+            }
+        });
+    };
+
+    const handleDateChange = async (type: 'today' | 'tomorrow' | 'next_week' | 'no_date') => {
+        setMenuPosition(null);
+        if (!task.id) return;
+
+        let newDate: Date | null = null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        switch (type) {
+            case 'today':
+                newDate = new Date(); // Keep current time or set to end of day? Usually start of day or specific time. Using current time for now or just date component.
+                break;
+            case 'tomorrow':
+                newDate = new Date(today);
+                newDate.setDate(today.getDate() + 1);
+                break;
+            case 'next_week':
+                newDate = new Date(today);
+                newDate.setDate(today.getDate() + 7);
+                break;
+            case 'no_date':
+                newDate = null;
+                break;
+        }
+
+        await updateTask(task.id, { dueDate: newDate });
+    };
+
     // Meta Data Logic
     const project = task.projectId ? projects.find(p => p.id === task.projectId) : null;
     const timeBlock = task.timeBlockId ? timeBlocks.find(tb => tb.id === task.timeBlockId) : null;
@@ -45,94 +104,115 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
     const hasDate = !!task.dueDate;
 
     return (
-        <li
-            style={style}
-            onClick={() => openModal('task-detail', task)}
-            className={cn(
-                "group flex items-center gap-3 p-[var(--task-p)] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-xl hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 cursor-pointer hover-lift",
-                className
-            )}
-            {...dragHandleProps}
-        >
-            {/* Checkbox */}
-            <button
-                onClick={handleToggle}
+        <>
+            <li
+                style={style}
+                onClick={() => openModal('task-detail', task)}
+                onContextMenu={handleContextMenu}
                 className={cn(
-                    "w-5 h-5 rounded-full border flex items-center justify-center transition-colors shrink-0",
-                    isCompleted
-                        ? "bg-blue-500 border-blue-500 text-white"
-                        : "border-gray-300 dark:border-gray-600 hover:border-blue-400 text-transparent"
+                    "group flex items-center gap-3 p-[var(--task-p)] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-xl hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 cursor-pointer hover-lift",
+                    className
                 )}
-                aria-label={isCompleted ? "Mark as incomplete" : "Mark as complete"}
+                {...dragHandleProps}
             >
-                <IconCheck className="w-3 h-3" strokeWidth={3} />
-            </button>
-
-            {/* Title & Description */}
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <div className={cn("text-sm text-gray-800 dark:text-gray-200 break-words", isCompleted && "line-through text-gray-400 dark:text-gray-500")}>
-                    {task.title}
-                </div>
-                {task.description && (
-                    <div className="text-xs text-gray-500 line-clamp-1 truncate">
-                        {task.description}
-                    </div>
-                )}
-            </div>
-
-            {/* Meta Info (Right Side) */}
-            <div className="flex items-center gap-3 text-xs shrink-0">
-                {/* Project */}
-                {project && (
-                    <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: project.color || '#ccc' }} />
-                        <span className="max-w-[100px] truncate">{project.name}</span>
-                    </div>
-                )}
-
-                {/* TimeBlock */}
-                {timeBlock && (
-                    <div className="hidden sm:flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                        <IconClock className="w-3.5 h-3.5" />
-                        <span className="max-w-[120px] truncate">{timeBlock.name}</span>
-                    </div>
-                )}
-
-                {/* Date / Recurrence */}
-                <div className={cn("flex items-center gap-1", isCompleted ? "text-gray-400" : getTaskDateColor(task.dueDate || null))}>
-                    {hasRecurrence ? (
-                        /* Recurrence Icon */
-                        <IconRepeat className="w-3.5 h-3.5" />
-                    ) : hasDate ? (
-                        /* Date Icon + Text */
-                        <>
-                            <IconCalendar className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">{formatDateCompact(task.dueDate || null)}</span>
-                        </>
-                    ) : (
-                        /* No Date */
-                        null
-                    )}
-                </div>
-            </div>
-
-            {/* Actions */}
-            <div className={cn(
-                "flex items-center gap-1 transition-opacity shrink-0",
-                isImportant ? "opacity-100" : "opacity-0 group-hover:opacity-100 placeholder-opacity" // Using placeholder class just to keep layout stable if needed, but opacity-0 works
-            )}>
+                {/* Checkbox */}
                 <button
-                    onClick={handleToggleImportant}
+                    onClick={handleToggle}
                     className={cn(
-                        "p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
-                        isImportant ? "text-yellow-500" : "text-gray-400"
+                        "w-5 h-5 rounded-full border flex items-center justify-center transition-colors shrink-0",
+                        isCompleted
+                            ? "bg-blue-500 border-blue-500 text-white"
+                            : "border-gray-300 dark:border-gray-600 hover:border-blue-400 text-transparent"
                     )}
-                    title={isImportant ? "重要度を解除" : "重要としてマーク"}
+                    aria-label={isCompleted ? "Mark as incomplete" : "Mark as complete"}
                 >
-                    <IconStar className="w-4 h-4" fill={isImportant ? "currentColor" : "none"} />
+                    <IconCheck className="w-3 h-3" strokeWidth={3} />
                 </button>
-            </div>
-        </li>
+
+                {/* Title & Description */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <div className={cn("text-sm text-gray-800 dark:text-gray-200 break-words", isCompleted && "line-through text-gray-400 dark:text-gray-500")}>
+                        {task.title}
+                    </div>
+                    {task.description && (
+                        <div className="text-xs text-gray-500 line-clamp-1 truncate">
+                            {task.description}
+                        </div>
+                    )}
+                </div>
+
+                {/* Meta Info (Right Side) */}
+                <div className="flex items-center gap-3 text-xs shrink-0">
+                    {/* Project */}
+                    {project && (
+                        <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: project.color || '#ccc' }} />
+                            <span className="max-w-[100px] truncate">{project.name}</span>
+                        </div>
+                    )}
+
+                    {/* TimeBlock */}
+                    {timeBlock && (
+                        <div className="hidden sm:flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                            <IconClock className="w-3.5 h-3.5" />
+                            <span className="max-w-[120px] truncate">{timeBlock.name}</span>
+                        </div>
+                    )}
+
+                    {/* Date / Recurrence */}
+                    <div className={cn("flex items-center gap-1", isCompleted ? "text-gray-400" : getTaskDateColor(task.dueDate || null))}>
+                        {hasRecurrence ? (
+                            /* Recurrence Icon */
+                            <IconRepeat className="w-3.5 h-3.5" />
+                        ) : hasDate ? (
+                            /* Date Icon + Text */
+                            <>
+                                <IconCalendar className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">{formatDateCompact(task.dueDate || null)}</span>
+                            </>
+                        ) : (
+                            /* No Date */
+                            null
+                        )}
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className={cn(
+                    "flex items-center gap-1 transition-opacity shrink-0",
+                    isImportant ? "opacity-100" : "opacity-0 group-hover:opacity-100 placeholder-opacity" // Using placeholder class just to keep layout stable if needed, but opacity-0 works
+                )}>
+                    <button
+                        onClick={handleToggleImportant}
+                        className={cn(
+                            "p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
+                            isImportant ? "text-yellow-500" : "text-gray-400"
+                        )}
+                        title={isImportant ? "重要度を解除" : "重要としてマーク"}
+                    >
+                        <IconStar className="w-4 h-4" fill={isImportant ? "currentColor" : "none"} />
+                    </button>
+                </div>
+            </li>
+
+            {/* Context Menu */}
+            {menuPosition && (
+                <ContextMenu x={menuPosition.x} y={menuPosition.y} onClose={() => setMenuPosition(null)}>
+                    <ContextMenuSub label={t('date_change') || "日付変更"} icon={<IconCalendar />}>
+                        <ContextMenuItem onClick={() => handleDateChange('today')}>{t('today')}</ContextMenuItem>
+                        <ContextMenuItem onClick={() => handleDateChange('tomorrow')}>{t('tomorrow')}</ContextMenuItem>
+                        <ContextMenuItem onClick={() => handleDateChange('next_week')}>{t('next_week') || "来週"}</ContextMenuItem>
+                        <ContextMenuItem onClick={() => handleDateChange('no_date')}>{t('no_date') || "期限なし"}</ContextMenuItem>
+                    </ContextMenuSub>
+                    <ContextMenuItem onClick={handleEdit} icon={<IconEdit />}>
+                        {t('edit')}
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={handleDelete} variant="danger" icon={<IconTrash />}>
+                        {t('delete')}
+                    </ContextMenuItem>
+                </ContextMenu>
+            )}
+        </>
     );
 }, (prev, next) => {
     // 日付比較: Timestamp/Date混在に対応するためgetTime()で統一比較

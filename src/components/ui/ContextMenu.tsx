@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn';
+import { IconChevronRight } from '../common/Icons';
 
 interface ContextMenuProps {
     x: number;
@@ -35,13 +36,38 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose, childre
     return createPortal(
         <div
             ref={menuRef}
-            className="fixed z-50 min-w-[160px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+            className="fixed z-50 min-w-[160px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 animate-in fade-in zoom-in-95 duration-100"
             style={{ top: y, left: x }}
             onContextMenu={(e) => e.preventDefault()}
         >
             {children}
         </div>,
         document.body
+    );
+};
+
+export const ContextMenuSub: React.FC<{ label: React.ReactNode; icon?: React.ReactNode; children: React.ReactNode }> = ({ label, icon, children }) => {
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    return (
+        <div
+            className="relative w-full"
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
+        >
+            <button className="w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 transition-colors text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <div className="flex items-center gap-2">
+                    {icon && <span className="w-4 h-4 text-gray-400">{icon}</span>}
+                    {label}
+                </div>
+                <IconChevronRight className="w-3 h-3 text-gray-400" />
+            </button>
+            {isOpen && (
+                <div className="absolute left-full top-0 ml-1 min-w-[140px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 animate-in fade-in zoom-in-95 duration-100 z-50">
+                    {children}
+                </div>
+            )}
+        </div>
     );
 };
 
