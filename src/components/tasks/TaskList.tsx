@@ -21,7 +21,6 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
 import { IconCheck, IconPlus, IconSearch } from '../common/Icons';
-import { AddTaskButton } from './AddTaskButton';
 import { TaskItem } from './TaskItem';
 import { TaskStats } from './TaskStats';
 
@@ -171,9 +170,7 @@ export const TaskList: React.FC = () => {
             <div className="flex-1 overflow-y-auto custom-scrollbar px-1 pb-24">
                 <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm pt-2 pb-4 mb-4 flex items-center gap-2">
                     <div className="flex-1">
-                        {!isSearching ? (
-                            <AddTaskButton initialValue="" />
-                        ) : (
+                        {isSearching && (
                             <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
                                 <IconSearch className="w-4 h-4" />
                                 {t('task_list.searching_results', { query: query || '' })}

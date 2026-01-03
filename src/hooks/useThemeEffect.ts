@@ -28,9 +28,9 @@ export const useThemeEffect = () => {
             }
         }
 
-        // --- Fonts ---
-        root.style.setProperty('--font-en', `"${fontEn}"`);
-        root.style.setProperty('--font-jp', `"${fontJp}"`);
+        // --- Fonts (no quotes - CSS handles font-family parsing) ---
+        root.style.setProperty('--font-en', fontEn);
+        root.style.setProperty('--font-jp', fontJp);
 
         // --- Font Size ---
         const sizeClasses = ['font-app-sm', 'font-app-base', 'font-app-md', 'font-app-lg', 'font-app-xl'];
