@@ -1,22 +1,17 @@
 ﻿import {
-    DndContext,
     DragEndEvent,
-    KeyboardSensor,
-    PointerSensor,
-    closestCenter,
-    useSensor,
-    useSensors
+    useDndMonitor
 } from '@dnd-kit/core';
 import {
     SortableContext,
     arrayMove,
-    sortableKeyboardCoordinates,
     useSortable,
     verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../core/translations';
+import { UI_CONFIG } from '../../core/ui-constants';
 import { useTasks } from '../../hooks/useTasks';
 import { getProcessedTasks } from '../../logic/search';
 import { reorderTasks } from '../../store';
@@ -39,7 +34,13 @@ const SortableTaskItem = ({ task, className }: { task: Task; className?: string 
         transform,
         transition,
         isDragging
-    } = useSortable({ id: task.id || '' });
+    } = useSortable({
+        id: `${UI_CONFIG.DND.PREFIX_TASK}${task.id || ''}`,
+        data: {
+            type: 'task',
+            task: task // Pass full task object if needed, but type check relies on prefix/data
+        }
+    });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -113,31 +114,42 @@ export const TaskList: React.FC = () => {
         spacious: 'space-y-4'
     }[density];
 
-    // DnD Sensors
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 8, // Prevent accidental drags
-            },
-        }),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
+    // Handle Drag End for Task Reordering (Local) via Monitor
+    useDndMonitor({
+        onDragEnd: async (event: DragEndEvent) => {
+            const { active, over } = event;
+            if (!over || active.id === over.id) return;
 
-    const handleDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (!over || active.id === over.id) return;
+            const activeIdStr = String(active.id);
+            const overIdStr = String(over.id);
 
-        const oldIndex = processedTasks.findIndex(t => t.id === active.id);
-        const newIndex = processedTasks.findIndex(t => t.id === over.id);
+            // Ensure both are tasks
+            if (!activeIdStr.startsWith(UI_CONFIG.DND.PREFIX_TASK) || !overIdStr.startsWith(UI_CONFIG.DND.PREFIX_TASK)) {
+                return;
+            }
 
-        if (oldIndex !== -1 && newIndex !== -1) {
-            const reordered = arrayMove(processedTasks, oldIndex, newIndex);
-            const orderedIds = reordered.map(t => t.id!).filter(Boolean);
-            await reorderTasks(orderedIds);
+            const activeTaskId = activeIdStr.replace(UI_CONFIG.DND.PREFIX_TASK, '');
+            const overTaskId = overIdStr.replace(UI_CONFIG.DND.PREFIX_TASK, '');
+
+            // Only allow reordering if we are in manual sort mode
+            if (sortCriteria !== 'manual') return;
+
+            const oldIndex = processedTasks.findIndex(t => t.id === activeTaskId);
+            const newIndex = processedTasks.findIndex(t => t.id === overTaskId);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                // Optimistic UI update could be better handled by a local state or just waiting for store update
+                // Here we trigger store update directly
+                // Note: Since we don't have local optimistic state here easily without duplicating 'tasks',
+                // there might be a slight delay. getProcessedTasks relies on 'tasks' from store.
+                // Reordering IDs calculation:
+                // We simulate the move on processedTasks to get the new order of IDs
+                const reordered = arrayMove(processedTasks, oldIndex, newIndex);
+                const orderedIds = reordered.map(t => t.id!).filter(Boolean);
+                await reorderTasks(orderedIds);
+            }
         }
-    };
+    });
 
     // 検索モード時はちらつきを防ぐため、キャッシュがあればローディングを表示しない
     const isSearching = !!(query && query.trim().length > 0);
@@ -174,13 +186,13 @@ export const TaskList: React.FC = () => {
                         <select
                             value={sortCriteria}
                             onChange={(e) => setSortCriteria(e.target.value)}
-                            className="text-xs bg-transparent border-none outline-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer font-medium"
+                            className="text-xs bg-transparent border-none outline-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer font-medium focus:ring-0"
                         >
-                            <option value="manual">{t('task_list.sort_manual')}</option>
-                            <option value="createdAt_desc">{t('task_list.sort_created')}</option>
-                            <option value="dueDate_asc">{t('task_list.sort_due')}</option>
-                            <option value="important_desc">{t('task_list.sort_important')}</option>
-                            <option value="title_asc">{t('task_list.sort_title')}</option>
+                            <option value="manual" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('task_list.sort_manual')}</option>
+                            <option value="createdAt_desc" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('task_list.sort_created')}</option>
+                            <option value="dueDate_asc" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('task_list.sort_due')}</option>
+                            <option value="important_desc" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('task_list.sort_important')}</option>
+                            <option value="title_asc" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('task_list.sort_title')}</option>
                         </select>
                     </div>
 
@@ -220,22 +232,16 @@ export const TaskList: React.FC = () => {
                     </div>
                 ) : (
                     isManualSort ? (
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={handleDragEnd}
+                        <SortableContext
+                            items={processedTasks.map(t => `${UI_CONFIG.DND.PREFIX_TASK}${t.id || ''}`)}
+                            strategy={verticalListSortingStrategy}
                         >
-                            <SortableContext
-                                items={processedTasks.map(t => t.id || '')}
-                                strategy={verticalListSortingStrategy}
-                            >
-                                <div className={cn("transition-all duration-200", densityClass)}>
-                                    {processedTasks.map(task => (
-                                        <SortableTaskItem key={task.id} task={task} />
-                                    ))}
-                                </div>
-                            </SortableContext>
-                        </DndContext>
+                            <div className={cn("transition-all duration-200", densityClass)}>
+                                {processedTasks.map(task => (
+                                    <SortableTaskItem key={task.id} task={task} />
+                                ))}
+                            </div>
+                        </SortableContext>
                     ) : (
                         <ul className={cn("transition-all duration-200", densityClass)}>
                             {processedTasks.map((task: Task) => (
