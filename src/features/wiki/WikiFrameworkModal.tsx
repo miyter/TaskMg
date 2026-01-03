@@ -1,12 +1,13 @@
 ﻿import React, { useCallback, useState } from 'react';
-import { IconChevronDown } from '../../components/common/Icons';
+import { IconChevronDown, IconChevronLeft, IconChevronRight, IconWizard } from '../../components/common/Icons';
 import { Modal } from '../../components/common/Modal';
+import { Button } from '../../components/ui/Button';
 import { useTranslation } from '../../core/translations';
 import { useModalStore } from '../../store/ui/modal-store';
-import { cn } from '../../utils/cn';
-import { WikiFramework } from './wiki-data';
-
+import { useSettingsStore } from '../../store/ui/settings-store';
 import { useViewStore } from '../../store/ui/view-store';
+import { cn } from '../../utils/cn';
+import { getWikiData, WikiFramework } from './wiki-data';
 
 interface WikiFrameworkModalProps {
     isOpen?: boolean;
@@ -60,11 +61,20 @@ const AccordionItem: React.FC<{
 export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { closeModal } = useModalStore();
     const { t } = useTranslation();
+    const { language } = useSettingsStore();
+
     const isOpen = !!propIsOpen;
-    const framework = propData as WikiFramework;
+    const initialFramework = propData as WikiFramework;
+
+    // Get localized version of the framework
+    const framework = initialFramework
+        ? getWikiData(language).find(f => f.id === initialFramework.id) || initialFramework
+        : null;
+
     const [currentUseCaseIndex, setCurrentUseCaseIndex] = useState(0);
 
     const handleApply = useCallback(() => {
+        if (!framework) return;
         // ウィザードに遷移
         useViewStore.getState().setView('wizard', { mode: framework.id });
         closeModal();
@@ -131,27 +141,27 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: 
                                 {/* カルーセルナビゲーション */}
                                 {hasMultipleUseCases && (
                                     <div className="flex items-center justify-center gap-2 mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={() => setCurrentUseCaseIndex(i => i > 0 ? i - 1 : useCases.length - 1)}
-                                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                                             aria-label="Previous"
+                                            className="p-1"
                                         >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                                            </svg>
-                                        </button>
+                                            <IconChevronLeft className="w-4 h-4" />
+                                        </Button>
                                         <span className="text-xs text-gray-500 min-w-[40px] text-center">
                                             {currentUseCaseIndex + 1} / {useCases.length}
                                         </span>
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={() => setCurrentUseCaseIndex(i => i < useCases.length - 1 ? i + 1 : 0)}
-                                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                                             aria-label="Next"
+                                            className="p-1"
                                         >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                                            </svg>
-                                        </button>
+                                            <IconChevronRight className="w-4 h-4" />
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -175,21 +185,20 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: 
 
                 {/* フッター - 下部固定 */}
                 <div className="flex items-center justify-between p-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
-                    <button
+                    <Button
+                        variant="ghost"
                         onClick={closeModal}
-                        className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                     >
                         {t('close')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="primary"
                         onClick={handleApply}
-                        className="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex items-center gap-1.5"
+                        className="bg-purple-600 hover:bg-purple-700 shadow-purple-500/20"
+                        rightIcon={<IconWizard className="w-3.5 h-3.5" />}
                     >
                         {t('wiki.use_in_wizard')}
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                    </button>
+                    </Button>
                 </div>
             </div>
         </Modal>

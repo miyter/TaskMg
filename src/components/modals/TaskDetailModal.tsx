@@ -10,8 +10,9 @@ import { cn } from '../../utils/cn';
 import { formatDateForInput, getInitialDueDateFromRecurrence, parseDateInput, toDate } from '../../utils/date';
 import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { ErrorMessage } from '../common/ErrorMessage';
-import { IconStar, IconX } from '../common/Icons';
+import { IconBold, IconHeading, IconItalic, IconList, IconListOrdered, IconQuote, IconStar, IconTrash, IconX } from '../common/Icons';
 import { Modal } from '../common/Modal';
+import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
@@ -275,23 +276,29 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             aria-label={t('task_detail.title_placeholder')}
                         />
                     </div>
-                    <button
-                        onClick={() => setIsImportant(!isImportant)}
-                        className={cn(
-                            "p-1.5 rounded-md transition-colors",
-                            isImportant ? "text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/30" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        )}
-                        title={isImportant ? "重要度を解除" : "重要としてマーク"}
-                    >
-                        <IconStar className="w-4 h-4" fill={isImportant ? "currentColor" : "none"} />
-                    </button>
-                    <button
-                        onClick={closeModal}
-                        className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        aria-label="閉じる"
-                    >
-                        <IconX className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setIsImportant(!isImportant)}
+                            className={cn(
+                                "p-1.5 rounded-md transition-colors",
+                                isImportant ? "text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/30" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            )}
+                            title={isImportant ? "重要度を解除" : "重要としてマーク"}
+                        >
+                            <IconStar size={16} fill={isImportant ? "currentColor" : "none"} />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={closeModal}
+                            className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            aria-label="閉じる"
+                        >
+                            <IconX size={16} />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Body */}
@@ -302,26 +309,26 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                         <div className="md:col-span-8 flex flex-col h-full min-h-[400px]">
                             {/* Toolbar - Compact */}
                             <div className="flex items-center gap-0.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-gray-800 shrink-0 overflow-x-auto no-scrollbar">
-                                <button type="button" onClick={() => insertMarkdown('**', '**')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Bold">
+                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('**', '**')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Bold">
                                     <IconBold size={16} />
-                                </button>
-                                <button type="button" onClick={() => insertMarkdown('*', '*')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Italic">
+                                </Button>
+                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('*', '*')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Italic">
                                     <IconItalic size={16} />
-                                </button>
+                                </Button>
                                 <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1.5" />
-                                <button type="button" onClick={() => insertMarkdown('- ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="List">
+                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('- ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="List">
                                     <IconList size={16} />
-                                </button>
-                                <button type="button" onClick={() => insertMarkdown('1. ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Numbered List">
+                                </Button>
+                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('1. ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Numbered List">
                                     <IconListOrdered size={16} />
-                                </button>
+                                </Button>
                                 <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1.5" />
-                                <button type="button" onClick={() => insertMarkdown('### ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Heading">
+                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('### ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Heading">
                                     <IconHeading size={16} />
-                                </button>
-                                <button type="button" onClick={() => insertMarkdown('> ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Quote">
+                                </Button>
+                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('> ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Quote">
                                     <IconQuote size={16} />
-                                </button>
+                                </Button>
                                 <div className="flex-1" />
                             </div>
 
@@ -486,31 +493,34 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 {/* Footer - Compact with minimal padding */}
                 <div className="px-3 sm:px-4 py-2 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center shrink-0">
                     {!isNewTask ? (
-                        <button
-                            type="button"
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={handleDelete}
-                            className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                            className="text-gray-400 hover:text-red-500 font-medium px-2"
+                            leftIcon={<IconTrash size={14} />}
                         >
                             {t('task_detail.delete_button')}
-                        </button>
+                        </Button>
                     ) : (
                         <div />
                     )}
                     <div className="flex items-center gap-2">
-                        <button
-                            type="button"
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={closeModal}
-                            className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                            className="font-medium"
                         >
                             {t('modal.cancel')}
-                        </button>
-                        <button
-                            type="button"
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="sm"
                             onClick={handleSave}
-                            className="px-4 py-1.5 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors"
                         >
                             {isNewTask ? t('modal.create') : t('modal.save')}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

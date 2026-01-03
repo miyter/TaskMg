@@ -4,7 +4,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
 import { useTranslation } from '../../core/translations';
-import { WIZARD_MODES, WizardModeId } from './wizard-config';
+import { useSettingsStore } from '../../store/ui/settings-store';
+import { getWizardModes, WizardModeId } from './wizard-config';
 import { WizardProgressBar } from './WizardProgressBar';
 
 interface WizardStepProps {
@@ -17,7 +18,8 @@ interface WizardStepProps {
 
 export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNext, onFinish }) => {
     const { t } = useTranslation();
-    const config = WIZARD_MODES[mode];
+    const { language } = useSettingsStore();
+    const config = getWizardModes(language)[mode];
     const stepIndex = step - 1;
     const stepConfig = config.steps[stepIndex];
     const totalSteps = config.steps.length;
@@ -31,7 +33,7 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
 
     const handleNext = () => {
         // Collect data using the keys defined in the config
-        const stepData = stepConfig.inputs.reduce((acc, input, idx) => {
+        const stepData = (stepConfig.inputs ?? []).reduce((acc, input, idx) => {
             const value = inputs[idx] || '';
             // Use meaningful key from config
             if (input.key) {
@@ -58,7 +60,7 @@ export const WizardStep: React.FC<WizardStepProps> = ({ mode, step, onBack, onNe
                     <p className="mb-6 text-gray-600 dark:text-gray-400">{stepConfig.description}</p>
 
                     <div className="mb-8 space-y-4">
-                        {stepConfig.inputs.map((input, idx) => (
+                        {(stepConfig.inputs ?? []).map((input, idx) => (
                             <div key={input.key || idx}>
                                 {input.type === 'textarea' ? (
                                     <Textarea

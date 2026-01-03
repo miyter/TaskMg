@@ -1,7 +1,7 @@
 import React from 'react';
 import { IconChevronUp } from '../../components/common/Icons';
-import { getTranslator } from '../../core/translations';
-import { useSettingsStore } from '../../store/ui/settings-store';
+import { Button } from '../../components/ui/Button';
+import { useTranslation } from '../../core/translations';
 import { KGIStatus } from './dashboard-types';
 
 interface DashboardHeaderProps {
@@ -13,8 +13,7 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(({ kgi, currentTab, onTabChange, collapsed, onToggleCollapse }) => {
-    const { language } = useSettingsStore();
-    const { t } = getTranslator(language);
+    const { t } = useTranslation();
     const statusColors: Record<string, string> = {
         good: 'text-emerald-500',
         warning: 'text-amber-500',
@@ -90,15 +89,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(({ kgi
 
 
                     {/* Toggle */}
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={onToggleCollapse}
-                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                         title={collapsed ? t('target_dashboard.header_expand') : t('target_dashboard.header_collapse')}
+                        className="rounded-lg"
                     >
                         <IconChevronUp
                             className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`}
                         />
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

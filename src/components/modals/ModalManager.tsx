@@ -1,18 +1,16 @@
-import React from 'react';
-import { FilterEditModal } from './FilterEditModal';
-import { LabelEditModal } from './LabelEditModal';
-import { ProjectEditModal } from './ProjectEditModal';
-import { SettingsModal } from './SettingsModal';
-import { TaskDetailModal } from './TaskDetailModal';
-import { TimeBlockEditModal } from './TimeBlockEditModal';
-import { WorkspaceEditModal } from './WorkspaceEditModal';
-
+import React, { Suspense } from 'react';
 import { useModalStore } from '../../store/ui/modal-store';
 
-import { WikiFrameworkModal } from '../../features/wiki/WikiFrameworkModal';
-import { ConfirmationModal } from './ConfirmationModal';
-
-
+// Lazy load modals to improve initial bundle size and performance
+const FilterEditModal = React.lazy(() => import('./FilterEditModal').then(m => ({ default: m.FilterEditModal })));
+const LabelEditModal = React.lazy(() => import('./LabelEditModal').then(m => ({ default: m.LabelEditModal })));
+const ProjectEditModal = React.lazy(() => import('./ProjectEditModal').then(m => ({ default: m.ProjectEditModal })));
+const SettingsModal = React.lazy(() => import('./SettingsModal').then(m => ({ default: m.SettingsModal })));
+const TaskDetailModal = React.lazy(() => import('./TaskDetailModal').then(m => ({ default: m.TaskDetailModal })));
+const TimeBlockEditModal = React.lazy(() => import('./TimeBlockEditModal').then(m => ({ default: m.TimeBlockEditModal })));
+const WorkspaceEditModal = React.lazy(() => import('./WorkspaceEditModal').then(m => ({ default: m.WorkspaceEditModal })));
+const WikiFrameworkModal = React.lazy(() => import('../../features/wiki/WikiFrameworkModal').then(m => ({ default: m.WikiFrameworkModal })));
+const ConfirmationModal = React.lazy(() => import('./ConfirmationModal').then(m => ({ default: m.ConfirmationModal })));
 
 export const ModalManager: React.FC = () => {
     const { stack } = useModalStore();
@@ -20,12 +18,10 @@ export const ModalManager: React.FC = () => {
     if (stack.length === 0) return null;
 
     return (
-        <>
+        <Suspense fallback={null}>
             {stack.map((modal, index) => {
                 const isFirst = index === 0;
-                // スタック内の順序に応じてz-indexとオーバーレイを調整
-                // 2枚目以降は背景を少しだけ暗くする（完全な透明だと重なりが分かりにくい、濃すぎると見づらい）
-                const overlayStyle = isFirst ? undefined : "bg-black/30"; // undefined defaults to bg-black/50
+                const overlayStyle = isFirst ? undefined : "bg-black/30";
 
                 const props = {
                     isOpen: true,
@@ -34,8 +30,7 @@ export const ModalManager: React.FC = () => {
                     overlayClassName: overlayStyle
                 };
 
-                // Note: All modal components must accept StandardModalProps (isOpen, data, zIndex, overlayClassName)
-                // We pass key explicitly to avoid "key in spread" warnings
+                // Render correct modal component
                 switch (modal.type) {
                     case 'settings': return <SettingsModal key={modal.id} {...props} />;
                     case 'task-detail': return <TaskDetailModal key={modal.id} {...props} />;
@@ -49,6 +44,6 @@ export const ModalManager: React.FC = () => {
                     default: return null;
                 }
             })}
-        </>
+        </Suspense>
     );
 };

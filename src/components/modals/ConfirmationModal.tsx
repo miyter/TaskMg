@@ -2,6 +2,7 @@
 import { useTranslation } from '../../core/translations';
 import { ConfirmationData, useModalStore } from '../../store/ui/modal-store';
 import { Modal } from '../common/Modal';
+import { Button } from '../ui/Button';
 
 interface ConfirmationModalProps {
     isOpen: boolean;
@@ -48,22 +49,20 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, da
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
-                    <button
+                    <Button
+                        variant="ghost"
                         onClick={closeModal}
-                        className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     >
                         {cancelLabel}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant={variant}
                         onClick={handleConfirm}
-                        className={`px-6 py-2 text-sm font-bold text-white rounded-lg shadow-md transition-transform active:scale-95 ${isDanger
-                                ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30'
-                                : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
-                            }`}
+                        className="px-6"
                         autoFocus
                     >
                         {confirmLabel}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </Modal>

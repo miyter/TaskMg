@@ -241,13 +241,14 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
                     {/* Add Button - FAB style circular button */}
                     {blocks.length < UI_CONFIG.TIME_BLOCK.MAX_COUNT ? (
                         <div className="flex justify-center py-2">
-                            <button
+                            <Button
                                 onClick={handleAdd}
-                                className="w-10 h-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center hover:scale-105 active:scale-95"
+                                size="icon"
+                                className="w-10 h-10 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center hover:scale-105 active:scale-95"
                                 title={t('time_block.add_button')}
                             >
                                 <IconPlus className="w-5 h-5" />
-                            </button>
+                            </Button>
                         </div>
                     ) : (
                         <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-xs rounded-lg flex items-center justify-center gap-2">
@@ -261,14 +262,14 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
 
                 {/* Footer - Minimal with only done button */}
                 <div className="pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-end">
-                    <button
+                    <Button
                         type="button"
                         onClick={handleSave}
-                        disabled={loading}
-                        className="px-5 py-1.5 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 rounded-md transition-colors"
+                        isLoading={loading}
+                        className="px-6"
                     >
-                        {loading ? t('saving') : t('done')}
-                    </button>
+                        {t('done')}
+                    </Button>
                 </div>
             </div>
         </Modal>

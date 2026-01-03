@@ -1,7 +1,7 @@
 export interface WizardStepInput {
     type: string;
     placeholder: string;
-    key: string; // Meaningful key for data persistence
+    key: string;
 }
 
 export interface WizardStep {
@@ -17,7 +17,7 @@ export interface WizardMode {
     steps: WizardStep[];
 }
 
-export const WIZARD_MODES = {
+const WIZARD_MODES_JA = {
     backward: {
         id: 'backward',
         label: 'Backward Design',
@@ -88,8 +88,85 @@ export const WIZARD_MODES = {
             }
         ]
     }
-} as const; // Use as const to infer literal types correctly, or explicit interface if mutable.
-// Given it's config, 'as const' is good, but let's stick to the interface approach if I want structured usage.
-// Actually, 'as const' is safer for literal string matching.
+};
 
-export type WizardModeId = keyof typeof WIZARD_MODES;
+const WIZARD_MODES_EN = {
+    backward: {
+        id: 'backward',
+        label: 'Backward Design',
+        description: 'Design solid tasks by rewinding from your goal. Best for long-term projects.',
+        steps: [
+            {
+                title: 'Goal / KGI',
+                description: 'Define the date and state (KGI) of your final goal.',
+                inputs: [{ type: 'textarea', placeholder: 'e.g., Reach 10,000 monthly active users by March 31, 2025.', key: 'goal_kgi' }]
+            },
+            {
+                title: 'Milestone',
+                description: 'What should be the state one month before the goal?',
+                inputs: [{ type: 'textarea', placeholder: 'e.g., Core features implemented and beta distributed to 100 users.', key: 'milestone_minus_1mo' }]
+            },
+            {
+                title: 'First Action',
+                description: 'What is the very first action you should start right now?',
+                inputs: [{ type: 'textarea', placeholder: 'e.g., Analyze competitor reviews and create a feature list.', key: 'first_action' }]
+            }
+        ]
+    },
+    woop: {
+        id: 'woop',
+        label: 'WOOP',
+        description: 'Contrast wishes and obstacles to automate your execution plan. Effective for habits and tough goals.',
+        steps: [
+            {
+                title: 'Wish',
+                description: 'What do you want to achieve? (Challenging but achievable)',
+                inputs: [{ type: 'textarea', placeholder: 'e.g., Study English for 30 minutes every day.', key: 'wish' }]
+            },
+            {
+                title: 'Outcome',
+                description: 'Imagine the "best benefit" or feeling when it\'s achieved.',
+                inputs: [{ type: 'textarea', placeholder: 'e.g., Enjoy foreign dramas without subtitles and gain confidence.', key: 'outcome' }]
+            },
+            {
+                title: 'Obstacle',
+                description: 'What is your "inner obstacle" (emotion, habit, belief) that gets in the way?',
+                inputs: [{ type: 'textarea', placeholder: 'e.g., Checking SNS on the phone when returning home tired from work.', key: 'obstacle' }]
+            },
+            {
+                title: 'Plan',
+                description: 'Make a plan in the form of "IF (obstacle) happens, THEN (action)".',
+                inputs: [{ type: 'textarea', placeholder: 'e.g., IF I am about to sit on the sofa tired, THEN I will open the textbook immediately.', key: 'plan' }]
+            }
+        ]
+    },
+    okr: {
+        id: 'okr',
+        label: 'OKR',
+        description: 'Combine ambitious objectives (O) with measurable key results (KR). For organizations, teams, or high-growth individuals.',
+        steps: [
+            {
+                title: 'Objective',
+                description: 'Decide on one qualitative and exciting objective.',
+                inputs: [{ type: 'textarea', placeholder: 'e.g., Build a development tool loved by engineers worldwide!', key: 'objective' }]
+            },
+            {
+                title: 'Key Results',
+                description: 'Set three specific metrics (indices) to measure goal achievement.',
+                inputs: [
+                    { type: 'text', placeholder: 'KR 1 (e.g., Reach 1,000 GitHub stars)', key: 'kr_1' },
+                    { type: 'text', placeholder: 'KR 2 (e.g., 500 downloads per week)', key: 'kr_2' },
+                    { type: 'text', placeholder: 'KR 3 (e.g., Maintain 40% user retention rate)', key: 'kr_3' }
+                ]
+            }
+        ]
+    }
+};
+
+export const getWizardModes = (lang: string = 'ja') => {
+    return lang === 'ja' ? WIZARD_MODES_JA : WIZARD_MODES_EN;
+};
+
+// For compatibility
+export const WIZARD_MODES = WIZARD_MODES_JA;
+export type WizardModeId = keyof typeof WIZARD_MODES_JA;

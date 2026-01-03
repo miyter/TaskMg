@@ -272,13 +272,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 });
                                             }}
                                         />
-                                        <label
-                                            htmlFor="backup-import-input"
-                                            className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer shadow-sm text-sm flex items-center justify-center gap-2 transition-colors"
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() => document.getElementById('backup-import-input')?.click()}
+                                            leftIcon={<IconPlus className="w-4 h-4" />}
+                                            className="w-full sm:w-auto"
                                         >
-                                            <IconPlus className="w-4 h-4" />
                                             {t('settings_modal.backup.import')}
-                                        </label>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>

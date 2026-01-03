@@ -10,6 +10,7 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { ErrorMessage } from '../common/ErrorMessage';
 import { Modal } from '../common/Modal';
 import { SelectionBox } from '../common/SelectionBox';
+import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
 
@@ -210,22 +211,22 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
                 <ErrorMessage message={error} />
 
                 <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                    <button
-                        type="button"
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={closeModal}
                         disabled={loading}
-                        className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors px-3 py-1.5 disabled:opacity-50"
                     >
                         {t('modal.cancel')}
-                    </button>
-                    <button
-                        type="button"
+                    </Button>
+                    <Button
+                        variant="primary"
+                        size="sm"
                         onClick={handleSave}
-                        disabled={loading}
-                        className="px-4 py-1.5 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 rounded-md transition-colors"
+                        isLoading={loading}
                     >
-                        {loading ? '...' : isEditMode ? t('modal.save') : t('modal.create')}
-                    </button>
+                        {isEditMode ? t('modal.save') : t('modal.create')}
+                    </Button>
                 </div>
             </div>
         </Modal>

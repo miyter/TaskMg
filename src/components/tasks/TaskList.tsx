@@ -18,6 +18,8 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
 import { IconCheck, IconPlus, IconSearch } from '../common/Icons';
+import { Button } from '../ui/Button';
+import { Select } from '../ui/Select';
 import { TaskItem } from './TaskItem';
 import { TaskStats } from './TaskStats';
 
@@ -186,33 +188,30 @@ export const TaskList: React.FC = () => {
 
                     {/* Sort Options */}
                     <div className="flex items-center gap-2 px-1">
-                        <select
+                        <Select
                             name="sortCriteria"
                             aria-label={t('task_list.sort_options') || "Sort Options"}
                             value={sortCriteria}
                             onChange={(e) => setSortCriteria(e.target.value)}
-                            className="text-xs bg-transparent border-none outline-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer font-medium focus:ring-0"
+                            className="font-medium text-xs py-1.5 h-auto"
                         >
-                            <option value="manual" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('task_list.sort_manual')}</option>
-                            <option value="createdAt_desc" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('task_list.sort_created')}</option>
-                            <option value="dueDate_asc" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('task_list.sort_due')}</option>
-                            <option value="important_desc" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('task_list.sort_important')}</option>
-                            <option value="title_asc" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('task_list.sort_title')}</option>
-                        </select>
+                            <option value="manual">{t('task_list.sort_manual')}</option>
+                            <option value="createdAt_desc">{t('task_list.sort_created')}</option>
+                            <option value="dueDate_asc">{t('task_list.sort_due')}</option>
+                            <option value="important_desc">{t('task_list.sort_important')}</option>
+                            <option value="title_asc">{t('task_list.sort_title')}</option>
+                        </Select>
                     </div>
 
-                    <button
+                    <Button
+                        variant={showCompleted ? 'primary' : 'outline'}
+                        size="sm"
                         onClick={() => setShowCompleted(!showCompleted)}
-                        className={cn(
-                            "px-3 py-2 rounded-lg text-xs font-medium border transition-colors shrink-0",
-                            showCompleted
-                                ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300"
-                                : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400"
-                        )}
                         title={showCompleted ? t('task_list.hide_completed') : t('task_list.show_completed')}
+                        className="shrink-0"
                     >
                         {showCompleted ? t('task_list.hide_completed') : t('task_list.show_completed')}
-                    </button>
+                    </Button>
                 </div>
 
                 {isEmpty ? (
@@ -227,13 +226,13 @@ export const TaskList: React.FC = () => {
                         <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mb-8">
                             {showCompleted ? t('task_list.no_tasks_desc_showing') : t('task_list.no_tasks_desc_hiding')}
                         </p>
-                        <button
+                        <Button
+                            variant="premium"
                             onClick={() => openModal('task-detail', { title: '' })}
-                            className="btn-premium flex items-center gap-2"
+                            leftIcon={<IconPlus className="w-5 h-5" />}
                         >
-                            <IconPlus className="w-5 h-5" />
                             {t('task_list.add_new_task')}
-                        </button>
+                        </Button>
                     </div>
                 ) : (
                     isManualSort ? (

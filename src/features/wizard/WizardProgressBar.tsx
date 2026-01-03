@@ -1,6 +1,7 @@
 import React from 'react';
+import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
-import { WIZARD_MODES, WizardModeId } from './wizard-config';
+import { getWizardModes, WizardModeId } from './wizard-config';
 
 interface WizardProgressBarProps {
     mode: WizardModeId;
@@ -8,7 +9,8 @@ interface WizardProgressBarProps {
 }
 
 export const WizardProgressBar: React.FC<WizardProgressBarProps> = ({ mode, currentStep }) => {
-    const config = WIZARD_MODES[mode];
+    const { language } = useSettingsStore();
+    const config = getWizardModes(language)[mode];
     const totalSteps = config.steps.length;
 
     return (

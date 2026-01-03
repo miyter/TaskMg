@@ -25,12 +25,12 @@ export interface WikiFramework {
     tips: WikiTip[];
 }
 
-export const WIKI_DATA: WikiFramework[] = [
+const WIKI_DATA_JA: WikiFramework[] = [
     {
         id: 'okr',
         title: 'OKR (Objectives and Key Results)',
         subTitle: '野心的な目標と成果指標',
-        color: 'blue', // Tailwind: blue-600
+        color: 'blue',
         icon: '🎯',
         concept: {
             summary: '「何を達成したいか（Objective）」と「どうやって達成を測るか（Key Results）」をセットで管理する手法。',
@@ -63,7 +63,7 @@ export const WIKI_DATA: WikiFramework[] = [
         id: 'woop',
         title: 'WOOP (Wish, Outcome, Obstacle, Plan)',
         subTitle: '科学的な願望実現メソッド',
-        color: 'amber', // Tailwind: amber-500
+        color: 'amber',
         icon: '✨',
         concept: {
             summary: '「最高の未来」と「現実の障害」を対比させ、脳を本気にさせる（メンタル・コントラスティング）。',
@@ -96,7 +96,7 @@ export const WIKI_DATA: WikiFramework[] = [
         id: 'backward',
         title: 'Backward Design (逆算思考)',
         subTitle: 'ゴールから現在地への架け橋',
-        color: 'purple', // Tailwind: purple-600
+        color: 'purple',
         icon: '🗺️',
         concept: {
             summary: '「ありたい姿（ゴール）」から時間を巻き戻して、今やるべきことを決定する。',
@@ -126,3 +126,112 @@ export const WIKI_DATA: WikiFramework[] = [
         ]
     }
 ];
+
+const WIKI_DATA_EN: WikiFramework[] = [
+    {
+        id: 'okr',
+        title: 'OKR (Objectives and Key Results)',
+        subTitle: 'Ambitious Goals and Measurable Outcomes',
+        color: 'blue',
+        icon: '🎯',
+        concept: {
+            summary: 'A goal-setting framework for defining and tracking objectives and their outcomes.',
+            detail: 'Adopted by companies like Google and Intel. Characterized by "Moonshot" goals where 60-70% achievement is considered success, encouraging leap-forward growth rather than just the status quo.'
+        },
+        useCases: [
+            {
+                title: 'Individual Skill Development',
+                before: 'Vaguely thinking "I want to improve my tech skills" and reading books without a focus.',
+                after: 'O: "Become a lead in team\'s Rust migration" KR: "Implement one microservice in Rust", "Hold 3 internal study sessions". Learning focus became crystal clear.'
+            },
+            {
+                title: 'Side Projects',
+                before: 'Wishing to release an app "someday" but continuing development without a deadline.',
+                after: 'O: "Release a MVP loved by users" KR: "App store release by March", "Gain 100 initial users", "Achieve 30% weekly active rate". Committed with dates and numbers.'
+            }
+        ],
+        tips: [
+            {
+                q: 'The goals are too high and I lose motivation.',
+                a: 'OKR assumes "no penalty for falling short". Consider 60% a success and value the challenge itself. Check progress weekly (Win sessions) to celebrate small wins.'
+            },
+            {
+                q: 'How should I determine KR numbers?',
+                a: 'Aim for a line between "Achievable with effort (50%)" and "Impossible without extreme luck (100%)", approx the "70% stretch" line. Avoid unmeasurable descriptors like "Try hard".'
+            }
+        ]
+    },
+    {
+        id: 'woop',
+        title: 'WOOP (Wish, Outcome, Obstacle, Plan)',
+        subTitle: 'A Scientific Method for Goal Realization',
+        color: 'amber',
+        icon: '✨',
+        concept: {
+            summary: 'Mental Contrasting: Contrast your "best future" with "inner obstacles" to engage the brain.',
+            detail: 'Instead of just positive thinking, directly face your inner obstacles and prepare "If-Then Plans" in advance to dramatically increase execution rates.'
+        },
+        useCases: [
+            {
+                title: 'Daily Exercise Habit',
+                before: 'Thinking "I want to lose weight" but skipping it when tired from work.',
+                after: 'W: "Run 30 mins daily" O: "Feel lighter and gain confidence" Obs: "Fatigue after work" Plan: "IF I feel tired, THEN at least change into workout clothes." Started acting automatically.'
+            },
+            {
+                title: 'Studying for Certifications',
+                before: 'Losing focus due to smartphone notifications.',
+                after: 'Obs: "Habit of checking phone" Plan: "IF I start studying, THEN place the phone in another room." Secured focused time.'
+            }
+        ],
+        tips: [
+            {
+                q: 'What should I write for Obstacles?',
+                a: 'Avoid external factors like "no time". Look for emotions or habits within yourself, like "procrastinating" or "fear of failure". These are the true controllable obstacles.'
+            },
+            {
+                q: 'My Plan doesn\'t seem to work.',
+                a: 'Make the trigger more specific. Instead of "when tired", use "the moment I see the sofa after returning home". Keep the action extremely simple, like "do it for just 5 minutes".'
+            }
+        ]
+    },
+    {
+        id: 'backward',
+        title: 'Backward Design',
+        subTitle: 'Bridging the Gap from Goal to Today',
+        color: 'purple',
+        icon: '🗺️',
+        concept: {
+            summary: 'Determine what to do now by rewinding time from your "Ideal State (Goal)".',
+            detail: 'By using Backcasting (from future to present) instead of Forecasting (from present to future), you find shortcuts and results beyond the status quo. Essential for long-term projects.'
+        },
+        useCases: [
+            {
+                title: 'Organizing a Large Event',
+                before: 'Booking a venue first, then scrambling for speakers and content at the last minute.',
+                after: 'Goal: "Successful Event" -> 1mo before: "Tickets Sold out" -> 3mo before: "Start Promotion/LP Ready" -> Now: "Define Concept/Offer Speakers". Identified must-have tasks for this month.'
+            },
+            {
+                title: 'Career Change',
+                before: 'Disliking current job but just browsing sites without acting due to lack of skills.',
+                after: 'Goal: "Freelance in 3 years" -> 2yrs later: "200k/mo from side work" -> 1yr later: "Complete portfolio" -> Now: "Choose a school/Save study time". Started with concrete steps.'
+            }
+        ],
+        tips: [
+            {
+                q: 'The future feels too distant to imagine.',
+                a: 'No need to decide every detail. Start with your KGI and deadline, then ask "What should have happened just before that?". Only the nearest milestones need full detail.'
+            },
+            {
+                q: 'What if I can\'t follow the plan?',
+                a: 'The backward plan is a hypothesis. Re-route when situations change. The important thing is "don\'t lose sight of the goal". Recalculate your route just like a GPS navigator.'
+            }
+        ]
+    }
+];
+
+export const getWikiData = (lang: string = 'ja') => {
+    return lang === 'ja' ? WIKI_DATA_JA : WIKI_DATA_EN;
+};
+
+// For backward compatibility (optional, but better to update all callers)
+export const WIKI_DATA = WIKI_DATA_JA;

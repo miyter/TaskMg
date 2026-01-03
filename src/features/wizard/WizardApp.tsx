@@ -2,9 +2,10 @@
 import { useTranslation } from '../../core/translations';
 import { useWorkspace } from '../../hooks/useWorkspace';
 import { addTarget } from '../../store';
+import { useSettingsStore } from '../../store/ui/settings-store';
 import { toast } from '../../store/ui/toast-store';
 import { useViewStore } from '../../store/ui/view-store';
-import { WIZARD_MODES, WizardModeId } from './wizard-config';
+import { getWizardModes, WizardModeId } from './wizard-config';
 import { WizardStep } from './WizardStep';
 import { WizardWelcome } from './WizardWelcome';
 
@@ -15,6 +16,8 @@ export const WizardApp: React.FC = () => {
     const { setView, viewData } = useViewStore();
     const { workspaceId } = useWorkspace();
     const { t } = useTranslation();
+    const { language } = useSettingsStore();
+    const modesConfig = getWizardModes(language);
 
     useEffect(() => {
         if (viewData?.mode) {
@@ -44,7 +47,7 @@ export const WizardApp: React.FC = () => {
                 data: finalData
             });
             console.log("Wizard Completed, Saved to Firestore", finalData);
-            toast.success(t('wizard.alert_create_success', { label: WIZARD_MODES[mode].label }));
+            toast.success(t('wizard.alert_create_success', { label: modesConfig[mode].label }));
 
             // Reset and navigate
             setStep(0);

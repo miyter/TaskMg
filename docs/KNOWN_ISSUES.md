@@ -25,6 +25,13 @@
     - **Edit/Delete**: Added edit/delete functionality in the workspace dropdown.
 - **Time Block & Duration**:
     - **Settings UI**: Added dedicated schedule tab in settings modal.
+- **Performance & Architecture**:
+    - **Lazy Loading**: Implemented `React.lazy` for all modal components to optimize bundle size and TTI.
+    - **Component Standardization**: Integrated `Button`, `Input`, `Select`, `Textarea` across all views and modals for consistent UI/UX.
+- **Internationalization (i18n)**:
+    - **Wiki Content**: Localized Wiki Framework data for JA/EN.
+    - **Wizard Content**: Localized Target Wizard modes and steps for JA/EN.
+    - **System-wide**: Standardized `useTranslation` usage across all main features.
 
 ---
 
@@ -41,6 +48,6 @@
 
 ## 🏗️ Long-Term Roadmap
 
-- **完全な多言語化 (i18n)**: Wikiコンテンツの多言語化、Zodスキーマのエラーメッセージのローカライズ。
+- **完全な多言語化 (i18n)**: Zodスキーマのエラーメッセージのローカライズ、動的な日付フォーマットのさらなる検討。
 - **Firestore制約**: `WorkspaceEditModal` 等でのサーバー側ユニーク制約の検討。
 - **定数値の集約**: 引き続きマジックナンバーの抽出を進める。
