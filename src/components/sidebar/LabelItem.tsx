@@ -2,6 +2,7 @@ import React from 'react';
 import { Label } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
+import { useViewStore } from '../../store/ui/view-store';
 import { cn } from '../../utils/cn';
 import { getDensityClass } from '../../utils/ui-utils';
 
@@ -12,13 +13,19 @@ interface LabelItemProps {
 export const LabelItem = React.memo<LabelItemProps>(({ label }) => {
     const { filterType, targetId, setFilter } = useFilterStore();
     const { density } = useSettingsStore();
+    const { setView } = useViewStore();
 
     const isActive = filterType === 'label' && targetId === label.id;
+
+    const handleClick = () => {
+        setFilter('label', label.id);
+        setView('tasks');
+    };
 
     return (
         <li>
             <button
-                onClick={() => setFilter('label', label.id)}
+                onClick={handleClick}
                 className={cn(
                     "w-full flex items-center px-2 py-1.5 text-sm rounded-md transition-colors text-left gap-2 group", // Changed px-3 to px-2 for better mobile fit
                     getDensityClass(density), // Use density utils

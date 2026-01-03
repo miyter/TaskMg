@@ -14,7 +14,7 @@ interface ModalProps {
     className?: string;
     overlayClassName?: string;
     zIndex?: number;
-    size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | 'full' | 'none';
 }
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className, overlayClassName, zIndex = 100, size = 'md' }) => {
@@ -27,7 +27,8 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
         md: 'max-w-full sm:max-w-lg',
         lg: 'max-w-full sm:max-w-3xl',
         xl: 'max-w-full sm:max-w-5xl',
-        full: 'max-w-full m-0 sm:m-4 h-[100dvh] sm:h-[calc(100vh-2rem)]'
+        full: 'max-w-full m-0 sm:m-4 h-[100dvh] sm:h-[calc(100vh-2rem)]',
+        none: ''
     };
 
     useEffect(() => {

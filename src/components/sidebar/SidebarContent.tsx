@@ -82,17 +82,27 @@ export const SidebarContent: React.FC = () => {
     // Load section order from localStorage
     const [sectionOrder, setSectionOrder] = React.useState<string[]>(() => {
         const saved = localStorage.getItem(UI_CONFIG.STORAGE_KEYS.SECTION_ORDER);
+        let currentOrder = DEFAULT_SECTION_ORDER;
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
                 if (Array.isArray(parsed) && parsed.every(s => typeof s === 'string')) {
-                    return parsed;
+                    // Ensure all default sections are present even if they were missing in saved state
+                    const merged = [...parsed];
+                    DEFAULT_SECTION_ORDER.forEach(id => {
+                        if (!merged.includes(id)) {
+                            // Add missing default sections (usually at the top or original position)
+                            if (id === 'general') merged.unshift(id);
+                            else merged.push(id);
+                        }
+                    });
+                    currentOrder = merged.filter(id => DEFAULT_SECTION_ORDER.includes(id));
                 }
             } catch {
                 // ignore
             }
         }
-        return DEFAULT_SECTION_ORDER;
+        return currentOrder;
     });
 
     // Persist section order to localStorage

@@ -197,7 +197,8 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
             isOpen={isOpen}
             onClose={closeModal}
             title={t('time_block.settings_title')}
-            className="max-w-2xl h-[600px]"
+            size="lg"
+            className="h-[600px]"
             zIndex={zIndex}
             overlayClassName={overlayClassName}
         >

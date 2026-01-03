@@ -146,7 +146,8 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
             isOpen={isOpen}
             onClose={closeModal}
             title={isEditMode ? t('modal.edit') : t('modal.create')}
-            className="max-w-4xl"
+            size="xl"
+            className="w-full h-[90vh] sm:h-auto"
             zIndex={zIndex}
             overlayClassName={overlayClassName}
         >

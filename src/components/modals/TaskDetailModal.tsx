@@ -231,7 +231,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             isOpen={isOpen}
             onClose={closeModal}
             zIndex={zIndex}
-            className="max-w-4xl h-[95vh] sm:h-[85vh] w-full mx-2 sm:mx-auto mt-4 sm:mt-0 pb-safe"
+            size="xl"
+            className="h-[95vh] sm:h-[85vh] w-full mx-2 sm:mx-auto mt-4 sm:mt-0 pb-safe"
             overlayClassName={overlayClassName}
         >
             <div className="flex flex-col h-full" onKeyDown={handleContainerKeyDown}>

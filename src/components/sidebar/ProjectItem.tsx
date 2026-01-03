@@ -6,6 +6,7 @@ import { Project } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { useModalStore } from '../../store/ui/modal-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
+import { useViewStore } from '../../store/ui/view-store';
 import { cn } from '../../utils/cn';
 import { getDensityClass } from '../../utils/ui-utils';
 import { IconEdit, IconTrash } from '../common/Icons';
@@ -20,6 +21,8 @@ export const ProjectItem = React.memo<ProjectItemProps>(({ project }) => {
     const { filterType, targetId, setFilter } = useFilterStore();
     const { density } = useSettingsStore();
     const { openModal } = useModalStore();
+
+    const { setView } = useViewStore();
 
     const isActive = filterType === 'project' && targetId === project.id;
     const [menuPosition, setMenuPosition] = useState<{ x: number, y: number } | null>(null);
@@ -59,11 +62,16 @@ export const ProjectItem = React.memo<ProjectItemProps>(({ project }) => {
         setMenuPosition({ x: e.clientX, y: e.clientY });
     };
 
+    const handleClick = () => {
+        setFilter('project', project.id);
+        setView('tasks');
+    };
+
     return (
         <>
             <div
                 ref={setNodeRef}
-                onClick={() => setFilter('project', project.id)}
+                onClick={handleClick}
                 onContextMenu={handleContextMenu}
                 className={cn(
                     "group flex items-center justify-between px-2 rounded-md cursor-pointer transition-colors select-none",

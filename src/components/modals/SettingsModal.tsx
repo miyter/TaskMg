@@ -68,8 +68,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
             isOpen={isOpen}
             onClose={closeModal}
             title={t('settings_modal.title')}
-            className="w-full max-w-4xl h-[90vh] md:h-[85vh] p-0 overflow-hidden"
+            className="w-full h-[90vh] md:h-[85vh] p-0 overflow-hidden"
             zIndex={zIndex}
+            size="xl"
             overlayClassName={overlayClassName}
         >
             <div className="flex flex-col md:flex-row h-full">

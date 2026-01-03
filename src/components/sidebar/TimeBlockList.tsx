@@ -58,6 +58,8 @@ const TimeBlockItem: React.FC<{ block: TimeBlock, count: number, workspaceId: st
     const { openModal } = useModalStore(); // 追加
     const isActive = filterType === 'timeblock' && targetId === block.id;
 
+    const { setView } = useViewStore();
+
     const [menuPosition, setMenuPosition] = useState<{ x: number, y: number } | null>(null);
 
     const { setNodeRef, isOver } = useDroppable({
@@ -94,6 +96,11 @@ const TimeBlockItem: React.FC<{ block: TimeBlock, count: number, workspaceId: st
         setMenuPosition({ x: e.clientX, y: e.clientY });
     };
 
+    const handleClick = () => {
+        setFilter('timeblock', block.id || '');
+        setView('tasks');
+    };
+
     return (
         <div ref={setNodeRef} onContextMenu={handleContextMenu}>
             <SidebarItem
@@ -102,7 +109,7 @@ const TimeBlockItem: React.FC<{ block: TimeBlock, count: number, workspaceId: st
                 count={count}
                 isActive={isActive}
                 isOver={isOver}
-                onClick={() => setFilter('timeblock', block.id || '')}
+                onClick={handleClick}
             />
             {menuPosition && (
                 <ContextMenu x={menuPosition.x} y={menuPosition.y} onClose={() => setMenuPosition(null)}>
@@ -123,6 +130,8 @@ const UnassignedTimeBlockItem: React.FC<{ count: number }> = ({ count }) => {
     const { t } = useTranslation();
     const { filterType, targetId, setFilter } = useFilterStore();
 
+    const { setView } = useViewStore();
+
     const isActive = filterType === 'timeblock' && targetId === 'unassigned';
 
 
@@ -134,6 +143,11 @@ const UnassignedTimeBlockItem: React.FC<{ count: number }> = ({ count }) => {
         }
     });
 
+    const handleClick = () => {
+        setFilter('timeblock', 'unassigned');
+        setView('tasks');
+    };
+
     return (
         <div ref={setNodeRef}>
             <SidebarItem
@@ -144,7 +158,7 @@ const UnassignedTimeBlockItem: React.FC<{ count: number }> = ({ count }) => {
                 count={count}
                 isActive={isActive}
                 isOver={isOver}
-                onClick={() => setFilter('timeblock', 'unassigned')}
+                onClick={handleClick}
             />
         </div>
     );

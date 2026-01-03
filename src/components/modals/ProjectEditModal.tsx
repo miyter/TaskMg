@@ -120,7 +120,7 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
         <Modal
             isOpen={isOpen}
             onClose={closeModal}
-            className="max-w-sm"
+            size="sm"
             zIndex={zIndex}
             overlayClassName={overlayClassName}
         >
