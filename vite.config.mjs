@@ -30,9 +30,7 @@ export default defineConfig({
             if (id.includes('firebase')) {
               return 'firebase';
             }
-            if (id.includes('react') || id.includes('scheduler')) {
-              return 'react-vendor';
-            }
+
             return 'vendor';
           }
         },
