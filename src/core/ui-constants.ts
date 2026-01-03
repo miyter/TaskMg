@@ -24,6 +24,7 @@ export const UI_CONFIG = {
         TYPE_PROJECT: 'project',
         TYPE_INBOX: 'inbox',
         TYPE_TIMEBLOCK: 'timeblock',
+        TYPE_LABEL: 'label',
         TOUCH_DELAY: 250, // Issue #9
     },
 

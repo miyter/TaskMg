@@ -1,7 +1,9 @@
-﻿import React, { useCallback } from 'react';
+﻿import React, { useCallback, useState } from 'react';
+import { IconChevronDown } from '../../components/common/Icons';
 import { Modal } from '../../components/common/Modal';
 import { useTranslation } from '../../core/translations';
 import { useModalStore } from '../../store/ui/modal-store';
+import { cn } from '../../utils/cn';
 import { WikiFramework } from './wiki-data';
 
 import { useViewStore } from '../../store/ui/view-store';
@@ -12,11 +14,55 @@ interface WikiFrameworkModalProps {
     zIndex?: number;
 }
 
+// アコーディオンセクションコンポーネント
+const AccordionItem: React.FC<{
+    title: string;
+    accentColor?: string;
+    defaultOpen?: boolean;
+    children: React.ReactNode;
+}> = ({ title, accentColor = 'gray', defaultOpen = false, children }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    const colorMap: Record<string, string> = {
+        purple: 'bg-purple-500',
+        amber: 'bg-amber-500',
+        gray: 'bg-gray-400',
+    };
+
+    return (
+        <div className="border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors rounded-md -mx-1 px-1"
+            >
+                <span className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center">
+                    <span className={cn("w-1 h-4 mr-2 rounded-full", colorMap[accentColor])}></span>
+                    {title}
+                </span>
+                <IconChevronDown
+                    size={18}
+                    className={cn(
+                        "text-gray-400 transition-transform duration-200",
+                        isOpen && "rotate-180"
+                    )}
+                />
+            </button>
+            <div className={cn(
+                "overflow-hidden transition-all duration-200",
+                isOpen ? "max-h-[2000px] opacity-100 pb-4" : "max-h-0 opacity-0"
+            )}>
+                {children}
+            </div>
+        </div>
+    );
+};
+
 export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: propIsOpen, data: propData, zIndex }) => {
     const { closeModal } = useModalStore();
     const { t } = useTranslation();
     const isOpen = !!propIsOpen;
     const framework = propData as WikiFramework;
+    const [currentUseCaseIndex, setCurrentUseCaseIndex] = useState(0);
 
     const handleApply = useCallback(() => {
         // ウィザードに遷移
@@ -26,119 +72,123 @@ export const WikiFrameworkModal: React.FC<WikiFrameworkModalProps> = ({ isOpen: 
 
     if (!isOpen || !framework) return null;
 
+    const useCases = framework.useCases || [];
+    const hasMultipleUseCases = useCases.length > 1;
+
     return (
         <Modal
             isOpen={isOpen}
             onClose={closeModal}
-            className="max-w-3xl max-h-[90vh] p-0 overflow-hidden bg-transparent shadow-none"
+            className="max-w-2xl max-h-[90vh] p-0 overflow-hidden bg-transparent shadow-none"
         >
-            <div className={`w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]`}>
-                {/* ヘッダー */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-3">
-                        <span className="text-4xl animate-bounce-slow">{framework.icon}</span>
-                        <div>
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{framework.title}</h2>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{framework.subTitle}</p>
-                        </div>
+            <div className="w-full bg-white dark:bg-gray-800 rounded-xl overflow-hidden flex flex-col max-h-[90vh]">
+                {/* ヘッダー - コンパクト化 */}
+                <div className="flex items-center gap-3 p-4 border-b border-gray-100 dark:border-gray-700">
+                    <span className="text-3xl">{framework.icon}</span>
+                    <div className="flex-1 min-w-0">
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate">{framework.title}</h2>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{framework.subTitle}</p>
                     </div>
-                    {/* Close button is handled by Modal component header usually, but here we customize content */}
                 </div>
 
-                {/* コンテンツ */}
-                <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
-                    {/* 概要 */}
-                    <div className="mb-8">
-                        <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center">
-                            <span className="w-1 h-4 bg-blue-600 dark:bg-blue-400 mr-2 rounded-full"></span>
+                {/* コンテンツ - 段階的開示 */}
+                <div className="p-4 overflow-y-auto flex-1 custom-scrollbar">
+                    {/* 概要 - 常に表示 */}
+                    <div className="mb-4">
+                        <h3 className="text-sm font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-2 flex items-center">
+                            <span className="w-1 h-4 bg-purple-500 mr-2 rounded-full"></span>
                             {t('wiki.summary')}
                         </h3>
-                        <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                             {framework.concept.summary}
                         </p>
                     </div>
 
-                    {/* 詳細 */}
-                    <div className="mb-8">
-                        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
-                            <span className="w-1 h-4 bg-gray-400 mr-2 rounded-full"></span>
-                            {t('wiki.details')}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+                    {/* 詳細 - アコーディオン */}
+                    <AccordionItem title={t('wiki.details')} accentColor="gray" defaultOpen={false}>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                             {framework.concept.detail}
                         </p>
-                    </div>
+                    </AccordionItem>
 
-                    {/* 使用例 */}
-                    {Array.isArray(framework.useCases) && framework.useCases.length > 0 && (
-                        <div className="mb-8">
-                            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
-                                <span className="w-1 h-4 bg-purple-500 mr-2 rounded-full"></span>
-                                {t('wiki.use_cases')}
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {framework.useCases.map((uc, idx) => (
-                                    <div key={idx} className="bg-gray-50 dark:bg-gray-900/40 rounded-lg p-5 border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 transition-colors">
-                                        <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center">
-                                            <span className="text-purple-500 mr-2">#</span>
-                                            {uc.title}
-                                        </h4>
-                                        <div className="mb-3">
-                                            <div className="flex items-start mb-1">
-                                                <span className="text-[10px] font-bold text-red-600 bg-red-100 dark:bg-red-900/40 dark:text-red-300 px-1.5 py-0.5 rounded mr-2 mt-0.5 min-w-[40px] text-center">Before</span>
-                                                <span className="text-sm text-gray-600 dark:text-gray-400">{uc.before}</span>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex items-start">
-                                                <span className="text-[10px] font-bold text-blue-600 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300 px-1.5 py-0.5 rounded mr-2 mt-0.5 min-w-[40px] text-center">After</span>
-                                                <span className="text-sm text-gray-800 dark:text-gray-300 font-medium">{uc.after}</span>
-                                            </div>
-                                        </div>
+                    {/* 使用例 - アコーディオン + カルーセル */}
+                    {useCases.length > 0 && (
+                        <AccordionItem title={t('wiki.use_cases')} accentColor="purple" defaultOpen={false}>
+                            <div className="bg-gray-50 dark:bg-gray-900/40 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-3 text-sm">
+                                    {useCases[currentUseCaseIndex].title}
+                                </h4>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex items-start">
+                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mr-2 mt-0.5 min-w-[40px]">Before:</span>
+                                        <span className="text-gray-500 dark:text-gray-400">{useCases[currentUseCaseIndex].before}</span>
                                     </div>
-                                ))}
+                                    <div className="flex items-start">
+                                        <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300 mr-2 mt-0.5 min-w-[40px]">After:</span>
+                                        <span className="text-gray-800 dark:text-gray-200 font-medium">{useCases[currentUseCaseIndex].after}</span>
+                                    </div>
+                                </div>
+                                {/* カルーセルナビゲーション */}
+                                {hasMultipleUseCases && (
+                                    <div className="flex items-center justify-center gap-2 mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                        <button
+                                            onClick={() => setCurrentUseCaseIndex(i => i > 0 ? i - 1 : useCases.length - 1)}
+                                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                            aria-label="Previous"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                                            </svg>
+                                        </button>
+                                        <span className="text-xs text-gray-500 min-w-[40px] text-center">
+                                            {currentUseCaseIndex + 1} / {useCases.length}
+                                        </span>
+                                        <button
+                                            onClick={() => setCurrentUseCaseIndex(i => i < useCases.length - 1 ? i + 1 : 0)}
+                                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                            aria-label="Next"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                        </div>
+                        </AccordionItem>
                     )}
 
-                    {/* Tips (Optional, based on data structure) */}
+                    {/* Tips - アコーディオン（デフォルト閉じ） */}
                     {framework.tips && framework.tips.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
-                                <span className="w-1 h-4 bg-amber-500 mr-2 rounded-full"></span>
-                                {t('wiki.tips')}
-                            </h3>
-                            <div className="space-y-3">
+                        <AccordionItem title={t('wiki.tips')} accentColor="amber" defaultOpen={false}>
+                            <div className="space-y-2">
                                 {framework.tips.map((tip, idx) => (
-                                    <div key={idx} className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-lg border border-amber-100 dark:border-amber-900/30">
-                                        <p className="font-bold text-amber-800 dark:text-amber-400 mb-1">Q. {tip.q}</p>
-                                        <p className="text-sm text-gray-700 dark:text-gray-300">A. {tip.a}</p>
+                                    <div key={idx} className="text-sm">
+                                        <p className="font-medium text-gray-700 dark:text-gray-300">Q. {tip.q}</p>
+                                        <p className="text-gray-500 dark:text-gray-400 mt-1">A. {tip.a}</p>
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </AccordionItem>
                     )}
                 </div>
 
-                {/* フッター */}
-                <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                {/* フッター - 下部固定 */}
+                <div className="flex items-center justify-between p-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
                     <button
                         onClick={closeModal}
-                        className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                     >
                         {t('close')}
                     </button>
                     <button
                         onClick={handleApply}
-                        className="group relative px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-lg shadow-md transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
+                        className="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex items-center gap-1.5"
                     >
-                        <span className="relative z-10 flex items-center">
-                            {t('wiki.use_in_wizard')}
-                            <svg className="w-4 h-4 ml-2 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                        </span>
-                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 skew-y-12"></div>
+                        {t('wiki.use_in_wizard')}
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
                     </button>
                 </div>
             </div>

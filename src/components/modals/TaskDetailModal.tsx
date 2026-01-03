@@ -317,7 +317,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                         </div>
 
                         {/* Right Column: Settings */}
-                        <div className="md:col-span-4 space-y-4">
+                        <div className="md:col-span-4 space-y-3">
                             {/* Schedule Section */}
                             <details open={scheduleOpen} onToggle={(e) => setScheduleOpen(e.currentTarget.open)} className="group border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
                                 <summary
@@ -333,7 +333,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                         <IconChevronDown size={20} />
                                     </span>
                                 </summary>
-                                <div className="p-3 sm:p-4 flex flex-col gap-3 sm:gap-4">
+                                <div className="p-3 flex flex-col gap-3">
                                     {/* Due Date */}
                                     <div>
                                         <div
@@ -423,7 +423,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             </details>
 
                             {/* Project */}
-                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
                                 <Select
                                     id="task-project"
                                     label={t('task_detail.project_label')}

@@ -80,6 +80,13 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
                     updates.projectId = null;
                 } else if (targetType === UI_CONFIG.DND.TYPE_TIMEBLOCK) {
                     updates.timeBlockId = targetValue === 'unassigned' ? null : targetValue;
+                } else if (targetType === UI_CONFIG.DND.TYPE_LABEL) {
+                    // ラベルへのドラッグ: 既存のlabelIdsに追加（重複チェック）
+                    const task = active.data.current?.task as Task | undefined;
+                    const currentLabelIds = task?.labelIds ?? [];
+                    if (targetValue && !currentLabelIds.includes(targetValue)) {
+                        updates.labelIds = [...currentLabelIds, targetValue];
+                    }
                 }
 
                 if (Object.keys(updates).length > 0) {

@@ -91,9 +91,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-900 order-first md:order-last relative">
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-900 order-first md:order-last relative">
                     {activeTab === 'appearance' && (
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-3">
                             {/* Theme */}
                             <AccordionSection title={t('settings_modal.appearance.theme')} icon="🌓" defaultOpen={false}>
                                 <div className="grid grid-cols-3 gap-3">
@@ -187,7 +187,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                     )}
 
                     {activeTab === 'general' && (
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-3">
                             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
                                 <h4 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                                     <span>💾</span> {t('settings_modal.backup.title')}
@@ -303,7 +303,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                     )}
 
                     {activeTab === 'advanced' && (
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-3">
                             <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
                                 <h4 className="font-bold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
                                     <span>🧹</span> {t('settings_modal.maintenance.title')}

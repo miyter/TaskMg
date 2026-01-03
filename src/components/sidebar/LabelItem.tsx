@@ -1,4 +1,6 @@
+import { useDroppable } from '@dnd-kit/core';
 import React from 'react';
+import { UI_CONFIG } from '../../core/ui-constants';
 import { Label } from '../../store/schema';
 import { useFilterStore } from '../../store/ui/filter-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
@@ -17,21 +19,30 @@ export const LabelItem = React.memo<LabelItemProps>(({ label }) => {
 
     const isActive = filterType === 'label' && targetId === label.id;
 
+    const { setNodeRef, isOver } = useDroppable({
+        id: `label:${label.id}`,
+        data: {
+            type: UI_CONFIG.DND.TYPE_LABEL,
+            value: label.id
+        }
+    });
+
     const handleClick = () => {
         setFilter('label', label.id);
         setView('tasks');
     };
 
     return (
-        <li>
+        <li ref={setNodeRef}>
             <button
                 onClick={handleClick}
                 className={cn(
-                    "w-full flex items-center px-2 py-1.5 text-sm rounded-md transition-colors text-left gap-2 group", // Changed px-3 to px-2 for better mobile fit
-                    getDensityClass(density), // Use density utils
+                    "w-full flex items-center px-2 py-1.5 text-sm rounded-md transition-colors text-left gap-2 group",
+                    getDensityClass(density),
                     isActive
                         ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
-                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700",
+                    isOver && "bg-purple-50 dark:bg-purple-900/30 ring-2 ring-purple-400"
                 )}
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={`Label: ${label.name}`}
