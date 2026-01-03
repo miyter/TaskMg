@@ -1,6 +1,9 @@
 import {
     closestCenter,
-    DndContext
+    CollisionDetection,
+    DndContext,
+    pointerWithin,
+    rectIntersection
 } from '@dnd-kit/core';
 import React, { useCallback, useMemo } from 'react';
 import { LoginPage } from './components/auth/LoginPage';
@@ -23,6 +26,50 @@ import { useThemeEffect } from './hooks/useThemeEffect';
 
 import { useFilterStore } from './store/ui/filter-store';
 import { useViewStore } from './store/ui/view-store';
+
+/**
+ * Helper function to check if a droppable ID is a sidebar target
+ */
+function isSidebarDroppable(id: string | number): boolean {
+    const idStr = String(id);
+    return idStr.startsWith('project:') ||
+        idStr === 'inbox' ||
+        idStr.startsWith('timeblock:') ||
+        idStr.startsWith('duration:');
+}
+
+/**
+ * Custom collision detection that prioritizes sidebar drop targets.
+ * When dragging a task over the sidebar, project/inbox/timeblock targets
+ * should take precedence over task reordering targets.
+ * 
+ * Key implementation: Filter droppableContainers BEFORE calling collision detection,
+ * not filtering the results after.
+ */
+const customCollisionDetection: CollisionDetection = (args) => {
+    // 1. pointerWithin で衝突検出（サイドバーターゲットがあれば即返却）
+    const pointerCollisions = pointerWithin(args);
+    const sidebarPointerTargets = pointerCollisions.filter(c => isSidebarDroppable(c.id));
+    if (sidebarPointerTargets.length > 0) {
+        return sidebarPointerTargets;
+    }
+
+    // 2. サイドバーdroppableのみでrectIntersectionを呼ぶ（argsのdroppableContainersを事前フィルタ）
+    const sidebarContainers = args.droppableContainers.filter(
+        container => isSidebarDroppable(container.id)
+    );
+
+    if (sidebarContainers.length > 0) {
+        const sidebarArgs = { ...args, droppableContainers: sidebarContainers };
+        const sidebarRectCollisions = rectIntersection(sidebarArgs);
+        if (sidebarRectCollisions.length > 0) {
+            return sidebarRectCollisions;
+        }
+    }
+
+    // 3. フォールバックでclosestCenter（タスク並び替え用）
+    return closestCenter(args);
+};
 
 const App: React.FC = () => {
     useThemeEffect();
@@ -108,7 +155,7 @@ const App: React.FC = () => {
     return (
         <DndContext
             sensors={sensors}
-            collisionDetection={closestCenter}
+            collisionDetection={customCollisionDetection}
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}
         >
