@@ -152,24 +152,42 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
                     </div>
 
                     {/* TimeBlock */}
-                    {timeBlock && (
-                        <div className="hidden sm:flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                            <IconClock className="w-3.5 h-3.5" />
-                            <span className="max-w-[120px] truncate">
-                                {timeBlock.name || `${timeBlock.start} - ${timeBlock.end}`}
-                            </span>
-                        </div>
-                    )}
+                    <div className="hidden sm:flex items-center gap-1 text-gray-500 dark:text-gray-400 min-w-[80px]">
+                        {timeBlock ? (
+                            <>
+                                <IconClock className="w-3.5 h-3.5" />
+                                <span className="max-w-[120px] truncate">
+                                    {timeBlock.name || `${timeBlock.start} - ${timeBlock.end}`}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="text-gray-300 dark:text-gray-600">—</span>
+                        )}
+                    </div>
 
                     {/* Date / Recurrence */}
-                    {(hasRecurrence || hasDate) && (
-                        <div className={cn("flex items-center gap-1", isCompleted ? "text-gray-400" : getTaskDateColor(task.dueDate || null))}>
-                            {hasRecurrence ? <IconRepeat className="w-3.5 h-3.5" /> : <IconCalendar className="w-3.5 h-3.5" />}
-                            {task.dueDate && (
-                                <span className="hidden sm:inline">{formatDateCompact(task.dueDate)}</span>
-                            )}
-                        </div>
-                    )}
+                    <div className={cn(
+                        "flex items-center gap-1 min-w-[70px]",
+                        (hasRecurrence || hasDate)
+                            ? (isCompleted ? "text-gray-400" : getTaskDateColor(task.dueDate || null))
+                            : "text-gray-300 dark:text-gray-600"
+                    )}>
+                        {hasRecurrence ? (
+                            <>
+                                <IconRepeat className="w-3.5 h-3.5" />
+                                {task.dueDate && (
+                                    <span className="hidden sm:inline">{formatDateCompact(task.dueDate)}</span>
+                                )}
+                            </>
+                        ) : hasDate ? (
+                            <>
+                                <IconCalendar className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">{formatDateCompact(task.dueDate!)}</span>
+                            </>
+                        ) : (
+                            <span>—</span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Actions */}
