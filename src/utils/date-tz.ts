@@ -228,3 +228,116 @@ export function getTaskDateColorTz(date: Date | { toDate: () => Date } | number 
     if (diffDays === 1) return 'text-orange-500 dark:text-orange-400 font-medium';
     return 'text-gray-500 dark:text-gray-400';
 }
+
+// --- 繰り返し設定型定義 ---
+export interface RecurrenceConfig {
+    type: 'none' | 'daily' | 'weekly' | 'weekdays' | 'monthly' | null;
+    days?: number[];
+}
+
+/**
+ * HTML <input type="date"> の値 (YYYY-MM-DD) をDate型に変換
+ */
+export const parseDateInput = (val: string): Date | null => {
+    if (!val) return null;
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+};
+
+/**
+ * 次回の繰り返し期限日を計算 (date.tsより移植)
+ */
+export function getNextRecurrenceDate(currentDueDate: Date | { toDate: () => Date } | string | number | null, recurrence: RecurrenceConfig): Date | null {
+    if (!currentDueDate || !recurrence?.type) return null;
+    const baseDate = ensureDate(currentDueDate);
+    if (!baseDate) return null;
+
+    const nextDate = new Date(baseDate);
+
+    switch (recurrence.type) {
+        case 'daily':
+            nextDate.setDate(nextDate.getDate() + 1);
+            return nextDate;
+
+        case 'weekly': {
+            if (!recurrence.days?.length) return null;
+            const currentDay = nextDate.getDay();
+            // 1日目から探索開始（当日は含めない = 次の該当曜日を探す）
+            for (let i = 1; i <= 7; i++) {
+                const targetDay = (currentDay + i) % 7;
+                if (recurrence.days.includes(targetDay)) {
+                    nextDate.setDate(nextDate.getDate() + i);
+                    return nextDate;
+                }
+            }
+            return null;
+        }
+
+        case 'weekdays': // 平日 (月〜金)
+            do {
+                nextDate.setDate(nextDate.getDate() + 1);
+            } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
+            return nextDate;
+
+        case 'monthly':
+            nextDate.setMonth(nextDate.getMonth() + 1);
+            return nextDate;
+
+        default:
+            return null;
+    }
+}
+
+/**
+ * 繰り返し設定から初期の期限日を決定 (date.tsより移植)
+ */
+export function getInitialDueDateFromRecurrence(recurrence: RecurrenceConfig): Date {
+    const today = getLocalStartOfDay(new Date());
+
+    if (!recurrence?.type || recurrence.type === 'daily' || recurrence.type === 'monthly') {
+        return today;
+    }
+
+    if (recurrence.type === 'weekly' && recurrence.days && recurrence.days.length > 0) {
+        const currentDay = today.getDay();
+        for (let i = 0; i <= 6; i++) {
+            if (recurrence.days.includes((currentDay + i) % 7)) {
+                today.setDate(today.getDate() + i);
+                return today;
+            }
+        }
+    }
+
+    if (recurrence.type === 'weekdays') {
+        // 土日なら月曜まで進める
+        while (today.getDay() === 0 || today.getDay() === 6) {
+            today.setDate(today.getDate() + 1);
+        }
+        return today;
+    }
+
+    return today;
+}
+
+/**
+ * HH:mm 形式の開始時間と終了時間の差分（分）を計算する
+ * (date.tsより移植)
+ */
+export function calculateDurationMinutes(start: string, end: string): number {
+    if (!start || !end) return 0;
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+
+    // Validate numbers
+    if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return 0;
+
+    const startMinutes = startH * 60 + startM;
+    let endMinutes = endH * 60 + endM;
+
+    // 日を跨ぐ場合 (例: 23:00 -> 01:00)
+    if (endMinutes < startMinutes) {
+        endMinutes += 24 * 60;
+    }
+
+    return endMinutes - startMinutes;
+}

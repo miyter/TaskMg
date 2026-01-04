@@ -7,7 +7,7 @@ import { Recurrence, Task } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
-import { formatDateForInput, getInitialDueDateFromRecurrence, parseDateInput, toDate } from '../../utils/date';
+import { getInitialDueDateFromRecurrence, parseDateInput } from '../../utils/date-tz';
 import { ErrorMessage } from '../common/ErrorMessage';
 import { IconChevronDown, IconStar, IconTrash, IconX } from '../common/Icons';
 import { Modal } from '../common/Modal';
@@ -90,7 +90,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             setDuration(task.duration || null);
 
             // 期限日のパース
-            const parsedDueDate = toDate(task.dueDate);
+            const parsedDueDate = ensureDate(task.dueDate);
             setDueDate(parsedDueDate);
 
             // 繰り返し設定
