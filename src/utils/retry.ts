@@ -10,11 +10,16 @@ const NON_RETRYABLE_ERRORS = [
     'failed-precondition',
 ];
 
+interface ErrorWithCode {
+    code?: string;
+    message?: string;
+}
+
 interface RetryOptions {
     maxRetries?: number;
     initialDelay?: number;
-    onError?: (error: any, attempt: number) => void;
-    onFinalFailure?: (error: any) => void;
+    onError?: (error: unknown, attempt: number) => void;
+    onFinalFailure?: (error: unknown) => void;
 }
 
 /**
@@ -40,12 +45,12 @@ export async function withRetry<T>(
     } = opts;
 
     const enableLogging = import.meta.env?.DEV ?? false;
-    let lastError: any;
+    let lastError: unknown;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
             return await operation();
-        } catch (error: any) {
+        } catch (error: unknown) {
             lastError = error;
 
             // エラーコールバック実行
@@ -57,7 +62,8 @@ export async function withRetry<T>(
             if (attempt === maxRetries) break;
 
             // リトライ不要なエラーの判定
-            const errorCode = error?.code || '';
+            const errorObj = error as ErrorWithCode;
+            const errorCode = errorObj?.code || '';
             const isNonRetryable = NON_RETRYABLE_ERRORS.some(code => errorCode.includes(code));
             if (isNonRetryable) {
                 if (onFinalFailure) {
@@ -70,7 +76,7 @@ export async function withRetry<T>(
 
             // 開発環境でのみログ出力（本番環境のコンソール汚染を防止）
             if (enableLogging) {
-                console.warn(`[Retry] Attempt ${attempt + 1} failed. Retrying in ${delay}ms...`, error?.message || error);
+                console.warn(`[Retry] Attempt ${attempt + 1} failed. Retrying in ${delay}ms...`, errorObj?.message || String(error));
             }
 
             await new Promise(resolve => setTimeout(resolve, delay));

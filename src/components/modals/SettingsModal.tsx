@@ -17,9 +17,9 @@ import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { AccountSettingsTab } from './AccountSettingsTab';
 
-import { cleanupDuplicateTasks } from '../../store/maintenance';
+import { cleanupDuplicateTasks, cleanupOldTasks } from '../../store/maintenance';
 
-type SettingsTab = 'general' | 'appearance' | 'schedule' | 'account' | 'advanced';
+type SettingsTab = 'general' | 'appearance' | 'schedule' | 'security';
 
 const TabButton: React.FC<{ active: boolean; onClick: () => void; label: string; icon: string }> = ({ active, onClick, label, icon }) => (
     <button
@@ -85,11 +85,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                         <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label={t('settings_modal.tabs.general')} icon="⚙️" />
                         <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label={t('settings_modal.tabs.appearance')} icon="🎨" />
                         <TabButton active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} label={t('settings_modal.tabs.schedule') || 'Schedule'} icon="📅" />
-                        <TabButton active={activeTab === 'account'} onClick={() => setActiveTab('account')} label={t('settings_modal.tabs.account')} icon="👤" />
-
-                        {/* Mobile only divider logic handled by layout, removing hr */}
-
-                        <TabButton active={activeTab === 'advanced'} onClick={() => setActiveTab('advanced')} label={t('settings_modal.tabs.advanced')} icon="⚡" />
+                        <TabButton active={activeTab === 'security'} onClick={() => setActiveTab('security')} label={(t('settings_modal.tabs.security') as any) || 'Security'} icon="🔐" />
                     </div>
                 </div>
 
@@ -190,9 +186,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                     )}
 
                     {activeTab === 'schedule' && (
-                        <div className="flex flex-col gap-6">
-                            <TimeBlockSettings />
-                            <DurationSettings />
+                        <div className="flex flex-col gap-3">
+                            <AccordionSection
+                                title={t('time_block.settings_title')}
+                                icon="📅"
+                                defaultOpen={true}
+                            >
+                                <TimeBlockSettings />
+                            </AccordionSection>
+
+                            <AccordionSection
+                                title={t('task_detail.duration_label') || "Duration"}
+                                icon="⏱️"
+                                defaultOpen={false}
+                            >
+                                <DurationSettings />
+                            </AccordionSection>
                         </div>
                     )}
 
@@ -220,7 +229,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 a.click();
                                                 document.body.removeChild(a);
                                                 URL.revokeObjectURL(url);
-                                                addToast(t('settings_modal.backup.create_success'), 'success'); // Assuming key exists or generic success message
+                                                addToast(t('settings_modal.backup.create_success'), 'success');
                                             } catch (e) {
                                                 console.error(e);
                                                 addToast(t('settings_modal.backup.create_fail'), 'error');
@@ -241,14 +250,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0];
                                                 if (!file || !auth.currentUser || !currentWorkspaceId) return;
-
-                                                // Reset input immediately
                                                 e.target.value = '';
-
                                                 openModal('confirmation', {
                                                     title: t('settings_modal.backup.import'),
                                                     message: t('settings_modal.backup.import_confirm'),
-                                                    confirmLabel: t('modal.ok'), // or 'Import'
+                                                    confirmLabel: t('modal.ok'),
                                                     variant: 'danger',
                                                     onConfirm: () => {
                                                         const reader = new FileReader();
@@ -257,11 +263,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                                 const json = JSON.parse(ev.target?.result as string);
                                                                 const result = await importBackupData(auth.currentUser!.uid, currentWorkspaceId, json);
                                                                 addToast(t('settings_modal.backup.import_success').replace('{tasks}', String(result.tasksCount)).replace('{projects}', String(result.projectsCount)), 'success');
-
-                                                                // Short delay to let the toast be seen before reload
-                                                                setTimeout(() => {
-                                                                    window.location.reload();
-                                                                }, 1000);
+                                                                setTimeout(() => window.location.reload(), 1000);
                                                             } catch (err) {
                                                                 console.error(err);
                                                                 addToast(t('settings_modal.backup.import_fail'), 'error');
@@ -309,64 +311,96 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                         </div>
                     )}
 
-                    {activeTab === 'account' && (
-                        <AccountSettingsTab />
-                    )}
+                    {activeTab === 'security' && (
+                        <div className="flex flex-col gap-6">
+                            <AccountSettingsTab />
 
-                    {activeTab === 'advanced' && (
-                        <div className="flex flex-col gap-3">
-                            <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
-                                <h4 className="font-bold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
-                                    <span>🧹</span> {t('settings_modal.maintenance.title')}
-                                </h4>
-                                <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-4">
-                                    {t('settings_modal.maintenance.description')}
-                                </p>
+                            <hr className="border-gray-200 dark:border-gray-700 my-2" />
 
-                                <label htmlFor="backup-confirm-checkbox" className="flex items-center gap-2 mb-4 cursor-pointer">
-                                    <input
-                                        id="backup-confirm-checkbox"
-                                        name="backupConfirmed"
-                                        type="checkbox"
-                                        className="w-4 h-4 text-red-600 rounded border-red-300 focus:ring-red-500"
-                                        checked={backupConfirmed}
-                                        onChange={(e) => setBackupConfirmed(e.target.checked)}
-                                    />
-                                    <span className="text-sm font-bold text-red-700 dark:text-red-400">
-                                        {t('settings_modal.maintenance.confirm_backup')}
-                                    </span>
-                                </label>
+                            <div className="flex flex-col gap-3">
+                                <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
+                                    <h4 className="font-bold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
+                                        <span>🧹</span> {t('settings_modal.maintenance.title')}
+                                    </h4>
+                                    <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-4">
+                                        {t('settings_modal.maintenance.description')}
+                                    </p>
 
-                                <Button
-                                    onClick={() => {
-                                        if (!currentWorkspaceId) return;
+                                    <label htmlFor="backup-confirm-checkbox" className="flex items-center gap-2 mb-4 cursor-pointer">
+                                        <input
+                                            id="backup-confirm-checkbox"
+                                            name="backupConfirmed"
+                                            type="checkbox"
+                                            className="w-4 h-4 text-red-600 rounded border-red-300 focus:ring-red-500"
+                                            checked={backupConfirmed}
+                                            onChange={(e) => setBackupConfirmed(e.target.checked)}
+                                        />
+                                        <span className="text-sm font-bold text-red-700 dark:text-red-400">
+                                            {t('settings_modal.maintenance.confirm_backup')}
+                                        </span>
+                                    </label>
 
-                                        openModal('confirmation', {
-                                            title: t('settings_modal.maintenance.title'),
-                                            message: t('settings_modal.maintenance.confirm_final'),
-                                            confirmLabel: t('settings_modal.maintenance.cleanup_duplicate'),
-                                            variant: 'danger',
-                                            onConfirm: async () => {
-                                                try {
-                                                    const count = await cleanupDuplicateTasks(currentWorkspaceId);
-                                                    addToast(t('settings_modal.maintenance.cleanup_success').replace('{count}', String(count)), 'success');
-                                                    if (count > 0) {
-                                                        setTimeout(() => {
-                                                            window.location.reload();
-                                                        }, 1000);
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <Button
+                                            onClick={() => {
+                                                if (!currentWorkspaceId) return;
+
+                                                openModal('confirmation', {
+                                                    title: t('settings_modal.maintenance.title'),
+                                                    message: t('settings_modal.maintenance.confirm_final'),
+                                                    confirmLabel: t('settings_modal.maintenance.cleanup_duplicate'),
+                                                    variant: 'danger',
+                                                    onConfirm: async () => {
+                                                        try {
+                                                            const count = await cleanupDuplicateTasks(currentWorkspaceId);
+                                                            addToast(t('settings_modal.maintenance.cleanup_success').replace('{count}', String(count)), 'success');
+                                                            if (count > 0) {
+                                                                setTimeout(() => {
+                                                                    window.location.reload();
+                                                                }, 1000);
+                                                            }
+                                                        } catch (e: any) {
+                                                            console.error(e);
+                                                            addToast(t('settings_modal.maintenance.cleanup_fail').replace('{error}', e.message), 'error');
+                                                        }
                                                     }
-                                                } catch (e: any) {
-                                                    console.error(e);
-                                                    addToast(t('settings_modal.maintenance.cleanup_fail').replace('{error}', e.message), 'error');
-                                                }
-                                            }
-                                        });
-                                    }}
-                                    disabled={!backupConfirmed}
-                                    variant="danger"
-                                >
-                                    {t('settings_modal.maintenance.cleanup_duplicate')}
-                                </Button>
+                                                });
+                                            }}
+                                            disabled={!backupConfirmed}
+                                            variant="danger"
+                                            className="flex-1"
+                                        >
+                                            {t('settings_modal.maintenance.cleanup_duplicate')}
+                                        </Button>
+
+                                        <Button
+                                            onClick={() => {
+                                                if (!currentWorkspaceId) return;
+
+                                                openModal('confirmation', {
+                                                    title: t('settings_modal.maintenance.cleanup_old'),
+                                                    message: `${t('settings_modal.maintenance.cleanup_old_desc')}\n\n${t('settings_modal.maintenance.confirm_final')}`,
+                                                    confirmLabel: t('modal.ok'),
+                                                    variant: 'danger',
+                                                    onConfirm: async () => {
+                                                        try {
+                                                            const count = await cleanupOldTasks(currentWorkspaceId);
+                                                            addToast(t('settings_modal.maintenance.cleanup_success').replace('{count}', String(count)), 'success');
+                                                        } catch (e: any) {
+                                                            console.error(e);
+                                                            addToast(t('settings_modal.maintenance.cleanup_fail').replace('{error}', e.message), 'error');
+                                                        }
+                                                    }
+                                                });
+                                            }}
+                                            disabled={!backupConfirmed}
+                                            variant="danger"
+                                            className="flex-1"
+                                        >
+                                            {t('settings_modal.maintenance.cleanup_old')}
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}

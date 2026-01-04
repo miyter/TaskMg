@@ -33,7 +33,7 @@ const MINUTE_OPTIONS = ['00', '15', '30', '45'].map(m => ({ value: m, label: m }
 
 interface TimeBlockEditModalProps {
     isOpen?: boolean;
-    data?: any;
+    data?: unknown;
     zIndex?: number;
     overlayClassName?: string;
 }
@@ -180,8 +180,9 @@ export const TimeBlockEditModal: React.FC<TimeBlockEditModalProps> = ({ isOpen: 
             await Promise.all(promises);
             await Promise.all(promises);
             closeModal();
-        } catch (err: any) {
-            setError(err.message || t('validation.save_fail'));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            setError(message || t('validation.save_fail'));
             setLoading(false);
         }
     };

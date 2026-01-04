@@ -1,6 +1,8 @@
 
+import { subDays } from 'date-fns'; // Need to be careful about import order?
 import { auth, db } from '../core/firebase';
-import { collection, doc, getDocs, writeBatch } from '../core/firebase-sdk';
+import { collection, doc, getDocs, query, where, writeBatch } from '../core/firebase-sdk';
+import { toDate } from '../utils/date';
 import { paths } from '../utils/paths';
 import { Task } from './schema';
 
@@ -82,4 +84,63 @@ export async function cleanupDuplicateTasks(workspaceId: string): Promise<number
     }
 
     return groupIdsToDelete.length;
+}
+
+/**
+ * 古い完了済みタスクのクリーンアップ（詳細情報の削除）
+ * ポリシー: 完了から30日以上経過したタスクのdescriptionを空にし、isDetailPurgedフラグを立てる
+ * 
+ * @param workspaceId 対象のワークスペースID
+ * @returns 更新されたタスクの数
+ */
+export async function cleanupOldTasks(workspaceId: string): Promise<number> {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const path = paths.tasks(user.uid, workspaceId);
+
+    // Fetch completed tasks
+    const q = query(collection(db, path), where('status', '==', 'completed'));
+    const snapshot = await getDocs(q);
+
+    const cutOffDate = subDays(new Date(), 30);
+    const tasksToClean: Task[] = [];
+
+    for (const d of snapshot.docs) {
+        const t = { id: d.id, ...d.data() } as Task;
+
+        // Skip if already purged
+        if (t.isDetailPurged) continue;
+
+        // Check completedAt
+        if (t.completedAt) {
+            const completedDate = toDate(t.completedAt);
+            if (completedDate && completedDate < cutOffDate) {
+                // Only process if it has description or hasn't been marked purged
+                if (t.description || !t.isDetailPurged) {
+                    tasksToClean.push(t);
+                }
+            }
+        }
+    }
+
+    if (tasksToClean.length === 0) return 0;
+
+    let updatedCount = 0;
+    // Batch update
+    for (let i = 0; i < tasksToClean.length; i += 500) {
+        const batch = writeBatch(db);
+        const chunk = tasksToClean.slice(i, i + 500);
+
+        for (const task of chunk) {
+            batch.update(doc(db, path, task.id!), {
+                description: '',
+                isDetailPurged: true,
+            });
+            updatedCount++;
+        }
+        await batch.commit();
+    }
+
+    return updatedCount;
 }

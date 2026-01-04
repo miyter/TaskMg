@@ -70,11 +70,11 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, timeBlockId }) => {
                 <div className="flex-shrink-0 flex items-center gap-2 tabular-nums">
                     <span className={cn(
                         "text-xs font-bold w-[4ch] text-right",
-                        isExceeded ? "text-red-500" : "text-blue-500"
+                        isExceeded ? "text-red-500 dark:text-red-400" : "text-blue-500 dark:text-blue-400"
                     )}>
                         {Math.round(rawPercent)}%
                     </span>
-                    <span className={cn("text-[10px] hidden sm:inline", isOver ? "text-red-400" : "text-gray-400")}>
+                    <span className={cn("text-[10px] hidden sm:inline", isOver ? "text-red-400 dark:text-red-300" : "text-gray-400 dark:text-gray-500")}>
                         ({isOver ? '+' : '-'}{absDiffHours}h)
                     </span>
                 </div>

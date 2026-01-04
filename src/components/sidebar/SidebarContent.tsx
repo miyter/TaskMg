@@ -1,23 +1,13 @@
 ﻿import {
-    closestCenter,
-    DndContext,
-    DragEndEvent,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-} from '@dnd-kit/core';
-import {
-    arrayMove,
     SortableContext,
-    sortableKeyboardCoordinates,
     useSortable,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from '../../core/translations';
-import { UI_CONFIG } from '../../core/ui-constants';
+import { useModalStore } from '../../store/ui/modal-store';
+import { useUIStore } from '../../store/ui/ui-store';
 import { BasicFilters } from './BasicFilters';
 import { CustomFilterList } from './CustomFilterList';
 import { DurationList } from './DurationList';
@@ -26,7 +16,6 @@ import { SidebarSection } from './SidebarSection';
 import { TargetList } from './TargetList';
 import { TimeBlockList } from './TimeBlockList';
 
-import { useModalStore } from '../../store/ui/modal-store';
 
 interface SectionDef {
     id: string;
@@ -72,66 +61,15 @@ const SortableSection: React.FC<SortableSectionProps> = ({ id, section }) => {
     );
 };
 
-// --- Default Section Order ---
-const DEFAULT_SECTION_ORDER = ['general', 'projects', 'targets', 'timeblocks', 'durations', 'filters'];
-
 export const SidebarContent: React.FC = () => {
     const { t } = useTranslation();
     const { openModal } = useModalStore();
+    const { sidebarSections } = useUIStore();
 
-    // Load section order from localStorage
-    const [sectionOrder, setSectionOrder] = React.useState<string[]>(() => {
-        const saved = localStorage.getItem(UI_CONFIG.STORAGE_KEYS.SECTION_ORDER);
-        let currentOrder = DEFAULT_SECTION_ORDER;
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                if (Array.isArray(parsed) && parsed.every(s => typeof s === 'string')) {
-                    // Ensure all default sections are present even if they were missing in saved state
-                    const merged = [...parsed];
-                    DEFAULT_SECTION_ORDER.forEach(id => {
-                        if (!merged.includes(id)) {
-                            // Add missing default sections (usually at the top or original position)
-                            if (id === 'general') merged.unshift(id);
-                            else merged.push(id);
-                        }
-                    });
-                    currentOrder = merged.filter(id => DEFAULT_SECTION_ORDER.includes(id));
-                }
-            } catch {
-                // ignore
-            }
-        }
-        return currentOrder;
-    });
-
-    // Persist section order to localStorage
-    useEffect(() => {
-        localStorage.setItem(UI_CONFIG.STORAGE_KEYS.SECTION_ORDER, JSON.stringify(sectionOrder));
-    }, [sectionOrder]);
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 8, // Prevent accidental drags
-            },
-        }),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-
-        if (over && active.id !== over.id) {
-            setSectionOrder((items) => {
-                const oldIndex = items.indexOf(active.id as string);
-                const newIndex = items.indexOf(over.id as string);
-                return arrayMove(items, oldIndex, newIndex);
-            });
-        }
-    };
+    // Determine the order to render. Fallback to default if empty (though store should handle it)
+    const renderOrder = sidebarSections && sidebarSections.length > 0
+        ? sidebarSections
+        : ['general', 'projects', 'targets', 'timeblocks', 'durations', 'filters'];
 
     const sectionDefinitions = React.useMemo<Record<string, SectionDef>>(() => ({
         general: {
@@ -217,31 +155,25 @@ export const SidebarContent: React.FC = () => {
     }), [t, openModal]);
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+        <SortableContext
+            items={renderOrder}
+            strategy={verticalListSortingStrategy}
         >
-            <SortableContext
-                items={sectionOrder}
-                strategy={verticalListSortingStrategy}
-            >
-                <div className="flex flex-col gap-4">
-                    {sectionOrder.map(sectionId => {
-                        const section = sectionDefinitions[sectionId];
-                        if (!section) return null;
+            <div className="flex flex-col gap-4">
+                {renderOrder.map(sectionId => {
+                    const section = sectionDefinitions[sectionId];
+                    if (!section) return null;
 
-                        return (
-                            <SortableSection
-                                key={section.id}
-                                id={section.id}
-                                section={section}
-                            />
-                        );
-                    })}
-                </div>
-            </SortableContext>
-        </DndContext>
+                    return (
+                        <SortableSection
+                            key={section.id}
+                            id={section.id}
+                            section={section}
+                        />
+                    );
+                })}
+            </div>
+        </SortableContext>
     );
 };
 

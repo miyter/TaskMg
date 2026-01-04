@@ -27,8 +27,8 @@ export const RecurrenceSchema = z.object({
 
 export const TaskSchema = z.object({
     id: z.string().optional(), // Firestore ID
-    title: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.title_required' } }),
-    description: z.string().nullable().optional(),
+    title: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.title_required' } }).pipe(z.string().max(15)),
+    description: z.string().max(200).nullable().optional(),
     status: z.enum(['todo', 'completed', 'archived']).default('todo'),
     dueDate: DateLikeSchema,
     completedAt: DateLikeSchema,
@@ -45,11 +45,12 @@ export const TaskSchema = z.object({
     isImportant: z.boolean().default(false),
     recurrence: RecurrenceSchema,
     order: z.number().optional(), // For custom ordering
+    isDetailPurged: z.boolean().optional(),
 });
 
 export const ProjectSchema = z.object({
     id: z.string().optional(),
-    name: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.project_name_required' } }),
+    name: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.project_name_required' } }).pipe(z.string().max(10)),
     color: z.string().optional(),
     ownerId: z.string(),
     createdAt: DateLikeSchema,
@@ -74,7 +75,7 @@ export const WorkspaceSchema = z.object({
 
 export const FilterSchema = z.object({
     id: z.string().optional(),
-    name: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.filter_name_required' } }),
+    name: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.filter_name_required' } }).pipe(z.string().max(10)),
     query: z.string(),
     workspaceId: z.string().optional(),
     ownerId: z.string().optional(),

@@ -8,14 +8,13 @@ import { useModalStore } from '../../store/ui/modal-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
 import { formatDateForInput, getInitialDueDateFromRecurrence, parseDateInput, toDate } from '../../utils/date';
-import { simpleMarkdownToHtml } from '../../utils/markdown';
 import { ErrorMessage } from '../common/ErrorMessage';
-import { IconBold, IconHeading, IconItalic, IconList, IconListOrdered, IconQuote, IconStar, IconTrash, IconX } from '../common/Icons';
+import { IconStar, IconTrash, IconX } from '../common/Icons';
 import { Modal } from '../common/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { RichTextEditor } from '../ui/RichTextEditor';
 import { Select } from '../ui/Select';
-import { Textarea } from '../ui/Textarea';
 
 import { useTranslation } from '../../core/translations';
 
@@ -206,7 +205,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     }, [recurrence?.days]);
 
     // --- Memoized ---
-    const previewHtml = useMemo(() => simpleMarkdownToHtml(description), [description]);
 
     // Title Input: Enter to save
     const handleTitleKeyDown = (e: React.KeyboardEvent) => {
@@ -223,29 +221,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             handleSave();
         }
     };
-
-    // --- Markdown Editor Helpers ---
-    const insertMarkdown = useCallback((prefix: string, suffix: string = '') => {
-        const textarea = document.getElementById('task-description') as HTMLTextAreaElement;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-        const selectedText = text.substring(start, end);
-
-        const newText = text.substring(0, start) + prefix + selectedText + suffix + text.substring(end);
-
-        setDescription(newText);
-
-        // Restore cursor position / selection
-        // We need to wait for React to re-render with new value, but setState is async.
-        // Using setTimeout to defer selection update
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start + prefix.length, end + prefix.length);
-        }, 0);
-    }, []);
 
     if (!isOpen) return null;
 
@@ -274,6 +249,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             containerClassName="gap-0"
                             autoFocus
                             aria-label={t('task_detail.title_placeholder')}
+                            maxLength={15}
                         />
                     </div>
                     <div className="flex items-center gap-1">
@@ -305,62 +281,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
                     <ErrorMessage message={error} className="mb-3" />
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
-                        {/* Left Column: Memo (Main Content) - Split Editor/Preview */}
+                        {/* Left Column: Memo (Main Content) - Rich Text Editor */}
                         <div className="md:col-span-8 flex flex-col h-full min-h-[400px]">
-                            {/* Toolbar - Compact */}
-                            <div className="flex items-center gap-0.5 mb-2 pb-1.5 border-b border-gray-100 dark:border-gray-800 shrink-0 overflow-x-auto no-scrollbar">
-                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('**', '**')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Bold">
-                                    <IconBold size={16} />
-                                </Button>
-                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('*', '*')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Italic">
-                                    <IconItalic size={16} />
-                                </Button>
-                                <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1.5" />
-                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('- ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="List">
-                                    <IconList size={16} />
-                                </Button>
-                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('1. ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Numbered List">
-                                    <IconListOrdered size={16} />
-                                </Button>
-                                <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1.5" />
-                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('### ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Heading">
-                                    <IconHeading size={16} />
-                                </Button>
-                                <Button variant="ghost" size="icon" type="button" onClick={() => insertMarkdown('> ')} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="Quote">
-                                    <IconQuote size={16} />
-                                </Button>
-                                <div className="flex-1" />
-                            </div>
-
-                            {/* Split Editor/Preview */}
-                            <div className="flex-1 flex flex-col md:flex-row gap-4 h-full min-h-0">
-                                {/* Editor */}
-                                <div className="flex-1 flex flex-col h-full min-h-0">
-                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 px-0.5">Editor</div>
-                                    <Textarea
-                                        id="task-description"
-                                        name="description"
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        placeholder="Add details..."
-                                        className="flex-1 bg-transparent border-0 focus:ring-0 p-0 text-gray-800 dark:text-gray-200 font-mono text-xs sm:text-sm resize-none leading-relaxed custom-scrollbar"
-                                        containerClassName="h-full"
-                                        autoFocus={!description}
-                                        aria-label="Description"
-                                    />
-                                </div>
-
-                                <div className="hidden md:block w-px bg-gray-100 dark:bg-gray-800 self-stretch my-2" />
-
-                                {/* Preview */}
-                                <div className="flex-1 flex flex-col h-full min-h-0 border-t md:border-t-0 pt-4 md:pt-0">
-                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 px-0.5">Preview</div>
-                                    <div
-                                        className="flex-1 py-0 pr-2 text-xs sm:text-sm overflow-y-auto custom-scrollbar prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0.5"
-                                        dangerouslySetInnerHTML={{ __html: previewHtml || '<span class="text-gray-400 italic">No content</span>' }}
-                                    />
-                                </div>
-                            </div>
+                            <RichTextEditor
+                                value={description}
+                                onChange={setDescription}
+                                placeholder={t('task_detail.description_placeholder') || "詳細を追加..."}
+                                className="flex-1 flex flex-col"
+                            />
                         </div>
 
                         {/* Divider - Vertical */}
@@ -368,102 +296,122 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                         {/* Right Column: Settings (Sidebar style) */}
                         <div className="md:col-span-3 space-y-5 pt-1 overflow-y-auto no-scrollbar">
-                            {/* Schedule Section - Flat */}
+                            {/* Schedule Section - Flat & Collapsible */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1 border-b border-gray-100 dark:border-gray-800">
-                                    {t('task_detail.schedule_label')}
-                                </div>
-                                <div className="space-y-3 px-1">
-                                    {/* Due Date */}
-                                    <div className="relative group">
-                                        <label className="text-xs text-gray-500 mb-1 block">{t('task_detail.due_date_label')}</label>
-                                        <div
-                                            className="relative cursor-pointer"
-                                            onClick={() => {
-                                                const input = document.getElementById('task-due-date') as HTMLInputElement;
-                                                input?.showPicker?.();
-                                            }}
-                                        >
-                                            <Input
-                                                type="date"
-                                                id="task-due-date"
-                                                value={formatDateForInput(dueDate)}
-                                                onChange={(e) => setDueDate(parseDateInput(e.target.value))}
-                                                className="cursor-pointer bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto w-full"
-                                            />
-                                        </div>
-                                    </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setScheduleOpen(!scheduleOpen)}
+                                    className="w-full flex items-center justify-between group text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1 border-b border-gray-100 dark:border-gray-800 hover:text-blue-500 transition-colors"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        {t('task_detail.schedule_label')}
+                                    </span>
+                                    <IconX className={cn("w-3 h-3 transition-transform", scheduleOpen ? "rotate-45" : "rotate-45")} style={{ transform: scheduleOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                                    {/* Using IconX as generic icon or better IconChevronDown if available. Reusing what's imported. IconX is close (cross). IconCheck. IconPlus. IconTrash. 
+                                       Actually, IconChevronDown is not imported. 
+                                       I can use CSS caret or text '>' or 'v'.
+                                       Or import chevron.
+                                       Let's use a simple span with CSS transform for now or existing icon. 
+                                       Actually, let's simply use text v / > for simplicity if no icon available. 
+                                       Or better, import IconChevronDown if I can find it. 
+                                       Common/Icons usually has it.
+                                    */}
+                                    <span className={cn("text-xs transition-transform duration-200", scheduleOpen ? "rotate-180" : "")}>▼</span>
+                                </button>
 
-                                    {/* Recurrence */}
-                                    <div>
-                                        <label className="text-xs text-gray-500 mb-1 block">{t('task_detail.recurrence_label')}</label>
-                                        <Select
-                                            id="task-recurrence"
-                                            value={recurrence?.type || 'none'}
-                                            onChange={(e) => handleRecurrenceTypeChange(e.target.value)}
-                                            className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
-                                            options={definitionRecurrenceOptions}
-                                        />
-                                    </div>
-
-                                    {/* Weekly Days */}
-                                    {(recurrence?.type === 'weekly' || recurrence?.type === 'weekdays') && (
-                                        <div className="pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {dayLabels.map((day, idx) => {
-                                                    const isSelected = recurrence.days?.includes(idx);
-                                                    return (
-                                                        <button
-                                                            type="button"
-                                                            key={idx}
-                                                            onClick={() => handleDayToggle(idx)}
-                                                            className={cn(
-                                                                "w-7 h-7 rounded-full text-xs flex items-center justify-center transition-colors border",
-                                                                isSelected
-                                                                    ? "bg-blue-500 text-white border-blue-500"
-                                                                    : "bg-transparent text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                                                            )}
-                                                        >
-                                                            {day}
-                                                        </button>
-                                                    );
-                                                })}
+                                {scheduleOpen && (
+                                    <div className="space-y-3 px-1 animate-in slide-in-from-top-1 fade-in duration-200">
+                                        {/* Due Date */}
+                                        <div className="relative group">
+                                            <label htmlFor="task-due-date" className="text-xs text-gray-500 mb-1 block">{t('task_detail.due_date_label')}</label>
+                                            <div
+                                                className="relative cursor-pointer"
+                                                onClick={() => {
+                                                    const input = document.getElementById('task-due-date') as HTMLInputElement;
+                                                    input?.showPicker?.();
+                                                }}
+                                            >
+                                                <Input
+                                                    type="date"
+                                                    id="task-due-date"
+                                                    value={formatDateForInput(dueDate)}
+                                                    onChange={(e) => setDueDate(parseDateInput(e.target.value))}
+                                                    className="cursor-pointer bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto w-full"
+                                                />
                                             </div>
                                         </div>
-                                    )}
 
-                                    {/* TimeBlock */}
-                                    <div>
-                                        <label className="text-xs text-gray-500 mb-1 block">{t('task_detail.time_block_label')}</label>
-                                        <Select
-                                            id="task-timeblock"
-                                            value={timeBlockId || ''}
-                                            onChange={(e) => setTimeBlockId(e.target.value || null)}
-                                            className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
-                                        >
-                                            <option value="">{t('task_detail.time_block_unspecified')}</option>
-                                            {timeBlocks.map(tb => (
-                                                <option key={tb.id} value={tb.id}>{tb.start} - {tb.end}</option>
-                                            ))}
-                                        </Select>
-                                    </div>
+                                        {/* Recurrence */}
+                                        <div>
+                                            <label htmlFor="task-recurrence" className="text-xs text-gray-500 mb-1 block">{t('task_detail.recurrence_label')}</label>
+                                            <Select
+                                                id="task-recurrence"
+                                                value={recurrence?.type || 'none'}
+                                                onChange={(e) => handleRecurrenceTypeChange(e.target.value)}
+                                                className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
+                                                options={definitionRecurrenceOptions}
+                                            />
+                                        </div>
 
-                                    {/* Duration */}
-                                    <div>
-                                        <label className="text-xs text-gray-500 mb-1 block">{t('task_detail.duration_label')}</label>
-                                        <Select
-                                            id="task-duration"
-                                            value={duration || ''}
-                                            onChange={(e) => setDuration(e.target.value ? parseInt(e.target.value, 10) : null)}
-                                            className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
-                                        >
-                                            <option value="">{t('task_detail.duration_none')}</option>
-                                            {customDurations.map(d => (
-                                                <option key={d} value={d}>{d} {t('task_detail.duration_unit')}</option>
-                                            ))}
-                                        </Select>
+                                        {/* Weekly Days */}
+                                        {(recurrence?.type === 'weekly' || recurrence?.type === 'weekdays') && (
+                                            <div className="pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {dayLabels.map((day, idx) => {
+                                                        const isSelected = recurrence.days?.includes(idx);
+                                                        return (
+                                                            <button
+                                                                type="button"
+                                                                key={idx}
+                                                                onClick={() => handleDayToggle(idx)}
+                                                                className={cn(
+                                                                    "w-7 h-7 rounded-full text-xs flex items-center justify-center transition-colors border",
+                                                                    isSelected
+                                                                        ? "bg-blue-500 text-white border-blue-500"
+                                                                        : "bg-transparent text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                                                )}
+                                                            >
+                                                                {day}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* TimeBlock */}
+                                        <div>
+                                            <label htmlFor="task-timeblock" className="text-xs text-gray-500 mb-1 block">{t('task_detail.time_block_label')}</label>
+                                            <Select
+                                                id="task-timeblock"
+                                                value={timeBlockId || ''}
+                                                onChange={(e) => setTimeBlockId(e.target.value || null)}
+                                                className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
+                                            >
+                                                <option value="">{t('task_detail.time_block_unspecified')}</option>
+                                                {timeBlocks.map(tb => (
+                                                    <option key={tb.id} value={tb.id}>{tb.start} - {tb.end}</option>
+                                                ))}
+                                            </Select>
+                                        </div>
+
+                                        {/* Duration */}
+                                        <div>
+                                            <label htmlFor="task-duration" className="text-xs text-gray-500 mb-1 block">{t('task_detail.duration_label')}</label>
+                                            <Select
+                                                id="task-duration"
+                                                value={duration || ''}
+                                                onChange={(e) => setDuration(e.target.value ? parseInt(e.target.value, 10) : null)}
+                                                className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
+                                            >
+                                                <option value="">{t('task_detail.duration_none')}</option>
+                                                {customDurations.map(d => (
+                                                    <option key={d} value={d}>{d} {t('task_detail.duration_unit')}</option>
+                                                ))}
+                                            </Select>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* Project Section */}

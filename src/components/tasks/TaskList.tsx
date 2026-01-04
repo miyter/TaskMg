@@ -1,4 +1,5 @@
-﻿import {
+﻿import { useDraggable } from '@dnd-kit/core';
+import {
     SortableContext,
     arrayMove,
     useSortable,
@@ -43,6 +44,39 @@ const SortableTaskItem = ({ task, className }: { task: Task; className?: string 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
+        zIndex: isDragging ? 50 : 'auto',
+        position: 'relative' as const,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="touch-manipulation">
+            <TaskItem
+                task={task}
+                className={cn(className, isDragging && "opacity-80 shadow-lg border-blue-400 bg-blue-50/50")}
+                dragHandleProps={{ ...attributes, ...listeners }}
+            />
+        </div>
+    );
+};
+
+// --- Draggable Item Wrapper (for non-manual sort) ---
+const DraggableTaskItem = ({ task, className }: { task: Task; className?: string }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        isDragging
+    } = useDraggable({
+        id: `${UI_CONFIG.DND.PREFIX_TASK}${task.id || ''}`,
+        data: {
+            type: 'task',
+            task: task
+        }
+    });
+
+    const style = {
+        transform: CSS.Translate.toString(transform),
         zIndex: isDragging ? 50 : 'auto',
         position: 'relative' as const,
     };
@@ -275,11 +309,11 @@ export const TaskList: React.FC = () => {
                             </div>
                         </SortableContext>
                     ) : (
-                        <ul className={cn("transition-all duration-200", densityClass)}>
+                        <div className={cn("transition-all duration-200", densityClass)}>
                             {displayTasks.map((task: Task) => (
-                                <TaskItem key={task.id} task={task} />
+                                <DraggableTaskItem key={task.id} task={task} />
                             ))}
-                        </ul>
+                        </div>
                     )
                 )}
             </div>

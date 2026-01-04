@@ -164,6 +164,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({ isOpen: propIs
                         onKeyDown={handleKeyDown}
                         placeholder={t('modal.filter_name_placeholder')}
                         autoFocus
+                        maxLength={10}
                     />
                 </div>
 

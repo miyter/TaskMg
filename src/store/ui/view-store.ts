@@ -5,8 +5,8 @@ export type ViewType = 'tasks' | 'wizard' | 'target-dashboard' | 'wiki' | 'searc
 
 interface ViewState {
     currentView: ViewType;
-    viewData: any; // Optional data passed to the view (e.g., wizard mode)
-    setView: (view: ViewType, data?: any) => void;
+    viewData: unknown; // Optional data passed to the view (e.g., wizard mode)
+    setView: (view: ViewType, data?: unknown) => void;
 }
 
 export const useViewStore = create<ViewState>()(

@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
+import { parseFilterQuery } from '../logic/filter-parser';
+import { matchesConditions } from '../logic/search';
 import { useFilterStore } from '../store/ui/filter-store';
-import { isToday, isUpcoming } from '../utils/date';
+import { isToday, isUpcoming, toDate } from '../utils/date';
+import { useFilters } from './useFilters';
 import { useTasks } from './useTasks';
 
 export type TaskCounts = {
@@ -11,10 +14,12 @@ export type TaskCounts = {
     all: number;
     search: number;
     projects: Record<string, number>;
+    customFilters: Record<string, number>;
 };
 
 export function useTaskCounts() {
     const { tasks } = useTasks();
+    const { filters } = useFilters();
     const { showCompleted, query: searchQuery } = useFilterStore();
 
     // Future Improvement: Move aggregation to Firestore (server-side counters)
@@ -27,11 +32,18 @@ export function useTaskCounts() {
             important: 0,
             all: 0,
             search: 0,
-            projects: {}
+            projects: {},
+            customFilters: {}
         };
 
         // Pre-compute lowercase search query if exists
         const normalizedQuery = searchQuery ? searchQuery.toLowerCase().trim() : '';
+
+        // Pre-parse custom filter queries
+        const activeFilters = filters.map(f => ({
+            id: f.id!,
+            conditions: parseFilterQuery(f.query)
+        }));
 
         for (const task of tasks) {
             // Count search matches regardless of status filters? 
@@ -54,6 +66,18 @@ export function useTaskCounts() {
             if (task.status === 'archived') continue;
 
             const isCompleted = task.status === 'completed';
+
+            // Custom Filters Counting (Active Only)
+            // We count custom filters EVEN if completed, IF the filter allows it?
+            // Sidebar badges usually imply "Active Count". To keep it simple and consistent:
+            // Report matches that are NOT completed.
+            if (!isCompleted) {
+                for (const { id, conditions } of activeFilters) {
+                    if (matchesConditions(task, conditions)) {
+                        acc.customFilters[id] = (acc.customFilters[id] || 0) + 1;
+                    }
+                }
+            }
 
             // Issue #8: Search badge vs Filter view inconsistency
             // 'Today', 'Upcoming', 'Inbox', 'Important' badges usually show ACTIVE tasks count only.
@@ -83,16 +107,24 @@ export function useTaskCounts() {
 
             // Date
             if (task.dueDate) {
-                if (isToday(task.dueDate)) {
-                    acc.today++;
-                } else if (isUpcoming(task.dueDate)) {
-                    acc.upcoming++;
+                const dateObj = toDate(task.dueDate);
+                if (dateObj) {
+                    const todayStart = new Date();
+                    todayStart.setHours(0, 0, 0, 0);
+
+                    if (dateObj < todayStart) {
+                        acc.today++; // Overdue counts as today
+                    } else if (isToday(dateObj)) {
+                        acc.today++;
+                    } else if (isUpcoming(dateObj)) {
+                        acc.upcoming++;
+                    }
                 }
             }
         }
 
         return acc;
-    }, [tasks, searchQuery]); // showCompleted dependency removed: badges count active tasks usually
+    }, [tasks, searchQuery, filters]); // showCompleted dependency removed: badges count active tasks usually
 
     return counts;
 }

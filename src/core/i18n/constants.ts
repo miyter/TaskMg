@@ -168,6 +168,7 @@ export const ja = {
         due_date_label: '期限日',
         schedule_label: 'スケジュール',
         title_placeholder: 'タスクのタイトル',
+        description_placeholder: '詳細を追加...',
 
         delete_button: '削除',
         duration_unit: '分',
@@ -230,10 +231,10 @@ export const ja = {
         title: '設定',
         tabs: {
             general: '一般設定',
-            appearance: '外観・表示',
+            appearance: '外観',
             account: 'アカウント',
-            schedule: 'スケジュール設定',
-            advanced: '高度な設定',
+            schedule: '時間設定',
+            security: 'セキュリティ',
         },
         appearance: {
             theme: 'テーマ',
@@ -285,6 +286,8 @@ export const ja = {
             confirm_final: '【最終確認】この操作は取り消せません。本当に実行しますか？',
             cleanup_success: '{count} 件の重複タスクを削除しました。',
             cleanup_fail: 'エラーが発生しました: {error}',
+            cleanup_old: '古いタスク情報の削除',
+            cleanup_old_desc: '完了から30日以上経過したタスクの詳細（メモ）を削除します。（件数データは残ります）',
         },
         account: {
             guest_user: 'ゲストユーザー',
@@ -351,6 +354,9 @@ export const ja = {
         yesterday: '昨日',
         week: '今週',
         next_week: '来週',
+        day: '日',
+        month: '月',
+        quarter: '四半期',
     },
 
     task_list: {
@@ -491,6 +497,7 @@ export const ja = {
     general_dashboard: {
         overall_stats: '全体統計',
         time_block_usage: 'タイムブロック使用状況',
+        completion_chart: 'タスク完了数推移',
     }
 };
 
@@ -536,6 +543,9 @@ export const en = {
     no_date: 'No Date',
     tomorrow: 'Tomorrow',
     next_week: 'Next Week',
+    day: 'Day',
+    month: 'Month',
+    quarter: 'Quarter',
     backward_map: 'Backward Map',
     woop_board: 'WOOP Board',
     okr_tree: 'OKR Tree',
@@ -657,6 +667,7 @@ export const en = {
         due_date_label: 'Due Date',
         schedule_label: 'Schedule',
         title_placeholder: 'Task Title',
+        description_placeholder: 'Add details...',
 
         delete_button: 'Delete',
         duration_unit: 'min',
@@ -723,8 +734,8 @@ export const en = {
             general: 'General',
             appearance: 'Appearance',
             account: 'Account',
-            schedule: 'Schedule',
-            advanced: 'Advanced',
+            schedule: 'Time Settings',
+            security: 'Security',
         },
         appearance: {
             theme: 'Theme',
@@ -776,6 +787,8 @@ export const en = {
             confirm_final: '[Final Confirm] This cannot be undone. Execute?',
             cleanup_success: 'Deleted {count} duplicate tasks.',
             cleanup_fail: 'Error occurred: {error}',
+            cleanup_old: 'Purge Old Task Details',
+            cleanup_old_desc: 'Remove details from tasks completed over 30 days ago. (Counts are preserved)',
         },
         account: {
             guest_user: 'Guest User',
@@ -982,6 +995,7 @@ export const en = {
     general_dashboard: {
         overall_stats: 'Overall Statistics',
         time_block_usage: 'Time Block Usage',
+        completion_chart: 'Completion Trend',
     }
 };
 

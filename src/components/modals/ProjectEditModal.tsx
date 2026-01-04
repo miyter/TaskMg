@@ -145,15 +145,16 @@ export const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen: prop
                             containerClassName="gap-0"
                             autoFocus
                             aria-describedby={error ? "project-error-msg" : undefined}
+                            maxLength={10}
                         />
                     </div>
                 </div>
 
                 {/* Color Selection (Previously missing) */}
-                <div>
-                    <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
+                <div role="group" aria-labelledby="theme-color-label">
+                    <span id="theme-color-label" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
                         {t('modal.theme_color')}
-                    </label>
+                    </span>
                     <div className="flex flex-wrap gap-2">
                         {COLOR_PALETTE.map(c => (
                             <button

@@ -8,7 +8,8 @@ import { Task } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
 import { cn } from '../../utils/cn';
 import { formatDateCompact, getTaskDateColor } from '../../utils/date';
-import { IconCalendar, IconCheck, IconClock, IconEdit, IconGripVertical, IconRepeat, IconStar, IconTrash } from '../common/Icons';
+import { stripHtml } from '../../utils/text';
+import { IconCalendar, IconCheck, IconClock, IconEdit, IconGripVertical, IconRepeat, IconTrash } from '../common/Icons';
 import { ContextMenu, ContextMenuItem, ContextMenuSub } from '../ui/ContextMenu';
 
 interface TaskItemProps {
@@ -21,7 +22,6 @@ interface TaskItemProps {
 export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dragHandleProps }) => {
     const { t } = useTranslation();
     const isCompleted = task.status === 'completed';
-    const isImportant = !!task.isImportant;
     const { openModal } = useModalStore();
     const { projects } = useProjects();
     const { timeBlocks } = useTimeBlocks();
@@ -32,13 +32,6 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
         e.stopPropagation();
         if (task.id) {
             await toggleTaskStatus(task.id, task.status || 'todo');
-        }
-    };
-
-    const handleToggleImportant = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (task.id) {
-            await updateTask(task.id, { isImportant: !isImportant });
         }
     };
 
@@ -147,75 +140,63 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
                     </div>
                     {task.description && (
                         <div className="text-xs text-gray-500 line-clamp-1 truncate">
-                            {task.description}
+                            {stripHtml(task.description)}
                         </div>
                     )}
                 </div>
 
                 {/* Meta Info (Right Side) */}
-                <div className="flex items-center gap-3 text-xs shrink-0">
+                <div className="hidden sm:grid grid-cols-[90px_110px_50px_80px] gap-2 text-xs shrink-0 items-center">
                     {/* Project */}
-                    <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: project?.color || UI_CONFIG.DEFAULT_COLORS.PROJECT_INACTIVE }} />
-                        <span className="max-w-[100px] truncate">
-                            {project ? project.name : t('task_detail.project_none')}
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 overflow-hidden">
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: project?.color || UI_CONFIG.DEFAULT_COLORS.PROJECT_INACTIVE }} />
+                        <span className="truncate">
+                            {project ? project.name : "PJなし"}
                         </span>
                     </div>
 
                     {/* TimeBlock */}
-                    <div className="hidden sm:flex items-center gap-1 text-gray-400 dark:text-gray-500 min-w-[80px]">
+                    <div className="flex items-center gap-1 text-gray-400 dark:text-gray-500 overflow-hidden">
                         {timeBlock ? (
                             <>
-                                <IconClock className="w-3.5 h-3.5" />
-                                <span className="max-w-[120px] truncate">
-                                    {timeBlock.name || `${timeBlock.start} - ${timeBlock.end}`}
+                                <IconClock className="w-3.5 h-3.5 shrink-0" />
+                                <span className="truncate">
+                                    {timeBlock.name}
                                 </span>
                             </>
                         ) : (
-                            <span className="text-[10px] uppercase font-bold tracking-widest opacity-30">{t('task_detail.time_block_unspecified')}</span>
+                            <span className="text-[10px] text-gray-300 dark:text-gray-600 truncate">時間帯なし</span>
                         )}
+                    </div>
+
+                    {/* Duration */}
+                    <div className="text-gray-400 dark:text-gray-500 tabular-nums text-right overflow-hidden">
+                        {task.duration ? `${task.duration}m` : ''}
                     </div>
 
                     {/* Date / Recurrence */}
                     <div className={cn(
-                        "flex items-center gap-1 min-w-[70px]",
+                        "flex items-center justify-end gap-1 overflow-hidden",
                         (hasRecurrence || hasDate)
                             ? (isCompleted ? "text-gray-400" : getTaskDateColor(task.dueDate || null))
                             : "text-gray-400 dark:text-gray-500 opacity-50"
                     )}>
                         {hasRecurrence ? (
                             <>
-                                <IconRepeat className="w-3.5 h-3.5" />
+                                <IconRepeat className="w-3.5 h-3.5 shrink-0" />
                                 {task.dueDate && (
-                                    <span className="hidden sm:inline">{formatDateCompact(task.dueDate)}</span>
+                                    <span className="truncate">{formatDateCompact(task.dueDate)}</span>
                                 )}
                             </>
                         ) : hasDate ? (
                             <>
-                                <IconCalendar className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">{formatDateCompact(task.dueDate!)}</span>
+                                <IconCalendar className="w-3.5 h-3.5 shrink-0" />
+                                <span className="truncate">{formatDateCompact(task.dueDate!)}</span>
                             </>
                         ) : (
                             <span className="text-[10px] uppercase font-bold tracking-widest">{t('no_date')}</span>
                         )}
                     </div>
-                </div>
-
-                {/* Actions */}
-                <div className={cn(
-                    "flex items-center gap-1 transition-opacity shrink-0",
-                    isImportant ? "opacity-100" : "opacity-0 group-hover:opacity-100 placeholder-opacity" // Using placeholder class just to keep layout stable if needed, but opacity-0 works
-                )}>
-                    <button
-                        onClick={handleToggleImportant}
-                        className={cn(
-                            "p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
-                            isImportant ? "text-yellow-500" : "text-gray-400"
-                        )}
-                        title={isImportant ? "重要度を解除" : "重要としてマーク"}
-                    >
-                        <IconStar className="w-4 h-4" fill={isImportant ? "currentColor" : "none"} />
-                    </button>
                 </div>
             </li>
 
@@ -259,10 +240,10 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
         prev.task.status === next.task.status &&
         prev.task.title === next.task.title &&
         prev.task.description === next.task.description &&
-        prev.task.projectId === next.task.projectId && // Added check
-        prev.task.timeBlockId === next.task.timeBlockId && // Added check
-        prev.task.isImportant === next.task.isImportant &&
-        prev.task.recurrence === next.task.recurrence && // Added check
+        prev.task.projectId === next.task.projectId &&
+        prev.task.timeBlockId === next.task.timeBlockId &&
+        prev.task.duration === next.task.duration && // Added check for duration
+        prev.task.recurrence === next.task.recurrence &&
         isDateEqual(prev.task.dueDate, next.task.dueDate)
     );
 });

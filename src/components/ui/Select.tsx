@@ -1,4 +1,4 @@
-import { forwardRef, SelectHTMLAttributes } from 'react';
+import { forwardRef, SelectHTMLAttributes, useId } from 'react';
 import { cn } from '../../utils/cn';
 import { IconChevronDown } from '../common/Icons';
 
@@ -11,11 +11,13 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     ({ className, label, error, containerClassName, options, children, id, ...props }, ref) => {
+        const generatedId = useId();
+        const selectId = id || generatedId;
         return (
             <div className={cn("flex flex-col gap-1.5", containerClassName)}>
                 {label && (
                     <label
-                        htmlFor={id}
+                        htmlFor={selectId}
                         className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                     >
                         {label}
@@ -24,7 +26,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 <div className="relative group">
                     <select
                         ref={ref}
-                        id={id}
+                        id={selectId}
                         className={cn(
                             "w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border rounded-xl pl-4 pr-10 py-2.5 outline-none transition-all appearance-none cursor-pointer placeholder:text-gray-300 dark:placeholder:text-gray-600",
                             "focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500",
@@ -36,7 +38,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                             className
                         )}
                         aria-invalid={!!error}
-                        aria-describedby={error && id ? `${id}-error` : undefined}
+                        aria-describedby={error ? `${selectId}-error` : undefined}
                         {...props}
                     >
                         {children ? children : options?.map(opt => (
@@ -49,7 +51,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                     </div>
                 </div>
                 {error && (
-                    <p id={id ? `${id}-error` : undefined} className="text-xs text-red-500 font-medium animate-fade-in-down">
+                    <p id={`${selectId}-error`} className="text-xs text-red-500 font-medium animate-fade-in-down">
                         {error}
                     </p>
                 )}

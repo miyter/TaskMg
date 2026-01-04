@@ -134,8 +134,6 @@ const App: React.FC = () => {
             case 'inbox': return 'Inbox';
             case 'today': return 'Today';
             case 'upcoming': return 'Upcoming';
-            case 'important': return 'Important';
-            case 'custom': return 'All Tasks';
             default: return 'TaskMg';
         }
     }, [currentView, query, filterType, targetId, projects, labels]);

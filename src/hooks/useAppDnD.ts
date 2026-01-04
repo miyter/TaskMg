@@ -12,6 +12,7 @@ import { UI_CONFIG } from '../core/ui-constants';
 import { reorderProjects, updateTask } from '../store';
 import { Project, Task } from '../store/schema';
 import { toast } from '../store/ui/toast-store';
+import { useUIStore } from '../store/ui/ui-store';
 
 /** Optimistic Update オプション */
 interface UseAppDnDOptions {
@@ -132,7 +133,20 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
                     options?.onRevertReorder?.(currentProjects);
                 }
             }
+            return;
         }
+
+        // 3. サイドバーセクションの並び替え
+        const { sidebarSections, setSidebarSections } = useUIStore.getState();
+        if (activeId !== overId && sidebarSections.includes(activeId) && sidebarSections.includes(overId)) {
+            const oldIndex = sidebarSections.indexOf(activeId);
+            const newIndex = sidebarSections.indexOf(overId);
+            if (oldIndex !== -1 && newIndex !== -1) {
+                setSidebarSections(arrayMove(sidebarSections, oldIndex, newIndex));
+            }
+            return;
+        }
+
     }, [projects, options, t]);
 
     return { sensors, handleDragEnd, handleDragStart };

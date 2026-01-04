@@ -1,4 +1,4 @@
-import { forwardRef, TextareaHTMLAttributes } from 'react';
+import { forwardRef, TextareaHTMLAttributes, useId } from 'react';
 import { cn } from '../../utils/cn';
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -9,11 +9,13 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     ({ className, label, error, containerClassName, id, ...props }, ref) => {
+        const generatedId = useId();
+        const textareaId = id || generatedId;
         return (
             <div className={cn("flex flex-col gap-1.5 h-full", containerClassName)}>
                 {label && (
                     <label
-                        htmlFor={id}
+                        htmlFor={textareaId}
                         className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                     >
                         {label}
@@ -21,7 +23,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                 )}
                 <textarea
                     ref={ref}
-                    id={id}
+                    id={textareaId}
                     className={cn(
                         "w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border rounded-xl px-4 py-3 outline-none transition-all placeholder:text-gray-300 dark:placeholder:text-gray-600 resize-none",
                         "focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500",
@@ -31,11 +33,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                         className
                     )}
                     aria-invalid={!!error}
-                    aria-describedby={error && id ? `${id}-error` : undefined}
+                    aria-describedby={error ? `${textareaId}-error` : undefined}
                     {...props}
                 />
                 {error && (
-                    <p id={id ? `${id}-error` : undefined} className="text-xs text-red-500 font-medium animate-fade-in-down">
+                    <p id={`${textareaId}-error`} className="text-xs text-red-500 font-medium animate-fade-in-down">
                         {error}
                     </p>
                 )}

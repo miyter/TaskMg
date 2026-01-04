@@ -4,7 +4,8 @@ import { useTaskCounts } from '../../hooks/useTaskCounts';
 import { useTasks } from '../../hooks/useTasks';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { useSettingsStore } from '../../store/ui/settings-store';
-import { IconCalendar, IconCalendarDays, IconInbox, IconStar } from '../common/Icons';
+import { IconCalendar, IconCalendarDays, IconInbox } from '../common/Icons';
+import { TaskCompletionChart } from '../dashboard/TaskCompletionChart';
 import { TaskStats } from '../tasks/TaskStats';
 
 export const GeneralDashboard: React.FC = () => {
@@ -23,7 +24,6 @@ export const GeneralDashboard: React.FC = () => {
         { id: 'inbox', label: t('inbox'), count: counts.inbox, icon: IconInbox, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
         { id: 'today', label: t('today'), count: counts.today, icon: IconCalendar, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20' },
         { id: 'upcoming', label: t('upcoming'), count: counts.upcoming, icon: IconCalendarDays, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-        { id: 'important', label: t('important'), count: counts.important, icon: IconStar, color: 'text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
     ];
 
     return (
@@ -36,7 +36,7 @@ export const GeneralDashboard: React.FC = () => {
             </header>
 
             {/* Key Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {cards.map(card => (
                     <div key={card.id} className="p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800 shadow-sm flex items-center justify-between">
                         <div>
@@ -50,10 +50,15 @@ export const GeneralDashboard: React.FC = () => {
                 ))}
             </div>
 
-            {/* Overall Stats (General Mode) */}
-            <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-gray-800">
-                <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('general_dashboard.overall_stats')}</h2>
-                <TaskStats tasks={tasks.filter(t => t.status !== 'completed')} timeBlockId={null} />
+            {/* Analytics Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <TaskCompletionChart tasks={tasks} />
+
+                {/* Overall Stats (General Mode) */}
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-gray-800">
+                    <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('general_dashboard.overall_stats')}</h2>
+                    <TaskStats tasks={tasks.filter(t => t.status !== 'completed')} timeBlockId={null} />
+                </div>
             </div>
 
             {/* TimeBlock Usage */}
@@ -63,7 +68,7 @@ export const GeneralDashboard: React.FC = () => {
                     {timeBlocks.map(tb => {
                         // Filter tasks for this timeblock
                         const tbTasks = tasks.filter(t => t.timeBlockId === tb.id && t.status !== 'completed');
-                        if (tbTasks.length === 0) return null; // Skip empty blocks for cleaner view? Or show empty?
+                        // if (tbTasks.length === 0) return null; // Removed to show 0% usage blocks
 
                         return (
                             <div key={tb.id} className="p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800 shadow-sm">

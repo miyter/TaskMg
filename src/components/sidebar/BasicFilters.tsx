@@ -7,14 +7,12 @@ import { useSettingsStore } from '../../store/ui/settings-store';
 import { useViewStore } from '../../store/ui/view-store';
 import { cn } from '../../utils/cn';
 import { getDensityClass } from '../../utils/ui-utils';
-import { IconCalendar, IconCalendarDays, IconClipboard, IconDashboard, IconInbox, IconStar } from '../common/Icons';
+import { IconCalendar, IconCalendarDays, IconDashboard, IconInbox } from '../common/Icons';
 
 const FILTER_ITEMS = [
     { id: 'inbox', i18nKey: 'inbox', Icon: IconInbox, color: 'text-blue-500', droppable: true },
     { id: 'today', i18nKey: 'today', Icon: IconCalendar, color: 'text-green-500' },
     { id: 'upcoming', i18nKey: 'upcoming', Icon: IconCalendarDays, color: 'text-purple-500' },
-    { id: 'important', i18nKey: 'important', Icon: IconStar, color: 'text-amber-400' },
-    { id: 'custom', i18nKey: 'all_tasks', Icon: IconClipboard, color: 'text-gray-500' },
 ] as const;
 
 export const BasicFilters: React.FC = () => {
@@ -49,7 +47,7 @@ export const BasicFilters: React.FC = () => {
                     key={item.id}
                     item={item as unknown as FilterItemType}
                     label={t(item.i18nKey as any)}
-                    count={counts[item.id as keyof typeof counts] || 0}
+                    count={((counts as any)[item.id] as number) || 0}
                 />
             ))}
         </ul>

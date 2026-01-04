@@ -190,7 +190,7 @@ export const WorkspaceDropdown: React.FC = () => {
                                         </span>
 
                                         {/* Hover Actions */}
-                                        <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                        <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover/item:opacity-100 transition-opacity">
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();

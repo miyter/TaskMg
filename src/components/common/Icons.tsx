@@ -78,6 +78,7 @@ export const IconListOrdered = createIcon(<><path d="M10 6h11" /><path d="M10 12
 export const IconCheckSquare = createIcon(<><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" /></>);
 export const IconCode = createIcon(<><path d="M16 18l6-6-6-6" /><path d="M8 6l-6 6 6 6" /></>);
 export const IconHeading = createIcon(<><path d="M6 4v16" /><path d="M18 4v16" /><path d="M6 12h12" /></>);
+export const IconLink = createIcon(<><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></>);
 export const IconQuote = createIcon(<><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2.5 2h-1c-.5 0-1 .5-1 1v1c0 .5.5 1 1 1z" /><path d="M16 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2.5 2h-1c-.5 0-1 .5-1 1v1c0 .5.5 1 1 1z" /></>);
 
 // --- Spinner ---

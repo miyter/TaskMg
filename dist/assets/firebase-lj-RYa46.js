@@ -1,4 +1,4 @@
-import{o as hh,_ as Ts}from"./vendor-CBsUEP5T.js";var pa={};/**
+import{o as hh,_ as Ts}from"./vendor-DCNAVw4P.js";var pa={};/**
  * @license
  * Copyright 2017 Google LLC
  *
@@ -3058,4 +3058,4 @@ This typically indicates that your device does not have a healthy Internet conne
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */function sy(n){return gi(n=Ce(n,Ye)),new k_(n,(e=>lr(n,e)))}(function(e,t=!0){(function(i){on=i})(nn),Kt(new St("firestore",((r,{instanceIdentifier:i,options:o})=>{const a=r.getProvider("app").getImmediate(),c=new Ye(new Lp(r.getProvider("auth-internal")),new Bp(r.getProvider("app-check-internal")),(function(d,p){if(!Object.prototype.hasOwnProperty.apply(d.options,["projectId"]))throw new N(P.INVALID_ARGUMENT,'"projectId" not provided in firebase.initializeApp.');return new Hn(d.options.projectId,p)})(a,i),a);return o=Object.assign({useFetchStreams:t},o),c._setSettings(o),c}),"PUBLIC").setMultipleInstances(!0)),dt(Ua,"4.7.3",e),dt(Ua,"4.7.3","esm2017")})();export{Z_ as A,sn as E,oe as T,N_ as a,D_ as b,G_ as c,v_ as d,K_ as e,j_ as f,X_ as g,q_ as h,Sd as i,x_ as j,O_ as k,M_ as l,ry as m,J_ as n,Y_ as o,Q_ as p,W_ as q,ny as r,B_ as s,iy as t,ey as u,ty as v,sy as w,L_ as x,U_ as y,F_ as z};
+ */function sy(n){return gi(n=Ce(n,Ye)),new k_(n,(e=>lr(n,e)))}(function(e,t=!0){(function(i){on=i})(nn),Kt(new St("firestore",((r,{instanceIdentifier:i,options:o})=>{const a=r.getProvider("app").getImmediate(),c=new Ye(new Lp(r.getProvider("auth-internal")),new Bp(r.getProvider("app-check-internal")),(function(d,p){if(!Object.prototype.hasOwnProperty.apply(d.options,["projectId"]))throw new N(P.INVALID_ARGUMENT,'"projectId" not provided in firebase.initializeApp.');return new Hn(d.options.projectId,p)})(a,i),a);return o=Object.assign({useFetchStreams:t},o),c._setSettings(o),c}),"PUBLIC").setMultipleInstances(!0)),dt(Ua,"4.7.3",e),dt(Ua,"4.7.3","esm2017")})();export{Z_ as A,sn as E,oe as T,Q_ as a,N_ as b,G_ as c,v_ as d,D_ as e,K_ as f,X_ as g,j_ as h,Sd as i,q_ as j,x_ as k,M_ as l,O_ as m,ry as n,Y_ as o,J_ as p,W_ as q,ny as r,B_ as s,iy as t,ey as u,ty as v,sy as w,L_ as x,U_ as y,F_ as z};

@@ -38,7 +38,7 @@ function matchesDateCondition(
 
     switch (condition) {
         case 'today':
-            return isSameDay(taskDate, now);
+            return isSameDay(taskDate, now) || (taskDate < now && taskStatus !== 'completed');
         case 'tomorrow':
             return isSameDay(taskDate, tomorrow);
         case 'week':
@@ -53,6 +53,124 @@ function matchesDateCondition(
 }
 
 /**
+ * 単一タスクが条件に一致するか判定
+ */
+export function matchesConditions(
+    task: Task,
+    conditions: FilterConditions,
+    dateBaselines: ReturnType<typeof createDateBaselines> | null = null
+): boolean {
+    // 0. Date Baselines (Calculate if not provided and needed)
+    if (!dateBaselines && conditions.dates.length > 0) {
+        dateBaselines = createDateBaselines();
+    }
+
+    // 1. Status Check
+    if (conditions.status.length > 0) {
+        const status = task.status || 'todo';
+        const isMatch = conditions.status.some(s => {
+            if (s === 'active' && status === 'todo') return true;
+            return s === status;
+        });
+        if (!isMatch) return false;
+    }
+    if (conditions.excludeStatus.length > 0) {
+        const status = task.status || 'todo';
+        const isMatch = conditions.excludeStatus.some(s => {
+            if (s === 'active' && status === 'todo') return true;
+            return s === status;
+        });
+        if (isMatch) return false;
+    }
+
+    // 1.5 Important Check
+    if (conditions.isImportant === true && !task.isImportant) {
+        return false;
+    }
+    if (conditions.isImportant === false && task.isImportant) {
+        return false;
+    }
+
+    // 2. Project Check
+    if (conditions.projects.length > 0) {
+        const hasMatch = conditions.projects.some(p => {
+            if (p === 'unassigned') {
+                return !task.projectId || task.projectId === 'unassigned' || task.projectId === 'none';
+            }
+            return task.projectId === p;
+        });
+        if (!hasMatch) return false;
+    }
+    if (conditions.excludeProjects.length > 0) {
+        if (conditions.excludeProjects.some(p => task.projectId === p)) return false;
+    }
+
+    // 3. Label Check
+    if (conditions.labels.length > 0) {
+        if (!task.labelIds || !conditions.labels.some(l => task.labelIds?.includes(l))) {
+            return false;
+        }
+    }
+    if (conditions.excludeLabels.length > 0) {
+        if (task.labelIds && conditions.excludeLabels.some(l => task.labelIds?.includes(l))) return false;
+    }
+
+    // 4. TimeBlock Check
+    if (conditions.timeBlocks.length > 0) {
+        const hasMatch = conditions.timeBlocks.some(tb => {
+            if (tb === 'unassigned') return !task.timeBlockId;
+            return task.timeBlockId === tb;
+        });
+        if (!hasMatch) return false;
+    }
+    if (conditions.excludeTimeBlocks.length > 0) {
+        if (conditions.excludeTimeBlocks.some(tb => task.timeBlockId === tb)) return false;
+    }
+
+    // 5. Duration Check (Number comparison)
+    if (conditions.durations.length > 0) {
+        const taskDur = task.duration || 0;
+        if (!conditions.durations.includes(taskDur)) return false;
+    }
+
+    // 6. Date Check (Using pre-calculated baselines)
+    if (conditions.dates.length > 0) {
+        // Safe check for dateBaselines
+        const baselines = dateBaselines || createDateBaselines();
+
+        const taskDate = toDate(task.dueDate);
+        if (!taskDate) return false;
+
+        const isMatch = conditions.dates.some(d =>
+            matchesDateCondition(taskDate, d, baselines, task.status || 'todo')
+        );
+        if (!isMatch) return false;
+    }
+
+    // 7. Keywords (Title/Description)
+    const content = `${task.title} ${task.description || ''}`.toLowerCase();
+
+    if (conditions.keywords.length > 0) {
+        const matchesAll = conditions.keywords.every(kw => {
+            // If kw is array, it's an OR group (matches ANY)
+            if (Array.isArray(kw)) {
+                return kw.some(k => content.includes(k));
+            }
+            // Else it's a standard keyword (must include)
+            return content.includes(kw);
+        });
+        if (!matchesAll) return false;
+    }
+
+    if (conditions.excludeKeywords.length > 0) {
+        const matchesAnyExclude = conditions.excludeKeywords.some(kw => content.includes(kw));
+        if (matchesAnyExclude) return false;
+    }
+
+    return true;
+}
+
+/**
  * フィルター条件に基づいてタスクを絞り込む (Primary Engine)
  */
 export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
@@ -63,108 +181,7 @@ export function filterTasks(tasks: Task[], criteria: FilterCriteria): Task[] {
     // 日付基準値を事前計算 (タスクごとに再計算しない)
     const dateBaselines = conditions.dates.length > 0 ? createDateBaselines() : null;
 
-    return tasks.filter(task => {
-        // 1. Status Check
-        if (conditions.status.length > 0) {
-            const status = task.status || 'todo';
-            const isMatch = conditions.status.some(s => {
-                if (s === 'active' && status === 'todo') return true;
-                return s === status;
-            });
-            if (!isMatch) return false;
-        }
-        if (conditions.excludeStatus.length > 0) {
-            const status = task.status || 'todo';
-            const isMatch = conditions.excludeStatus.some(s => {
-                if (s === 'active' && status === 'todo') return true;
-                return s === status;
-            });
-            if (isMatch) return false;
-        }
-
-        // 1.5 Important Check
-        if (conditions.isImportant === true && !task.isImportant) {
-            return false;
-        }
-        if (conditions.isImportant === false && task.isImportant) {
-            return false;
-        }
-
-        // 2. Project Check
-        if (conditions.projects.length > 0) {
-            const hasMatch = conditions.projects.some(p => {
-                if (p === 'unassigned') {
-                    return !task.projectId || task.projectId === 'unassigned' || task.projectId === 'none';
-                }
-                return task.projectId === p;
-            });
-            if (!hasMatch) return false;
-        }
-        if (conditions.excludeProjects.length > 0) {
-            if (conditions.excludeProjects.some(p => task.projectId === p)) return false;
-        }
-
-        // 3. Label Check
-        if (conditions.labels.length > 0) {
-            if (!task.labelIds || !conditions.labels.some(l => task.labelIds?.includes(l))) {
-                return false;
-            }
-        }
-        if (conditions.excludeLabels.length > 0) {
-            if (task.labelIds && conditions.excludeLabels.some(l => task.labelIds?.includes(l))) return false;
-        }
-
-        // 4. TimeBlock Check
-        if (conditions.timeBlocks.length > 0) {
-            const hasMatch = conditions.timeBlocks.some(tb => {
-                if (tb === 'unassigned') return !task.timeBlockId;
-                return task.timeBlockId === tb;
-            });
-            if (!hasMatch) return false;
-        }
-        if (conditions.excludeTimeBlocks.length > 0) {
-            if (conditions.excludeTimeBlocks.some(tb => task.timeBlockId === tb)) return false;
-        }
-
-        // 5. Duration Check (Number comparison)
-        if (conditions.durations.length > 0) {
-            const taskDur = task.duration || 0;
-            if (!conditions.durations.includes(taskDur)) return false;
-        }
-
-        // 6. Date Check (Using pre-calculated baselines)
-        if (dateBaselines && conditions.dates.length > 0) {
-            const taskDate = toDate(task.dueDate);
-            if (!taskDate) return false;
-
-            const isMatch = conditions.dates.some(d =>
-                matchesDateCondition(taskDate, d, dateBaselines, task.status || 'todo')
-            );
-            if (!isMatch) return false;
-        }
-
-        // 7. Keywords (Title/Description)
-        const content = `${task.title} ${task.description || ''}`.toLowerCase();
-
-        if (conditions.keywords.length > 0) {
-            const matchesAll = conditions.keywords.every(kw => {
-                // If kw is array, it's an OR group (matches ANY)
-                if (Array.isArray(kw)) {
-                    return kw.some(k => content.includes(k));
-                }
-                // Else it's a standard keyword (must include)
-                return content.includes(kw);
-            });
-            if (!matchesAll) return false;
-        }
-
-        if (conditions.excludeKeywords.length > 0) {
-            const matchesAnyExclude = conditions.excludeKeywords.some(kw => content.includes(kw));
-            if (matchesAnyExclude) return false;
-        }
-
-        return true;
-    });
+    return tasks.filter(task => matchesConditions(task, conditions, dateBaselines));
 }
 
 export interface SearchConfig {
