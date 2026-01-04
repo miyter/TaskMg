@@ -27,9 +27,21 @@ export default defineConfig({
           }
 
           if (id.includes('node_modules')) {
+            // React Core
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+              return 'react-vendor';
+            }
+
+            // Firebase
             if (id.includes('firebase')) {
               return 'firebase';
             }
+
+            // Lazy loaded modules should not be in the main vendor chunk
+            if (id.includes('recharts') || id.includes('d3') || id.includes('react-smooth')) {
+              return undefined;
+            }
+
             return 'vendor';
           }
         },

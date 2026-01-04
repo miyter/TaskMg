@@ -3,7 +3,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useProjects } from '../../hooks/useProjects';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { addTask, deleteTask, updateTask } from '../../store';
-import { Recurrence, Task } from '../../store/schema';
+import { Recurrence, Task, TaskSchema } from '../../store/schema'; // Import TaskSchema
+import { validateWithSchema } from '../../store/store-utils';
+
 import { useModalStore } from '../../store/ui/modal-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
@@ -69,12 +71,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
         t('days.sun'), t('days.mon'), t('days.tue'), t('days.wed'), t('days.thu'), t('days.fri'), t('days.sat')
     ], [t]);
 
-
-
-
-
-
-
     const [error, setError] = useState<string | null>(null);
 
     // --- 初期化 ---
@@ -111,14 +107,20 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     // --- Handlers ---
     const handleSave = useCallback(async () => {
         setError(null);
-        if (!title.trim()) {
-            setError(t('validation.required'));
-            return;
-        }
 
-        // 繰り返しがweeklyなのに曜日未選択の場合
-        if (recurrence?.type === 'weekly' && (!recurrence.days || recurrence.days.length === 0)) {
-            setError(t('validation.select_days'));
+        const formValues = {
+            title: title.trim(),
+            recurrence: recurrence?.type === 'none' ? null : recurrence
+        };
+
+        const validation = validateWithSchema(
+            TaskSchema.pick({ title: true, recurrence: true }),
+            formValues,
+            false // Don't show toast, use local error state
+        );
+
+        if (!validation.success) {
+            setError(validation.errorMessage || t('validation.validation_error'));
             return;
         }
 

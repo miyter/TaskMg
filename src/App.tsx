@@ -5,24 +5,26 @@ import {
     pointerWithin,
     rectIntersection
 } from '@dnd-kit/core';
-import React, { useCallback, useMemo } from 'react';
+import React, { Suspense, useCallback, useMemo } from 'react';
 import { LoginPage } from './components/auth/LoginPage';
 import { ToastContainer } from './components/common/ToastContainer';
 import { AppLayout } from './components/layout/AppLayout';
 import { ModalManager } from './components/modals/ModalManager';
 import { SidebarContent } from './components/sidebar/SidebarContent';
 import { TaskList } from './components/tasks/TaskList';
-import { GeneralDashboard } from './components/views/GeneralDashboard';
-import { SearchView } from './components/views/SearchView';
-import { DashboardApp } from './features/target-dashboard/DashboardApp';
-import { WikiApp } from './features/wiki/WikiApp';
-import { WizardApp } from './features/wizard/WizardApp';
 import { useAppDnD } from './hooks/useAppDnD';
 import { useAuth } from './hooks/useAuth';
 import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
 import { useThemeEffect } from './hooks/useThemeEffect';
 import { useTranslation } from './hooks/useTranslation';
+
+// Lazy load heavy components
+const DashboardApp = React.lazy(() => import('./features/target-dashboard/DashboardApp').then(m => ({ default: m.DashboardApp })));
+const WikiApp = React.lazy(() => import('./features/wiki/WikiApp').then(m => ({ default: m.WikiApp })));
+const WizardApp = React.lazy(() => import('./features/wizard/WizardApp').then(m => ({ default: m.WizardApp })));
+const GeneralDashboard = React.lazy(() => import('./components/views/GeneralDashboard').then(m => ({ default: m.GeneralDashboard })));
+const SearchView = React.lazy(() => import('./components/views/SearchView').then(m => ({ default: m.SearchView })));
 
 import { useDnDStore } from './store/ui/dnd-store';
 import { useFilterStore } from './store/ui/filter-store';
@@ -163,19 +165,25 @@ const App: React.FC = () => {
                 title={title}
             >
                 {/* Main Content Routing */}
-                {currentView === 'wizard' ? (
-                    <WizardApp />
-                ) : currentView === 'target-dashboard' ? (
-                    <DashboardApp />
-                ) : currentView === 'wiki' ? (
-                    <WikiApp />
-                ) : currentView === 'search' ? (
-                    <SearchView />
-                ) : currentView === 'dashboard' ? (
-                    <GeneralDashboard />
-                ) : (
-                    <TaskList />
-                )}
+                <Suspense fallback={
+                    <div className="flex items-center justify-center h-full">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    </div>
+                }>
+                    {currentView === 'wizard' ? (
+                        <WizardApp />
+                    ) : currentView === 'target-dashboard' ? (
+                        <DashboardApp />
+                    ) : currentView === 'wiki' ? (
+                        <WikiApp />
+                    ) : currentView === 'search' ? (
+                        <SearchView />
+                    ) : currentView === 'dashboard' ? (
+                        <GeneralDashboard />
+                    ) : (
+                        <TaskList />
+                    )}
+                </Suspense>
             </AppLayout>
         </DndContext>
     );

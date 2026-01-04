@@ -23,7 +23,12 @@ const DateLikeSchema = z.union([
 export const RecurrenceSchema = z.object({
     type: z.enum(['none', 'daily', 'weekly', 'weekdays', 'monthly']).default('none'),
     days: z.array(z.number().min(0).max(6)).optional(), // 0-6 for Sunday-Saturday
-}).nullable();
+}).refine(data => {
+    if (data.type === 'weekly') {
+        return data.days && data.days.length > 0;
+    }
+    return true;
+}, { params: { i18n: 'validation.select_days' } }).nullable();
 
 export const TaskSchema = z.object({
     id: z.string().optional(), // Firestore ID

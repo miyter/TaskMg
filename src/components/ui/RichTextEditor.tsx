@@ -57,7 +57,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const { t } = useTranslation();
     const editor = useEditor({
         extensions: [
-            StarterKit,
+            StarterKit.configure({
+                // Disable link extension in StarterKit to avoid duplication with the manual Link extension below
+                link: false,
+            }),
             Placeholder.configure({
                 placeholder,
             }),

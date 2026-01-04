@@ -20,10 +20,9 @@ import {
 } from "../core/firebase-sdk";
 import { areTaskArraysIdentical } from '../utils/compare';
 import { paths } from '../utils/paths';
-import { withRetry } from '../utils/retry';
 import { FirestoreCollectionCache } from './base-cache';
 import { Task, TaskSchema } from './schema';
-import { toast } from './ui/toast-store';
+import { withOptimisticUpdate } from './store-utils';
 
 interface TimestampLike {
     toDate(): Date;
@@ -196,58 +195,46 @@ function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
 }
 
 export async function reorderTasksRaw(userId: string, workspaceId: string, orderedTaskIds: string[]) {
-    // Build index map for O(1) lookup (avoid O(n^2) indexOf calls)
-    const orderMap = new Map<string, number>();
-    orderedTaskIds.forEach((id, index) => orderMap.set(id, index));
-
-    // Optimistic Update: Update order field AND sort the array
-    const currentTasks = taskCache.getTasks(workspaceId);
-    if (currentTasks && currentTasks.length > 0) {
-        // Update order field for each task
-        const updatedTasks = currentTasks.map(t => {
-            const newIndex = orderMap.get(t.id!);
-            if (newIndex !== undefined) {
-                return { ...t, order: newIndex };
-            }
-            return t;
-        });
-
-        // Sort by order field to reflect the new arrangement immediately
-        updatedTasks.sort((a, b) => {
-            const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
-            const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
-            return orderA - orderB;
-        });
-
-        taskCache.setCache(workspaceId, updatedTasks);
-    }
-
-    return withRetry(async () => {
-        const path = paths.tasks(userId, workspaceId);
-
-        // Limit batch size to 500
-        const chunks: string[][] = [];
-        for (let i = 0; i < orderedTaskIds.length; i += 500) {
-            chunks.push(orderedTaskIds.slice(i, i + 500));
-        }
-
-        for (const chunk of chunks) {
-            const batch = writeBatch(db);
-            chunk.forEach((id) => {
-                const globalIndex = orderMap.get(id)!;
-                const ref = doc(db, path, id);
-                batch.update(ref, { order: globalIndex });
+    return withOptimisticUpdate(
+        taskCache,
+        workspaceId,
+        (current) => {
+            const orderMap = new Map(orderedTaskIds.map((id, index) => [id, index]));
+            const updatedTasks = current.map(t => {
+                const newIndex = orderMap.get(t.id!);
+                return newIndex !== undefined ? { ...t, order: newIndex } : t;
             });
-            await batch.commit();
-        }
-    });
+            return updatedTasks.sort((a, b) => {
+                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+                return orderA - orderB;
+            });
+        },
+        async () => {
+            const path = paths.tasks(userId, workspaceId);
+            const chunks: string[][] = [];
+            for (let i = 0; i < orderedTaskIds.length; i += 500) {
+                chunks.push(orderedTaskIds.slice(i, i + 500));
+            }
+            // Re-map for batch op
+            const orderMap = new Map(orderedTaskIds.map((id, index) => [id, index]));
+
+            for (const chunk of chunks) {
+                const batch = writeBatch(db);
+                chunk.forEach((id) => {
+                    const globalIndex = orderMap.get(id)!;
+                    const ref = doc(db, path, id);
+                    batch.update(ref, { order: globalIndex });
+                });
+                await batch.commit();
+            }
+        },
+        'タスクの並び替えに失敗しました'
+    );
 }
 
 // タスク操作関数（Optimistic UI対応）
 export async function addTaskRaw(userId: string, workspaceId: string, taskData: Partial<Task>) {
-    const originalTasks = taskCache.getTasks(workspaceId);
-
-    // Optimistic Update: 一時IDで即時反映
     const tempId = 'temp-' + Date.now();
     const newTask: Task = {
         id: tempId,
@@ -264,40 +251,36 @@ export async function addTaskRaw(userId: string, workspaceId: string, taskData: 
         isImportant: taskData.isImportant || false,
         recurrence: taskData.recurrence || null,
     } as Task;
-    taskCache.setCache(workspaceId, [...originalTasks, newTask]);
 
-    return withRetry(async () => {
-        const path = paths.tasks(userId, workspaceId);
-        // undefinedを削除して安全にする
-        const safeData = removeUndefined({ ...taskData });
+    return withOptimisticUpdate(
+        taskCache,
+        workspaceId,
+        (current) => [...current, newTask],
+        async () => {
+            const path = paths.tasks(userId, workspaceId);
+            // undefinedを削除して安全にする
+            const safeData = removeUndefined({ ...taskData });
 
-        if (safeData.dueDate) safeData.dueDate = toFirestoreDate(safeData.dueDate);
+            if (safeData.dueDate) safeData.dueDate = toFirestoreDate(safeData.dueDate);
 
-        delete safeData.id;
+            delete safeData.id;
 
-        return await addDoc(collection(db, path), {
-            ...safeData,
-            ownerId: userId,
-            status: 'todo',
-            createdAt: serverTimestamp()
-        });
-    }, {
-        onFinalFailure: () => {
-            console.error(`[TaskCache] Failed to add task: ${taskData.title}`);
-            taskCache.setCache(workspaceId, originalTasks);
-            toast.error('タスクの追加に失敗しました');
-        }
-    });
+            await addDoc(collection(db, path), {
+                ...safeData,
+                ownerId: userId,
+                status: 'todo',
+                createdAt: serverTimestamp()
+            });
+        },
+        'タスクの追加に失敗しました'
+    );
 }
 
 export async function updateTaskStatusRaw(userId: string, workspaceId: string, taskId: string, status: string) {
-    // Save original state for potential rollback
-    const originalTasks = taskCache.getTasks(workspaceId);
-    const originalTask = originalTasks?.find(t => t.id === taskId);
-
-    // Optimistic Update
-    if (originalTasks) {
-        const newTasks = originalTasks.map(t => {
+    return withOptimisticUpdate(
+        taskCache,
+        workspaceId,
+        (current) => current.map(t => {
             if (t.id === taskId) {
                 return {
                     ...t,
@@ -306,80 +289,51 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
                 };
             }
             return t;
-        });
-        taskCache.setCache(workspaceId, newTasks);
-    }
-
-    return withRetry(async () => {
-        const path = paths.tasks(userId, workspaceId);
-        const updates: { status: string; completedAt: ReturnType<typeof serverTimestamp> | null } = { status, completedAt: null };
-        if (status === 'completed') {
-            updates.completedAt = serverTimestamp();
-        }
-        await updateDoc(doc(db, path, taskId), updates);
-    }, {
-        onFinalFailure: () => {
-            // Rollback on failure
-            if (originalTasks) {
-                taskCache.setCache(workspaceId, originalTasks);
+        }),
+        async () => {
+            const path = paths.tasks(userId, workspaceId);
+            const updates: { status: string; completedAt: ReturnType<typeof serverTimestamp> | null } = { status, completedAt: null };
+            if (status === 'completed') {
+                updates.completedAt = serverTimestamp();
             }
-            toast.error('タスクの更新に失敗しました');
-        }
-    });
+            await updateDoc(doc(db, path, taskId), updates);
+        },
+        'タスクの更新に失敗しました'
+    );
 }
 
 export async function updateTaskRaw(userId: string, workspaceId: string, taskId: string, updates: Partial<Task>) {
-    // Save original state for rollback
-    const originalTasks = taskCache.getTasks(workspaceId);
-
-    // Optimistic Update
-    if (originalTasks) {
-        const newTasks = originalTasks.map(t => {
+    return withOptimisticUpdate(
+        taskCache,
+        workspaceId,
+        (current) => current.map(t => {
             if (t.id === taskId) {
                 return { ...t, ...updates };
             }
             return t;
-        });
-        taskCache.setCache(workspaceId, newTasks);
-    }
+        }),
+        async () => {
+            const path = paths.tasks(userId, workspaceId);
+            const safeUpdates = removeUndefined({ ...updates });
 
-    return withRetry(async () => {
-        const path = paths.tasks(userId, workspaceId);
-        const safeUpdates = removeUndefined({ ...updates });
-
-        if (safeUpdates.dueDate !== undefined) safeUpdates.dueDate = toFirestoreDate(safeUpdates.dueDate);
-        await updateDoc(doc(db, path, taskId), safeUpdates);
-    }, {
-        onFinalFailure: () => {
-            if (originalTasks) {
-                taskCache.setCache(workspaceId, originalTasks);
-            }
-            toast.error('タスクの更新に失敗しました');
-        }
-    });
+            if (safeUpdates.dueDate !== undefined) safeUpdates.dueDate = toFirestoreDate(safeUpdates.dueDate);
+            await updateDoc(doc(db, path, taskId), safeUpdates);
+        },
+        'タスクの更新に失敗しました'
+    );
 }
 
 export async function deleteTaskRaw(userId: string, workspaceId: string, taskId: string) {
-    // Save original state for rollback
-    const originalTasks = taskCache.getTasks(workspaceId);
-
-    // Optimistic Update
-    if (originalTasks) {
-        const newTasks = originalTasks.filter(t => t.id !== taskId);
-        taskCache.setCache(workspaceId, newTasks);
-    }
-
-    return withRetry(async () => {
-        const path = paths.tasks(userId, workspaceId);
-        await deleteDoc(doc(db, path, taskId));
-    }, {
-        onFinalFailure: () => {
-            if (originalTasks) {
-                taskCache.setCache(workspaceId, originalTasks);
-            }
-            toast.error('タスクの削除に失敗しました');
-        }
-    });
+    return withOptimisticUpdate(
+        taskCache,
+        workspaceId,
+        (current) => current.filter(t => t.id !== taskId),
+        async () => {
+            const path = paths.tasks(userId, workspaceId);
+            await deleteDoc(doc(db, path, taskId));
+        },
+        'タスクの削除に失敗しました'
+    );
 }
 
 export async function getTaskByIdRaw(userId: string, workspaceId: string, taskId: string): Promise<Task | null> {
