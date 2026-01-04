@@ -6,4 +6,3 @@ compatibility_date = "2026-01-04"
 # Viteのビルド成果物である dist フォルダを参照
 [assets]
 directory = "./dist"
-binding = "ASSETS"
