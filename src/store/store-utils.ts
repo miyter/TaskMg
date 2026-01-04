@@ -8,6 +8,7 @@
 
 import { ZodError, ZodSchema } from 'zod';
 import { auth } from '../core/firebase';
+import { I18nKeys } from '../core/i18n/types';
 import { getTranslator } from '../core/i18n/utils';
 import { useSettingsStore } from './ui/settings-store';
 import { toast } from './ui/toast-store';
@@ -140,7 +141,8 @@ export async function withErrorHandling<T>(
     try {
         const result = await operation();
         if (successMessageKey) {
-            toast.success(t(successMessageKey as any));
+            // Dynamic keys need to be cast - the caller ensures correctness
+            toast.success(t(successMessageKey as I18nKeys));
         }
         return result;
     } catch (error) {
@@ -148,7 +150,7 @@ export async function withErrorHandling<T>(
 
         // Validation エラーは既にToast表示済みなのでスキップ
         if (!(error as Error).message?.includes('Validation')) {
-            toast.error(t(errorMessageKey as any));
+            toast.error(t(errorMessageKey as I18nKeys));
         }
 
         if (rethrow) throw error;

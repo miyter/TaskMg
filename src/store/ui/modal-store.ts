@@ -21,11 +21,11 @@ export type ModalInstance =
     | { id: string; type: 'workspace-edit'; data: Partial<Workspace> }
     | { id: string; type: 'filter-edit'; data: Partial<Filter> }
     | { id: string; type: 'timeblock-edit'; data: Partial<TimeBlock> }
-    | { id: string; type: 'wiki-framework'; data?: any }
+    | { id: string; type: 'wiki-framework'; data?: unknown }
     | { id: string; type: 'confirmation'; data: ConfirmationData };
 
 // Union for argument type
-export type ModalData = Partial<Task> | Partial<Project> | Partial<Label> | Partial<Workspace> | Partial<Filter> | Partial<TimeBlock> | ConfirmationData | null;
+export type ModalData = Partial<Task> | Partial<Project> | Partial<Label> | Partial<Workspace> | Partial<Filter> | Partial<TimeBlock> | ConfirmationData | unknown | null;
 
 interface ModalState {
     stack: ModalInstance[];

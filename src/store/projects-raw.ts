@@ -44,19 +44,19 @@ class ProjectCache extends FirestoreCollectionCache<Project> {
         if (!this.hasFirestoreSubscription(workspaceId)) {
             const path = paths.projects(userId, workspaceId);
             const q = query(collection(db, path));
-            console.log(`${this.config.logPrefix} Subscribing to path: ${path} for user: ${userId}`);
+
 
             const unsub = onSnapshot(q, (snapshot) => {
                 const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-                console.log(`${this.config.logPrefix} Received ${projects.length} projects from Firestore for workspace: ${workspaceId}`);
+
                 const current = this.getItems(workspaceId);
 
                 if (current.length > 0 && areProjectArraysIdentical(current, projects)) {
-                    console.log(`${this.config.logPrefix} Data identical, skipping update`);
+
                     return;
                 }
 
-                console.log(`${this.config.logPrefix} Updating cache and notifying listeners`);
+
                 this.setCache(workspaceId, projects);
             }, (error) => {
                 console.error(`${this.config.logPrefix} Subscription error:`, error);
@@ -89,7 +89,7 @@ export async function addProjectRaw(userId: string, workspaceId: string, name: s
     projectCache.setCache(workspaceId, [...originalProjects, newProject]);
 
     const path = paths.projects(userId, workspaceId);
-    console.log(`[ProjectCache] Adding project to path: ${path}`);
+
 
     return withRetry(async () => {
         const docRef = await addDoc(collection(db, path), {
@@ -98,7 +98,7 @@ export async function addProjectRaw(userId: string, workspaceId: string, name: s
             ownerId: userId,
             createdAt: serverTimestamp()
         });
-        console.log(`[ProjectCache] Successfully added project with ID: ${docRef.id}`);
+
     }, {
         onFinalFailure: () => {
             console.error(`[ProjectCache] Failed to add project: ${name}`);

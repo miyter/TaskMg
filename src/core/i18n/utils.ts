@@ -11,14 +11,20 @@ export const getTranslator = (language: Language) => {
         const langData = translations[language];
         const enData = translations['en'];
 
-        // Resolve path
-        const resolve = (obj: any, path: string): string => {
-            return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+        // Resolve path with type-safe approach
+        const resolve = (obj: Record<string, unknown>, path: string): string | undefined => {
+            const result = path.split('.').reduce<unknown>((acc, part) => {
+                if (acc && typeof acc === 'object' && part in acc) {
+                    return (acc as Record<string, unknown>)[part];
+                }
+                return undefined;
+            }, obj);
+            return typeof result === 'string' ? result : undefined;
         };
 
-        let result = resolve(langData, key);
+        let result = resolve(langData as Record<string, unknown>, key);
         if (!result) {
-            result = resolve(enData, key) || key;
+            result = resolve(enData as Record<string, unknown>, key) || key;
         }
 
         if (params) {

@@ -46,8 +46,8 @@ export const BasicFilters: React.FC = () => {
                 <FilterItem
                     key={item.id}
                     item={item as unknown as FilterItemType}
-                    label={t(item.i18nKey as any)}
-                    count={((counts as any)[item.id] as number) || 0}
+                    label={t(item.i18nKey)}
+                    count={counts[item.id as keyof typeof counts] as number || 0}
                 />
             ))}
         </ul>

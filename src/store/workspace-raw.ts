@@ -46,11 +46,11 @@ class WorkspaceCache extends FirestoreCollectionCache<Workspace> {
         if (!this.hasFirestoreSubscription(userId)) {
             const path = paths.workspaces(userId);
             const q = query(collection(db, path), orderBy('createdAt', 'asc'));
-            console.log(`${this.config.logPrefix} Subscribing to path: ${path}`);
+
 
             const unsub = onSnapshot(q, (snapshot) => {
                 const workspaces = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Workspace[];
-                console.log(`${this.config.logPrefix} Received ${workspaces.length} workspaces from Firestore`);
+
 
                 // Zod validation
                 const validWorkspaces = workspaces.filter(w => {
@@ -97,7 +97,7 @@ export async function addWorkspaceRaw(userId: string, name: string): Promise<{ i
     workspaceCache.setCache(userId, [...originalWorkspaces, newWorkspace]);
 
     const path = paths.workspaces(userId);
-    console.log(`[WorkspaceCache] Adding workspace to path: ${path}`);
+
 
     let docId = tempId;
 
@@ -107,7 +107,7 @@ export async function addWorkspaceRaw(userId: string, name: string): Promise<{ i
             createdAt: serverTimestamp()
         });
         docId = docRef.id;
-        console.log(`[WorkspaceCache] Successfully added workspace with ID: ${docRef.id}`);
+        docId = docRef.id;
     }, {
         onFinalFailure: () => {
             console.error(`[WorkspaceCache] Failed to add workspace: ${name}`);

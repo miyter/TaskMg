@@ -53,7 +53,7 @@ export async function updateTaskStatus(taskId: string, status: string) {
     if (status === 'completed') {
         const task = getTaskFromCache(workspaceId, taskId);
         if (task?.recurrence && task.recurrence.type !== 'none') {
-            const nextDate = getNextRecurrenceDate(task.dueDate ?? null, task.recurrence as any);
+            const nextDate = getNextRecurrenceDate(task.dueDate ?? null, task.recurrence);
             if (nextDate) {
                 const nextTask: Partial<Task> = {
                     title: task.title,
@@ -152,7 +152,7 @@ export async function getTaskById(taskId: string): Promise<Task | null> {
 /**
  * タスク一覧の購読
  */
-export function subscribeToTasks(workspaceId: string, callback: (tasks: Task[]) => void, onError?: (error: any) => void): Unsubscribe {
+export function subscribeToTasks(workspaceId: string, callback: (tasks: Task[]) => void, onError?: (error: Error) => void): Unsubscribe {
     const user = auth.currentUser;
     if (!user || !workspaceId) {
         if (typeof callback === 'function') callback([]);

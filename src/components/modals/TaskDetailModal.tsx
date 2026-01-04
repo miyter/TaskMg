@@ -9,7 +9,7 @@ import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
 import { formatDateForInput, getInitialDueDateFromRecurrence, parseDateInput, toDate } from '../../utils/date';
 import { ErrorMessage } from '../common/ErrorMessage';
-import { IconStar, IconTrash, IconX } from '../common/Icons';
+import { IconChevronDown, IconStar, IconTrash, IconX } from '../common/Icons';
 import { Modal } from '../common/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -26,7 +26,7 @@ const TASK_STATUS = {
 // --- メインコンポーネント ---
 interface TaskDetailModalProps {
     isOpen?: boolean;
-    data?: any;
+    data?: Task;
     zIndex?: number;
     overlayClassName?: string;
 }
@@ -35,7 +35,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     const { t } = useTranslation();
     const { closeModal, openModal } = useModalStore(); // Destructure openModal
     const isOpen = !!propIsOpen;
-    const task = propData as Task | null;
+    const task = propData || null;
     // 新規タスク判定: IDがない、または'temp-'で始まる一時IDの場合
     const isNewTask = !task?.id || task.id.startsWith('temp-');
 
@@ -158,8 +158,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
         if (!task?.id || isNewTask) return;
 
-        if (!task?.id || isNewTask) return;
-
         openModal('confirmation', {
             title: t('delete'),
             message: t('modal.delete_confirm'),
@@ -261,7 +259,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                 "p-1.5 rounded-md transition-colors",
                                 isImportant ? "text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/30" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                             )}
-                            title={isImportant ? "重要度を解除" : "重要としてマーク"}
+                            title={isImportant ? t('task_detail.unmark_important') : t('task_detail.mark_important')}
+                            aria-label={isImportant ? t('task_detail.unmark_important') : t('task_detail.mark_important')}
                         >
                             <IconStar size={16} fill={isImportant ? "currentColor" : "none"} />
                         </Button>
@@ -270,7 +269,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                             size="icon"
                             onClick={closeModal}
                             className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            aria-label="閉じる"
+                            aria-label={t('modal.close')}
                         >
                             <IconX size={16} />
                         </Button>
@@ -301,22 +300,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                 <button
                                     type="button"
                                     onClick={() => setScheduleOpen(!scheduleOpen)}
-                                    className="w-full flex items-center justify-between group text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1 border-b border-gray-100 dark:border-gray-800 hover:text-blue-500 transition-colors"
+                                    aria-expanded={scheduleOpen}
+                                    className="w-full flex items-center justify-between group text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1 border-b border-gray-100 dark:border-gray-800 hover:text-blue-500 transition-colors focus:outline-none focus:border-blue-500"
                                 >
                                     <span className="flex items-center gap-2">
                                         {t('task_detail.schedule_label')}
                                     </span>
-                                    <IconX className={cn("w-3 h-3 transition-transform", scheduleOpen ? "rotate-45" : "rotate-45")} style={{ transform: scheduleOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-                                    {/* Using IconX as generic icon or better IconChevronDown if available. Reusing what's imported. IconX is close (cross). IconCheck. IconPlus. IconTrash. 
-                                       Actually, IconChevronDown is not imported. 
-                                       I can use CSS caret or text '>' or 'v'.
-                                       Or import chevron.
-                                       Let's use a simple span with CSS transform for now or existing icon. 
-                                       Actually, let's simply use text v / > for simplicity if no icon available. 
-                                       Or better, import IconChevronDown if I can find it. 
-                                       Common/Icons usually has it.
-                                    */}
-                                    <span className={cn("text-xs transition-transform duration-200", scheduleOpen ? "rotate-180" : "")}>▼</span>
+                                    <IconChevronDown className={cn("w-3 h-3 transition-transform duration-200", scheduleOpen ? "rotate-180" : "")} />
                                 </button>
 
                                 {scheduleOpen && (
@@ -360,19 +350,19 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                                     {dayLabels.map((day, idx) => {
                                                         const isSelected = recurrence.days?.includes(idx);
                                                         return (
-                                                            <button
+                                                            <Button
                                                                 type="button"
                                                                 key={idx}
+                                                                variant={isSelected ? "primary" : "outline"}
+                                                                size="icon"
                                                                 onClick={() => handleDayToggle(idx)}
                                                                 className={cn(
-                                                                    "w-7 h-7 rounded-full text-xs flex items-center justify-center transition-colors border",
-                                                                    isSelected
-                                                                        ? "bg-blue-500 text-white border-blue-500"
-                                                                        : "bg-transparent text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                                                    "w-7 h-7 text-xs rounded-full p-0 border",
+                                                                    !isSelected && "bg-transparent text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                                                                 )}
                                                             >
                                                                 {day}
-                                                            </button>
+                                                            </Button>
                                                         );
                                                     })}
                                                 </div>

@@ -38,10 +38,7 @@ export const isTargetsInitialized = (workspaceId?: string): boolean => {
 /**
  * ターゲットのリアルタイム購読
  */
-/**
- * ターゲットのリアルタイム購読
- */
-export const subscribeToTargets = (workspaceId: string, onUpdate: (targets: Target[]) => void, onError?: (error: any) => void): Unsubscribe => {
+export const subscribeToTargets = (workspaceId: string, onUpdate: (targets: Target[]) => void, onError?: (error: unknown) => void): Unsubscribe => {
     const user = auth.currentUser;
 
     if (user && workspaceId && typeof onUpdate === 'function') {

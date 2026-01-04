@@ -89,10 +89,8 @@ if (!firebaseConfig?.apiKey || !firebaseConfig?.projectId) {
 let appInstance: FirebaseApp;
 if (getApps().length > 0) {
     appInstance = getApps()[0];
-    if (import.meta.env.DEV) console.log("[Firebase] Using existing app instance.");
 } else {
     appInstance = initializeApp(firebaseConfig);
-    if (import.meta.env.DEV) console.log("[Firebase] Initialized new app instance.");
 }
 
 

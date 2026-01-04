@@ -23,6 +23,7 @@ import { useAppDnD } from './hooks/useAppDnD';
 import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
 import { useThemeEffect } from './hooks/useThemeEffect';
+import { useTranslation } from './hooks/useTranslation';
 
 import { useDnDStore } from './store/ui/dnd-store';
 import { useFilterStore } from './store/ui/filter-store';
@@ -81,6 +82,7 @@ const App: React.FC = () => {
     const { setFilter } = useFilterStore();
     const { projects, setProjectsOverride } = useProjects();
     const { labels } = useLabels();
+    const { t } = useTranslation();
 
     // Auth state: null = not determined yet, false = explicitly logged out
     const [authState, setAuthState] = React.useState<{ user: any; loading: boolean }>({
@@ -122,21 +124,21 @@ const App: React.FC = () => {
 
     // Compute Title (memoized)
     const title = useMemo(() => {
-        if (currentView === 'wizard') return 'Goal Wizard';
-        if (currentView === 'target-dashboard') return 'Target Dashboard';
-        if (currentView === 'wiki') return 'Framework Wiki';
-        if (currentView === 'search') return query ? `"${query}" の検索結果` : '検索';
+        if (currentView === 'wizard') return t('sidebar.target_wizard');
+        if (currentView === 'target-dashboard') return t('sidebar.target_dashboard');
+        if (currentView === 'wiki') return t('sidebar.framework_wiki');
+        if (currentView === 'search') return query ? t('search_view.results_for', { query }) : t('search');
 
-        if (filterType === 'project') return projects.find(p => p.id === targetId)?.name || 'Project';
-        if (filterType === 'label') return labels.find(l => l.id === targetId)?.name || 'Label';
-        if (filterType === 'search') return query ? `"${query}" の検索結果` : '検索';
+        if (filterType === 'project') return projects.find(p => p.id === targetId)?.name || t('project');
+        if (filterType === 'label') return labels.find(l => l.id === targetId)?.name || t('label');
+        if (filterType === 'search') return query ? t('search_view.results_for', { query }) : t('search');
         switch (filterType) {
-            case 'inbox': return 'Inbox';
-            case 'today': return 'Today';
-            case 'upcoming': return 'Upcoming';
+            case 'inbox': return t('inbox');
+            case 'today': return t('today');
+            case 'upcoming': return t('upcoming');
             default: return 'TaskMg';
         }
-    }, [currentView, query, filterType, targetId, projects, labels]);
+    }, [currentView, query, filterType, targetId, projects, labels, t]);
 
     // Show loading spinner while Firebase restores auth state
     if (authState.loading) {

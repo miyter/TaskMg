@@ -40,12 +40,15 @@ export function areTaskArraysIdentical(a: Task[] | undefined, b: Task[] | undefi
         if (ta.duration !== tb.duration) return false;
         if (ta.recurrence !== tb.recurrence) return false; // isImportant was removed, added recurrence check
         // 日付の比較 (Date / Firestore Timestamp の両方に対応)
+        interface TimestampLike {
+            toMillis(): number;
+        }
         const toMs = (val: unknown): number | null | undefined => {
             if (val === null || val === undefined) return val as null | undefined;
             if (val instanceof Date) return val.getTime();
             // Firestore Timestamp check
-            if (typeof val === 'object' && val !== null && 'toMillis' in val && typeof (val as any).toMillis === 'function') {
-                return (val as any).toMillis();
+            if (typeof val === 'object' && val !== null && 'toMillis' in val && typeof (val as TimestampLike).toMillis === 'function') {
+                return (val as TimestampLike).toMillis();
             }
             if (typeof val === 'number') return val;
             return null;

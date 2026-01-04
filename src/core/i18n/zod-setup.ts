@@ -9,14 +9,21 @@ import { getTranslator } from './utils';
  * Also handles standard Zod errors with generic translated messages.
  */
 export const initZodI18n = () => {
-    z.setErrorMap(((issue: any, ctx: any) => {
+    // Use Parameters utility to get the exact expected types for the error map function from zod directly
+    // This avoids dependency on specific exported types that might change between versions (v3 vs v4)
+    type ErrorMapType = Parameters<typeof z.setErrorMap>[0];
+    type IssueType = Parameters<ErrorMapType>[0];
+
+    const customErrorMap = (issue: IssueType) => {
         const { language } = useSettingsStore.getState();
         const { t } = getTranslator(language as Language);
 
         // 1. Handle Custom Refinements with internationalization keys
         if (issue.code === z.ZodIssueCode.custom) {
+            // @ts-ignore - 'i18n' is a custom param we add manually in schema
             if (issue.params && issue.params.i18n) {
-                return { message: t(issue.params.i18n as any) };
+                // @ts-ignore
+                return { message: t(issue.params.i18n) };
             }
         }
 
@@ -27,7 +34,10 @@ export const initZodI18n = () => {
             }
         }
 
-        // 3. Fallback to default Zod message (with null safety)
-        return { message: ctx?.defaultError || t('validation.validation_error') };
-    }) as any);
+        // 3. Fallback
+        // @ts-ignore
+        return { message: issue.message || t('validation.validation_error') };
+    };
+
+    z.setErrorMap(customErrorMap);
 };

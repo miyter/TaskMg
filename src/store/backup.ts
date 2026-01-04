@@ -156,9 +156,9 @@ export async function createBackupData(userId: string, workspaceId: string): Pro
             getDocs(filtersRef)
         ]);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const serializeData = (snap: any) =>
-            snap.docs.map((d: any) => {
+
+        const serializeData = <T extends Record<string, unknown>>(snap: { docs: Array<{ id: string; data: () => Record<string, unknown> }> }): T[] =>
+            snap.docs.map((d) => {
                 const data = d.data();
                 const serialized: Record<string, unknown> = { id: d.id };
                 for (const key in data) {
@@ -168,7 +168,7 @@ export async function createBackupData(userId: string, workspaceId: string): Pro
                         ? value.toMillis()
                         : value;
                 }
-                return serialized;
+                return serialized as T;
             });
 
         return {

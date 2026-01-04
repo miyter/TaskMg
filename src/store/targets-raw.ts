@@ -44,7 +44,7 @@ class TargetCache extends FirestoreCollectionCache<Target> {
             const path = paths.targets(userId, workspaceId);
             // 作成日順（新しいものが上）
             const q = query(collection(db, path), orderBy('createdAt', 'desc'));
-            console.log(`${this.config.logPrefix} Subscribing to path: ${path}`);
+
 
             const unsub = onSnapshot(q, (snapshot) => {
                 const targets = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Target[];
@@ -55,7 +55,7 @@ class TargetCache extends FirestoreCollectionCache<Target> {
                     return;
                 }
 
-                console.log(`${this.config.logPrefix} Received ${targets.length} targets from Firestore for workspace: ${workspaceId}`);
+
                 this.setCache(workspaceId, targets);
             }, (error) => {
                 console.error(`${this.config.logPrefix} Subscription error:`, error);

@@ -59,7 +59,7 @@ export const ProjectSchema = z.object({
 
 export const LabelSchema = z.object({
     id: z.string().optional(),
-    name: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.label_name_required' } }),
+    name: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.label_name_required' } }).pipe(z.string().max(20)),
     color: z.string().optional(),
     ownerId: z.string(),
     workspaceId: z.string().optional(), // Added for future migration
@@ -69,7 +69,7 @@ export const LabelSchema = z.object({
 
 export const WorkspaceSchema = z.object({
     id: z.string().optional(),
-    name: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.workspace_name_required' } }),
+    name: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.workspace_name_required' } }).pipe(z.string().max(30)),
     createdAt: DateLikeSchema,
 });
 
@@ -90,7 +90,7 @@ const TimeStringSchema = z.string().refine(
 
 export const TimeBlockSchema = z.object({
     id: z.string().optional(),
-    name: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.timeblock_name_required' } }),
+    name: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.timeblock_name_required' } }).pipe(z.string().max(20)),
     start: TimeStringSchema,
     end: TimeStringSchema,
     color: z.string().optional(),

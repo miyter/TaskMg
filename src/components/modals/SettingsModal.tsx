@@ -85,7 +85,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                         <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label={t('settings_modal.tabs.general')} icon="⚙️" />
                         <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label={t('settings_modal.tabs.appearance')} icon="🎨" />
                         <TabButton active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} label={t('settings_modal.tabs.schedule') || 'Schedule'} icon="📅" />
-                        <TabButton active={activeTab === 'security'} onClick={() => setActiveTab('security')} label={(t('settings_modal.tabs.security') as any) || 'Security'} icon="🔐" />
+                        <TabButton active={activeTab === 'security'} onClick={() => setActiveTab('security')} label={t('settings_modal.tabs.security')} icon="🔐" />
                     </div>
                 </div>
 
@@ -100,8 +100,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                         <button
                                             key={mode}
                                             onClick={() => setThemeMode(mode)}
+                                            aria-pressed={themeMode === mode}
                                             className={cn(
-                                                "p-3 border rounded-xl text-sm font-medium transition-all",
+                                                "p-3 border rounded-xl text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500",
                                                 themeMode === mode
                                                     ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-2 ring-blue-200 dark:ring-blue-800"
                                                     : "border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400"
@@ -118,7 +119,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                 <div className="space-y-3">
                                     {(['compact', 'normal', 'comfortable', 'spacious'] as Density[]).map(d => (
                                         <label key={d} htmlFor={`density-${d}`} className={cn(
-                                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-blue-500",
                                             density === d
                                                 ? "border-blue-500 bg-blue-50 dark:bg-blue-900/10"
                                                 : "border-transparent hover:bg-white dark:hover:bg-gray-800"
@@ -135,7 +136,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                                 name="density"
                                                 checked={density === d}
                                                 onChange={() => setDensity(d)}
-                                                className="hidden"
+                                                className="sr-only"
                                             />
                                             <span className="capitalize text-sm font-medium text-gray-700 dark:text-gray-300">{t(`settings_modal.options.density.${d}` as any)}</span>
                                         </label>
@@ -295,8 +296,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                         <button
                                             key={lang.code}
                                             onClick={() => setLanguage(lang.code as any)}
+                                            aria-pressed={language === lang.code}
                                             className={cn(
-                                                "p-3 border rounded-xl text-sm font-medium transition-all",
+                                                "p-3 border rounded-xl text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500",
                                                 language === lang.code
                                                     ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-2 ring-blue-200 dark:ring-blue-800"
                                                     : "border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400"

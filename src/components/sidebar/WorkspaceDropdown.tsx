@@ -2,7 +2,7 @@
 import { useTranslation } from '../../core/translations';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useModalStore } from '../../store/ui/modal-store';
-import { setCurrentWorkspaceId } from '../../store/workspace';
+import { deleteWorkspace, setCurrentWorkspaceId } from '../../store/workspace';
 
 import { UI_CONFIG } from '../../core/ui-constants';
 import { cn } from '../../utils/cn';
@@ -102,7 +102,6 @@ export const WorkspaceDropdown: React.FC = () => {
             variant: 'danger',
             onConfirm: async () => {
                 try {
-                    const { deleteWorkspace } = await import('../../store/workspace');
                     await deleteWorkspace(ws.id!);
                 } catch (e) {
                     console.error("Failed to delete workspace:", e);
@@ -214,7 +213,6 @@ export const WorkspaceDropdown: React.FC = () => {
                                                             confirmLabel: t('delete'),
                                                             variant: 'danger',
                                                             onConfirm: async () => {
-                                                                const { deleteWorkspace } = await import('../../store/workspace');
                                                                 await deleteWorkspace(ws.id!);
                                                             }
                                                         });

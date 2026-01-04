@@ -26,10 +26,21 @@ import { FirestoreCollectionCache } from './base-cache';
 import { Task, TaskSchema } from './schema';
 import { toast } from './ui/toast-store';
 
-const toJSDate = (val: any): Date | undefined => (val instanceof Timestamp) ? val.toDate() : (val instanceof Date ? val : undefined);
-const toFirestoreDate = (val: any): Timestamp | Date | undefined => (val instanceof Date) ? Timestamp.fromDate(val) : val;
+interface TimestampLike {
+    toDate(): Date;
+}
 
-function deserializeTask(id: string, data: any): Task {
+const toJSDate = (val: unknown): Date | undefined => {
+    if (val instanceof Timestamp) return val.toDate();
+    if (typeof val === 'object' && val !== null && 'toDate' in val && typeof (val as TimestampLike).toDate === 'function') {
+        return (val as TimestampLike).toDate();
+    }
+    if (val instanceof Date) return val;
+    return undefined;
+};
+const toFirestoreDate = (val: unknown): Timestamp | Date | undefined => (val instanceof Date) ? Timestamp.fromDate(val) : (val as Timestamp | undefined);
+
+function deserializeTask(id: string, data: Record<string, unknown>): Task {
     // データを安全に Task 型に整形
     if (!data || typeof data !== 'object') {
         console.warn(`[deserializeTask] Invalid data for task ${id}:`, data);
@@ -41,7 +52,15 @@ function deserializeTask(id: string, data: any): Task {
         } as Task;
     }
 
-    const recurrence = data.recurrence || null;
+    // Recurrence を適切な型に整形
+    const rawRecurrence = data.recurrence as Record<string, unknown> | null | undefined;
+    let recurrence: Task['recurrence'] = null;
+    if (rawRecurrence && typeof rawRecurrence === 'object' && 'type' in rawRecurrence) {
+        recurrence = {
+            type: rawRecurrence.type as 'none' | 'daily' | 'weekly' | 'weekdays' | 'monthly',
+            days: Array.isArray(rawRecurrence.days) ? rawRecurrence.days as number[] : undefined
+        };
+    }
 
     const task: Task = {
         id,
@@ -57,7 +76,7 @@ function deserializeTask(id: string, data: any): Task {
         projectId: data.projectId ? String(data.projectId) : null,
         labelIds: Array.isArray(data.labelIds) ? data.labelIds.map(String) : [],
         timeBlockId: data.timeBlockId ? String(data.timeBlockId) : null,
-        duration: typeof data.duration === 'number' ? data.duration : null,
+        duration: typeof data.duration === 'number' ? data.duration : undefined,
         isImportant: !!data.isImportant,
         recurrence: recurrence,
     };
@@ -110,7 +129,7 @@ class TaskCache extends FirestoreCollectionCache<Task> {
         this.currentWorkspaceId = null;
     }
 
-    public subscribe(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void, onError?: (error: any) => void): Unsubscribe {
+    public subscribe(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void, onError?: (error: Error) => void): Unsubscribe {
         if (!userId || !workspaceId) {
             onUpdate([]);
             return () => { };
@@ -176,12 +195,12 @@ export function isTasksInitialized(workspaceId: string): boolean {
     return taskCache.isInitialized(workspaceId);
 }
 
-export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void, onError?: (error: any) => void): Unsubscribe {
+export function subscribeToTasksRaw(userId: string, workspaceId: string, onUpdate: (tasks: Task[]) => void, onError?: (error: Error) => void): Unsubscribe {
     return taskCache.subscribe(userId, workspaceId, onUpdate, onError);
 }
 
 // ヘルパー: undefinedを除去する
-function removeUndefined<T extends Record<string, any>>(obj: T): T {
+function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
     return Object.fromEntries(
         Object.entries(obj).filter(([_, v]) => v !== undefined)
     ) as T;
@@ -293,7 +312,7 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
             if (t.id === taskId) {
                 return {
                     ...t,
-                    status: status as any,
+                    status: status as Task['status'],
                     completedAt: status === 'completed' ? new Date() : undefined
                 };
             }
@@ -304,11 +323,9 @@ export async function updateTaskStatusRaw(userId: string, workspaceId: string, t
 
     return withRetry(async () => {
         const path = paths.tasks(userId, workspaceId);
-        const updates: any = { status };
+        const updates: { status: string; completedAt: ReturnType<typeof serverTimestamp> | null } = { status, completedAt: null };
         if (status === 'completed') {
             updates.completedAt = serverTimestamp();
-        } else {
-            updates.completedAt = null;
         }
         await updateDoc(doc(db, path, taskId), updates);
     }, {

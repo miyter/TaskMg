@@ -136,6 +136,7 @@ export const ja = {
         ok: 'OK',
         delete: '削除',
         delete_confirm: '本当にこのタスクを削除しますか？',
+        close: '閉じる',
         no_memo: 'メモがありません',
         workspace_edit_title: 'ワークスペース名の変更',
         workspace_create_title: '新規ワークスペース',
@@ -172,6 +173,8 @@ export const ja = {
 
         delete_button: '削除',
         duration_unit: '分',
+        mark_important: '重要としてマーク',
+        unmark_important: '重要度を解除',
     },
 
     time_block: {
@@ -225,6 +228,18 @@ export const ja = {
         brown: '茶',
         grey: 'グレー',
         blue_grey: 'ブルーグレー',
+    },
+
+    rich_text: {
+        bold: '太字 (Cmd+B)',
+        italic: '斜体 (Cmd+I)',
+        heading: '見出し',
+        bullet_list: '箇条書き',
+        ordered_list: '番号付きリスト',
+        task_list: 'タスクリスト',
+        link: 'リンク',
+        code_block: 'コードブロック',
+        blockquote: '引用',
     },
 
     settings_modal: {
@@ -635,6 +650,7 @@ export const en = {
         ok: 'OK',
         delete: 'Delete',
         delete_confirm: 'Are you sure you want to delete this task?',
+        close: 'Close',
         no_memo: 'No memo',
         workspace_edit_title: 'Edit Workspace Name',
         workspace_create_title: 'New Workspace',
@@ -671,6 +687,8 @@ export const en = {
 
         delete_button: 'Delete',
         duration_unit: 'min',
+        mark_important: 'Mark as Important',
+        unmark_important: 'Unmark Important',
     },
 
     time_block: {
@@ -726,6 +744,18 @@ export const en = {
         brown: 'Brown',
         grey: 'Grey',
         blue_grey: 'Blue Grey',
+    },
+
+    rich_text: {
+        bold: 'Bold (Cmd+B)',
+        italic: 'Italic (Cmd+I)',
+        heading: 'Heading',
+        bullet_list: 'Bullet List',
+        ordered_list: 'Ordered List',
+        task_list: 'Task List',
+        link: 'Link',
+        code_block: 'Code Block',
+        blockquote: 'Blockquote',
     },
 
     settings_modal: {

@@ -43,11 +43,11 @@ class LabelCache extends FirestoreCollectionCache<Label> {
         if (!this.hasFirestoreSubscription(workspaceId)) {
             const path = paths.labels(userId, workspaceId);
             const q = query(collection(db, path));
-            console.log(`${this.config.logPrefix} Subscribing to path: ${path}`);
+
 
             const unsub = onSnapshot(q, (snapshot) => {
                 const labels = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Label[];
-                console.log(`${this.config.logPrefix} Received ${labels.length} labels from Firestore for workspace: ${workspaceId}`);
+
 
                 this.setCache(workspaceId, labels);
             }, (error) => {
@@ -85,7 +85,7 @@ export async function addLabelRaw(userId: string, workspaceId: string, name: str
     labelCache.setCache(workspaceId, [...originalLabels, newLabel]);
 
     const path = paths.labels(userId, workspaceId);
-    console.log(`[LabelCache] Adding label to path: ${path}`);
+
 
     return withRetry(async () => {
         await addDoc(collection(db, path), {

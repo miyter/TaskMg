@@ -59,7 +59,7 @@ export function useFirestoreSubscription<T>(
 
         if (!subRecord) {
             // Start new subscription
-            // console.log(`[FirestoreSub] Starting subscription for: ${keyHash}`);
+
             const unsubscribe = subscribeFn((data) => {
                 queryClient.setQueryData(queryKey, data);
             });

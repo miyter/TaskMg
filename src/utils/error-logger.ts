@@ -99,7 +99,7 @@ export function logReactError(error: Error, componentStack?: string): void {
 /**
  * 警告をログに記録
  */
-export function logWarn(message: string, context?: Record<string, any>): void {
+export function logWarn(message: string, context?: Record<string, unknown>): void {
     logError({
         timestamp: new Date().toISOString(),
         type: 'warn',

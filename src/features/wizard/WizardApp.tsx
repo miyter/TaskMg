@@ -46,7 +46,7 @@ export const WizardApp: React.FC = () => {
                 mode: mode,
                 data: finalData
             });
-            console.log("Wizard Completed, Saved to Firestore", finalData);
+
             toast.success(t('wizard.alert_create_success', { label: modesConfig[mode].label }));
 
             // Reset and navigate

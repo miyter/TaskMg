@@ -83,7 +83,7 @@ class AuthService {
         this.initialLoginPromise = (async () => {
             try {
                 await signInWithCustomToken(auth, initialToken);
-                console.log("[Auth] Initial token login success");
+
             } catch (err: any) {
                 logError({
                     timestamp: new Date().toISOString(),
