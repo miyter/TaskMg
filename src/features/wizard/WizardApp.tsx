@@ -20,8 +20,8 @@ export const WizardApp: React.FC = () => {
     const modesConfig = getWizardModes(language);
 
     useEffect(() => {
-        if (viewData?.mode) {
-            setMode(viewData.mode as WizardModeId);
+        if (viewData && (viewData as any).mode) {
+            setMode((viewData as any).mode as WizardModeId);
             setStep(0);
         }
     }, [viewData]);

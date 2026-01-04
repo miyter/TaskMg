@@ -5,7 +5,7 @@
 
 import { auth } from '../core/firebase';
 import { Unsubscribe } from '../core/firebase-sdk';
-import { getNextRecurrenceDate } from '../utils/date';
+import { getNextRecurrenceDate } from '../utils/date-tz';
 import { Task, TaskSchema } from './schema';
 import { getT, requireAuthAndWorkspace, withErrorHandling } from './store-utils';
 import {

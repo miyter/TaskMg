@@ -26,7 +26,7 @@ export const ModalManager: React.FC = () => {
 
                 const props = {
                     isOpen: true,
-                    data: modal.data,
+                    data: modal.data as any,
                     zIndex: UI_CONFIG.Z_INDEX.MODAL + index * 10,
                     overlayClassName: overlayStyle
                 };

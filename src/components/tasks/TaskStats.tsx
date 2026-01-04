@@ -3,7 +3,7 @@ import { useTranslation } from '../../core/translations';
 import { useTimeBlocks } from '../../hooks/useTimeBlocks';
 import { Task } from '../../store/schema';
 import { cn } from '../../utils/cn';
-import { calculateDurationMinutes } from '../../utils/date';
+import { calculateDurationMinutes } from '../../utils/date-tz';
 
 interface TaskStatsProps {
     tasks: Task[];

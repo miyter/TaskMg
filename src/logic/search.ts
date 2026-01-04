@@ -1,5 +1,6 @@
+import { addDays } from 'date-fns';
 import { Task } from '../store/schema';
-import { getStartOfWeek, isSameDay, toDate } from '../utils/date';
+import { ensureDate, getLocalStartOfDay, getLocalStartOfWeek, isSameDayLocal } from '../utils/date-tz';
 import { FilterConditions, parseFilterQuery } from './filter-parser';
 import { sortTasks } from './sort';
 
@@ -9,18 +10,13 @@ type FilterCriteria = string | FilterConditions;
  * 日付基準値を事前計算 (パフォーマンス最適化)
  */
 function createDateBaselines() {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
+    // ローカルタイムでの今日の00:00:00を取得
+    const now = getLocalStartOfDay(new Date());
 
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const weekStart = getStartOfWeek(now);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-
-    const upcomingEnd = new Date(tomorrow);
-    upcomingEnd.setDate(upcomingEnd.getDate() + 7);
+    const tomorrow = addDays(now, 1);
+    const weekStart = getLocalStartOfWeek(new Date());
+    const weekEnd = addDays(weekStart, 7);
+    const upcomingEnd = addDays(tomorrow, 7); // tomorrow + 7 days = 8 days from now
 
     return { now, tomorrow, weekStart, weekEnd, upcomingEnd };
 }
@@ -38,9 +34,9 @@ function matchesDateCondition(
 
     switch (condition) {
         case 'today':
-            return isSameDay(taskDate, now) || (taskDate < now && taskStatus !== 'completed');
+            return isSameDayLocal(taskDate, now) || (taskDate < now && taskStatus !== 'completed');
         case 'tomorrow':
-            return isSameDay(taskDate, tomorrow);
+            return isSameDayLocal(taskDate, tomorrow);
         case 'week':
             return taskDate >= weekStart && taskDate < weekEnd;
         case 'upcoming':
@@ -138,7 +134,7 @@ export function matchesConditions(
         // Safe check for dateBaselines
         const baselines = dateBaselines || createDateBaselines();
 
-        const taskDate = toDate(task.dueDate);
+        const taskDate = ensureDate(task.dueDate);
         if (!taskDate) return false;
 
         const isMatch = conditions.dates.some(d =>

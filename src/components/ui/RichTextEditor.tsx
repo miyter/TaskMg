@@ -3,6 +3,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import React, { useEffect } from 'react';
+import { useTranslation } from '../../core/translations';
 import { cn } from '../../utils/cn';
 import {
     IconBold,

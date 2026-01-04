@@ -18,7 +18,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from '../../core/translations';
 import { Task } from '../../store/schema';
 import { cn } from '../../utils/cn';
-import { toDate } from '../../utils/date';
+import { ensureDate } from '../../utils/date-tz';
 import { Select } from '../ui/Select';
 
 type Period = 'day' | 'week' | 'month' | 'quarter';
@@ -31,9 +31,8 @@ export const TaskCompletionChart: React.FC<TaskCompletionChartProps> = ({ tasks 
     const { t } = useTranslation();
     const [period, setPeriod] = useState<Period>('day');
 
-    const completedTasks = useMemo(() => {
-        return tasks.filter(t => t.status === 'completed' && t.completedAt);
-    }, [tasks]);
+
+    const completedTasks = useMemo(() => tasks.filter(task => task.status === 'completed' && task.completedAt), [tasks]);
 
     const data = useMemo(() => {
         const now = new Date();
@@ -65,8 +64,8 @@ export const TaskCompletionChart: React.FC<TaskCompletionChartProps> = ({ tasks 
                 label = `Q${Math.floor(start.getMonth() / 3) + 1}`;
             }
 
-            const count = completedTasks.filter(t => {
-                const d = toDate(t.completedAt);
+            const count = completedTasks.filter(task => {
+                const d = ensureDate(task.completedAt);
                 return d && d >= start && d <= end;
             }).length;
 

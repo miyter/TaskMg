@@ -2,7 +2,7 @@
 import { subDays } from 'date-fns'; // Need to be careful about import order?
 import { auth, db } from '../core/firebase';
 import { collection, doc, getDocs, query, where, writeBatch } from '../core/firebase-sdk';
-import { toDate } from '../utils/date';
+import { ensureDate } from '../utils/date-tz';
 import { paths } from '../utils/paths';
 import { Task } from './schema';
 
@@ -44,12 +44,7 @@ export async function cleanupDuplicateTasks(workspaceId: string): Promise<number
             group.sort((a, b) => {
                 // Handle Firestore Timestamp or Date objects
                 const getTime = (val: unknown): number => {
-                    if (!val) return 0;
-                    if (typeof val === 'object' && 'toDate' in val && typeof (val as { toDate: () => Date }).toDate === 'function') {
-                        return (val as { toDate: () => Date }).toDate().getTime();
-                    }
-                    const date = new Date(val as string | number | Date);
-                    return isNaN(date.getTime()) ? 0 : date.getTime();
+                    return ensureDate(val as any)?.getTime() || 0;
                 };
                 const timeA = getTime(a.createdAt);
                 const timeB = getTime(b.createdAt);
@@ -114,7 +109,7 @@ export async function cleanupOldTasks(workspaceId: string): Promise<number> {
 
         // Check completedAt
         if (t.completedAt) {
-            const completedDate = toDate(t.completedAt);
+            const completedDate = ensureDate(t.completedAt);
             if (completedDate && completedDate < cutOffDate) {
                 // Only process if it has description or hasn't been marked purged
                 if (t.description || !t.isDetailPurged) {

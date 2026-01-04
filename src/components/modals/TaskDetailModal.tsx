@@ -7,7 +7,7 @@ import { Recurrence, Task } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { cn } from '../../utils/cn';
-import { getInitialDueDateFromRecurrence, parseDateInput } from '../../utils/date-tz';
+import { ensureDate, formatForDateInput, getInitialDueDateFromRecurrence, parseDateInput } from '../../utils/date-tz';
 import { ErrorMessage } from '../common/ErrorMessage';
 import { IconChevronDown, IconStar, IconTrash, IconX } from '../common/Icons';
 import { Modal } from '../common/Modal';
@@ -324,7 +324,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                                 <Input
                                                     type="date"
                                                     id="task-due-date"
-                                                    value={formatDateForInput(dueDate)}
+                                                    value={dueDate ? formatForDateInput(dueDate) : ''}
                                                     onChange={(e) => setDueDate(parseDateInput(e.target.value))}
                                                     className="cursor-pointer bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto w-full"
                                                 />

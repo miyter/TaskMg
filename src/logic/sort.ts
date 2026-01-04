@@ -1,5 +1,5 @@
 import { Task } from '../store/schema';
-import { toDate } from '../utils/date';
+import { ensureDate } from '../utils/date-tz';
 
 export type SortCriteria = 'dueDate' | 'createdAt' | 'title' | 'duration' | 'dueDate_desc' | 'createdAt_desc' | 'title_desc' | 'duration_desc' | string;
 
@@ -16,12 +16,12 @@ export function sortTasks(tasks: Task[], criteria: SortCriteria = 'createdAt_des
 
         switch (field) {
             case 'dueDate':
-                valA = toDate(a.dueDate)?.getTime();
-                valB = toDate(b.dueDate)?.getTime();
+                valA = ensureDate(a.dueDate)?.getTime();
+                valB = ensureDate(b.dueDate)?.getTime();
                 break;
             case 'createdAt':
-                valA = toDate(a.createdAt)?.getTime();
-                valB = toDate(b.createdAt)?.getTime();
+                valA = ensureDate(a.createdAt)?.getTime();
+                valB = ensureDate(b.createdAt)?.getTime();
                 break;
             case 'title':
                 valA = a.title.toLowerCase();
@@ -43,8 +43,8 @@ export function sortTasks(tasks: Task[], criteria: SortCriteria = 'createdAt_des
             default:
                 // 不明な criteria の場合は createdAt にフォールバック
                 // console.debug(`[sortTasks] Unknown criteria: ${field}, falling back to createdAt`);
-                valA = toDate(a.createdAt)?.getTime();
-                valB = toDate(b.createdAt)?.getTime();
+                valA = ensureDate(a.createdAt)?.getTime();
+                valB = ensureDate(b.createdAt)?.getTime();
         }
 
         return compareNullable(valA, valB) * multiplier;

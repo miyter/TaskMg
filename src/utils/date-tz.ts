@@ -334,10 +334,45 @@ export function calculateDurationMinutes(start: string, end: string): number {
     const startMinutes = startH * 60 + startM;
     let endMinutes = endH * 60 + endM;
 
-    // 日を跨ぐ場合 (例: 23:00 -> 01:00)
     if (endMinutes < startMinutes) {
         endMinutes += 24 * 60;
     }
 
     return endMinutes - startMinutes;
 }
+
+// --- 判定ロジック ---
+
+/**
+ * 2つの日付が同じ日かどうかを判定する (ローカルタイムゾーン基準)
+ */
+export const isSameDayLocal = (d1: Date | { toDate: () => Date } | string | number | null, d2: Date | { toDate: () => Date } | string | number | null): boolean => {
+    const a = ensureDate(d1);
+    const b = ensureDate(d2);
+    if (!a || !b) return false;
+
+    // Convert to local time and strip time
+    const localA = toLocalTime(a);
+    const localB = toLocalTime(b);
+    return differenceInCalendarDays(localA, localB) === 0;
+};
+
+/**
+ * 指定された期間（デフォルトは明日から1週間）に含まれるかを判定
+ */
+export const isUpcoming = (date: Date | { toDate: () => Date } | string | number | null, days: number = 7): boolean => {
+    const target = ensureDate(date);
+    if (!target) return false;
+
+    const now = new Date();
+    const localNow = toLocalTime(now);
+    localNow.setHours(0, 0, 0, 0);
+
+    const start = addDays(localNow, 1); // Tomorrow
+    const end = addDays(localNow, days + 1); // +8 days roughly
+
+    const localTarget = toLocalTime(target);
+
+    // タイムゾーン変換後の日付オブジェクト同士で比較
+    return localTarget >= start && localTarget < end;
+};

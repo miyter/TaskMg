@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { parseFilterQuery } from '../logic/filter-parser';
 import { matchesConditions } from '../logic/search';
 import { useFilterStore } from '../store/ui/filter-store';
-import { isToday, isUpcoming, toDate } from '../utils/date';
+import { ensureDate, getLocalStartOfDay, isLocalToday, isUpcoming } from '../utils/date-tz';
 import { useFilters } from './useFilters';
 import { useTasks } from './useTasks';
 
@@ -107,14 +107,13 @@ export function useTaskCounts() {
 
             // Date
             if (task.dueDate) {
-                const dateObj = toDate(task.dueDate);
+                const dateObj = ensureDate(task.dueDate);
                 if (dateObj) {
-                    const todayStart = new Date();
-                    todayStart.setHours(0, 0, 0, 0);
+                    const todayStart = getLocalStartOfDay(new Date());
 
                     if (dateObj < todayStart) {
                         acc.today++; // Overdue counts as today
-                    } else if (isToday(dateObj)) {
+                    } else if (isLocalToday(dateObj)) {
                         acc.today++;
                     } else if (isUpcoming(dateObj)) {
                         acc.upcoming++;
