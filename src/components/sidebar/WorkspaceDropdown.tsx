@@ -8,7 +8,15 @@ import { UI_CONFIG } from '../../core/ui-constants';
 import { cn } from '../../utils/cn';
 
 import { useWorkspace } from '../../hooks/useWorkspace';
-import { IconCheck, IconChevronDown, IconPlus, IconSettings } from '../common/Icons';
+import { Workspace } from '../../store/schema';
+import { IconCheck, IconChevronDown, IconEdit, IconPlus, IconTrash } from '../common/Icons';
+
+interface ContextMenuState {
+    visible: boolean;
+    x: number;
+    y: number;
+    workspace: Workspace | null;
+}
 
 export const WorkspaceDropdown: React.FC = () => {
     const { t } = useTranslation();
@@ -19,28 +27,89 @@ export const WorkspaceDropdown: React.FC = () => {
     const { workspaceId: currentId } = useWorkspace();
     const currentWorkspace = workspaces.find(w => w.id === currentId);
 
+    // 右クリックメニュー
+    const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+        visible: false,
+        x: 0,
+        y: 0,
+        workspace: null
+    });
+    const contextMenuRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
+            }
+            // コンテキストメニューも閉じる
+            if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+                setContextMenu(prev => ({ ...prev, visible: false }));
             }
         };
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 setIsOpen(false);
+                setContextMenu(prev => ({ ...prev, visible: false }));
             }
         };
 
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            document.addEventListener('keydown', handleKeyDown);
-        }
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [isOpen]);
+    }, []);
+
+    const handleContextMenu = (e: React.MouseEvent, workspace: Workspace) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setContextMenu({
+            visible: true,
+            x: e.clientX,
+            y: e.clientY,
+            workspace
+        });
+    };
+
+    const handleEdit = () => {
+        if (contextMenu.workspace) {
+            setIsOpen(false);
+            setContextMenu(prev => ({ ...prev, visible: false }));
+            openModal('workspace-edit', contextMenu.workspace);
+        }
+    };
+
+    const handleDelete = () => {
+        const ws = contextMenu.workspace;
+        if (!ws?.id) return;
+
+        // 最後のワークスペースは削除できない
+        if (workspaces.length <= 1) {
+            setIsOpen(false);
+            setContextMenu(prev => ({ ...prev, visible: false }));
+            return;
+        }
+
+        setContextMenu(prev => ({ ...prev, visible: false }));
+        setIsOpen(false);
+
+        openModal('confirmation', {
+            title: t('delete'),
+            message: t('msg.confirm_delete_workspace') || `ワークスペース「${ws.name}」を削除しますか？`,
+            confirmLabel: t('delete'),
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    const { deleteWorkspace } = await import('../../store/workspace');
+                    await deleteWorkspace(ws.id!);
+                } catch (e) {
+                    console.error("Failed to delete workspace:", e);
+                }
+            }
+        });
+    };
 
     if (loading) {
         return (
@@ -88,47 +157,67 @@ export const WorkspaceDropdown: React.FC = () => {
                         {workspaces.map(ws => {
                             const isCurrent = ws.id === currentId;
                             return (
-                                <div key={ws.id} className="flex items-center justify-between group/item px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <button
-                                        onClick={() => {
-                                            if (ws.id) setCurrentWorkspaceId(ws.id);
-                                            setIsOpen(false);
-                                        }}
-                                        className={cn(
-                                            "flex-1 text-left text-sm truncate mr-2",
-                                            isCurrent
-                                                ? 'text-blue-700 dark:text-blue-300 font-medium'
-                                                : 'text-gray-700 dark:text-gray-300'
-                                        )}
-                                    >
-                                        <span className="truncate block max-w-[120px] sm:max-w-[140px]">{ws.name}</span>
-                                    </button>
+                                <div
+                                    key={ws.id}
+                                    className="flex items-center justify-between group/item px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                                    onClick={() => {
+                                        if (ws.id) setCurrentWorkspaceId(ws.id);
+                                        setIsOpen(false);
+                                    }}
+                                    onContextMenu={(e) => handleContextMenu(e, ws)}
+                                >
+                                    <span className={cn(
+                                        "flex-1 text-sm truncate mr-2",
+                                        isCurrent
+                                            ? 'text-blue-700 dark:text-blue-300 font-medium'
+                                            : 'text-gray-700 dark:text-gray-300'
+                                    )}>
+                                        <span className="truncate block max-w-[140px] sm:max-w-[160px]">{ws.name}</span>
+                                    </span>
 
-                                    <div className="flex items-center gap-1">
-                                        {isCurrent && (
-                                            <IconCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                                        )}
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setIsOpen(false);
-                                                openModal('workspace-edit', ws);
-                                            }}
-                                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded opacity-0 group-hover/item:opacity-100 transition-opacity"
-                                            title={t('edit')}
-                                        >
-                                            <IconSettings className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
+                                    {isCurrent && (
+                                        <IconCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                                    )}
                                 </div>
                             );
                         })}
                     </div>
+
+                    <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                            {t('sidebar.workspace_hint') || '右クリックで編集・削除'}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* 右クリックコンテキストメニュー */}
+            {contextMenu.visible && contextMenu.workspace && (
+                <div
+                    ref={contextMenuRef}
+                    className="fixed rounded-lg shadow-xl bg-white dark:bg-gray-800 ring-1 ring-black/10 border border-gray-200 dark:border-gray-700 py-1 min-w-[140px] animate-scale-in"
+                    style={{
+                        left: contextMenu.x,
+                        top: contextMenu.y,
+                        zIndex: UI_CONFIG.Z_INDEX.MODAL
+                    }}
+                >
+                    <button
+                        onClick={handleEdit}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                        <IconEdit className="w-4 h-4 mr-3 text-gray-500" />
+                        {t('edit')}
+                    </button>
+                    <button
+                        onClick={handleDelete}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                        <IconTrash className="w-4 h-4 mr-3" />
+                        {t('delete')}
+                    </button>
                 </div>
             )}
         </div>
     );
 };
-
-
-

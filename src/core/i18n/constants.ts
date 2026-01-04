@@ -113,6 +113,7 @@ export const ja = {
         reorder_section: 'セクションを並び替え',
         no_projects: 'プロジェクトはありません',
         duration_format: '{min}分',
+        workspace_hint: '右クリックで編集・削除',
     },
 
     modal: {
@@ -601,6 +602,7 @@ export const en = {
         no_projects: 'No projects',
         no_labels: 'No labels',
         duration_format: '{min} min',
+        workspace_hint: 'Right-click to edit or delete',
     },
 
     modal: {

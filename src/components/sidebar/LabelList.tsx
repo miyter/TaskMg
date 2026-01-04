@@ -35,11 +35,11 @@ export const LabelList: React.FC = () => {
             const activeIdStr = String(active.id);
             const overIdStr = String(over.id);
 
-            // Verify they are labels
-            if (!activeIdStr.startsWith('label:') || !overIdStr.startsWith('label:')) return;
+            // Verify they are labels for sorting
+            if (!activeIdStr.startsWith('label-sortable:') || !overIdStr.startsWith('label-sortable:')) return;
 
-            const sourceId = activeIdStr.replace('label:', '');
-            const targetId = overIdStr.replace('label:', '');
+            const sourceId = activeIdStr.replace('label-sortable:', '');
+            const targetId = overIdStr.replace('label-sortable:', '');
 
             const oldIndex = labels.findIndex(l => l.id === sourceId);
             const newIndex = labels.findIndex(l => l.id === targetId);
@@ -63,7 +63,7 @@ export const LabelList: React.FC = () => {
 
     return (
         <SortableContext
-            items={validLabels.map(l => `label:${l.id}`)}
+            items={validLabels.map(l => `label-sortable:${l.id}`)}
             strategy={verticalListSortingStrategy}
         >
             <ul className="space-y-0.5">

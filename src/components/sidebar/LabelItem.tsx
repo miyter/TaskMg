@@ -1,3 +1,4 @@
+import { useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import React, { useState } from 'react';
@@ -30,21 +31,36 @@ export const LabelItem = React.memo<LabelItemProps>(({ label, count = 0 }) => {
 
     const isActive = filterType === 'label' && targetId === label.id;
 
+    // Sortable for reordering labels
     const {
         attributes,
         listeners,
-        setNodeRef,
+        setNodeRef: setSortableRef,
         transform,
         transition,
-        isOver,
         isDragging
     } = useSortable({
+        id: `label-sortable:${label.id}`,
+        data: {
+            type: 'label-sortable',
+            value: label.id
+        }
+    });
+
+    // Droppable for receiving tasks
+    const { setNodeRef: setDroppableRef, isOver } = useDroppable({
         id: `label:${label.id}`,
         data: {
             type: UI_CONFIG.DND.TYPE_LABEL,
             value: label.id
         }
     });
+
+    // Combine refs
+    const setNodeRef = (node: HTMLLIElement | null) => {
+        setSortableRef(node);
+        setDroppableRef(node);
+    };
 
     const style = {
         transform: CSS.Transform.toString(transform),
