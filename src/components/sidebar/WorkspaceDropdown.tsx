@@ -136,66 +136,121 @@ export const WorkspaceDropdown: React.FC = () => {
 
             {isOpen && (
                 <div
-                    className="absolute left-0 mt-2 w-60 sm:w-64 max-w-[calc(100vw-32px)] origin-top-left rounded-lg shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black/5 border border-gray-100 dark:border-gray-700 overflow-hidden animate-scale-in custom-scrollbar"
+                    className="absolute left-0 mt-2 w-64 max-w-[calc(100vw-32px)] origin-top-left rounded-2xl shadow-2xl glass-effect overflow-hidden animate-scale-in custom-scrollbar"
                     style={{ zIndex: UI_CONFIG.Z_INDEX.DROPDOWN }}
                 >
-
-                    <div className="p-1 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                    <div className="p-2 border-b border-gray-200/50 dark:border-gray-700/30">
                         <button
                             onClick={() => {
                                 setIsOpen(false);
                                 openModal('workspace-edit', null);
                             }}
-                            className="flex items-center w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors rounded-md"
+                            className="flex items-center w-full px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-500/10 transition-all rounded-xl group/add"
                         >
-                            <IconPlus className="w-4 h-4 mr-2" />
+                            <div className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center mr-2 group-hover/add:scale-110 transition-transform">
+                                <IconPlus className="w-4 h-4" />
+                            </div>
                             {t('sidebar.add_workspace')}
                         </button>
                     </div>
 
-                    <div className="py-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+                    <div className="py-2 max-h-[300px] overflow-y-auto custom-scrollbar">
                         {workspaces.map(ws => {
                             const isCurrent = ws.id === currentId;
                             return (
                                 <div
                                     key={ws.id}
-                                    className="flex items-center justify-between group/item px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                                    onClick={() => {
-                                        if (ws.id) setCurrentWorkspaceId(ws.id);
-                                        setIsOpen(false);
-                                    }}
-                                    onContextMenu={(e) => handleContextMenu(e, ws)}
+                                    className="px-2"
                                 >
-                                    <span className={cn(
-                                        "flex-1 text-sm truncate mr-2",
-                                        isCurrent
-                                            ? 'text-blue-700 dark:text-blue-300 font-medium'
-                                            : 'text-gray-700 dark:text-gray-300'
-                                    )}>
-                                        <span className="truncate block max-w-[140px] sm:max-w-[160px]">{ws.name}</span>
-                                    </span>
+                                    <div
+                                        className={cn(
+                                            "flex items-center group/item px-3 py-2.5 rounded-xl transition-all cursor-pointer relative",
+                                            isCurrent
+                                                ? 'bg-blue-50/50 dark:bg-blue-500/10'
+                                                : 'hover:bg-gray-100/50 dark:hover:bg-gray-700/30'
+                                        )}
+                                        onClick={() => {
+                                            if (ws.id) setCurrentWorkspaceId(ws.id);
+                                            setIsOpen(false);
+                                        }}
+                                        onContextMenu={(e) => handleContextMenu(e, ws)}
+                                    >
+                                        <div className={cn(
+                                            "w-2 h-2 rounded-full mr-3",
+                                            isCurrent ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" : "bg-transparent"
+                                        )} />
 
-                                    {isCurrent && (
-                                        <IconCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                                    )}
+                                        <span className={cn(
+                                            "flex-1 text-sm truncate mr-2",
+                                            isCurrent
+                                                ? 'text-blue-700 dark:text-blue-300 font-bold'
+                                                : 'text-gray-700 dark:text-gray-300'
+                                        )}>
+                                            {ws.name}
+                                        </span>
+
+                                        {/* Hover Actions */}
+                                        <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setIsOpen(false);
+                                                    openModal('workspace-edit', ws);
+                                                }}
+                                                className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400 transition-colors"
+                                                title={t('edit')}
+                                            >
+                                                <IconEdit className="w-3.5 h-3.5" />
+                                            </button>
+                                            {workspaces.length > 1 && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setContextMenu({ visible: false, x: 0, y: 0, workspace: ws });
+                                                        setIsOpen(false);
+                                                        openModal('confirmation', {
+                                                            title: t('delete'),
+                                                            message: t('msg.confirm_delete_workspace')?.replace('{name}', ws.name) || `ワークスペース「${ws.name}」を削除しますか？`,
+                                                            confirmLabel: t('delete'),
+                                                            variant: 'danger',
+                                                            onConfirm: async () => {
+                                                                const { deleteWorkspace } = await import('../../store/workspace');
+                                                                await deleteWorkspace(ws.id!);
+                                                            }
+                                                        });
+                                                    }}
+                                                    className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                                    title={t('delete')}
+                                                >
+                                                    <IconTrash className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {isCurrent && !contextMenu.visible && (
+                                            <div className="absolute right-3 opacity-100 group-hover/item:opacity-0 transition-opacity">
+                                                <IconCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             );
                         })}
                     </div>
 
-                    <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                            {t('sidebar.workspace_hint') || '右クリックで編集・削除'}
+                    <div className="px-4 py-2 bg-gray-50/30 dark:bg-gray-800/20 border-t border-gray-200/50 dark:border-gray-700/30">
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">
+                            {t('workspaces')}
                         </p>
                     </div>
                 </div>
             )}
 
-            {/* 右クリックコンテキストメニュー */}
+            {/* コンテキストメニュー（予備として残すが、基本はホバーアクションを使用） */}
             {contextMenu.visible && contextMenu.workspace && (
                 <div
                     ref={contextMenuRef}
-                    className="fixed rounded-lg shadow-xl bg-white dark:bg-gray-800 ring-1 ring-black/10 border border-gray-200 dark:border-gray-700 py-1 min-w-[140px] animate-scale-in"
+                    className="fixed rounded-xl shadow-2xl glass-effect py-1.5 min-w-[140px] animate-scale-in"
                     style={{
                         left: contextMenu.x,
                         top: contextMenu.y,
@@ -204,7 +259,7 @@ export const WorkspaceDropdown: React.FC = () => {
                 >
                     <button
                         onClick={handleEdit}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors"
                     >
                         <IconEdit className="w-4 h-4 mr-3 text-gray-500" />
                         {t('edit')}
@@ -218,6 +273,7 @@ export const WorkspaceDropdown: React.FC = () => {
                     </button>
                 </div>
             )}
+
         </div>
     );
 };

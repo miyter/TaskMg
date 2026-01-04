@@ -39,6 +39,7 @@ module.exports = {
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out forwards',
         'fade-in-down': 'fadeInDown 0.3s ease-out forwards',
+        'scale-in': 'scaleIn 0.2s ease-out forwards',
       },
       keyframes: {
         fadeIn: {
@@ -48,7 +49,11 @@ module.exports = {
         fadeInDown: {
           '0%': { opacity: '0', transform: 'translateY(-10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
-        }
+        },
+        scaleIn: {
+          '0%': { opacity: '0', transform: 'scale(0.95) translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
