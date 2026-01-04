@@ -13,7 +13,12 @@ import { SYSTEM_CONSTANTS } from '../core/constants';
 export const useAuth = () => {
     const [userId, setUserId] = useState<string | null>(auth.currentUser?.uid || null);
     const [user, setUser] = useState<User | null>(auth.currentUser);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(() => {
+        // If there's an initial token (e.g. from magic link), always wait for it to process
+        if (authService.hasInitialToken()) return true;
+        // Otherwise, if we have a cached user, we can start as not loading (optimistic)
+        return !auth.currentUser;
+    });
 
     useEffect(() => {
         const controller = new AbortController();

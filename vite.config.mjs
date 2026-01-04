@@ -27,7 +27,7 @@ export default defineConfig({
           }
 
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom') || id.includes('scheduler')) {
               return 'react-vendor';
             }
             if (id.includes('firebase')) {

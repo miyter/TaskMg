@@ -14,12 +14,11 @@ import { SidebarContent } from './components/sidebar/SidebarContent';
 import { TaskList } from './components/tasks/TaskList';
 import { GeneralDashboard } from './components/views/GeneralDashboard';
 import { SearchView } from './components/views/SearchView';
-import { auth } from './core/firebase';
-import { onAuthStateChanged } from './core/firebase-sdk';
 import { DashboardApp } from './features/target-dashboard/DashboardApp';
 import { WikiApp } from './features/wiki/WikiApp';
 import { WizardApp } from './features/wizard/WizardApp';
 import { useAppDnD } from './hooks/useAppDnD';
+import { useAuth } from './hooks/useAuth';
 import { useLabels } from './hooks/useLabels';
 import { useProjects } from './hooks/useProjects';
 import { useThemeEffect } from './hooks/useThemeEffect';
@@ -84,11 +83,8 @@ const App: React.FC = () => {
     const { labels } = useLabels();
     const { t } = useTranslation();
 
-    // Auth state: null = not determined yet, false = explicitly logged out
-    const [authState, setAuthState] = React.useState<{ user: any; loading: boolean }>({
-        user: auth.currentUser,
-        loading: !auth.currentUser // Only loading if no cached user
-    });
+    // Use unified auth hook
+    const { user, loading } = useAuth();
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         const target = e.target as HTMLElement;
@@ -103,14 +99,9 @@ const App: React.FC = () => {
     }, [setFilter, setView]);
 
     React.useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setAuthState({ user, loading: false });
-        });
-
         document.addEventListener('keydown', handleKeyDown);
 
         return () => {
-            unsubscribe();
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [handleKeyDown]);
@@ -141,7 +132,7 @@ const App: React.FC = () => {
     }, [currentView, query, filterType, targetId, projects, labels, t]);
 
     // Show loading spinner while Firebase restores auth state
-    if (authState.loading) {
+    if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
                 <div className="flex flex-col items-center gap-4">
@@ -152,7 +143,7 @@ const App: React.FC = () => {
         );
     }
 
-    if (!authState.user) {
+    if (!user) {
         return <LoginPage />;
     }
 
