@@ -1,10 +1,9 @@
 name = "taskmg"
 # 互換性の日付は最新のものを指定
-compatibility_date = "2025-11-23" 
+compatibility_date = "2026-01-04" 
 
-# [site] セクションの設定
-[site]
-# 【修正】Viteのビルド成果物である dist フォルダを参照するように変更
-bucket = "./dist"
-# Workersで静的ファイルを扱うためのボイラープレートの場所
-entry-point = "workers-site"
+# [assets] セクションの設定 (Workers Static Assets)
+# Viteのビルド成果物である dist フォルダを参照
+[assets]
+directory = "./dist"
+binding = "ASSETS"

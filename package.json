@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "description": "Dependencies for running the static site on Cloudflare Worker.",
-  "main": "workers-site/index.js",
   "dependencies": {
     "@cloudflare/kv-asset-handler": "^0.4.1",
     "@dnd-kit/core": "^6.3.1",
@@ -20,12 +19,13 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
+    "fast-equals": "^6.0.0",
     "firebase": "^10.14.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^3.4.0",
-    "zustand": "^5.0.9",
-    "zod": "^4.2.1"
+    "zod": "^4.2.1",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
