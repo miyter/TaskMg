@@ -7,7 +7,7 @@
 
 interface ErrorLog {
     timestamp: string;
-    type: 'error' | 'unhandledrejection' | 'react' | 'warn';
+    type: 'error' | 'unhandledrejection' | 'react' | 'warn' | 'console-error';
     message: string;
     stack?: string;
     url?: string;
@@ -23,7 +23,7 @@ const MAX_BUFFER_SIZE = 50;
 /**
  * エラーをログに記録
  */
-export function logError(log: ErrorLog): void {
+export async function logError(log: ErrorLog, showToast = false): Promise<void> {
     // バッファに追加
     errorBuffer.push(log);
     if (errorBuffer.length > MAX_BUFFER_SIZE) {
@@ -35,13 +35,21 @@ export function logError(log: ErrorLog): void {
     const details = log.stack ? `\n${log.stack}` : '';
 
     if (log.type === 'warn') {
-        console.warn(`${prefix} ${log.message}${details}`);
+        process.env.NODE_ENV === 'development' && console.warn(`${prefix} ${log.message}${details}`);
     } else {
-        console.error(`${prefix} ${log.message}${details}`);
+        process.env.NODE_ENV === 'development' && console.error(`${prefix} ${log.message}${details}`);
     }
 
-    // TODO: 将来的にFirestoreや外部サービスに送信可能
-    // await saveErrorToFirestore(log);
+    // トースト通知（クリティカルな場合や明示的に指定された場合）
+    if (showToast) {
+        try {
+            // Lazy load toast to avoid early React/Store initialization issues
+            const { toast } = await import('../store/ui/toast-store');
+            toast.error(`System: ${log.message.substring(0, 100)}${log.message.length > 100 ? '...' : ''}`);
+        } catch (e) {
+            console.error('Failed to show error toast', e);
+        }
+    }
 }
 
 /**
@@ -55,6 +63,8 @@ export function getErrorLogs(): ErrorLog[] {
  * グローバルエラーハンドラーを初期化
  */
 export function initErrorLogger(): void {
+    if (typeof window === 'undefined') return;
+
     // JavaScript エラー
     window.onerror = (message, source, lineno, colno, error) => {
         logError({
@@ -65,8 +75,8 @@ export function initErrorLogger(): void {
             url: source,
             line: lineno,
             column: colno,
-        });
-        return false; // デフォルトのエラーハンドリングも実行
+        }, true); // グローバルエラーは常にトースト
+        return false;
     };
 
     // Promise の未処理拒否
@@ -77,8 +87,67 @@ export function initErrorLogger(): void {
             type: 'unhandledrejection',
             message: reason?.message || String(reason),
             stack: reason?.stack,
-        });
+        }, true);
     };
+
+    // 開発環境のみ: console.warn/error をフックしてUIに表面化させる
+    if (import.meta.env.DEV) {
+        const originalWarn = console.warn;
+        const originalError = console.error;
+
+        // サーキットブレーカー（無限ループ対策）
+        let recentLogCount = 0;
+        let lastLogTime = Date.now();
+        const MAX_LOGS_PER_WINDOW = 30; // 1秒間に30回以上のログで発動
+        const TIME_WINDOW_MS = 1000;
+
+        const checkCircuitBreaker = (message: string) => {
+            const now = Date.now();
+            if (now - lastLogTime < TIME_WINDOW_MS) {
+                recentLogCount++;
+            } else {
+                recentLogCount = 1;
+                lastLogTime = now;
+            }
+
+            if (recentLogCount > MAX_LOGS_PER_WINDOW) {
+                const fatalMsg = `🛑 Infinite Loop detected! Stopped following logs. Last: ${message}`;
+                originalError(fatalMsg);
+                // ストッパー：意図的に例外を投げてErrorBoundaryを発動させる
+                throw new Error("CIRCUIT_BREAKER_TRIGGERED: " + fatalMsg);
+            }
+        };
+
+        console.warn = (...args) => {
+            const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
+            checkCircuitBreaker(message);
+
+            // Tiptapの警告などの重要なライブラリ警告をキャッチ
+            if (message.includes('[tiptap warn]') || message.includes('Duplicate extension')) {
+                logError({
+                    timestamp: new Date().toISOString(),
+                    type: 'warn',
+                    message: `Library Warning: ${message}`,
+                }, true); // UIに通知
+            }
+            originalWarn(...args);
+        };
+
+        console.error = (...args) => {
+            const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
+            checkCircuitBreaker(message);
+
+            // 無限ループなどのReact警告をキャッチ
+            if (message.includes('Too many re-renders') || message.includes('infinite loop')) {
+                logError({
+                    timestamp: new Date().toISOString(),
+                    type: 'console-error',
+                    message: `Critical Error: ${message}`,
+                }, true);
+            }
+            originalError(...args);
+        };
+    }
 
     console.info('[ErrorLogger] Initialized');
 }
@@ -93,7 +162,7 @@ export function logReactError(error: Error, componentStack?: string): void {
         message: error.message,
         stack: error.stack,
         componentStack,
-    });
+    }, true);
 }
 
 /**

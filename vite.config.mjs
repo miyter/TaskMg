@@ -27,8 +27,15 @@ export default defineConfig({
           }
 
           if (id.includes('node_modules')) {
-            // React Core
-            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+            // React Core & Essential Hooks-heavy libraries
+            if (
+              id.includes('react') ||
+              id.includes('react-dom') ||
+              id.includes('scheduler') ||
+              id.includes('@tiptap') ||
+              id.includes('@tanstack/react-query') ||
+              id.includes('zustand')
+            ) {
               return 'react-vendor';
             }
 
@@ -37,9 +44,9 @@ export default defineConfig({
               return 'firebase';
             }
 
-            // Lazy loaded modules should not be in the main vendor chunk
-            if (id.includes('recharts') || id.includes('d3') || id.includes('react-smooth')) {
-              return undefined;
+            // Large or non-essential libraries
+            if (id.includes('recharts') || id.includes('d3')) {
+              return 'viz';
             }
 
             return 'vendor';
