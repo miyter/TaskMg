@@ -7,7 +7,7 @@ import { deleteTask, toggleTaskStatus, updateTask } from '../../store';
 import { Task } from '../../store/schema';
 import { useModalStore } from '../../store/ui/modal-store';
 import { cn } from '../../utils/cn';
-import { formatDateCompact, getTaskDateColor } from '../../utils/date';
+import { ensureDate, formatDateCompactTz, getTaskDateColorTz } from '../../utils/date-tz';
 import { stripHtml } from '../../utils/text';
 import { IconCalendar, IconCheck, IconClock, IconEdit, IconGripVertical, IconRepeat, IconTrash } from '../common/Icons';
 import { ContextMenu, ContextMenuItem, ContextMenuSub } from '../ui/ContextMenu';
@@ -71,7 +71,7 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
 
         switch (type) {
             case 'today':
-                newDate = new Date(); // Keep current time or set to end of day? Usually start of day or specific time. Using current time for now or just date component.
+                newDate = new Date();
                 break;
             case 'tomorrow':
                 newDate = new Date(today);
@@ -96,6 +96,7 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
     // Determine Date/Recurrence Display
     const hasRecurrence = !!(task.recurrence && task.recurrence.type !== 'none');
     const hasDate = !!task.dueDate;
+    const dateObj = ensureDate(task.dueDate);
 
     return (
         <>
@@ -178,20 +179,20 @@ export const TaskItem = React.memo<TaskItemProps>(({ task, style, className, dra
                     <div className={cn(
                         "flex items-center justify-end gap-1 overflow-hidden",
                         (hasRecurrence || hasDate)
-                            ? (isCompleted ? "text-gray-400" : getTaskDateColor(task.dueDate || null))
+                            ? (isCompleted ? "text-gray-400" : getTaskDateColorTz(task.dueDate))
                             : "text-gray-400 dark:text-gray-500 opacity-50"
                     )}>
                         {hasRecurrence ? (
                             <>
                                 <IconRepeat className="w-3.5 h-3.5 shrink-0" />
-                                {task.dueDate && (
-                                    <span className="truncate">{formatDateCompact(task.dueDate)}</span>
+                                {dateObj && (
+                                    <span className="truncate">{formatDateCompactTz(dateObj)}</span>
                                 )}
                             </>
-                        ) : hasDate ? (
+                        ) : hasDate && dateObj ? (
                             <>
                                 <IconCalendar className="w-3.5 h-3.5 shrink-0" />
-                                <span className="truncate">{formatDateCompact(task.dueDate!)}</span>
+                                <span className="truncate">{formatDateCompactTz(dateObj)}</span>
                             </>
                         ) : (
                             <span className="text-[10px] uppercase font-bold tracking-widest">{t('no_date')}</span>

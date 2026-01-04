@@ -53,6 +53,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     className,
     editable = true
 }) => {
+    const { t } = useTranslation();
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -145,14 +146,14 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleBold().run()}
                         isActive={editor.isActive('bold')}
-                        title="Bold (Cmd+B)"
+                        title={t('rich_text.bold')}
                     >
                         <IconBold className="w-4 h-4" />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleItalic().run()}
                         isActive={editor.isActive('italic')}
-                        title="Italic (Cmd+I)"
+                        title={t('rich_text.italic')}
                     >
                         <IconItalic className="w-4 h-4" />
                     </ToolbarButton>
@@ -162,28 +163,28 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                         isActive={editor.isActive('heading', { level: 1 })}
-                        title="Heading 1"
+                        title={t('rich_text.heading')}
                     >
                         <IconHeading className="w-4 h-4" />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleBulletList().run()}
                         isActive={editor.isActive('bulletList')}
-                        title="Bullet List"
+                        title={t('rich_text.bullet_list')}
                     >
                         <IconList className="w-4 h-4" />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleOrderedList().run()}
                         isActive={editor.isActive('orderedList')}
-                        title="Ordered List"
+                        title={t('rich_text.ordered_list')}
                     >
                         <IconListOrdered className="w-4 h-4" />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleTaskList().run()}
                         isActive={editor.isActive('taskList')}
-                        title="Task List"
+                        title={t('rich_text.task_list')}
                         disabled={true} // StarterKit doesn't include TaskList by default? It does... Check.
                     // StarterKit has BulletList, OrderedList. To use TaskList we need @tiptap/extension-task-list
                     // I didn't install it. So disable for now.
@@ -196,21 +197,21 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     <ToolbarButton
                         onClick={setLink}
                         isActive={editor.isActive('link')}
-                        title="Link"
+                        title={t('rich_text.link')}
                     >
                         <IconLink className="w-4 h-4" />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
                         isActive={editor.isActive('codeBlock')}
-                        title="Code Block"
+                        title={t('rich_text.code_block')}
                     >
                         <IconCode className="w-4 h-4" />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleBlockquote().run()}
                         isActive={editor.isActive('blockquote')}
-                        title="Blockquote"
+                        title={t('rich_text.blockquote')}
                     >
                         <IconQuote className="w-4 h-4" />
                     </ToolbarButton>

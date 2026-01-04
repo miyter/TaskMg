@@ -192,3 +192,39 @@ export function addMonthsLocal(date: Date, months: number): Date {
 export function getDayOfWeek(date: Date): number {
     return getDay(toLocalTime(date));
 }
+
+/**
+ * 任意の日付形式をDateオブジェクトに変換 (Timestamp対応)
+ */
+export function ensureDate(val: Date | { toDate: () => Date } | number | string | null | undefined): Date | null {
+    if (val === null || val === undefined) return null;
+    if (val instanceof Date) return val;
+    // Duck typing for Firestore Timestamp to avoid dependency
+    if (typeof val === 'object' && 'toDate' in val && typeof (val as any).toDate === 'function') {
+        return (val as any).toDate();
+    }
+    const d = new Date(val as string | number);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * 期限日に基づくTailwindカラークラスを取得 (タイムゾーン考慮)
+ */
+export function getTaskDateColorTz(date: Date | { toDate: () => Date } | number | string | null | undefined): string {
+    const target = ensureDate(date);
+    if (!target) return 'text-gray-500 dark:text-gray-400';
+
+    const zonedDate = toLocalTime(target);
+    const zonedNow = toLocalTime(new Date());
+
+    // reset time to compare dates only
+    zonedDate.setHours(0, 0, 0, 0);
+    zonedNow.setHours(0, 0, 0, 0);
+
+    const diffDays = differenceInCalendarDays(zonedDate, zonedNow);
+
+    if (diffDays < 0) return 'text-red-500 font-bold';
+    if (diffDays === 0) return 'text-green-600 dark:text-green-400 font-medium';
+    if (diffDays === 1) return 'text-orange-500 dark:text-orange-400 font-medium';
+    return 'text-gray-500 dark:text-gray-400';
+}

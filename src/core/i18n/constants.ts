@@ -116,6 +116,7 @@ export const ja = {
         workspace_hint: '右クリックで編集・削除',
     },
 
+
     modal: {
         task_title_placeholder: 'タスクのタイトル',
         filter_name_placeholder: '例: 今週の重要タスク',
@@ -629,6 +630,7 @@ export const en = {
         duration_format: '{min} min',
         workspace_hint: 'Right-click to edit or delete',
     },
+
 
     modal: {
         task_title_placeholder: 'Task Title',

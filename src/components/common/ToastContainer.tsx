@@ -1,8 +1,10 @@
 import React from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useToastStore } from '../../store/ui/toast-store';
 import { cn } from '../../utils/cn';
 
 export const ToastContainer: React.FC = () => {
+    const { t } = useTranslation();
     const { toasts, removeToast } = useToastStore();
 
     if (toasts.length === 0) return null;
@@ -34,7 +36,7 @@ export const ToastContainer: React.FC = () => {
                         <button
                             onClick={(e) => { e.stopPropagation(); removeToast(toast.id); }}
                             className="flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            aria-label="閉じる"
+                            aria-label={t('close')}
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
