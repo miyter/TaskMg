@@ -10,6 +10,8 @@ import { ZodError, ZodSchema } from 'zod';
 import { auth } from '../core/firebase';
 import { I18nKeys } from '../core/i18n/types';
 import { getTranslator } from '../core/i18n/utils';
+import { withRetry } from '../utils/retry';
+import { BaseEntity, FirestoreCollectionCache } from './base-cache';
 import { useSettingsStore } from './ui/settings-store';
 import { toast } from './ui/toast-store';
 import { getCurrentWorkspaceId } from './workspace';
@@ -155,5 +157,61 @@ export async function withErrorHandling<T>(
 
         if (rethrow) throw error;
         return undefined;
+    }
+}
+
+// ============================================================
+// Optimistic UI ユーティリティ
+// ============================================================
+
+/**
+ * Optimistic Update（楽観的UI更新）の共通ロジック
+ * 
+ * 1. 現在のキャッシュ状態をバックアップ
+ * 2. キャッシュを先行更新（updater関数）
+ * 3. 非同期操作を実行（fireStoreOp）
+ * 4. 失敗時にキャッシュをロールバックしてエラー表示
+ * 
+ * @param cache FirestoreCollectionCacheインスタンス
+ * @param key キャッシュキー (workspaceIdなど)
+ * @param updater 現在のアイテムリストを受け取り、更新後のリストを返す関数
+ * @param firestoreOp 実行するFirestore操作
+ * @param errorMessage エラー時のメッセージ（または翻訳キー）
+ */
+export async function withOptimisticUpdate<T extends BaseEntity, K extends string = string>(
+    cache: FirestoreCollectionCache<T, K>,
+    key: K,
+    updater: (current: T[]) => T[],
+    firestoreOp: () => Promise<void>,
+    errorMessage: string
+): Promise<void> {
+    const originalItems = cache.getItems(key);
+
+    try {
+        // 1 & 2. Optimistic update
+        const newItems = updater(originalItems);
+        cache.setCache(key, newItems);
+
+        // 3. Execute operation
+        await withRetry(firestoreOp, {
+            onFinalFailure: (error: any) => {
+                // 4. Rollback on definitive failure
+                console.error(`[OptimisticUpdate] Failed:`, error);
+                cache.setCache(key, originalItems);
+
+                // Try translation, fallback to raw string
+                const t = getT();
+                const msg = errorMessage.includes('.') ? t(errorMessage as I18nKeys) : errorMessage;
+                toast.error(msg);
+            }
+        });
+    } catch (error) {
+        // Here we catch errors that might have bubbled up from withRetry (it rethrows after onFinalFailure)
+        // or errors from updater/setCache.
+        // If withRetry threw, we already rolled back in onFinalFailure.
+        // If updater threw, we haven't touched cache yet (or might have partial).
+        // For safety, ensure rollback if not already handled is tricky without state.
+        // But withRetry guarantees onFinalFailure is called before re-throwing.
+        throw error;
     }
 }

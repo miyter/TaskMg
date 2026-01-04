@@ -8,7 +8,6 @@ import {
     addDoc,
     collection,
     deleteDoc, doc,
-    onSnapshot,
     query,
     serverTimestamp, Unsubscribe,
     updateDoc,
@@ -44,18 +43,11 @@ class LabelCache extends FirestoreCollectionCache<Label> {
             const path = paths.labels(userId, workspaceId);
             const q = query(collection(db, path));
 
-
-            const unsub = onSnapshot(q, (snapshot) => {
-                const labels = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Label[];
-
-
-                this.setCache(workspaceId, labels);
-            }, (error) => {
-                console.error(`${this.config.logPrefix} Subscription error:`, error);
-                this.setCache(workspaceId, []);
-            });
-
-            this.setFirestoreSubscription(workspaceId, unsub);
+            this.__subscribeToQuery(
+                workspaceId,
+                q,
+                (d) => ({ id: d.id, ...d.data() } as Label)
+            );
         }
 
         return cleanup;

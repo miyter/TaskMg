@@ -26,6 +26,7 @@ import { useTranslation } from './hooks/useTranslation';
 
 import { useDnDStore } from './store/ui/dnd-store';
 import { useFilterStore } from './store/ui/filter-store';
+import { useModalStore } from './store/ui/modal-store';
 import { useViewStore } from './store/ui/view-store';
 
 /**
@@ -89,7 +90,8 @@ const App: React.FC = () => {
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         const target = e.target as HTMLElement;
         const isInput = ['INPUT', 'TEXTAREA'].includes(target.tagName) || target.closest('[contenteditable]');
-        const hasModal = document.querySelector('[role="dialog"]');
+        // Check for open modals using the store state instead of DOM query
+        const hasModal = useModalStore.getState().stack.length > 0;
 
         if (e.key === '/' && !isInput && !hasModal) {
             e.preventDefault();

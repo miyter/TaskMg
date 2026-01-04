@@ -27,22 +27,9 @@ export default defineConfig({
           }
 
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom') || id.includes('scheduler')) {
-              return 'react-vendor';
-            }
             if (id.includes('firebase')) {
               return 'firebase';
             }
-            if (id.includes('@dnd-kit')) {
-              return 'dnd';
-            }
-            if (id.includes('date-fns')) {
-              return 'date-fns';
-            }
-            if (id.includes('lodash')) {
-              return 'utils';
-            }
-
             return 'vendor';
           }
         },

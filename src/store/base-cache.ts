@@ -10,7 +10,7 @@
  * Firestore クエリのカスタマイズ（orderBy, where など）を行う。
  */
 
-import { Unsubscribe } from "../core/firebase-sdk";
+import { FirestoreError, Query, QuerySnapshot, Unsubscribe, onSnapshot } from "../core/firebase-sdk";
 
 /**
  * エンティティ型の基本制約
@@ -140,6 +140,36 @@ export abstract class FirestoreCollectionCache<T extends BaseEntity, K extends s
      */
     protected hasFirestoreSubscription(key: K): boolean {
         return this.unsubscribes.has(key);
+    }
+    /**
+     * Firestore 購読の共通ロジック
+     * @param key キャッシュキー
+     * @param query Firestore Query
+     * @param transformFn データ変換関数 (Option: デフォルトは id + data())
+     * @param compareFn 比較関数 (Option: デフォルトは変更検知なしで更新)
+     */
+    protected __subscribeToQuery(
+        key: K,
+        query: Query,
+        transformFn: (doc: any) => T = (d) => ({ id: d.id, ...d.data() } as T),
+        compareFn?: (a: T[], b: T[]) => boolean
+    ): void {
+        const unsub = onSnapshot(query, (snapshot: QuerySnapshot) => {
+            const items = snapshot.docs.map(transformFn);
+
+            if (compareFn) {
+                const current = this.getItems(key);
+                if (current.length > 0 && compareFn(current, items)) {
+                    return;
+                }
+            }
+
+            this.setCache(key, items);
+        }, (error: FirestoreError) => {
+            console.error(`${this.config.logPrefix} Subscription error:`, error);
+        });
+
+        this.setFirestoreSubscription(key, unsub);
     }
 }
 

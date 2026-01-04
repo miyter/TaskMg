@@ -8,7 +8,6 @@ import {
     addDoc,
     collection,
     deleteDoc, doc,
-    onSnapshot,
     query,
     serverTimestamp, Unsubscribe,
     updateDoc,
@@ -46,24 +45,12 @@ class ProjectCache extends FirestoreCollectionCache<Project> {
             const q = query(collection(db, path));
 
 
-            const unsub = onSnapshot(q, (snapshot) => {
-                const projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-
-                const current = this.getItems(workspaceId);
-
-                if (current.length > 0 && areProjectArraysIdentical(current, projects)) {
-
-                    return;
-                }
-
-
-                this.setCache(workspaceId, projects);
-            }, (error) => {
-                console.error(`${this.config.logPrefix} Subscription error:`, error);
-                this.setCache(workspaceId, []);
-            });
-
-            this.setFirestoreSubscription(workspaceId, unsub);
+            this.__subscribeToQuery(
+                workspaceId,
+                q,
+                (d) => ({ id: d.id, ...d.data() } as Project),
+                areProjectArraysIdentical
+            );
         }
 
         return cleanup;

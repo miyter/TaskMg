@@ -54,7 +54,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     const [recurrence, setRecurrence] = useState<Recurrence>({ type: 'none', days: [] });
     const [timeBlockId, setTimeBlockId] = useState<string | null>(null);
     const [duration, setDuration] = useState<number | null>(null);
-    const [showPreview, setShowPreview] = useState(false);
     const [scheduleOpen, setScheduleOpen] = useState(false);
 
     // --- i18n Data ---
@@ -106,9 +105,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
             // 新規タスク時またはデータがある場合は開く
             const hasScheduleData = !!(parsedDueDate || rec?.type !== 'none' || task.timeBlockId || task.duration);
             setScheduleOpen(hasScheduleData || isNewTask);
-
-            // プレビュー: 内容があればプレビュー、なければ編集モード
-            setShowPreview(!!(task.description?.trim()));
         }
     }, [task, isOpen]); // isNewTask is derived from task
 
@@ -313,7 +309,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                     <div className="space-y-3 px-1 animate-in slide-in-from-top-1 fade-in duration-200">
                                         {/* Due Date */}
                                         <div className="relative group">
-                                            <label htmlFor="task-due-date" className="text-xs text-gray-500 mb-1 block">{t('task_detail.due_date_label')}</label>
                                             <div
                                                 className="relative cursor-pointer"
                                                 onClick={() => {
@@ -324,6 +319,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                                 <Input
                                                     type="date"
                                                     id="task-due-date"
+                                                    label={t('task_detail.due_date_label')}
                                                     value={dueDate ? formatForDateInput(dueDate) : ''}
                                                     onChange={(e) => setDueDate(parseDateInput(e.target.value))}
                                                     className="cursor-pointer bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto w-full"
@@ -333,9 +329,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                                         {/* Recurrence */}
                                         <div>
-                                            <label htmlFor="task-recurrence" className="text-xs text-gray-500 mb-1 block">{t('task_detail.recurrence_label')}</label>
                                             <Select
                                                 id="task-recurrence"
+                                                label={t('task_detail.recurrence_label')}
                                                 value={recurrence?.type || 'none'}
                                                 onChange={(e) => handleRecurrenceTypeChange(e.target.value)}
                                                 className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
@@ -371,9 +367,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                                         {/* TimeBlock */}
                                         <div>
-                                            <label htmlFor="task-timeblock" className="text-xs text-gray-500 mb-1 block">{t('task_detail.time_block_label')}</label>
                                             <Select
                                                 id="task-timeblock"
+                                                label={t('task_detail.time_block_label')}
                                                 value={timeBlockId || ''}
                                                 onChange={(e) => setTimeBlockId(e.target.value || null)}
                                                 className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"
@@ -387,9 +383,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                                         {/* Duration */}
                                         <div>
-                                            <label htmlFor="task-duration" className="text-xs text-gray-500 mb-1 block">{t('task_detail.duration_label')}</label>
                                             <Select
                                                 id="task-duration"
+                                                label={t('task_detail.duration_label')}
                                                 value={duration || ''}
                                                 onChange={(e) => setDuration(e.target.value ? parseInt(e.target.value, 10) : null)}
                                                 className="bg-transparent border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-sm rounded px-2 py-1.5 h-auto"

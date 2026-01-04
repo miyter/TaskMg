@@ -1,8 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { Workspace } from '../store/schema';
 import { getWorkspaces, isWorkspacesInitialized, subscribeToWorkspaces } from '../store/workspace';
 import { useAuth } from './useAuth';
-import { useFirestoreSubscription } from './useFirestoreSubscription';
+
+const EMPTY_ARRAY: any[] = [];
 
 /**
  * ワークスペース一覧を購読するカスタムフック
@@ -10,22 +11,22 @@ import { useFirestoreSubscription } from './useFirestoreSubscription';
 export const useWorkspaces = () => {
     const { userId, loading: authLoading } = useAuth();
 
-    const subscribeFn = useCallback((onData: (data: Workspace[]) => void) => {
-        // 認証が完了するまでサブスクリプションを開始しない
+    const subscribe = useCallback((onStoreChange: () => void) => {
         if (!userId) return () => { };
-        return subscribeToWorkspaces(userId, onData);
+        return subscribeToWorkspaces(userId, () => onStoreChange());
     }, [userId]);
 
+    const getSnapshot = useCallback(() => {
+        if (userId && isWorkspacesInitialized(userId)) {
+            return getWorkspaces(userId);
+        }
+        return EMPTY_ARRAY as Workspace[];
+    }, [userId]);
+
+    const workspaces = useSyncExternalStore(subscribe, getSnapshot);
+
     const isCacheReady = userId ? isWorkspacesInitialized(userId) : false;
-    const initialData = (isCacheReady && userId) ? getWorkspaces(userId) : undefined;
+    const loading = authLoading || (!!userId && !isCacheReady);
 
-    const { data: workspaces, isPending } = useFirestoreSubscription<Workspace[]>(
-        ['workspaces', userId || undefined],
-        subscribeFn,
-        initialData
-    );
-
-    const loading = authLoading || (!!userId && isPending);
-
-    return { workspaces: workspaces || [], loading };
+    return { workspaces, loading };
 };

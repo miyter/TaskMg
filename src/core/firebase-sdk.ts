@@ -11,9 +11,8 @@ export {
 
 // --- Firestore (Database) ---
 export {
-    addDoc, collection, deleteDoc, doc, getDoc,
-    getDocs, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch,
-    type Unsubscribe
+    Timestamp, addDoc, collection, deleteDoc, doc, getDoc,
+    getDocs, getFirestore, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch, type FirestoreError, type Query, type QuerySnapshot, type Unsubscribe
 } from "firebase/firestore";
 
 // --- アプリケーション (App) ---

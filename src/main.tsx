@@ -10,6 +10,9 @@ import { initErrorLogger } from './utils/error-logger';
 // Load fonts asynchronously to reduce initial bundle size and render blocking
 import('./core/fonts');
 
+// QueryClient is used for React Query cache management
+// Note: As of 2026-01-05, we are migrating to useSyncExternalStore for Firestore data,
+// but QueryClient is still used for other async operations and legacy components.
 import { queryClient } from './core/query-client';
 
 // グローバルエラーハンドラーを初期化

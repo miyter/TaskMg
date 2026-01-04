@@ -11,7 +11,6 @@ import {
     collection,
     deleteDoc, doc,
     getDoc,
-    onSnapshot,
     query,
     serverTimestamp,
     Timestamp,
@@ -145,22 +144,12 @@ class TaskCache extends FirestoreCollectionCache<Task> {
             const path = paths.tasks(userId, workspaceId);
             const q = query(collection(db, path));
 
-            const unsub = onSnapshot(q, (snapshot) => {
-                const tasks = snapshot.docs.map(doc => deserializeTask(doc.id, doc.data()));
-                const currentTasks = this.getItems(workspaceId);
-
-                // Optimization: Stabilize reference
-                if (currentTasks.length > 0 && areTaskArraysIdentical(currentTasks, tasks)) {
-                    return;
-                }
-
-                this.setCache(workspaceId, tasks);
-            }, (error) => {
-                console.error(`${this.config.logPrefix} Subscription error:`, error);
-                if (onError) onError(error);
-            });
-
-            this.setFirestoreSubscription(workspaceId, unsub);
+            this.__subscribeToQuery(
+                workspaceId,
+                q,
+                (doc) => deserializeTask(doc.id, doc.data()),
+                areTaskArraysIdentical
+            );
         }
 
         return cleanup;

@@ -149,6 +149,7 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
                             autoFocus
                             aria-invalid={!!error}
                             aria-describedby={error ? "label-error-msg" : undefined}
+                            maxLength={20}
                         />
                     </div>
                 </div>
