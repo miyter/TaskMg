@@ -6,8 +6,8 @@
 **TaskMg** は、目標達成とタスク管理を統合した先進的な Web アプリケーションです。
 **「目標（Target）から逆算して、日々の行動（Task）を設計する」** というコンセプトの元、OKR、WOOP、バックワード・デザインといった複数のフレームワークをシームレスに利用できます。
 
-ファイル総数: 148 ファイル
-総行数(LOC): 17,179 行
+ファイル総数: 144 ファイル
+総行数(LOC): 15,137 行
 
 ### 主な機能
 - **高度なタスク管理**: プロジェクト・ラベル・時間帯フィルタに加え、AND/OR 複合条件による柔軟な検索が可能。繰り返しタスク（日次/週次/月次）にも対応。
@@ -31,11 +31,11 @@
 | **State** | Zustand 5 | グローバル状態と UI 状態の一元管理 |
 | **Backend** | Firebase Firestore 10 | リアルタイム同期とオフライン対応 |
 | **Auth** | Firebase Auth 10 | 堅牢な認証システム |
-| **Hosting** | Cloudflare Workers | 高速なエッジネットワーク配信 |
-| **Styling** | Tailwind CSS 3 | プレミアムなデザインシステムとレスポンシブ対応 |
+| **Hosting** | Cloudflare Workers (Static Assets) | 高速なエッジネットワーク配信 |
+| **Styling** | Tailwind CSS 3, M PLUS 2 Variable | プレミアムなデザインシステムと可変フォントによる最適化 |
 | **DnD** | @dnd-kit/core 6, @dnd-kit/sortable 10 | タスク・セクションのドラッグ&ドロップ |
 | **Cache** | @tanstack/react-query 5 | 効率的なデータ取得とキャッシュ管理 |
-| **Date** | date-fns 4, date-fns-tz 3 | 日付操作とタイムゾーン管理 |
+| **Date/Utils** | date-fns 4, date-fns-tz 3, fast-equals 6 | 厳密な日付・タイムゾーン管理と高速な等価比較 |
 
 ---
 
