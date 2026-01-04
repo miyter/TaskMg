@@ -55,27 +55,29 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editable = true
 }) => {
     const { t } = useTranslation();
+    const extensions = React.useMemo(() => [
+        StarterKit.configure({
+            // Disable link extension in StarterKit to avoid duplication with the manual Link extension below
+            link: false,
+        }),
+        Placeholder.configure({
+            placeholder,
+        }),
+        Link.configure({
+            openOnClick: false, // Prevent opening links when editing
+            linkOnPaste: true,  // Auto-link URLs
+        }),
+    ], [placeholder]);
+
     const editor = useEditor({
-        extensions: [
-            StarterKit.configure({
-                // Disable link extension in StarterKit to avoid duplication with the manual Link extension below
-                link: false,
-            }),
-            Placeholder.configure({
-                placeholder,
-            }),
-            Link.configure({
-                openOnClick: false, // Prevent opening links when editing
-                linkOnPaste: true,  // Auto-link URLs
-            }),
-        ],
+        extensions,
         content: value,
         editable,
-        onUpdate: ({ editor }) => {
+        onUpdate: React.useCallback(({ editor }: { editor: any }) => {
             // Return HTML content
             onChange(editor.getHTML());
-        },
-        editorProps: {
+        }, [onChange]),
+        editorProps: React.useMemo(() => ({
             attributes: {
                 class: cn(
                     "prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[150px] px-3 py-2",
@@ -83,7 +85,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     !editable && "min-h-0"
                 ),
             },
-        },
+        }), [editable]),
     });
 
     // Sync external value changes (only if editor is not focused/being edited to avoid cursor jumps)

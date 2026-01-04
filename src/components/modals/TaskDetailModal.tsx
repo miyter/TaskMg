@@ -281,6 +281,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                         {/* Left Column: Memo (Main Content) - Rich Text Editor */}
                         <div className="md:col-span-8 flex flex-col h-full min-h-[400px]">
                             <RichTextEditor
+                                key={task?.id || 'new'}
                                 value={description}
                                 onChange={setDescription}
                                 placeholder={t('task_detail.description_placeholder') || "詳細を追加..."}
