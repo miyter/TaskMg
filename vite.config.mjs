@@ -50,12 +50,19 @@ export default defineConfig({
     },
   },
 
-  // 2. エイリアス設定
+  // 2. エイリアス設定と依存関係の調整
   resolve: {
     alias: {
       // ★修正2: srcフォルダをルートに移動済みの場合、ここは './src' になります
       '@': './src',
     },
+    // Reactの重複インストールを防ぎ、単一インスタンスを保証
+    dedupe: ['react', 'react-dom'],
+  },
+
+  // 依存関係の最適化設定
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
   },
 
   // Tailwind CSSとPostCSSの設定
