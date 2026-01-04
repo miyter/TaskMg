@@ -35,7 +35,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ sidebarContent, title, chi
             </Sidebar>
 
             <div className="flex-1 flex flex-col relative overflow-hidden">
-                <header className="h-12 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 sticky top-0">
+                <header
+                    className="border-b border-gray-200 dark:border-gray-800 flex items-center px-4 justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 sticky top-0"
+                    style={{
+                        height: 'calc(3rem + env(safe-area-inset-top, 0px))',
+                        paddingTop: 'env(safe-area-inset-top, 0px)'
+                    }}
+                >
                     <div className="flex items-center gap-3">
                         {!isSidebarOpen && (
                             <button onClick={toggleSidebar} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={t('sidebar.menu_open')} aria-label={t('sidebar.menu_open')}>

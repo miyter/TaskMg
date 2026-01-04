@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 import { useSettingsStore } from '../../store/ui/settings-store';
 import { Language } from './types';
@@ -7,6 +6,7 @@ import { getTranslator } from './utils';
 /**
  * Configure global Zod error map for i18n.
  * This looks for `params.i18n` in the issue to translate custom error messages.
+ * Also handles standard Zod errors with generic translated messages.
  */
 export const initZodI18n = () => {
     z.setErrorMap(((issue: any, ctx: any) => {
@@ -20,7 +20,14 @@ export const initZodI18n = () => {
             }
         }
 
-        // Fallback to default Zod message (with null safety)
-        return { message: ctx?.defaultError || 'Validation error' };
+        // 2. Handle generic "Required" errors
+        if (issue.code === z.ZodIssueCode.invalid_type) {
+            if (issue.received === 'undefined' || issue.received === 'null') {
+                return { message: t('validation.required') };
+            }
+        }
+
+        // 3. Fallback to default Zod message (with null safety)
+        return { message: ctx?.defaultError || t('validation.validation_error') };
     }) as any);
 };

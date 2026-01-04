@@ -72,7 +72,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
             } as React.CSSProperties}
         >
             {/* Header */}
-            <div className="h-14 flex items-center px-4 flex-shrink-0 justify-between border-b border-gray-100 dark:border-gray-800/50">
+            <div
+                className="flex items-center px-4 flex-shrink-0 justify-between border-b border-gray-100 dark:border-gray-800/50"
+                style={{
+                    height: 'calc(3.5rem + env(safe-area-inset-top, 0px))',
+                    paddingTop: 'env(safe-area-inset-top, 0px)'
+                }}
+            >
                 <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition select-none">
                     <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
                         <img src={logo} alt="L" className="h-5 w-5 invert brightness-0" />
@@ -93,7 +99,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
                 <SidebarSearch />
             </div>
 
-            <div className={cn("flex-1 overflow-y-auto custom-scrollbar pt-2", densityClass)}>
+            <div
+                className={cn("flex-1 overflow-y-auto custom-scrollbar pt-2", densityClass)}
+                style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            >
                 {children}
             </div>
 
