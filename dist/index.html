@@ -9,6 +9,13 @@
 
     <!-- アプリケーションのスタイル -->
 
+    <!-- Fonts (LCP Optimization: Preconnect & Swap) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=M+PLUS+2:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+
     <!-- 初期設定（レンダリングブロックを最小限に） -->
     <script>
         // テーマの即時適用（FOUC対策）
@@ -47,20 +54,17 @@
                 }
             }
 
-            // その他グローバル変数の注入
-            window.GLOBAL_INITIAL_AUTH_TOKEN = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-            window.GLOBAL_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
 
             console.log("[index.html] Firebase config injected successfully.");
         })();
     </script>
-  <script type="module" crossorigin src="/assets/main-6ldnj5-x.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/vendor-BuZIrZAX.js">
-  <link rel="modulepreload" crossorigin href="/assets/react-vendor-BT7r1O85.js">
-  <link rel="modulepreload" crossorigin href="/assets/firebase-D5EeALLO.js">
-  <link rel="modulepreload" crossorigin href="/assets/i18n-DtNEmpUV.js">
+  <script type="module" crossorigin src="/assets/main-DbJl66SC.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/vendor-j1jwJuCp.js">
+  <link rel="modulepreload" crossorigin href="/assets/firebase-CTDNBn9D.js">
+  <link rel="modulepreload" crossorigin href="/assets/i18n-DVG6a50L.js">
   <link rel="stylesheet" crossorigin href="/assets/vendor-DKQ_J0ve.css">
-  <link rel="stylesheet" crossorigin href="/assets/main-C8Cxs9IV.css">
+  <link rel="stylesheet" crossorigin href="/assets/main-BgaJmcp8.css">
 </head>
 
 <body class="h-screen overflow-hidden">

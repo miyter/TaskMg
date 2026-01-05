@@ -25,6 +25,47 @@ const TASK_STATUS = {
     COMPLETED: 'completed',
 } as const;
 
+// Helper Component for Section Headers
+interface DetailSectionHeaderProps {
+    children: React.ReactNode;
+    onClick?: () => void;
+    isOpen?: boolean;
+    isCollapsible?: boolean;
+    className?: string;
+}
+
+const DetailSectionHeader: React.FC<DetailSectionHeaderProps> = ({
+    children,
+    onClick,
+    isOpen,
+    isCollapsible,
+    className
+}) => {
+    const baseClass = "w-full flex items-center justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1 border-b border-gray-100 dark:border-gray-800 transition-colors";
+
+    if (isCollapsible) {
+        return (
+            <button
+                type="button"
+                onClick={onClick}
+                aria-expanded={isOpen}
+                className={cn(baseClass, "group hover:text-blue-500 focus:outline-none focus:border-blue-500", className)}
+            >
+                <span className="flex items-center gap-2">
+                    {children}
+                </span>
+                <IconChevronDown className={cn("w-3 h-3 transition-transform duration-200", isOpen ? "rotate-180" : "")} />
+            </button>
+        );
+    }
+
+    return (
+        <div className={cn(baseClass, className)}>
+            {children}
+        </div>
+    );
+};
+
 // --- メインコンポーネント ---
 interface TaskDetailModalProps {
     isOpen?: boolean;
@@ -57,6 +98,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
     const [timeBlockId, setTimeBlockId] = useState<string | null>(null);
     const [duration, setDuration] = useState<number | null>(null);
     const [scheduleOpen, setScheduleOpen] = useState(false);
+
+    // Refs
+    const dateInputRef = React.useRef<HTMLInputElement>(null);
 
     // --- i18n Data ---
     const definitionRecurrenceOptions = useMemo(() => [
@@ -231,7 +275,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
         >
             <div className="flex flex-col h-full" onKeyDown={handleContainerKeyDown}>
                 {/* Header - Minimal height (40-50px) */}
-                <div className="px-3 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 shrink-0">
+                <div className="px-modal py-2 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 shrink-0">
                     <div className="flex-1 min-w-0">
                         <Input
                             id="task-title"
@@ -275,7 +319,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-modal custom-scrollbar">
                     <ErrorMessage message={error} className="mb-3" />
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
                         {/* Left Column: Memo (Main Content) - Rich Text Editor */}
@@ -284,7 +328,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                 key={task?.id || 'new'}
                                 value={description}
                                 onChange={setDescription}
-                                placeholder={t('task_detail.description_placeholder') || "詳細を追加..."}
+                                placeholder={t('task_detail.description_placeholder')}
                                 className="flex-1 flex flex-col"
                             />
                         </div>
@@ -296,17 +340,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                         <div className="md:col-span-3 space-y-5 pt-1 overflow-y-auto no-scrollbar">
                             {/* Schedule Section - Flat & Collapsible */}
                             <div className="space-y-4">
-                                <button
-                                    type="button"
+                                <DetailSectionHeader
+                                    isCollapsible
+                                    isOpen={scheduleOpen}
                                     onClick={() => setScheduleOpen(!scheduleOpen)}
-                                    aria-expanded={scheduleOpen}
-                                    className="w-full flex items-center justify-between group text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1 border-b border-gray-100 dark:border-gray-800 hover:text-blue-500 transition-colors focus:outline-none focus:border-blue-500"
                                 >
-                                    <span className="flex items-center gap-2">
-                                        {t('task_detail.schedule_label')}
-                                    </span>
-                                    <IconChevronDown className={cn("w-3 h-3 transition-transform duration-200", scheduleOpen ? "rotate-180" : "")} />
-                                </button>
+                                    {t('task_detail.schedule_label')}
+                                </DetailSectionHeader>
 
                                 {scheduleOpen && (
                                     <div className="space-y-3 px-1 animate-in slide-in-from-top-1 fade-in duration-200">
@@ -314,12 +354,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                                         <div className="relative group">
                                             <div
                                                 className="relative cursor-pointer"
-                                                onClick={() => {
-                                                    const input = document.getElementById('task-due-date') as HTMLInputElement;
-                                                    input?.showPicker?.();
-                                                }}
+                                                onClick={() => dateInputRef.current?.showPicker()}
                                             >
                                                 <Input
+                                                    ref={dateInputRef}
                                                     type="date"
                                                     id="task-due-date"
                                                     label={t('task_detail.due_date_label')}
@@ -405,9 +443,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
 
                             {/* Project Section */}
                             <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1 border-b border-gray-100 dark:border-gray-800">
+                                <DetailSectionHeader>
                                     {t('task_detail.project_label')}
-                                </div>
+                                </DetailSectionHeader>
                                 <div className="px-1">
                                     <Select
                                         id="task-project"
@@ -428,7 +466,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen: propIs
                 </div>
 
                 {/* Footer - Compact with minimal padding */}
-                <div className="px-3 sm:px-4 py-2 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center shrink-0">
+                <div className="px-modal py-2 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center shrink-0">
                     {!isNewTask ? (
                         <Button
                             variant="ghost"

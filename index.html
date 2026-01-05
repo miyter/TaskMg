@@ -10,6 +10,13 @@
     <!-- アプリケーションのスタイル -->
     <link rel="stylesheet" href="/src/index.css">
 
+    <!-- Fonts (LCP Optimization: Preconnect & Swap) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=M+PLUS+2:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+
     <!-- 初期設定（レンダリングブロックを最小限に） -->
     <script>
         // テーマの即時適用（FOUC対策）
@@ -48,9 +55,7 @@
                 }
             }
 
-            // その他グローバル変数の注入
-            window.GLOBAL_INITIAL_AUTH_TOKEN = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-            window.GLOBAL_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
 
             console.log("[index.html] Firebase config injected successfully.");
         })();

@@ -14,12 +14,14 @@ declare const __app_id: string | undefined;
 /**
  * グローバルなApp IDを取得する
  */
+/**
+ * グローバルなApp IDを取得する
+ * 
+ * NOTE: 以前は window.GLOBAL_APP_ID や __app_id を参照していたが、
+ * 過剰設計のため固定値に標準化。
+ */
 export function getAppId(): string {
-    if (typeof window !== 'undefined' && window.GLOBAL_APP_ID) {
-        return window.GLOBAL_APP_ID;
-    }
-    // @ts-ignore
-    return (typeof __app_id !== 'undefined' ? __app_id : 'default-app-id');
+    return 'default-app-id';
 }
 
 /**

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { authService, initAuthListener } from '../core/auth';
+import { initAuthListener } from '../core/auth';
 import { auth } from '../core/firebase';
 import { User } from '../core/firebase-sdk';
 
@@ -13,12 +13,7 @@ import { SYSTEM_CONSTANTS } from '../core/constants';
 export const useAuth = () => {
     const [userId, setUserId] = useState<string | null>(auth.currentUser?.uid || null);
     const [user, setUser] = useState<User | null>(auth.currentUser);
-    const [loading, setLoading] = useState(() => {
-        // If there's an initial token (e.g. from magic link), always wait for it to process
-        if (authService.hasInitialToken()) return true;
-        // Otherwise, if we have a cached user, we can start as not loading (optimistic)
-        return !auth.currentUser;
-    });
+    const [loading, setLoading] = useState(!auth.currentUser);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -26,13 +21,7 @@ export const useAuth = () => {
         let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
         const setup = async () => {
-            if (authService.hasInitialToken()) {
-                try {
-                    await authService.tryInitialTokenLogin();
-                } catch (error) {
-                    console.error('[useAuth] Initial token login failed:', error);
-                }
-            }
+
 
             // Avoid setting state if component unmounted during async operation
             if (controller.signal.aborted) return;

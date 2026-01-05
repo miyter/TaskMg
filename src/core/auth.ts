@@ -5,7 +5,6 @@
 
 import {
     onAuthStateChanged,
-    signInWithCustomToken,
     signInWithEmailAndPassword,
     signOut,
     updatePassword,
@@ -16,13 +15,7 @@ import {
 import { logError } from '../utils/error-logger';
 import { auth } from './firebase';
 
-// グローバル定数の型定義
-declare global {
-    interface Window {
-        GLOBAL_INITIAL_AUTH_TOKEN?: string;
-    }
-    const __initial_auth_token: string | undefined;
-}
+
 
 class AuthService {
 
@@ -35,70 +28,9 @@ class AuthService {
         return auth.currentUser?.uid || null;
     }
 
-    /**
-     * 環境に応じた初期認証トークンを取得
-     */
-    public hasInitialToken(): boolean {
-        if (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) return true;
-        try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) return true;
-        } catch (e) { }
-        return false;
-    }
-
-    /**
-     * 環境に応じた初期認証トークンを取得
-     */
-    private getInitialAuthToken(): string | null {
-        if (typeof window !== 'undefined' && window.GLOBAL_INITIAL_AUTH_TOKEN) {
-            return window.GLOBAL_INITIAL_AUTH_TOKEN;
-        }
-
-        try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                return __initial_auth_token;
-            }
-        } catch (e) {
-            // ReferenceError safe
-        }
-        return null;
-    }
 
 
-    private initialLoginPromise: Promise<void> | null = null;
 
-    /**
-     * 初期トークンによるログインを試行 (一度だけ成功させるか、進行中のものを待機)
-     */
-    public async tryInitialTokenLogin(): Promise<void> {
-        // すでに試行中または成功済みの場合はそれを待機または無視
-        if (this.initialLoginPromise) return this.initialLoginPromise;
-
-        const initialToken = this.getInitialAuthToken();
-        if (!initialToken) {
-            this.initialLoginPromise = Promise.resolve();
-            return;
-        }
-
-        this.initialLoginPromise = (async () => {
-            try {
-                await signInWithCustomToken(auth, initialToken);
-
-            } catch (err: any) {
-                logError({
-                    timestamp: new Date().toISOString(),
-                    type: 'error',
-                    message: `Initial token login failed: ${err.message}`,
-                    stack: err.stack,
-                    url: 'auth.ts'
-                });
-                // 失敗時は再試行可能にするためにPromiseをクリアするか、
-                // あるいは初期化済みとしてマークし続けるか (現状は後者)
-            }
-        })();
-
-        return this.initialLoginPromise;
-    }
 
 
     /**
@@ -108,8 +40,7 @@ class AuthService {
      * @returns unsubscribe function
      */
     public initAuthListener(onLogin: (user: User) => void, onLogout: () => void): () => void {
-        // 初期トークンログインの試行
-        this.tryInitialTokenLogin();
+
 
 
         // 認証状態の監視 (常に新しいリスナーを登録し、その解除関数を返す)

@@ -156,9 +156,9 @@ export const LabelEditModal: React.FC<LabelEditModalProps> = ({ isOpen: propIsOp
 
                 {/* Color Picker */}
                 <div>
-                    <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
+                    <div className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
                         {t('modal.theme_color')}
-                    </label>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                         {COLOR_PALETTE.map(c => (
                             <button

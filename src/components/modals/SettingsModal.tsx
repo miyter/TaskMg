@@ -40,6 +40,28 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; label: string;
     </button>
 );
 
+const OptionButton: React.FC<{
+    isActive: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+    className?: string;
+}> = ({ isActive, onClick, children, className }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={isActive}
+        className={cn(
+            "p-3 border rounded-xl text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500",
+            isActive
+                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-2 ring-blue-200 dark:ring-blue-800"
+                : "border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400",
+            className
+        )}
+    >
+        {children}
+    </button>
+);
+
 interface SettingsModalProps {
     isOpen?: boolean;
     data?: any;
@@ -84,32 +106,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                     <div className="flex flex-row md:flex-col justify-around md:justify-start md:p-4 md:space-y-2 pb-safe md:pb-4">
                         <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} label={t('settings_modal.tabs.general')} icon="⚙️" />
                         <TabButton active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} label={t('settings_modal.tabs.appearance')} icon="🎨" />
-                        <TabButton active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} label={t('settings_modal.tabs.schedule') || 'Schedule'} icon="📅" />
+                        <TabButton active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} label={t('settings_modal.tabs.schedule')} icon="📅" />
                         <TabButton active={activeTab === 'security'} onClick={() => setActiveTab('security')} label={t('settings_modal.tabs.security')} icon="🔐" />
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-900 order-first md:order-last relative">
+                <div className="flex-1 p-modal overflow-y-auto custom-scrollbar bg-white dark:bg-gray-900 order-first md:order-last relative">
                     {activeTab === 'appearance' && (
                         <div className="flex flex-col gap-3">
                             {/* Theme */}
                             <AccordionSection title={t('settings_modal.appearance.theme')} icon="🌓" defaultOpen={false}>
                                 <div className="grid grid-cols-3 gap-3">
                                     {(['light', 'dark', 'system'] as ThemeMode[]).map(mode => (
-                                        <button
+                                        <OptionButton
                                             key={mode}
+                                            isActive={themeMode === mode}
                                             onClick={() => setThemeMode(mode)}
-                                            aria-pressed={themeMode === mode}
-                                            className={cn(
-                                                "p-3 border rounded-xl text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500",
-                                                themeMode === mode
-                                                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-2 ring-blue-200 dark:ring-blue-800"
-                                                    : "border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400"
-                                            )}
                                         >
                                             <span className="capitalize">{t(`settings_modal.options.theme.${mode}` as any)}</span>
-                                        </button>
+                                        </OptionButton>
                                     ))}
                                 </div>
                             </AccordionSection>
@@ -293,20 +309,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen: propIsOpen
                                         { code: 'ja', label: '日本語' },
                                         { code: 'en', label: 'English' }
                                     ].map(lang => (
-                                        <button
+                                        <OptionButton
                                             key={lang.code}
+                                            isActive={language === lang.code}
                                             onClick={() => setLanguage(lang.code as any)}
-                                            aria-pressed={language === lang.code}
-                                            className={cn(
-                                                "p-3 border rounded-xl text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500",
-                                                language === lang.code
-                                                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-2 ring-blue-200 dark:ring-blue-800"
-                                                    : "border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400"
-                                            )}
                                         >
                                             <span className="text-xl mr-2">{lang.code === 'ja' ? '🇯🇵' : '🇺🇸'}</span>
                                             {lang.label}
-                                        </button>
+                                        </OptionButton>
                                     ))}
                                 </div>
                             </AccordionSection>

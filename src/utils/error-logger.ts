@@ -16,6 +16,9 @@ interface ErrorLog {
     componentStack?: string;
 }
 
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../core/firebase';
+
 // エラーログを一時保存（最新50件）
 const errorBuffer: ErrorLog[] = [];
 const MAX_BUFFER_SIZE = 50;
@@ -38,6 +41,25 @@ export async function logError(log: ErrorLog, showToast = false): Promise<void> 
         process.env.NODE_ENV === 'development' && console.warn(`${prefix} ${log.message}${details}`);
     } else {
         process.env.NODE_ENV === 'development' && console.error(`${prefix} ${log.message}${details}`);
+    }
+
+    // Firestoreに永続化 (ログイン中のみ)
+    // 注意: エラー処理自体のエラーで無限ループにならないよう、catchのみして何もしない、またはconsole出力のみにする
+    if (auth.currentUser) {
+        try {
+            // fire-and-forget
+            addDoc(collection(db, 'users', auth.currentUser.uid, 'error_logs'), {
+                ...log,
+                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+                href: typeof window !== 'undefined' ? window.location.href : 'unknown',
+                createdAt: serverTimestamp() // Import serverTimestamp if needed, or use existing string timestamp
+            }).catch(e => {
+                // サイレント失敗（開発時のみログ）
+                process.env.NODE_ENV === 'development' && console.warn('Failed to persist error log to Firestore', e);
+            });
+        } catch (e) {
+            // 同期エラーも無視
+        }
     }
 
     // トースト通知（クリティカルな場合や明示的に指定された場合）
