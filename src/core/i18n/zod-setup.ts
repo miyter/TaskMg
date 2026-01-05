@@ -31,7 +31,11 @@ export const initZodI18n = () => {
         }
 
         // 3. Fallback
-        return { message: ctx.defaultError };
+        if (ctx && ctx.defaultError) {
+            return { message: ctx.defaultError };
+        }
+
+        return { message: issue.message || 'Validation Error' };
     };
 
     z.setErrorMap(customErrorMap as any);
