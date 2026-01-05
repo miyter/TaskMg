@@ -22,7 +22,6 @@ import { areTaskArraysIdentical } from '../utils/compare';
 import { paths } from '../utils/paths';
 import { FirestoreCollectionCache } from './base-cache';
 import { Task, TaskSchema } from './schema';
-import { withOptimisticUpdate } from './store-utils';
 
 interface TimestampLike {
     toDate(): Date;
@@ -195,145 +194,62 @@ function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
 }
 
 export async function reorderTasksRaw(userId: string, workspaceId: string, orderedTaskIds: string[]) {
-    return withOptimisticUpdate(
-        taskCache,
-        workspaceId,
-        (current) => {
-            const orderMap = new Map(orderedTaskIds.map((id, index) => [id, index]));
-            const updatedTasks = current.map(t => {
-                const newIndex = orderMap.get(t.id!);
-                return newIndex !== undefined ? { ...t, order: newIndex } : t;
-            });
-            return updatedTasks.sort((a, b) => {
-                const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
-                const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
-                return orderA - orderB;
-            });
-        },
-        async () => {
-            const path = paths.tasks(userId, workspaceId);
-            const chunks: string[][] = [];
-            for (let i = 0; i < orderedTaskIds.length; i += 500) {
-                chunks.push(orderedTaskIds.slice(i, i + 500));
-            }
-            // Re-map for batch op
-            const orderMap = new Map(orderedTaskIds.map((id, index) => [id, index]));
+    const path = paths.tasks(userId, workspaceId);
+    const chunks: string[][] = [];
+    for (let i = 0; i < orderedTaskIds.length; i += 500) {
+        chunks.push(orderedTaskIds.slice(i, i + 500));
+    }
+    const orderMap = new Map(orderedTaskIds.map((id, index) => [id, index]));
 
-            for (const chunk of chunks) {
-                const batch = writeBatch(db);
-                chunk.forEach((id) => {
-                    const globalIndex = orderMap.get(id)!;
-                    const ref = doc(db, path, id);
-                    batch.update(ref, { order: globalIndex });
-                });
-                await batch.commit();
-            }
-        },
-        'タスクの並び替えに失敗しました'
-    );
+    for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach((id) => {
+            const globalIndex = orderMap.get(id)!;
+            const ref = doc(db, path, id);
+            batch.update(ref, { order: globalIndex });
+        });
+        await batch.commit();
+    }
 }
 
-// タスク操作関数（Optimistic UI対応）
+// タスク操作関数（Firestore SDKのOptimistic UI機能を利用）
 export async function addTaskRaw(userId: string, workspaceId: string, taskData: Partial<Task>) {
-    const tempId = 'temp-' + Date.now();
-    const newTask: Task = {
-        id: tempId,
-        title: taskData.title || 'Untitled',
-        description: taskData.description || null,
-        status: 'todo',
-        dueDate: taskData.dueDate,
-        createdAt: new Date(),
+    const path = paths.tasks(userId, workspaceId);
+    // undefinedを削除して安全にする
+    const safeData = removeUndefined({ ...taskData });
+
+    if (safeData.dueDate) safeData.dueDate = toFirestoreDate(safeData.dueDate);
+
+    delete safeData.id;
+
+    await addDoc(collection(db, path), {
+        ...safeData,
         ownerId: userId,
-        projectId: taskData.projectId || null,
-        labelIds: taskData.labelIds || [],
-        timeBlockId: taskData.timeBlockId || null,
-        duration: taskData.duration || null,
-        isImportant: taskData.isImportant || false,
-        recurrence: taskData.recurrence || null,
-    } as Task;
-
-    return withOptimisticUpdate(
-        taskCache,
-        workspaceId,
-        (current) => [...current, newTask],
-        async () => {
-            const path = paths.tasks(userId, workspaceId);
-            // undefinedを削除して安全にする
-            const safeData = removeUndefined({ ...taskData });
-
-            if (safeData.dueDate) safeData.dueDate = toFirestoreDate(safeData.dueDate);
-
-            delete safeData.id;
-
-            await addDoc(collection(db, path), {
-                ...safeData,
-                ownerId: userId,
-                status: 'todo',
-                createdAt: serverTimestamp()
-            });
-        },
-        'タスクの追加に失敗しました'
-    );
+        status: 'todo',
+        createdAt: serverTimestamp()
+    });
 }
 
 export async function updateTaskStatusRaw(userId: string, workspaceId: string, taskId: string, status: string) {
-    return withOptimisticUpdate(
-        taskCache,
-        workspaceId,
-        (current) => current.map(t => {
-            if (t.id === taskId) {
-                return {
-                    ...t,
-                    status: status as Task['status'],
-                    completedAt: status === 'completed' ? new Date() : undefined
-                };
-            }
-            return t;
-        }),
-        async () => {
-            const path = paths.tasks(userId, workspaceId);
-            const updates: { status: string; completedAt: ReturnType<typeof serverTimestamp> | null } = { status, completedAt: null };
-            if (status === 'completed') {
-                updates.completedAt = serverTimestamp();
-            }
-            await updateDoc(doc(db, path, taskId), updates);
-        },
-        'タスクの更新に失敗しました'
-    );
+    const path = paths.tasks(userId, workspaceId);
+    const updates: { status: string; completedAt: ReturnType<typeof serverTimestamp> | null } = { status, completedAt: null };
+    if (status === 'completed') {
+        updates.completedAt = serverTimestamp();
+    }
+    await updateDoc(doc(db, path, taskId), updates);
 }
 
 export async function updateTaskRaw(userId: string, workspaceId: string, taskId: string, updates: Partial<Task>) {
-    return withOptimisticUpdate(
-        taskCache,
-        workspaceId,
-        (current) => current.map(t => {
-            if (t.id === taskId) {
-                return { ...t, ...updates };
-            }
-            return t;
-        }),
-        async () => {
-            const path = paths.tasks(userId, workspaceId);
-            const safeUpdates = removeUndefined({ ...updates });
+    const path = paths.tasks(userId, workspaceId);
+    const safeUpdates = removeUndefined({ ...updates });
 
-            if (safeUpdates.dueDate !== undefined) safeUpdates.dueDate = toFirestoreDate(safeUpdates.dueDate);
-            await updateDoc(doc(db, path, taskId), safeUpdates);
-        },
-        'タスクの更新に失敗しました'
-    );
+    if (safeUpdates.dueDate !== undefined) safeUpdates.dueDate = toFirestoreDate(safeUpdates.dueDate);
+    await updateDoc(doc(db, path, taskId), safeUpdates);
 }
 
 export async function deleteTaskRaw(userId: string, workspaceId: string, taskId: string) {
-    return withOptimisticUpdate(
-        taskCache,
-        workspaceId,
-        (current) => current.filter(t => t.id !== taskId),
-        async () => {
-            const path = paths.tasks(userId, workspaceId);
-            await deleteDoc(doc(db, path, taskId));
-        },
-        'タスクの削除に失敗しました'
-    );
+    const path = paths.tasks(userId, workspaceId);
+    await deleteDoc(doc(db, path, taskId));
 }
 
 export async function getTaskByIdRaw(userId: string, workspaceId: string, taskId: string): Promise<Task | null> {

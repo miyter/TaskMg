@@ -88,31 +88,18 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }), [editable]),
     });
 
-    // Sync external value changes (only if editor is not focused/being edited to avoid cursor jumps)
-    // NOTE: This is tricky. If we sync on every render, cursor jumps.
-    // Usually we only initial load. But for Optimistic Updates, we might need sync.
-    // For now, assume value is controlled by editor state mostly.
+    // Sync external value changes
     useEffect(() => {
-        if (editor && value !== editor.getHTML()) {
-            // Only update if content is significantly different to avoid loops
-            // Simple check: if empty and value is empty, do nothing.
-            if (editor.getText() === '' && value === '') return;
-            // editor.commands.setContent(value); 
-            // Warning: setContent moves cursor to end.
-            // If the user is typing, 'value' updates via onChange, coming back here triggers setContent -> Jump.
-            // So we should NOT setContent if the change originated from editor.
-            // But we don't know that here.
-            // Common pattern: Only set content if it differs and editor is NOT focused?
-            // Or just trust initial value.
-            // For now, let's only set content on mount or if value changes externally (hard to detect).
-            // A safer approach for "controlled" editor:
-            // Compare current content with new value. If different, update.
-            // But getting HTML varies.
-            // Let's rely on standard Tiptap controlled pattern:
-            // Only update if *really* needed.
-            // For a task description, concurrent edits are rare.
-            // We'll update only if the editor is completely empty (initial load).
-            if (editor.isEmpty && value) {
+        if (!editor) return;
+
+        const currentContent = editor.getHTML();
+        // Provide a clearer update condition:
+        // 1. If content is different
+        // 2. AND (Editor is empty OR Editor is NOT focused)
+        // This allows initial population and external updates (like switching tasks),
+        // but prevents cursor jumping while the user is actively typing.
+        if (value !== currentContent) {
+            if (editor.isEmpty || !editor.isFocused) {
                 editor.commands.setContent(value);
             }
         }

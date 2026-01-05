@@ -5,6 +5,14 @@
 > [!IMPORTANT]
 > 修正にあたっては `docs/PROJECT_STATUS.md` の「UI/UX 設計思想」を必ず参照し、情報の高密度化とミニマリズムを両棲させてください。
 
+### 🛡️ 可用性・スケール・堅牢性 (Availability & Robustness)
+
+*(現在、既知の重大な課題はありません)*
+
+### 🏎️ 実行時エラーと保守性のリスク (Runtime & Maintenance)
+
+*(現在、既知の重大な課題はありません)*
+
 ---
 
 ## 🏗️ Long-Term Roadmap

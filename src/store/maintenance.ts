@@ -1,7 +1,7 @@
-
-import { subDays } from 'date-fns'; // Need to be careful about import order?
+import { subDays } from 'date-fns';
 import { auth, db } from '../core/firebase';
-import { collection, doc, getDocs, query, where, writeBatch } from '../core/firebase-sdk';
+import { collection, doc, getDocs, query, where } from '../core/firebase-sdk';
+import { BatchManager } from '../utils/batch-manager';
 import { ensureDate } from '../utils/date-tz';
 import { paths } from '../utils/paths';
 import { Task } from './schema';
@@ -35,14 +35,10 @@ export async function cleanupDuplicateTasks(workspaceId: string): Promise<number
     const groupIdsToDelete: string[] = [];
 
     // 2. Identify Duplicates
-    for (const [title, group] of seenTitles.entries()) {
+    for (const [_, group] of seenTitles.entries()) {
         if (group.length > 1) {
-            // Keep the one with the most information (e.g. has description) 
-            // or the oldest one (original), or newest.
             // Policy: Keep the oldest created one (most likely the original), delete others.
-
             group.sort((a, b) => {
-                // Handle Firestore Timestamp or Date objects
                 const getTime = (val: unknown): number => {
                     return ensureDate(val as any)?.getTime() || 0;
                 };
@@ -61,21 +57,13 @@ export async function cleanupDuplicateTasks(workspaceId: string): Promise<number
         }
     }
 
-    // 3. Batch Delete
+    // 3. Delete using BatchManager
     if (groupIdsToDelete.length > 0) {
-
-
-        // Firestore batch limits to 500 operations
-        for (let i = 0; i < groupIdsToDelete.length; i += 500) {
-            const batch = writeBatch(db);
-            const chunk = groupIdsToDelete.slice(i, i + 500);
-
-            for (const id of chunk) {
-                batch.delete(doc(db, path, id));
-            }
-
-            await batch.commit();
+        const batchManager = new BatchManager();
+        for (const id of groupIdsToDelete) {
+            batchManager.delete(doc(db, path, id));
         }
+        await batchManager.commitAll();
     }
 
     return groupIdsToDelete.length;
@@ -121,21 +109,17 @@ export async function cleanupOldTasks(workspaceId: string): Promise<number> {
 
     if (tasksToClean.length === 0) return 0;
 
+    const batchManager = new BatchManager();
     let updatedCount = 0;
-    // Batch update
-    for (let i = 0; i < tasksToClean.length; i += 500) {
-        const batch = writeBatch(db);
-        const chunk = tasksToClean.slice(i, i + 500);
 
-        for (const task of chunk) {
-            batch.update(doc(db, path, task.id!), {
-                description: '',
-                isDetailPurged: true,
-            });
-            updatedCount++;
-        }
-        await batch.commit();
+    for (const task of tasksToClean) {
+        batchManager.update(doc(db, path, task.id!), {
+            description: '',
+            isDetailPurged: true,
+        });
+        updatedCount++;
     }
 
+    await batchManager.commitAll();
     return updatedCount;
 }

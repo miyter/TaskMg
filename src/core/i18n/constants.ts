@@ -362,6 +362,7 @@ export const ja = {
         duration_invalid: '所要時間は0以上の数値で指定してください',
         time_format_invalid: '時刻はHH:mm形式で入力してください（例: 09:00）',
         timeblock_name_required: '時間帯の名前は必須です',
+        description_too_long: '詳細説明が長すぎます（200文字以内）',
     },
 
     date_options: {
@@ -879,6 +880,7 @@ export const en = {
         duration_invalid: 'Duration must be a positive number',
         time_format_invalid: 'Time must be in HH:mm format (e.g. 09:00)',
         timeblock_name_required: 'Time block name is required',
+        description_too_long: 'Description is too long (max 200 chars)',
     },
 
     date_options: {

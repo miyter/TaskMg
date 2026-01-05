@@ -29,6 +29,7 @@ const SearchView = React.lazy(() => import('./components/views/SearchView').then
 import { useDnDStore } from './store/ui/dnd-store';
 import { useFilterStore } from './store/ui/filter-store';
 import { useModalStore } from './store/ui/modal-store';
+import { useSettingsStore } from './store/ui/settings-store';
 import { useViewStore } from './store/ui/view-store';
 
 /**
@@ -135,8 +136,10 @@ const App: React.FC = () => {
         }
     }, [currentView, query, filterType, targetId, projects, labels, t]);
 
-    // Show loading spinner while Firebase restores auth state
-    if (loading) {
+    // Show loading spinner while Firebase restores auth state OR Settings are hydrating
+    const hasHydrated = useSettingsStore(state => state._hasHydrated);
+
+    if (loading || !hasHydrated) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
                 <div className="flex flex-col items-center gap-4">

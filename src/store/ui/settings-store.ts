@@ -22,6 +22,8 @@ interface SettingsState {
     setDensity: (density: Density) => void;
     setLanguage: (lang: 'ja' | 'en') => void;
     setCustomDurations: (durations: number[]) => void;
+    _hasHydrated: boolean;
+    setHasHydrated: (val: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -34,6 +36,7 @@ export const useSettingsStore = create<SettingsState>()(
             density: 'normal',
             language: 'ja',
             customDurations: [15, 30, 45, 60, 75, 90, 120],
+            _hasHydrated: false,
 
             setThemeMode: (mode) => set({ themeMode: mode }),
             setFontEn: (font) => set({ fontEn: font }),
@@ -42,6 +45,7 @@ export const useSettingsStore = create<SettingsState>()(
             setDensity: (density) => set({ density }),
             setLanguage: (lang) => set({ language: lang }),
             setCustomDurations: (durations) => set({ customDurations: durations.sort((a, b) => a - b) }),
+            setHasHydrated: (val) => set({ _hasHydrated: val }),
         }),
         {
             name: 'app-settings',
@@ -54,6 +58,9 @@ export const useSettingsStore = create<SettingsState>()(
                 language: state.language,
                 customDurations: state.customDurations,
             }),
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
         }
     )
 );

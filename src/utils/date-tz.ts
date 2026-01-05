@@ -8,15 +8,7 @@
 import {
     addDays,
     addMonths,
-    startOfMonth as dateFnsStartOfMonth,
-    startOfWeek as dateFnsStartOfWeek,
-    differenceInCalendarDays,
-    endOfDay,
-    getDay,
-    isToday,
-    isTomorrow,
-    isYesterday,
-    startOfDay
+    getDay
 } from 'date-fns';
 import {
     formatInTimeZone as dateFnsTzFormat,
@@ -65,12 +57,56 @@ export function toUTCTime(date: Date): Date {
     return fromZonedTime(date, getUserTimeZone());
 }
 
+// ============================================================
+// UTC Helper Functions for "Lie Dates"
+// "Lie Date" = A Date object where the UTC components match the
+// target timezone's wall clock time.
+// ============================================================
+
+function startOfDayUTC(date: Date): Date {
+    const d = new Date(date);
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+}
+
+function endOfDayUTC(date: Date): Date {
+    const d = new Date(date);
+    d.setUTCHours(23, 59, 59, 999);
+    return d;
+}
+
+function startOfMonthUTC(date: Date): Date {
+    const d = new Date(date);
+    d.setUTCDate(1);
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+}
+
+function startOfWeekUTC(date: Date, weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6 = 1): Date {
+    const d = new Date(date);
+    const day = d.getUTCDay();
+    const diff = (day < weekStartsOn ? 7 : 0) + day - weekStartsOn;
+    d.setUTCDate(d.getUTCDate() - diff);
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+}
+
+function differenceInCalendarDaysUTC(dateLeft: Date, dateRight: Date): number {
+    const startLeft = startOfDayUTC(dateLeft);
+    const startRight = startOfDayUTC(dateRight);
+    // Use simple math, assuming Lie Dates don't have DST gaps
+    const msPerDay = 86400000;
+    return Math.round((startLeft.getTime() - startRight.getTime()) / msPerDay);
+}
+
+// ============================================================
+
 /**
  * ローカルタイムゾーンでの日の開始時刻を取得
  */
 export function getLocalStartOfDay(date: Date = new Date()): Date {
     const zonedDate = toLocalTime(date);
-    return startOfDay(zonedDate);
+    return startOfDayUTC(zonedDate);
 }
 
 /**
@@ -78,7 +114,7 @@ export function getLocalStartOfDay(date: Date = new Date()): Date {
  */
 export function getLocalEndOfDay(date: Date = new Date()): Date {
     const zonedDate = toLocalTime(date);
-    return endOfDay(zonedDate);
+    return endOfDayUTC(zonedDate);
 }
 
 /**
@@ -87,7 +123,7 @@ export function getLocalEndOfDay(date: Date = new Date()): Date {
  */
 export function getLocalStartOfWeek(date: Date = new Date(), weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6 = 1): Date {
     const zonedDate = toLocalTime(date);
-    return dateFnsStartOfWeek(zonedDate, { weekStartsOn });
+    return startOfWeekUTC(zonedDate, weekStartsOn);
 }
 
 /**
@@ -95,35 +131,41 @@ export function getLocalStartOfWeek(date: Date = new Date(), weekStartsOn: 0 | 1
  */
 export function getLocalStartOfMonth(date: Date = new Date()): Date {
     const zonedDate = toLocalTime(date);
-    return dateFnsStartOfMonth(zonedDate);
+    return startOfMonthUTC(zonedDate);
 }
 
 /**
  * ローカルタイムゾーンで「今日」かどうかを判定
  */
 export function isLocalToday(date: Date): boolean {
-    return isToday(toLocalTime(date));
+    const localDate = toLocalTime(date);
+    const localNow = toLocalTime(new Date());
+    return differenceInCalendarDaysUTC(localDate, localNow) === 0;
 }
 
 /**
  * ローカルタイムゾーンで「明日」かどうかを判定
  */
 export function isLocalTomorrow(date: Date): boolean {
-    return isTomorrow(toLocalTime(date));
+    const localDate = toLocalTime(date);
+    const localNow = toLocalTime(new Date());
+    return differenceInCalendarDaysUTC(localDate, localNow) === 1;
 }
 
 /**
  * ローカルタイムゾーンで「昨日」かどうかを判定
  */
 export function isLocalYesterday(date: Date): boolean {
-    return isYesterday(toLocalTime(date));
+    const localDate = toLocalTime(date);
+    const localNow = toLocalTime(new Date());
+    return differenceInCalendarDaysUTC(localDate, localNow) === -1;
 }
 
 /**
  * 2つの日付間のカレンダー日数差を計算（ローカルタイムゾーン基準）
  */
 export function getDaysDifference(dateLeft: Date, dateRight: Date): number {
-    return differenceInCalendarDays(toLocalTime(dateLeft), toLocalTime(dateRight));
+    return differenceInCalendarDaysUTC(toLocalTime(dateLeft), toLocalTime(dateRight));
 }
 
 /**
@@ -147,7 +189,8 @@ export function formatDateCompactTz(date: Date): string {
     const zonedDate = toLocalTime(date);
     const zonedNow = toLocalTime(now);
 
-    if (zonedDate.getFullYear() !== zonedNow.getFullYear()) {
+    // Lie Date: Use UTC Getters
+    if (zonedDate.getUTCFullYear() !== zonedNow.getUTCFullYear()) {
         return dateFnsTzFormat(date, getUserTimeZone(), 'yyyy/MM/dd', { locale: getCurrentLocale() });
     }
     return dateFnsTzFormat(date, getUserTimeZone(), 'MM/dd', { locale: getCurrentLocale() });
@@ -217,11 +260,11 @@ export function getTaskDateColorTz(date: Date | { toDate: () => Date } | number 
     const zonedDate = toLocalTime(target);
     const zonedNow = toLocalTime(new Date());
 
-    // reset time to compare dates only
-    zonedDate.setHours(0, 0, 0, 0);
-    zonedNow.setHours(0, 0, 0, 0);
+    // reset time to compare dates only (using UTC for Lie Dates)
+    zonedDate.setUTCHours(0, 0, 0, 0);
+    zonedNow.setUTCHours(0, 0, 0, 0);
 
-    const diffDays = differenceInCalendarDays(zonedDate, zonedNow);
+    const diffDays = differenceInCalendarDaysUTC(zonedDate, zonedNow);
 
     if (diffDays < 0) return 'text-red-500 font-bold';
     if (diffDays === 0) return 'text-green-600 dark:text-green-400 font-medium';
@@ -354,7 +397,7 @@ export const isSameDayLocal = (d1: Date | { toDate: () => Date } | string | numb
     // Convert to local time and strip time
     const localA = toLocalTime(a);
     const localB = toLocalTime(b);
-    return differenceInCalendarDays(localA, localB) === 0;
+    return differenceInCalendarDaysUTC(localA, localB) === 0;
 };
 
 /**

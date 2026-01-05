@@ -7,11 +7,12 @@
 import { z } from 'zod';
 import { db } from '../core/firebase';
 import {
-    addDoc,
     collection,
+    doc,
     getDocs,
     Timestamp
 } from "../core/firebase-sdk";
+import { BatchManager } from '../utils/batch-manager';
 import { paths } from '../utils/paths';
 
 // ============================================================
@@ -140,23 +141,6 @@ export async function createBackupData(userId: string, workspaceId: string): Pro
     if (!userId || !workspaceId) throw new Error("Missing parameters for backup.");
 
     try {
-        const tasksRef = collection(db, paths.tasks(userId, workspaceId));
-        const projectsRef = collection(db, paths.projects(userId, workspaceId));
-        const labelsRef = collection(db, paths.labels(userId, workspaceId));
-        const targetsRef = collection(db, paths.targets(userId, workspaceId));
-        const timeBlocksRef = collection(db, paths.timeblocks(userId, workspaceId));
-        const filtersRef = collection(db, paths.filters(userId, workspaceId));
-
-        const [tasksSnap, projectsSnap, labelsSnap, targetsSnap, timeBlocksSnap, filtersSnap] = await Promise.all([
-            getDocs(tasksRef),
-            getDocs(projectsRef),
-            getDocs(labelsRef),
-            getDocs(targetsRef),
-            getDocs(timeBlocksRef),
-            getDocs(filtersRef)
-        ]);
-
-
         const serializeData = <T extends Record<string, unknown>>(snap: { docs: Array<{ id: string; data: () => Record<string, unknown> }> }): T[] =>
             snap.docs.map((d) => {
                 const data = d.data();
@@ -171,17 +155,36 @@ export async function createBackupData(userId: string, workspaceId: string): Pro
                 return serialized as T;
             });
 
+        // Fetch collections sequentially to avoid high memory pressure (Snapshot objects are heavy)
+        const tasksSnap = await getDocs(collection(db, paths.tasks(userId, workspaceId)));
+        const tasks = serializeData<BackupData['tasks'][number]>(tasksSnap);
+
+        const projectsSnap = await getDocs(collection(db, paths.projects(userId, workspaceId)));
+        const projects = serializeData<BackupData['projects'][number]>(projectsSnap);
+
+        const labelsSnap = await getDocs(collection(db, paths.labels(userId, workspaceId)));
+        const labels = serializeData<BackupData['labels'][number]>(labelsSnap);
+
+        const targetsSnap = await getDocs(collection(db, paths.targets(userId, workspaceId)));
+        const targets = serializeData<BackupData['targets'][number]>(targetsSnap);
+
+        const timeBlocksSnap = await getDocs(collection(db, paths.timeblocks(userId, workspaceId)));
+        const timeBlocks = serializeData<BackupData['timeBlocks'][number]>(timeBlocksSnap);
+
+        const filtersSnap = await getDocs(collection(db, paths.filters(userId, workspaceId)));
+        const customFilters = serializeData<BackupData['customFilters'][number]>(filtersSnap);
+
         return {
             version: "1.4",
             exportedAt: new Date().toISOString(),
             userId,
             workspaceId,
-            tasks: serializeData(tasksSnap) as BackupData['tasks'],
-            projects: serializeData(projectsSnap) as BackupData['projects'],
-            labels: serializeData(labelsSnap) as BackupData['labels'],
-            targets: serializeData(targetsSnap) as BackupData['targets'],
-            timeBlocks: serializeData(timeBlocksSnap) as BackupData['timeBlocks'],
-            customFilters: serializeData(filtersSnap) as BackupData['customFilters'],
+            tasks,
+            projects,
+            labels,
+            targets,
+            timeBlocks,
+            customFilters,
         };
     } catch (error) {
         console.error("[Backup] createBackupData failed:", error);
@@ -189,9 +192,13 @@ export async function createBackupData(userId: string, workspaceId: string): Pro
     }
 }
 
+
 // ============================================================
 // インポート処理
 // ============================================================
+
+// ... BatchManager imported from utils/batch-manager ...
+
 
 export interface ImportResult {
     tasksCount: number;
@@ -228,6 +235,7 @@ export async function importBackupData(
 
     const validatedData = parseResult.data;
     const errors: string[] = [];
+    const batchManager = new BatchManager();
 
     try {
         const {
@@ -259,12 +267,15 @@ export async function importBackupData(
                 } else {
                     const newLabelData: Record<string, unknown> = { ...label, name: normalizedName };
                     delete newLabelData.id;
-                    const docRef = await addDoc(collection(db, paths.labels(userId, workspaceId)), newLabelData);
+
+                    const docRef = doc(collection(db, paths.labels(userId, workspaceId)));
+                    batchManager.set(docRef, newLabelData);
+
                     labelMap.set(label.id, docRef.id);
                     currentLabelNames.set(normalizedName, docRef.id);
                 }
             } catch (err) {
-                errors.push(`ラベル "${label.name}" のインポートに失敗: ${err}`);
+                errors.push(`ラベル "${label.name}" のインポート準備に失敗: ${err}`);
             }
         }
 
@@ -277,10 +288,12 @@ export async function importBackupData(
                 delete newProjectData.id;
                 newProjectData.createdAt = parseImportDate(project.createdAt);
 
-                const docRef = await addDoc(collection(db, paths.projects(userId, workspaceId)), newProjectData);
+                const docRef = doc(collection(db, paths.projects(userId, workspaceId)));
+                batchManager.set(docRef, newProjectData);
+
                 projectMap.set(project.id, docRef.id);
             } catch (err) {
-                errors.push(`プロジェクト "${project.name}" のインポートに失敗: ${err}`);
+                errors.push(`プロジェクト "${project.name}" のインポート準備に失敗: ${err}`);
             }
         }
 
@@ -291,9 +304,11 @@ export async function importBackupData(
             try {
                 const newTbData: Record<string, unknown> = { ...tb };
                 delete newTbData.id;
-                await addDoc(collection(db, paths.timeblocks(userId, workspaceId)), newTbData);
+
+                const docRef = doc(collection(db, paths.timeblocks(userId, workspaceId)));
+                batchManager.set(docRef, newTbData);
             } catch (err) {
-                errors.push(`タイムブロック "${tb.name}" のインポートに失敗: ${err}`);
+                errors.push(`タイムブロック "${tb.name}" のインポート準備に失敗: ${err}`);
             }
         }
 
@@ -305,9 +320,11 @@ export async function importBackupData(
                 const newFilterData: Record<string, unknown> = { ...filter };
                 delete newFilterData.id;
                 newFilterData.createdAt = parseImportDate(filter.createdAt);
-                await addDoc(collection(db, paths.filters(userId, workspaceId)), newFilterData);
+
+                const docRef = doc(collection(db, paths.filters(userId, workspaceId)));
+                batchManager.set(docRef, newFilterData);
             } catch (err) {
-                errors.push(`フィルター "${filter.name}" のインポートに失敗: ${err}`);
+                errors.push(`フィルター "${filter.name}" のインポート準備に失敗: ${err}`);
             }
         }
 
@@ -322,16 +339,18 @@ export async function importBackupData(
                 newTargetData.updatedAt = parseImportDate(target.updatedAt);
                 newTargetData.ownerId = userId;
                 newTargetData.workspaceId = workspaceId;
-                await addDoc(collection(db, paths.targets(userId, workspaceId)), newTargetData);
+
+                const docRef = doc(collection(db, paths.targets(userId, workspaceId)));
+                batchManager.set(docRef, newTargetData);
             } catch (err) {
-                errors.push(`ターゲット (mode: ${target.mode}) のインポートに失敗: ${err}`);
+                errors.push(`ターゲット (mode: ${target.mode}) のインポート準備に失敗: ${err}`);
             }
         }
 
         // ============================================================
         // 7. タスクのインポート (依存関係解決後)
         // ============================================================
-        const tasksPromises = tasks.map(async (task) => {
+        for (const task of tasks) {
             try {
                 const newTaskData: Record<string, unknown> = { ...task };
                 delete newTaskData.id;
@@ -358,13 +377,17 @@ export async function importBackupData(
 
                 newTaskData.ownerId = userId;
 
-                await addDoc(collection(db, paths.tasks(userId, workspaceId)), newTaskData);
+                const docRef = doc(collection(db, paths.tasks(userId, workspaceId)));
+                batchManager.set(docRef, newTaskData);
             } catch (err) {
-                errors.push(`タスク "${task.title}" のインポートに失敗: ${err}`);
+                errors.push(`タスク "${task.title}" のインポート準備に失敗: ${err}`);
             }
-        });
+        }
 
-        await Promise.all(tasksPromises);
+        // ============================================================
+        // 8. バッチコミット実行
+        // ============================================================
+        await batchManager.commitAll();
 
         return {
             tasksCount: tasks.length,

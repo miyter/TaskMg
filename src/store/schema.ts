@@ -33,7 +33,12 @@ export const RecurrenceSchema = z.object({
 export const TaskSchema = z.object({
     id: z.string().optional(), // Firestore ID
     title: z.string().refine(val => val.length >= 1, { params: { i18n: 'validation.title_required' } }).pipe(z.string().max(15)),
-    description: z.string().max(200).nullable().optional(),
+    description: z.string().refine((val) => {
+        if (!val) return true;
+        // Strip HTML tags and common entities to count perceived characters
+        const stripped = val.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
+        return stripped.length <= 200;
+    }, { params: { i18n: 'validation.description_too_long' } }).nullable().optional(),
     status: z.enum(['todo', 'completed', 'archived']).default('todo'),
     dueDate: DateLikeSchema,
     completedAt: DateLikeSchema,
