@@ -43,9 +43,30 @@ export class ErrorBoundary extends Component<Props, State> {
                 return this.props.fallback;
             }
 
-            // クラスコンポーネントではフック不可なので、ストアから直接取得
-            const language = useSettingsStore.getState().language;
-            const { t } = getTranslator(language);
+            // 安全に翻訳関数を取得（ストア自体が壊れている可能性を考慮）
+            let t: (key: any) => string;
+            try {
+                const language = useSettingsStore.getState().language;
+                t = getTranslator(language).t as any;
+            } catch (e) {
+                // フォールバック（英語ベースで最低限の意味を通す）
+                t = (key: string) => {
+                    if (key === 'error_boundary.title') return 'An Error Occurred';
+                    if (key === 'error_boundary.description') return 'Something went wrong. You can try reloading or resetting the app.';
+                    if (key === 'error_boundary.retry') return 'Retry';
+                    if (key === 'error_boundary.reload') return 'Reload';
+                    if (key === 'error_boundary.details') return 'Error Details';
+                    return key;
+                };
+            }
+
+            const handleHardReset = () => {
+                if (window.confirm('Are you sure? This will reset local settings and cache to fix the issue. Your data synced to the cloud is safe.')) {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '/';
+                }
+            };
 
             return (
                 <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
@@ -61,18 +82,26 @@ export class ErrorBoundary extends Component<Props, State> {
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                             {t('error_boundary.description')}
                         </p>
-                        <div className="flex gap-3 justify-center">
+                        <div className="flex flex-col gap-3 justify-center">
+                            <div className="flex gap-3 justify-center">
+                                <button
+                                    onClick={this.handleRetry}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                    {t('error_boundary.retry')}
+                                </button>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                                >
+                                    {t('error_boundary.reload')}
+                                </button>
+                            </div>
                             <button
-                                onClick={this.handleRetry}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                onClick={handleHardReset}
+                                className="text-xs text-gray-400 hover:text-red-500 underline mt-2"
                             >
-                                {t('error_boundary.retry')}
-                            </button>
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                            >
-                                {t('error_boundary.reload')}
+                                Reset App Settings & Cache (Emergency)
                             </button>
                         </div>
                         {process.env.NODE_ENV === 'development' && this.state.error && (
