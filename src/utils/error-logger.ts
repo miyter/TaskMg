@@ -177,14 +177,14 @@ export function initErrorLogger(): void {
 /**
  * Reactコンポーネントエラーをログに記録
  */
-export function logReactError(error: Error, componentStack?: string): void {
+export function logReactError(error: Error, componentStack?: string, showToast = true): void {
     logError({
         timestamp: new Date().toISOString(),
         type: 'react',
         message: error.message,
         stack: error.stack,
         componentStack,
-    }, true);
+    }, showToast);
 }
 
 /**

@@ -1,6 +1,4 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { getTranslator } from '../../core/translations';
-import { useSettingsStore } from '../../store/ui/settings-store';
 import { logReactError } from '../../utils/error-logger';
 
 interface Props {
@@ -30,7 +28,8 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-        logReactError(error, errorInfo.componentStack ?? undefined);
+        // ReactエラーはToastを表示しない (再レンダリングループ防止のため)
+        logReactError(error, errorInfo.componentStack ?? undefined, false);
     }
 
     handleRetry = () => {
@@ -43,25 +42,22 @@ export class ErrorBoundary extends Component<Props, State> {
                 return this.props.fallback;
             }
 
-            // 安全に翻訳関数を取得（ストア自体が壊れている可能性を考慮）
-            let t: (key: any) => string;
-            try {
-                const language = useSettingsStore.getState().language;
-                t = getTranslator(language).t as any;
-            } catch (e) {
-                // フォールバック（英語ベースで最低限の意味を通す）
-                t = (key: string) => {
-                    if (key === 'error_boundary.title') return 'An Error Occurred';
-                    if (key === 'error_boundary.description') return 'Something went wrong. You can try reloading or resetting the app.';
-                    if (key === 'error_boundary.retry') return 'Retry';
-                    if (key === 'error_boundary.reload') return 'Reload';
-                    if (key === 'error_boundary.details') return 'Error Details';
-                    return key;
+            // 安全のため、ストア依存の翻訳機能は使用せず、静的なバイリンガルテキストを表示する
+            // This prevents crashes in the error boundary itself due to store access issues.
+            const t = (key: string) => {
+                const map: Record<string, string> = {
+                    'error_boundary.title': 'エラーが発生しました / An Error Occurred',
+                    'error_boundary.description': '申し訳ありません。予期せぬエラーが発生しました。\nSorry, an unexpected error has occurred.',
+                    'error_boundary.retry': '再試行 / Retry',
+                    'error_boundary.reload': '再読み込み / Reload',
+                    'error_boundary.reset': '緊急リセット / Hard Reset',
+                    'error_boundary.details': 'エラー詳細 / Error Details',
                 };
-            }
+                return map[key] || key;
+            };
 
             const handleHardReset = () => {
-                if (window.confirm('Are you sure? This will reset local settings and cache to fix the issue. Your data synced to the cloud is safe.')) {
+                if (window.confirm('本当にリセットしますか？\nローカルの設定とキャッシュを消去します。\nクラウド上のデータは安全です。\n\nAre you sure?\nThis will clear local settings and cache.\nYour cloud data is safe.')) {
                     localStorage.clear();
                     sessionStorage.clear();
                     window.location.href = '/';
@@ -79,7 +75,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
                             {t('error_boundary.title')}
                         </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 whitespace-pre-line">
                             {t('error_boundary.description')}
                         </p>
                         <div className="flex flex-col gap-3 justify-center">
@@ -101,7 +97,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                 onClick={handleHardReset}
                                 className="text-xs text-gray-400 hover:text-red-500 underline mt-2"
                             >
-                                Reset App Settings & Cache (Emergency)
+                                {t('error_boundary.reset')}
                             </button>
                         </div>
                         {process.env.NODE_ENV === 'development' && this.state.error && (
