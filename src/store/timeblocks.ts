@@ -39,13 +39,13 @@ function requireAuth(workspaceId: string) {
 /**
  * タイムブロックの購読
  */
-export function subscribeToTimeBlocks(workspaceId: string, callback: (blocks: TimeBlock[]) => void): Unsubscribe {
+export function subscribeToTimeBlocks(workspaceId: string, callback: (blocks: TimeBlock[]) => void, onError?: (error: any) => void): Unsubscribe {
     const userId = auth.currentUser?.uid;
     if (!userId) {
         callback([]);
         return () => { };
     }
-    return subscribeToTimeBlocksRaw(userId, workspaceId, callback);
+    return subscribeToTimeBlocksRaw(userId, workspaceId, callback, onError);
 }
 
 /**

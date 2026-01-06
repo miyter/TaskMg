@@ -44,7 +44,7 @@ class FilterCache extends FirestoreCollectionCache<Filter> {
         return this.getItems(workspaceId);
     }
 
-    public subscribe(userId: string | undefined, workspaceId: string, callback: (filters: Filter[]) => void): Unsubscribe {
+    public subscribe(userId: string | undefined, workspaceId: string, callback: (filters: Filter[]) => void, onError?: (error: any) => void): Unsubscribe {
         if (!userId || !workspaceId) {
             callback([]);
             return () => { };
@@ -69,6 +69,7 @@ class FilterCache extends FirestoreCollectionCache<Filter> {
             }, (error) => {
                 console.error(`${this.config.logPrefix} Subscription error:`, error);
                 this.setCache(workspaceId, []);
+                if (onError) onError(error);
             });
 
             this.setFirestoreSubscription(workspaceId, unsub);
@@ -82,8 +83,8 @@ const cache = FilterCache.getInstance();
 
 // --- Raw Exports ---
 
-export function subscribeToFiltersRaw(userId: string, workspaceId: string, callback: (filters: Filter[]) => void): Unsubscribe {
-    return cache.subscribe(userId, workspaceId, callback);
+export function subscribeToFiltersRaw(userId: string, workspaceId: string, callback: (filters: Filter[]) => void, onError?: (error: any) => void): Unsubscribe {
+    return cache.subscribe(userId, workspaceId, callback, onError);
 }
 
 export function getFiltersRaw(workspaceId: string): Filter[] {

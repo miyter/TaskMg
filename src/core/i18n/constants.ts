@@ -63,6 +63,9 @@ export const ja = {
             status_update_fail: 'ステータスの更新に失敗しました',
             move_fail: 'タスクの移動に失敗しました',
         },
+        error: {
+            subscription_failed: 'データの同期に失敗しました',
+        },
         auth: {
             login_success: 'ログインしました',
             logout_success: 'ログアウトしました',
@@ -578,6 +581,9 @@ export const en = {
             complete_success: 'Task completed 🎉',
             status_update_fail: 'Failed to update status',
             move_fail: 'Failed to move task',
+        },
+        error: {
+            subscription_failed: 'Failed to sync data',
         },
         auth: {
             login_success: 'Logged in',

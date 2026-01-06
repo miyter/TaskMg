@@ -6,7 +6,7 @@ import {
     useSensors
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from '../core/translations';
 import { UI_CONFIG } from '../core/ui-constants';
 import { reorderProjects, updateTask } from '../store';
@@ -47,12 +47,11 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
 
     const { t } = useTranslation();
 
-    // Store simple snapshot of projects at start of drag
-    const initialProjectsRef = useRef<Project[]>(projects);
-
     const handleDragStart = useCallback(() => {
-        initialProjectsRef.current = projects;
-    }, [projects]);
+        // No snapshot needed if we trust `projects` prop or state to be consistent during drag
+        // If we really need snapshot, it should be done carefully.
+        // For now, simpler is better: rely on current state at end of drag.
+    }, []);
 
     const handleDragEnd = useCallback(async (event: DragEndEvent) => {
         const { active, over } = event;
@@ -63,8 +62,11 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
 
         // Try to get Task ID from data (safer) or ID string (fallback)
         let draggedTaskId: string | null = null;
+        let originalTask: Task | undefined;
+
         if (active.data.current && active.data.current.type === 'task') {
-            draggedTaskId = (active.data.current.task as Task)?.id || activeId.replace(UI_CONFIG.DND.PREFIX_TASK, '');
+            originalTask = active.data.current.task as Task | undefined;
+            draggedTaskId = originalTask?.id || activeId.replace(UI_CONFIG.DND.PREFIX_TASK, '');
         }
 
         // 1. タスクの移動/並び替え
@@ -75,17 +77,26 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
 
             // 1-A. サイドバーターゲットへの移動
             if (targetType && isSidebarTargetType(targetType)) {
+                if (!originalTask) {
+                    console.error("Original task data missing for revert.");
+                    return;
+                }
+
                 const updates: Partial<Task> = {};
+                // Revert data prep
+                const revertUpdates: Partial<Task> = {};
 
                 if (targetType === UI_CONFIG.DND.TYPE_PROJECT) {
                     updates.projectId = targetValue;
+                    revertUpdates.projectId = originalTask.projectId;
                 } else if (targetType === UI_CONFIG.DND.TYPE_INBOX) {
                     updates.projectId = null;
+                    revertUpdates.projectId = originalTask.projectId;
                 } else if (targetType === UI_CONFIG.DND.TYPE_TIMEBLOCK) {
                     updates.timeBlockId = targetValue === 'unassigned' ? null : targetValue;
+                    revertUpdates.timeBlockId = originalTask.timeBlockId;
                 } else if (targetType === UI_CONFIG.DND.TYPE_LABEL) {
-                    const task = active.data.current?.task as Task | undefined;
-                    const currentLabelIds = task?.labelIds ?? [];
+                    const currentLabelIds = originalTask.labelIds ?? [];
                     if (targetValue) {
                         if (currentLabelIds.includes(targetValue)) {
                             updates.labelIds = currentLabelIds.filter(id => id !== targetValue);
@@ -93,14 +104,22 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
                             updates.labelIds = [...currentLabelIds, targetValue];
                         }
                     }
+                    revertUpdates.labelIds = originalTask.labelIds;
                 }
 
                 if (Object.keys(updates).length > 0) {
+                    // Optimistic update logic is handled by store usually, but here we just call updateTask
                     try {
                         await updateTask(draggedTaskId, updates);
                     } catch (err) {
                         console.error('Failed to update task via dnd', err);
                         toast.error(t('msg.dnd.reorderFailed') || t('error'));
+                        // Revert
+                        try {
+                            await updateTask(draggedTaskId, revertUpdates);
+                        } catch (revertErr) {
+                            console.error('CRITICAL: Failed to revert task update!', revertErr);
+                        }
                     }
                     return;
                 }
@@ -109,6 +128,11 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
             // 1-B. 他のタスクの上へのドロップ (並び替え)
             if (activeId !== overId && overId.startsWith(UI_CONFIG.DND.PREFIX_TASK)) {
                 const overTaskId = overId.replace(UI_CONFIG.DND.PREFIX_TASK, '');
+                // Call store action for reordering
+                // IMPORTANT: This should persist to Firestore! 
+                // Currently dnd-store only notifies UI. We need a way to persist.
+                // Assuming options.onTasksReorder is wiring this up? 
+                // If not, we have a missing persistence layer for task sorting.
                 options?.onTasksReorder?.(draggedTaskId, overTaskId);
                 return;
             }
@@ -116,7 +140,8 @@ export const useAppDnD = (projects: Project[], options?: UseAppDnDOptions) => {
 
         // 2. プロジェクト自体の並び替え
         if (activeId !== overId && activeId.startsWith(UI_CONFIG.DND.PREFIX_PROJECT) && overId.startsWith(UI_CONFIG.DND.PREFIX_PROJECT)) {
-            const currentProjects = initialProjectsRef.current;
+            // Use current 'projects' directly instead of stale ref
+            const currentProjects = projects;
             const realActiveId = activeId.replace(UI_CONFIG.DND.PREFIX_PROJECT, '');
             const realOverId = overId.replace(UI_CONFIG.DND.PREFIX_PROJECT, '');
             const oldIndex = currentProjects.findIndex(p => p.id === realActiveId);

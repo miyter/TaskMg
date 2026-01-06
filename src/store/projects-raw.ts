@@ -35,7 +35,7 @@ class ProjectCache extends FirestoreCollectionCache<Project> {
         return this.getItems(workspaceId);
     }
 
-    public subscribe(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void): Unsubscribe {
+    public subscribe(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void, onError?: (error: any) => void): Unsubscribe {
         // リスナー登録とクリーンアップ関数取得
         const cleanup = this.registerListener(workspaceId, onUpdate);
 
@@ -49,7 +49,8 @@ class ProjectCache extends FirestoreCollectionCache<Project> {
                 workspaceId,
                 q,
                 (d) => ({ id: d.id, ...d.data() } as Project),
-                areProjectArraysIdentical
+                areProjectArraysIdentical,
+                onError
             );
         }
 
@@ -63,8 +64,8 @@ export const isProjectsInitialized = (workspaceId: string) => projectCache.isIni
 export const getProjects = (workspaceId: string) => projectCache.getProjects(workspaceId);
 export const updateProjectsCacheRaw = (workspaceId: string, projects: Project[]) => projectCache.setCache(workspaceId, projects);
 
-export function subscribeToProjectsRaw(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void): Unsubscribe {
-    return projectCache.subscribe(userId, workspaceId, onUpdate);
+export function subscribeToProjectsRaw(userId: string, workspaceId: string, onUpdate: (projects: Project[]) => void, onError?: (error: any) => void): Unsubscribe {
+    return projectCache.subscribe(userId, workspaceId, onUpdate, onError);
 }
 
 export async function addProjectRaw(userId: string, workspaceId: string, name: string, color?: string) {

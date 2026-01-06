@@ -48,7 +48,7 @@ class TimeBlockCache extends FirestoreCollectionCache<TimeBlock> {
         return this.getItems(workspaceId);
     }
 
-    public subscribe(userId: string | undefined, workspaceId: string, callback: (blocks: TimeBlock[]) => void): Unsubscribe {
+    public subscribe(userId: string | undefined, workspaceId: string, callback: (blocks: TimeBlock[]) => void, onError?: (error: any) => void): Unsubscribe {
         if (!userId || !workspaceId) {
             callback([]);
             return () => { };
@@ -85,6 +85,7 @@ class TimeBlockCache extends FirestoreCollectionCache<TimeBlock> {
 
             }, (error) => {
                 console.error(`${this.config.logPrefix} Subscription error:`, error);
+                if (onError) onError(error);
             });
 
             this.setFirestoreSubscription(workspaceId, unsub);
@@ -117,8 +118,8 @@ async function createDefaultTimeBlocks(userId: string, workspaceId: string): Pro
 
 // --- Raw Exports ---
 
-export function subscribeToTimeBlocksRaw(userId: string, workspaceId: string, callback: (blocks: TimeBlock[]) => void): Unsubscribe {
-    return cache.subscribe(userId, workspaceId, callback);
+export function subscribeToTimeBlocksRaw(userId: string, workspaceId: string, callback: (blocks: TimeBlock[]) => void, onError?: (error: any) => void): Unsubscribe {
+    return cache.subscribe(userId, workspaceId, callback, onError);
 }
 
 export function getTimeBlocksRaw(workspaceId: string): TimeBlock[] {

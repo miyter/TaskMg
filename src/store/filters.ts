@@ -37,14 +37,14 @@ export function isFiltersInitialized(workspaceId: string): boolean {
 /**
  * フィルターのリアルタイム購読
  */
-export function subscribeToFilters(workspaceId: string, onUpdate: (filters: Filter[]) => void): Unsubscribe {
+export function subscribeToFilters(workspaceId: string, onUpdate: (filters: Filter[]) => void, onError?: (error: any) => void): Unsubscribe {
     const userId = auth.currentUser?.uid;
 
     if (!userId || !workspaceId) {
         onUpdate([]);
         return () => { };
     }
-    return subscribeToFiltersRaw(userId, workspaceId, onUpdate);
+    return subscribeToFiltersRaw(userId, workspaceId, onUpdate, onError);
 }
 
 /**

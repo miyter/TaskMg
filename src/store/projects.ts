@@ -44,16 +44,20 @@ export const updateProjectsCache = (projects: Project[], workspaceId?: string) =
  */
 export const subscribeToProjects = (
     workspaceId: string | ((projects: Project[]) => void),
-    onUpdate?: (projects: Project[]) => void
+    onUpdate?: ((projects: Project[]) => void) | ((error: any) => void),
+    onError?: (error: any) => void
 ): Unsubscribe => {
     // 引数解決ガード
-    const callback = typeof workspaceId === 'function' ? workspaceId : onUpdate;
+    const callback = (typeof workspaceId === 'function' ? workspaceId : onUpdate) as (projects: Project[]) => void;
+    // 第2引数がエラーハンドラの場合への対応（オーバーロード的な挙動への配慮）
+    const errorHandler = typeof workspaceId === 'function' ? (onUpdate as (error: any) => void) : onError;
+
     const targetWorkspaceId = typeof workspaceId === 'string' ? workspaceId : getCurrentWorkspaceId();
 
     const user = auth.currentUser;
 
     if (user && targetWorkspaceId && typeof callback === 'function') {
-        return subscribeToProjectsRaw(user.uid, targetWorkspaceId, callback);
+        return subscribeToProjectsRaw(user.uid, targetWorkspaceId, callback, errorHandler);
     } else {
         if (typeof callback === 'function') callback([]);
         return () => { };

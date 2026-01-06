@@ -152,7 +152,8 @@ export abstract class FirestoreCollectionCache<T extends BaseEntity, K extends s
         key: K,
         query: Query,
         transformFn: (doc: any) => T = (d) => ({ id: d.id, ...d.data() } as T),
-        compareFn?: (a: T[], b: T[]) => boolean
+        compareFn?: (a: T[], b: T[]) => boolean,
+        onError?: (error: FirestoreError) => void
     ): void {
         const unsub = onSnapshot(query, (snapshot: QuerySnapshot) => {
             const items = snapshot.docs.map(transformFn);
@@ -167,6 +168,7 @@ export abstract class FirestoreCollectionCache<T extends BaseEntity, K extends s
             this.setCache(key, items);
         }, (error: FirestoreError) => {
             console.error(`${this.config.logPrefix} Subscription error:`, error);
+            if (onError) onError(error);
         });
 
         this.setFirestoreSubscription(key, unsub);

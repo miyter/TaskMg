@@ -33,7 +33,7 @@ class LabelCache extends FirestoreCollectionCache<Label> {
         return this.getItems(workspaceId);
     }
 
-    public subscribe(userId: string, workspaceId: string, onUpdate: (labels: Label[]) => void): Unsubscribe {
+    public subscribe(userId: string, workspaceId: string, onUpdate: (labels: Label[]) => void, onError?: (error: any) => void): Unsubscribe {
         // リスナー登録とクリーンアップ関数取得
         const cleanup = this.registerListener(workspaceId, onUpdate);
 
@@ -45,7 +45,9 @@ class LabelCache extends FirestoreCollectionCache<Label> {
             this.__subscribeToQuery(
                 workspaceId,
                 q,
-                (d) => ({ id: d.id, ...d.data() } as Label)
+                (d) => ({ id: d.id, ...d.data() } as Label),
+                undefined,
+                onError
             );
         }
 
@@ -59,12 +61,12 @@ export const isLabelsInitialized = (workspaceId: string) => labelCache.isInitial
 export const getLabels = (workspaceId: string) => labelCache.getLabels(workspaceId);
 export const updateLabelsCacheRaw = (workspaceId: string, labels: Label[]) => labelCache.setCache(workspaceId, labels);
 
-export function subscribeToLabelsRaw(userId: string, workspaceId: string, onUpdate: (labels: Label[]) => void): Unsubscribe {
+export function subscribeToLabelsRaw(userId: string, workspaceId: string, onUpdate: (labels: Label[]) => void, onError?: (error: any) => void): Unsubscribe {
     if (!userId || !workspaceId) {
         onUpdate([]);
         return () => { };
     }
-    return labelCache.subscribe(userId, workspaceId, onUpdate);
+    return labelCache.subscribe(userId, workspaceId, onUpdate, onError);
 }
 
 export async function addLabelRaw(userId: string, workspaceId: string, name: string, color: string) {

@@ -27,11 +27,11 @@ export const isLabelsInitialized = (workspaceId?: string): boolean => {
 /**
  * ラベルのリアルタイム購読
  */
-export function subscribeToLabels(workspaceId: string, onUpdate: (labels: Label[]) => void): Unsubscribe {
+export function subscribeToLabels(workspaceId: string, onUpdate: (labels: Label[]) => void, onError?: (error: any) => void): Unsubscribe {
     const userId = auth.currentUser?.uid;
 
     if (userId && workspaceId) {
-        return subscribeToLabelsRaw(userId, workspaceId, onUpdate);
+        return subscribeToLabelsRaw(userId, workspaceId, onUpdate, onError);
     } else {
         onUpdate([]);
         return () => { };
