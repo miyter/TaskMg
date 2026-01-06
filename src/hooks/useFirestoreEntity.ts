@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useRef, useSyncExternalStore } from 'react';
 import { useWorkspace } from './useWorkspace';
 
 const EMPTY_ARRAY: any[] = [];
@@ -21,6 +21,31 @@ export const useFirestoreEntity = <T>({
     isInitializedFn
 }: UseFirestoreEntityOptions<T>) => {
     const { workspaceId, userId, loading: authLoading } = useWorkspace();
+
+    // Dev-only: Detect infinite loops caused by unstable subscribeFn
+    const lastFnRef = useRef(storeSubscribeFn);
+    const lastCallRef = useRef(Date.now());
+    const violationCountRef = useRef(0);
+
+    if (import.meta.env.DEV) {
+        if (lastFnRef.current !== storeSubscribeFn) {
+            const now = Date.now();
+            if (now - lastCallRef.current < 1000) {
+                violationCountRef.current++;
+                if (violationCountRef.current > 5) {
+                    console.error(
+                        `[useFirestoreEntity] 🚨 CRITICAL: Infinite loop detected for entity "${entityName}".\n` +
+                        `The 'subscribeFn' prop is being recreated too frequently. \n` +
+                        `Wrap the function passed to useFirestoreEntity with useCallback() in the parent component.`
+                    );
+                }
+            } else {
+                violationCountRef.current = 0;
+            }
+            lastFnRef.current = storeSubscribeFn;
+            lastCallRef.current = now;
+        }
+    }
 
     const subscribe = useCallback((onStoreChange: () => void) => {
         if (!workspaceId || !userId) return () => { };

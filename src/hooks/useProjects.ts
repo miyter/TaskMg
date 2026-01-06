@@ -1,12 +1,17 @@
+import { useCallback } from 'react';
 import { getProjects, isProjectsInitialized, subscribeToProjects, updateProjectsCache } from '../store/projects';
 import { Project } from '../store/schema';
 import { useFirestoreEntity } from './useFirestoreEntity';
 import { useWorkspace } from './useWorkspace';
 
 export const useProjects = () => {
+    const subscribeFn = useCallback((wid: string, onData: (data: Project[]) => void) => {
+        return subscribeToProjects(wid, onData);
+    }, []);
+
     const { entities: projects, loading } = useFirestoreEntity<Project>({
         entityName: 'projects',
-        subscribeFn: (wid, onData) => subscribeToProjects(wid, onData),
+        subscribeFn,
         getCacheFn: getProjects,
         isInitializedFn: isProjectsInitialized
     });
